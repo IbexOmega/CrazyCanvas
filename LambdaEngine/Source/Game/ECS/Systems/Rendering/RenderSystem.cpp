@@ -29,6 +29,7 @@
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Rendering/ParticleRenderer.h"
 #include "Rendering/ParticleUpdater.h"
@@ -122,9 +123,9 @@ namespace LambdaEngine
 					.pSubscriber = &m_LocalPlayerEntities,
 					.ComponentAccesses =
 					{
-						{ NDA, PlayerBaseComponent::Type() },
-						{ R, AnimationComponent::Type() },
-						{ R, MeshComponent::Type() }
+						{ NDA,	PlayerBaseComponent::Type() },
+						{ R,	AnimationComponent::Type() },
+						{ R,	MeshComponent::Type() }
 					},
 					.ComponentGroups =
 					{
@@ -190,15 +191,15 @@ namespace LambdaEngine
 		//Create Swapchain
 		{
 			SwapChainDesc swapChainDesc = {};
-			swapChainDesc.DebugName = "Renderer Swap Chain";
-			swapChainDesc.pWindow = pActiveWindow;
-			swapChainDesc.pQueue = RenderAPI::GetGraphicsQueue();
-			swapChainDesc.Format = EFormat::FORMAT_B8G8R8A8_UNORM;
-			swapChainDesc.Width = pActiveWindow->GetWidth();
-			swapChainDesc.Height = pActiveWindow->GetHeight();
-			swapChainDesc.BufferCount = BACK_BUFFER_COUNT;
-			swapChainDesc.SampleCount = 1;
-			swapChainDesc.VerticalSync = false;
+			swapChainDesc.DebugName		= "Renderer Swap Chain";
+			swapChainDesc.pWindow		= pActiveWindow;
+			swapChainDesc.pQueue		= RenderAPI::GetGraphicsQueue();
+			swapChainDesc.Format		= EFormat::FORMAT_B8G8R8A8_UNORM;
+			swapChainDesc.Width			= pActiveWindow->GetWidth();
+			swapChainDesc.Height		= pActiveWindow->GetHeight();
+			swapChainDesc.BufferCount	= BACK_BUFFER_COUNT;
+			swapChainDesc.SampleCount	= 1;
+			swapChainDesc.VerticalSync	= false;
 
 			m_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
 			if (!m_SwapChain)
@@ -306,9 +307,8 @@ namespace LambdaEngine
 		return true;
 	}
 
-
-	bool RenderSystem::InitRenderGraphs() {
-
+	bool RenderSystem::InitRenderGraphs() 
+	{
 		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
 
 		//Create RenderGraph
@@ -318,8 +318,8 @@ namespace LambdaEngine
 			String renderGraphName = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RENDER_GRAPH_NAME);
 			if (renderGraphName != "")
 			{
-				String prefix = m_RayTracingEnabled ? "RT_" : "";
-				String postfix = m_MeshShadersEnabled ? "_MESH" : "";
+				String prefix	= m_RayTracingEnabled	&& !MultiplayerUtils::IsServer() ? "RT_" : "";
+				String postfix	= m_MeshShadersEnabled	&& !MultiplayerUtils::IsServer() ? "_MESH" : "";
 				size_t pos = renderGraphName.find_first_of(".lrg");
 				if (pos != String::npos)
 				{
@@ -343,12 +343,12 @@ namespace LambdaEngine
 			}
 
 			RenderGraphDesc renderGraphDesc = {};
-			renderGraphDesc.Name = "Default Rendergraph";
-			renderGraphDesc.pRenderGraphStructureDesc = &renderGraphStructure;
-			renderGraphDesc.BackBufferCount = BACK_BUFFER_COUNT;
-			renderGraphDesc.BackBufferWidth = pActiveWindow->GetWidth();
-			renderGraphDesc.BackBufferHeight = pActiveWindow->GetHeight();
-			renderGraphDesc.CustomRenderers = { };
+			renderGraphDesc.Name						= "Default Rendergraph";
+			renderGraphDesc.pRenderGraphStructureDesc	= &renderGraphStructure;
+			renderGraphDesc.BackBufferCount				= BACK_BUFFER_COUNT;
+			renderGraphDesc.BackBufferWidth				= pActiveWindow->GetWidth();
+			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
+			renderGraphDesc.CustomRenderers				= { };
 
 			// Add paint mask renderer to the custom renderers inside the render graph.
 			{
@@ -595,11 +595,11 @@ namespace LambdaEngine
 		{
 			for (Entity entity : m_LocalPlayerEntities)
 			{
-				MeshComponent&		meshComp		= pMeshComponents->GetData(entity);
-				AnimationComponent&	animationComp	= pAnimationComponents->GetData(entity);
-				const auto&			positionComp	= pPositionComponents->GetConstData(entity);
-				const auto&			rotationComp	= pRotationComponents->GetConstData(entity);
-				const auto&			scaleComp		= pScaleComponents->GetConstData(entity);
+				MeshComponent& meshComp				= pMeshComponents->GetData(entity);
+				AnimationComponent& animationComp	= pAnimationComponents->GetData(entity);
+				const auto& positionComp	= pPositionComponents->GetConstData(entity);
+				const auto& rotationComp	= pRotationComponents->GetConstData(entity);
+				const auto& scaleComp		= pScaleComponents->GetConstData(entity);
 
 				UpdateAnimation(entity, meshComp, animationComp);
 				UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(false, true, false));
@@ -819,7 +819,7 @@ namespace LambdaEngine
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
 	}
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
@@ -828,7 +828,7 @@ namespace LambdaEngine
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
 	}
 
 	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
@@ -840,16 +840,29 @@ namespace LambdaEngine
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
 		transform = transform * animationAttachedComponent.Transform;
 
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false);
+		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
+
+		bool forceUniqueResources = false;
+		if (MultiplayerUtils::IsServer())
+		{
+			forceUniqueResources = true;
+		}
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true);
+		AddRenderableEntity(
+			entity, 
+			meshComp.MeshGUID, 
+			meshComp.MaterialGUID, 
+			transform, 
+			pAnimationComponents->HasComponent(entity),
+			forceUniqueResources);
 	}
 
 	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
@@ -963,20 +976,21 @@ namespace LambdaEngine
 		m_ParticleManager.OnEmitterEntityRemoved(entity);
 	}
 	
-	void RenderSystem::AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool isAnimated)
+	void RenderSystem::AddRenderableEntity(
+		Entity entity, 
+		GUID_Lambda meshGUID, 
+		GUID_Lambda materialGUID, 
+		const glm::mat4& transform, 
+		bool isAnimated, 
+		bool forceUniqueResource)
 	{
-		//auto& component = ECSCore::GetInstance().GetComponent<StaticMeshComponent>(Entity);
-
 		uint32 extensionGroupIndex = 0;
 		uint32 texturesPerExtensionGroup = 0;
 		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
-		MeshKey meshKey;
-		meshKey.MeshGUID	= meshGUID;
-		meshKey.IsAnimated	= isAnimated;
-		meshKey.EntityID	= entity;
-		meshKey.EntityMask	= EntityMaskManager::FetchEntityMask(entity);
+		const uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
+		MeshKey meshKey = MeshKey(meshGUID, entity, isAnimated, entityMask, forceUniqueResource);
 
 		static uint64 drawArgBufferOffset = 0;
 
@@ -1246,7 +1260,7 @@ namespace LambdaEngine
 						isAnimated);
 				}
 
-				meshAndInstancesIt = m_MeshAndInstancesMap.insert({ meshKey, meshEntry }).first;
+				meshAndInstancesIt = m_MeshAndInstancesMap.insert(std::make_pair(meshKey, meshEntry)).first;
 			}
 		}
 
@@ -1706,7 +1720,7 @@ namespace LambdaEngine
 		if (animationComp.IsPaused)
 			return;
 
-		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity));
+		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity), false);
 
 		auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 		if (meshEntryIt != m_MeshAndInstancesMap.end())

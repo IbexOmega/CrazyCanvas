@@ -1,10 +1,12 @@
 #include "ECS/Systems/GUI/HUDSystem.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
 
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Team/TeamComponent.h"
+#include "ECS/Components/Match/FlagComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -33,6 +35,7 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
+	EventQueue::UnregisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
 }
 
 void HUDSystem::Init()
@@ -52,7 +55,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_PlayerEntities,
 			.ComponentAccesses =
 			{
-				{ R, HealthComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
+				{ R, HealthComponent::Type() },  { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
 			}
 		},
 		{
@@ -60,6 +63,20 @@ void HUDSystem::Init()
 			.ComponentAccesses =
 			{
 				{ NDA,	PlayerForeignComponent::Type() }, { R,	TeamComponent::Type() }
+			}
+		},
+		{
+			.pSubscriber = &m_ProjectedGUIEntities,
+			.ComponentAccesses =
+			{
+				{ R,	ProjectedGUIComponent::Type() }
+			}
+		},
+		{
+			.pSubscriber = &m_CameraEntities,
+			.ComponentAccesses =
+			{
+				{ R, CameraComponent::Type() }
 			}
 		}
 	};
@@ -83,6 +100,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
+	EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
 
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
@@ -107,17 +125,20 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
+	const ComponentArray<ViewProjectionMatricesComponent>* pViewProjMats = pECS->GetComponentArray<ViewProjectionMatricesComponent>();
+	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 
-	for (Entity players : m_PlayerEntities)
+	for (Entity player : m_PlayerEntities)
 	{
-		const HealthComponent& healthComponent = pHealthComponents->GetConstData(players);
+		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
 		m_HUDGUI->UpdateScore();
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
 
 		if (m_LocalTeamIndex == UINT32_MAX)
 		{
 			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			m_LocalTeamIndex = pTeamComponents->GetConstData(players).TeamIndex;
+			m_LocalTeamIndex = pTeamComponents->GetConstData(player).TeamIndex;
 		}
 
 		{
@@ -156,6 +177,22 @@ void HUDSystem::FixedTick(Timestamp delta)
 			}
 
 			m_EnemyHitEventsToProcess.Clear();
+		}
+
+
+		for (Entity camera : m_CameraEntities)
+		{
+			const ViewProjectionMatricesComponent& viewProjMat = pViewProjMats->GetConstData(camera);
+
+			for (Entity entity : m_ProjectedGUIEntities)
+			{
+				const PositionComponent& worldPosition = pPositionComponents->GetConstData(entity);
+				const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(entity);
+
+				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
+			
+				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, projectedGUIComponent.GUIType);
+			}
 		}
 	}
 
@@ -311,5 +348,11 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 
 	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostFlags, mostDeaths);
 
+	return false;
+}
+
+bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
+{
+	m_HUDGUI->SetWindowSize(event.Width, event.Height);
 	return false;
 }

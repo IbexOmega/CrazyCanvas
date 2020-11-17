@@ -25,21 +25,21 @@ namespace LambdaEngine
 	class Buffer;
 	class Window;
 
-	enum class EPaintMode
+	enum class EPaintMode : uint32
 	{
 		REMOVE	= 0,
 		PAINT	= 1,
 		NONE	= 2
 	};
 
-	enum class ERemoteMode
+	enum class ERemoteMode : uint32
 	{
 		UNDEFINED 	= 0,
 		CLIENT		= 1,
 		SERVER		= 2
 	};
 
-	enum class ETeam
+	enum class ETeam : uint32
 	{
 		NONE	= 0,
 		RED		= 1,
@@ -85,8 +85,15 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool sleeping) override final;
 
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
-		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final 
+		{ 
+			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER;
+		}
+
+		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final 
+		{ 
+			return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; 
+		}
 
 		FORCEINLINE virtual const String& GetName() const override final
 		{
@@ -96,14 +103,17 @@ namespace LambdaEngine
 
 	public:
 		/* Adds a hitpoint to draw out a splash at
-		*	position - vec3 of the hit point position
-		*	direction - vec3 of the direction the hit position had during collision
-		*	paintMode - painting mode to be used for the target
+		*	position	- vec3 of the hit point position
+		*	direction	- vec3 of the direction the hit position had during collision
+		*	paintMode	- painting mode to be used for the target
 		*/
 		static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode, uint32 angle);
 
 		/* Reset client data from the texture and only use the verifed server data */
 		static void ResetClient();
+
+		/* Reset this entity's server texture (When player's are killed etc.) */
+		static void ResetServer(Entity entity);
 
 	private:
 		bool CreateCopyCommandList();
@@ -122,6 +132,7 @@ namespace LambdaEngine
 		struct RenderTarget
 		{
 			TextureView*	pTextureView	= nullptr;
+			Buffer*			pReadBackbuffer = nullptr;
 			uint32			DrawArgIndex	= 0;
 			uint32			InstanceIndex	= 0;
 		};
@@ -217,22 +228,23 @@ namespace LambdaEngine
 		TArray<TArray<TSharedRef<Buffer>>>	m_UnwrapDataCopyBuffers;
 		TSharedRef<Buffer>			m_UnwrapDataBuffer = nullptr;
 
-		const DrawArg*																	m_pDrawArgs = nullptr;
-		TArray<TArray<DescriptorSet*>>													m_VerticesInstanceDescriptorSets;
-		THashTable<DrawArgKey, TSharedRef<DescriptorSet>, DrawArgKeyHasher>				m_VerticesInstanceDescriptorSetMap;
-		TArray<DrawArgKey>																m_AliveDescriptorSetList;
-		TArray<DrawArgKey>																m_DeadDescriptorSetList;
+		const DrawArg*														m_pDrawArgs = nullptr;
+		TArray<TArray<DescriptorSet*>>										m_VerticesInstanceDescriptorSets;
+		THashTable<DrawArgKey, TSharedRef<DescriptorSet>, DrawArgKeyHasher>	m_VerticesInstanceDescriptorSetMap;
+		TArray<DrawArgKey>													m_AliveDescriptorSetList;
+		TArray<DrawArgKey>													m_DeadDescriptorSetList;
 
-		TSharedRef<DescriptorSet>														m_UnwrapDataDescriptorSet;
-		TSharedRef<DescriptorSet>														m_PerFrameBufferDescriptorSet;
-		TSharedRef<DescriptorSet>														m_BrushMaskDescriptorSet;
+		TSharedRef<DescriptorSet> m_UnwrapDataDescriptorSet;
+		TSharedRef<DescriptorSet> m_PerFrameBufferDescriptorSet;
+		TSharedRef<DescriptorSet> m_BrushMaskDescriptorSet;
 
-		TArray<TArray<TSharedRef<DeviceChild>>>											m_pDeviceResourcesToDestroy;
+		TArray<TArray<TSharedRef<DeviceChild>>>	m_pDeviceResourcesToDestroy;
+		TArray<RenderTarget>					m_RenderTargets;
 
-		TArray<RenderTarget>															m_RenderTargets;
 	private:
-		inline static bool				s_ShouldReset = false;
-		static TArray<UnwrapData>		s_ServerCollisions;
-		static TArray<UnwrapData>		s_ClientCollisions;
+		static TArray<Entity>	  s_ServerResets;
+		inline static bool		  s_ShouldReset = false;
+		static TArray<UnwrapData> s_ServerCollisions;
+		static TArray<UnwrapData> s_ClientCollisions;
 	};
 }

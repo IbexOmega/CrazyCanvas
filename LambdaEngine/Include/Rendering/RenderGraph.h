@@ -426,8 +426,16 @@ namespace LambdaEngine
 		bool CreateCopyCommandLists();
 		bool CreateProfiler(uint32 pipelineStageCount);
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<CustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
-		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
+		
+		bool CreateRenderStages(
+			const TArray<RenderStageDesc>& renderStages, 
+			const THashTable<String, RenderGraphShaderConstants>& shaderConstants, 
+			const TArray<CustomRenderer*>& customRenderers, 
+			TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
+		
+		bool CreateSynchronizationStages(
+			const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, 
+			TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
 		bool CreateDrawArgConfiguration();
 		bool CustomRenderStagesPostInit();
@@ -450,13 +458,37 @@ namespace LambdaEngine
 			CommandList* pComputeCommandList, 
 			CommandList** ppFirstExecutionStage, 
 			CommandList** ppSecondExecutionStage);
-		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, CommandAllocator* pGraphicsCommandAllocator, CommandList* pGraphicsCommandList, CommandList** ppExecutionStage);
-		void ExecuteComputeRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
-		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
+		
+		void ExecuteGraphicsRenderStage(
+			RenderStage* pRenderStage, 
+			CommandAllocator* pGraphicsCommandAllocator, 
+			CommandList* pGraphicsCommandList, 
+			CommandList** ppExecutionStage);
+		
+		void ExecuteComputeRenderStage(
+			RenderStage* pRenderStage, 
+			CommandAllocator* pComputeCommandAllocator, 
+			CommandList* pComputeCommandList, 
+			CommandList** ppExecutionStage);
+
+		void ExecuteRayTracingRenderStage(
+			RenderStage* pRenderStage, 
+			CommandAllocator* pComputeCommandAllocator, 
+			CommandList* pComputeCommandList, 
+			CommandList** ppExecutionStage);
 
 		// Helpers
-		void PipelineTextureBarriers(CommandList* pCommandList, const TArray<PipelineTextureBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage);
-		void PipelineBufferBarriers(CommandList* pCommandList, const TArray<PipelineBufferBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage);
+		void PipelineTextureBarriers(
+			CommandList* pCommandList, 
+			const TArray<PipelineTextureBarrierDesc>& textureBarriers, 
+			FPipelineStageFlags srcPipelineStage, 
+			FPipelineStageFlags dstPipelineStage);
+
+		void PipelineBufferBarriers(
+			CommandList* pCommandList, 
+			const TArray<PipelineBufferBarrierDesc>& textureBarriers, 
+			FPipelineStageFlags srcPipelineStage, 
+			FPipelineStageFlags dstPipelineStage);
 
 	private:
 		const GraphicsDevice*							m_pGraphicsDevice;
