@@ -184,6 +184,7 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				.Position		= packet.Position,
 				.Scale			= glm::vec3(1.0f),
 				.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.TeamIndex		= packet.Flag.TeamIndex
 			};
 
 			TArray<Entity> createdFlagEntities;

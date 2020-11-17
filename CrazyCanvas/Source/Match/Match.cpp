@@ -42,6 +42,8 @@ bool Match::CreateMatch(const MatchDescription* pDesc)
 		return false;
 	}
 
+	EventQueue::SendEvent<MatchInitializedEvent>(MatchInitializedEvent(pDesc->GameMode));
+
 	return true;
 }
 
