@@ -682,24 +682,4 @@
             </Grid>
         </Viewbox>
     </Grid>
-
-    <Grid x:Name="DAMAGE_INDICATOR_GRID" Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="3" Grid.RowSpan="7" RenderTransformOrigin="0.5,0.5">
-        <Grid.RowDefinitions>
-            <RowDefinition></RowDefinition>
-            <RowDefinition></RowDefinition>
-            <RowDefinition></RowDefinition>
-            <RowDefinition></RowDefinition>
-            <RowDefinition></RowDefinition>
-            <RowDefinition></RowDefinition>
-            <RowDefinition></RowDefinition>
-        </Grid.RowDefinitions>
-        
-        
-        <Grid.RenderTransform>
-            <RotateTransform/>
-        </Grid.RenderTransform>
-        <uc:DamageIndicatorGUI x:Name="DAMAGE_INDICATOR" HorizontalAlignment="Center" VerticalAlignment="Center"/>  
-        <Image Source="HitIndicator.png" Height="75" RenderTransformOrigin="0.5,0.5" HorizontalAlignment="Center" VerticalAlignment="Center" OpacityMask="Black" />
-
-    </Grid>
 </Grid>

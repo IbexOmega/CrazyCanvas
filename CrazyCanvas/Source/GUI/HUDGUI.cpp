@@ -177,7 +177,7 @@ void HUDGUI::ToggleEscapeMenu()
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 		Noesis::FrameworkElement* pElement = m_ContextStack.top();
-		pElement->SetVisibility(Noesis::Visibility_Hidden);
+		pElement->SetVisibility(Noesis::Visibility_Collapsed);
 		m_ContextStack.pop();
 		Input::PopInputMode();
 	}
@@ -192,7 +192,7 @@ void HUDGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::Rou
 		return;
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
-	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_ContextStack.pop();
 	Noesis::FrameworkElement* pCurrentElement = m_ContextStack.top();
@@ -210,7 +210,7 @@ void HUDGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const Noesis::R
 	m_MouseEnabled = !m_MouseEnabled;
 	CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 	Noesis::FrameworkElement* pElement = m_ContextStack.top();
-	pElement->SetVisibility(Noesis::Visibility_Hidden);
+	pElement->SetVisibility(Noesis::Visibility_Collapsed);
 	m_ContextStack.pop();
 	Input::PopInputMode();
 }
@@ -224,7 +224,7 @@ void HUDGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis:
 		return;
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
-	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pSettingsGrid);
@@ -242,7 +242,7 @@ void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 	SetRenderStagesInactive();
 
 	Noesis::FrameworkElement* pElement = m_ContextStack.top();
-	pElement->SetVisibility(Noesis::Visibility_Hidden);
+	pElement->SetVisibility(Noesis::Visibility_Collapsed);
 	m_ContextStack.pop();
 
 	State* pMainMenuState = DBG_NEW MainMenuState();
@@ -310,7 +310,7 @@ void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 		return;
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
-	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pKeyBindingsGrid);
