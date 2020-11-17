@@ -20,7 +20,6 @@ namespace LambdaEngine
 		uint32			Width			= 0;
 		uint32			Height			= 0;
 		uint32			SampleCount		= 0;
-		GUIRenderer*	pGUIRenderer	= nullptr;
 	};
 
 	class GUIRenderTarget : public Noesis::RenderTarget
@@ -47,8 +46,6 @@ namespace LambdaEngine
 		bool CreateRenderPass(const GUIRenderTargetDesc* pDesc);
 
 	private:
-		GUIRenderer*	m_pGUIRenderer = nullptr;
-
 		RenderPass*		m_pRenderPass	= nullptr;
 
 		GUITexture		m_Texture;

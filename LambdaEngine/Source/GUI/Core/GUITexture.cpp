@@ -19,22 +19,16 @@ namespace LambdaEngine
 
 	GUITexture::~GUITexture()
 	{
-		if (m_pGUIRenderer != nullptr)
-		{
-			TArray<DeviceChild*>& resourcesToRemove = m_pGUIRenderer->GetDeviceResourcesToRemoveArray();
-			resourcesToRemove.PushBack(m_pTexture);
-			resourcesToRemove.PushBack(m_pTextureView);
+		RenderAPI::EnqueueResourceRelease(m_pTexture);
+		RenderAPI::EnqueueResourceRelease(m_pTextureView);
 
-			m_pTexture = nullptr;
-			m_pTextureView = nullptr;
-
-			m_pGUIRenderer = nullptr;
-		}
+		m_pTexture = nullptr;
+		m_pTextureView = nullptr;
 	}
 
 	bool GUITexture::Init(CommandList* pCommandList, const GUITextureDesc* pDesc)
 	{
-		m_pGUIRenderer = pDesc->pGUIRenderer;
+		VALIDATE(pDesc != nullptr);
 
 		TextureDesc textureDesc = {};
 		textureDesc.DebugName	= pDesc->DebugName + " Texture";

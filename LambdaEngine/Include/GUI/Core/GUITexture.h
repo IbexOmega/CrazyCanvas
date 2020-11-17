@@ -10,7 +10,6 @@ namespace LambdaEngine
 	class Texture;
 	class TextureView;
 	class CommandList;
-	class GUIRenderer;
 
 	struct GUITextureDesc
 	{
@@ -20,7 +19,6 @@ namespace LambdaEngine
 		uint32			MipLevelCount	= 0;
 		EFormat			Format			= EFormat::FORMAT_NONE;
 		const void**	ppData			= nullptr;
-		GUIRenderer*	pGUIRenderer	= nullptr;
 	};
 
 	class GUITexture : public Noesis::Texture
@@ -69,8 +67,6 @@ namespace LambdaEngine
 		}
 
 	private:
-		GUIRenderer* m_pGUIRenderer = nullptr;
-
 		LambdaEngine::Texture*		m_pTexture		= nullptr;
 		LambdaEngine::TextureView*	m_pTextureView	= nullptr;
 	};
