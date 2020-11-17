@@ -16,10 +16,19 @@ namespace LambdaEngine
 		glm::vec3 Positon;
 	};
 
+	struct WeaponData
+	{
+		uint32 EntityId;
+		uint32 DrawArgIndex;
+		uint32 InstanceIndex;
+	};
+
 	struct PlayerData
 	{
 		uint32 DrawArgIndex;
+		uint32 EntityId;
 		uint32 TeamId;
+		WeaponData Weapon;
 		glm::vec3 Position;
 		float32 Distance2ToViewer;
 	};
