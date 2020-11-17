@@ -107,11 +107,11 @@ bool HUDGUI::UpdateScore()
 
 
 	// poor solution to handle bug if Match being reset before entering
-	
+
 	if (m_GUIState.Scores[0] != blueScore && blueScore != 0)	//Blue
 	{
 		m_GUIState.Scores[0] = blueScore;
-		
+
 		m_pBlueScoreGrid->GetChildren()->Get(5 - blueScore)->SetVisibility(Visibility::Visibility_Visible);
 	}
 	else if (m_GUIState.Scores[1] != redScore && redScore != 0) //Red
@@ -163,7 +163,7 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 void HUDGUI::ToggleEscapeMenu()
 {
-	if (Input::GetCurrentInputmode() != EInputLayer::GUI)
+	if (Input::GetCurrentInputmode() == EInputLayer::GAME)
 	{
 		Input::PushInputMode(EInputLayer::GUI);
 		m_MouseEnabled = !m_MouseEnabled;
@@ -172,7 +172,7 @@ void HUDGUI::ToggleEscapeMenu()
 		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Visible);
 		m_ContextStack.push(m_pEscapeGrid);
 	}
-	else
+	else if (Input::GetCurrentInputmode() == EInputLayer::GUI)
 	{
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
@@ -188,6 +188,9 @@ void HUDGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::Rou
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
 
@@ -200,6 +203,9 @@ void HUDGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const Noesis::R
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
 
 	m_MouseEnabled = !m_MouseEnabled;
 	CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
@@ -214,6 +220,9 @@ void HUDGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis:
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
 
@@ -225,6 +234,9 @@ void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::Ro
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
 
 	ClientHelper::Disconnect("Left by choice");
 	SetRenderStagesInactive();
@@ -244,11 +256,17 @@ void HUDGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::Rou
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
 	CommonApplication::Get()->Terminate();
 }
 
 void HUDGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
 	// Ray Tracing
 	Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
 	m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
@@ -274,6 +292,10 @@ void HUDGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const No
 
 void HUDGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
 	SetDefaultSettings();
 
 	OnButtonBackClick(pSender, args);
@@ -283,6 +305,9 @@ void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Hidden);
@@ -294,6 +319,9 @@ void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
 
 	// Starts listening to callbacks with specific button to be changed. This action is deferred to
 	// the callback functions of KeyboardCallback and MouseButtonCallback.
@@ -308,6 +336,9 @@ void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::Routed
 void HUDGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Go through all keys to set - and set them
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
 	for (auto& stringPair : m_KeysToSet)
 	{
 		InputActionSystem::ChangeKeyBinding(StringToAction(stringPair.first), stringPair.second);
@@ -320,6 +351,9 @@ void HUDGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const
 void HUDGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Reset
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
 	for (auto& stringPair : m_KeysToSet)
 	{
 		EAction action = StringToAction(stringPair.first);
