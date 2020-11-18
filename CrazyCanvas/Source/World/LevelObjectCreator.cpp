@@ -27,6 +27,7 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/Components/Match/FlagComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
@@ -227,7 +228,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	{
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<RayTracedComponent>(entity, 
+		pECS->AddComponent<RayTracedComponent>(entity,
 			RayTracedComponent
 			{
 				.HitMask = 0xFF
@@ -331,7 +332,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 					.HitMask = 0xFF
 				});
 		}
-		
+
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 		const CollisionCreateInfo collisionCreateInfo =
 		{
@@ -468,8 +469,8 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 				.GeometryType		= EGeometryType::PLANE,
 				.CollisionGroup		= FCollisionGroup::COLLISION_GROUP_STATIC,
 				.CollisionMask		= ~FCollisionGroup::COLLISION_GROUP_STATIC,
-				.EntityID			= entity,
-				.CallbackFunction	= &KillPlaneCallback
+				.EntityID			= entity
+				//.CallbackFunction	= &KillPlaneCallback
 			}
 		}
 	};
@@ -493,46 +494,48 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 
 	Entity entity = pECS->CreateEntity();
 
+	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
+
 	pECS->AddComponent<ParticleEmitterComponent>(entity,
 		ParticleEmitterComponent{
-			.ParticleCount = 20,
-			.EmitterShape = EEmitterShape::CONE,
-			.Velocity = 1.0f,
-			.Acceleration = 0.0f,
-			.BeginRadius = 1.0f,
-			.TileIndex = 16,
-			.AnimationCount = 4,
-			.FirstAnimationIndex = 16,
-			.Color = glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
+			.ParticleCount			= 20,
+			.EmitterShape			= EEmitterShape::CONE,
+			.Velocity				= 1.0f,
+			.Acceleration			= 0.0f,
+			.BeginRadius			= 1.0f,
+			.TileIndex				= 16,
+			.AnimationCount			= 4,
+			.FirstAnimationIndex	= 16,
+			.Color					= glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
 		}
 	);
 
-	//----
-	const CollisionCreateInfo colliderInfo =
+	const CollisionCreateInfo collisionCreateInfo =
 	{
-		.Entity = entity,
-		.Position = pECS->AddComponent<PositionComponent>(entity,	{ true, levelObject.DefaultPosition + translation }),
-		.Scale = pECS->AddComponent<ScaleComponent>(entity,	{ true, levelObject.DefaultScale }),
-		.Rotation = pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() }),
+		.Entity		= entity,
+		.Position	= pECS->AddComponent<PositionComponent>(entity,	{ true, levelObject.DefaultPosition + translation }),
+		.Scale		= pECS->AddComponent<ScaleComponent>(entity,	{ true, levelObject.DefaultScale }),
+		.Rotation	= pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() }),
 		.Shapes =
 		{
 			{
-				.ShapeType = EShapeType::TRIGGER,
-				.GeometryType = EGeometryType::BOX,
-				.CollisionGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
-				.CollisionMask = ~FCollisionGroup::COLLISION_GROUP_STATIC,
-				.EntityID = entity
-				//.CallbackFunction = &KillPlaneCallback
-			}
-		}
+				/* Shape Type */		EShapeType::TRIGGER,
+				/* GeometryType */		EGeometryType::BOX,
+				/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
+				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* EntityID*/			entity
+				/* CallbackFunction*/
+			},
+		},
 	};
 
 	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-	const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(colliderInfo);
+	const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Flag Spawn with EntityID %u", entity);
+	D_LOG_INFO("Created Particle Shower with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PARTICLE_SHOWER;
 
 }
@@ -772,7 +775,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 
-	// Server/Client 
+	// Server/Client
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
