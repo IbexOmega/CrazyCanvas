@@ -372,8 +372,13 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
-void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type)
+void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity)
 {
+
+	UNREFERENCED_VARIABLE(viewProj);
+	UNREFERENCED_VARIABLE(worldPos);
+	UNREFERENCED_VARIABLE(entity);
+
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
@@ -389,7 +394,7 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 	{
 		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
 		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
-		SetIndicatorOpacity(glm::max(0.1f, vecLength), type);
+		SetIndicatorOpacity(glm::max(0.1f, vecLength), entity);
 	}
 	else
 	{
@@ -401,7 +406,7 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
 	}
 	
-	TranslateIndicator(translation, type);
+	TranslateIndicator(translation, entity);
 }
 
 void HUDGUI::SetWindowSize(uint32 width, uint32 height)
@@ -448,7 +453,7 @@ void HUDGUI::InitGUI()
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
 
-	m_pFlagIndicator = FrameworkElement::FindName<Noesis::Rectangle>("FLAG_INDICATOR");
+	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	std::string ammoString;
 
@@ -457,9 +462,6 @@ void HUDGUI::InitGUI()
 	m_pWaterAmmoText->SetText(ammoString.c_str());
 	m_pPaintAmmoText->SetText(ammoString.c_str());
 
-	/*FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");*/
-
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	CommonApplication::Get()->SetMouseVisibility(false);
 
@@ -467,36 +469,56 @@ void HUDGUI::InitGUI()
 	m_WindowSize.y = CommonApplication::Get()->GetMainWindow()->GetHeight();
 }
 
-void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, IndicatorTypeGUI type)
+void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
-	switch (type)
-	{
-	case IndicatorTypeGUI::FLAG_INDICATOR:
-	{
-		m_pFlagIndicator->SetRenderTransform(pTranslation);
-		break;
-	}
-	default:
-		break;
-	}
-}
+	Noesis::Ptr<Noesis::Rectangle> indicator = *new Noesis::Rectangle();
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
-void HUDGUI::SetIndicatorOpacity(float32 value, IndicatorTypeGUI type)
-{
+	translation->SetY(100.0f);
+	translation->SetX(100.0f);
+
+	indicator->SetRenderTransform(translation);
+	indicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
 
-	brush->SetOpacity(value);
-
-	switch (type)
+	if (teamIndex != UINT8_MAX)
 	{
-	case IndicatorTypeGUI::FLAG_INDICATOR:
-	{ 
-		brush->SetColor(Noesis::Color::Red());
-		m_pFlagIndicator->SetFill(brush);
-		break;
+		if (localTeamIndex == teamIndex)
+			brush->SetColor(Noesis::Color::Blue());
+		else
+			brush->SetColor(Noesis::Color::Red());
 	}
-	default:
-		break;
+	else
+		brush->SetColor(Noesis::Color::Green());
+
+	indicator->SetHeight(40);
+	indicator->SetWidth(40);
+
+	indicator->SetFill(brush);
+
+	m_ProjectedElements[entity] = indicator;
+
+	if (m_pHUDGrid->GetChildren()->Add(indicator) == -1)
+	{
+		LOG_ERROR("Could not add Proj Element");
 	}
+
+	LOG_INFO("Grid Contains %d Items", m_pHUDGrid->GetChildren()->Count());
+}
+
+void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	indicator->second->SetRenderTransform(pTranslation);
+}
+
+void HUDGUI::SetIndicatorOpacity(float32 value, Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	indicator->second->GetFill()->SetOpacity(value);
 }

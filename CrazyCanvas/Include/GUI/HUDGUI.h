@@ -78,15 +78,17 @@ public:
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
-	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type);
+	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
+	void CreateProjectedGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
 
 	void SetWindowSize(uint32 width, uint32 height);
 
 private:
 	void InitGUI();
 
-	void TranslateIndicator(Noesis::Transform* translation, IndicatorTypeGUI type);
-	void SetIndicatorOpacity(float32 value, IndicatorTypeGUI type);
+
+	void TranslateIndicator(Noesis::Transform* translation, LambdaEngine::Entity entity);
+	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
 	// Helpers
 	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
 
@@ -108,15 +110,16 @@ private:
 
 	Noesis::Grid* m_pRedScoreGrid	= nullptr;
 	Noesis::Grid* m_pBlueScoreGrid	= nullptr;
+	Noesis::Grid* m_pHUDGrid		= nullptr;
 
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
-
-	Noesis::Rectangle* m_pFlagIndicator = nullptr;
 
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
 
 	bool m_ScoreboardVisible = false;
+
+	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
 };

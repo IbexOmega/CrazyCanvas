@@ -264,13 +264,6 @@
         </Viewbox>
     </Grid>
 
-    <Rectangle x:Name="FLAG_INDICATOR" Fill="#FFD10000"  Width="40" Height="40" RenderTransformOrigin="0.5,0.5">
-        <Rectangle.RenderTransform>
-            <TranslateTransform/>
-        </Rectangle.RenderTransform>
-    </Rectangle>
-
-
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
