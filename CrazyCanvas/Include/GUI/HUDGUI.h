@@ -113,7 +113,7 @@ private:
 	void InitGUI();
 
 
-	void TranslateIndicator(Noesis::Transform* translation, LambdaEngine::Entity entity);
+	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
 	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
