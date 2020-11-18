@@ -15,7 +15,6 @@ public:
 
 	static bool CreateMatch(const MatchDescription* pDesc);
 	static bool ResetMatch();
-	static bool ReleaseMatch();
 
 	static void StartMatch();
 	static void BeginLoading();

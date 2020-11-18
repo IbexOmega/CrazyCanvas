@@ -40,15 +40,34 @@ namespace LambdaEngine
 			m_FreeParticleChunks.PushBack(chunk);
 
 			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName = "DummyBuffer";
-			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-			bufferDesc.SizeInBytes = sizeof(uint32);
-			m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			m_pTransformBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			m_pParticleIndexDataBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			m_pParticleBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+			bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			bufferDesc.SizeInBytes	= sizeof(uint32);
+
+			{
+				bufferDesc.DebugName = "Particle Indirect Dummy Buffer";
+				m_pIndirectBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+
+			{
+				bufferDesc.DebugName = "Particle Transform Dummy Buffer";
+				m_pTransformBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+
+			{
+				bufferDesc.DebugName = "Particle Emitter Dummy Buffer";
+				m_pEmitterBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+			
+			{
+				bufferDesc.DebugName = "Particle Index Data Dummy Buffer";
+				m_pParticleIndexDataBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
+
+			{
+				bufferDesc.DebugName = "Particle Dummy Buffer";
+				m_pParticleBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			}
 
 			m_DirtyEmitterBuffer = true;
 			m_DirtyIndirectBuffer = true;

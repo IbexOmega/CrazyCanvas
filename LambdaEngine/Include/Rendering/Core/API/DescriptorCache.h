@@ -34,6 +34,8 @@ namespace LambdaEngine
 		*/
 		void HandleUnavailableDescriptors(uint32 modFrameIndex);
 
+		void LogStatistics(const String& cacheName);
+
 	private:
 		void HandleDirtyDescriptors();
 
