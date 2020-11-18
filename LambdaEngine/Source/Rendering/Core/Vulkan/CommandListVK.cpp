@@ -545,22 +545,7 @@ namespace LambdaEngine
 		DeferredImageBarrier deferredBarrier;
 		deferredBarrier.SrcStages	= ConvertPipelineStageMask(srcStage);
 		deferredBarrier.DestStages	= ConvertPipelineStageMask(dstStage);
-		if (!m_DeferredBarriers.IsEmpty())
-		{
-			for (DeferredImageBarrier& barrier : m_DeferredBarriers)
-			{
-				if (barrier.HasCompatableStages(deferredBarrier))
-				{
-					barrier.Barriers.EmplaceBack(imageBarrier);
-					break;
-				}
-			}
-		}
-		else
-		{
-			deferredBarrier.Barriers.EmplaceBack(imageBarrier);
-			m_DeferredBarriers.EmplaceBack(Move(deferredBarrier));
-		}
+		AddDeferredBarrier(deferredBarrier, imageBarrier);
 	}
 
 	void CommandListVK::QueueTransferBarrier(
@@ -606,22 +591,7 @@ namespace LambdaEngine
 		DeferredImageBarrier deferredBarrier;
 		deferredBarrier.SrcStages	= ConvertPipelineStageMask(srcStage);
 		deferredBarrier.DestStages	= ConvertPipelineStageMask(dstStage);
-		if (!m_DeferredBarriers.IsEmpty())
-		{
-			for (DeferredImageBarrier& barrier : m_DeferredBarriers)
-			{
-				if (barrier.HasCompatableStages(deferredBarrier))
-				{
-					barrier.Barriers.EmplaceBack(imageBarrier);
-					break;
-				}
-			}
-		}
-		else
-		{
-			deferredBarrier.Barriers.EmplaceBack(imageBarrier);
-			m_DeferredBarriers.EmplaceBack(Move(deferredBarrier));
-		}
+		AddDeferredBarrier(deferredBarrier, imageBarrier);
 	}
 
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)

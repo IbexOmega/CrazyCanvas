@@ -10,7 +10,8 @@
 #include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/Fence.h"
 #include "Rendering/Core/API/GraphicsHelpers.h"
-
+#include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/Texture.h"
 #include "Rendering/RenderAPI.h"
 
 #include "Audio/AudioAPI.h"
@@ -44,10 +45,14 @@ namespace LambdaEngine
 	Shader*			ResourceLoader::s_pCubeMapGenShader			= nullptr;
 
 	// The rest
+	CommandAllocator*	ResourceLoader::s_pComputeCommandAllocator	= nullptr;
+	CommandList*		ResourceLoader::s_pComputeCommandList		= nullptr;
+	Fence*				ResourceLoader::s_pComputeFence				= nullptr;
+	uint64				ResourceLoader::s_ComputeSignalValue		= 1;
 	CommandAllocator*	ResourceLoader::s_pCopyCommandAllocator		= nullptr;
 	CommandList*		ResourceLoader::s_pCopyCommandList			= nullptr;
 	Fence*				ResourceLoader::s_pCopyFence				= nullptr;
-	uint64				ResourceLoader::s_SignalValue				= 1;
+	uint64				ResourceLoader::s_CopySignalValue			= 1;
 
 	/*
 	* Helpers
@@ -145,25 +150,63 @@ namespace LambdaEngine
 	bool ResourceLoader::Init()
 	{
 		// Init resources
-		s_pCopyCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Resource Loader Copy Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
+		s_pCopyCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("ResourceLoader Copy CommandAllocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 		if (s_pCopyCommandAllocator == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Could not create Copy Command Allocator");
+			LOG_ERROR("[ResourceLoader]: Could not create Copy CommandAllocator");
 			return false;
 		}
 
 		CommandListDesc commandListDesc = {};
-		commandListDesc.DebugName		= "Resource Loader Copy Command List";
+		commandListDesc.DebugName		= "ResourceLoader Copy CommandList";
 		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 
 		s_pCopyCommandList = RenderAPI::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
+		if (s_pCopyCommandList == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Could not create Copy CommandList");
+			return false;
+		}
 
 		FenceDesc fenceDesc = {};
-		fenceDesc.DebugName		= "Resource Loader Copy Fence";
+		fenceDesc.DebugName		= "ResourceLoader Copy Fence";
 		fenceDesc.InitalValue	= 0;
-		s_pCopyFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
 
+		s_pCopyFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
+		if (s_pCopyFence == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Could not create Copy Fence");
+			return false;
+		}
+
+		s_pComputeCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("ResourceLoader Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+		if (s_pComputeCommandAllocator == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Could not create Compute CommandAllocator");
+			return false;
+		}
+
+		commandListDesc.DebugName		= "ResourceLoader Compute CommandList";
+		commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+		s_pComputeCommandList = RenderAPI::GetDevice()->CreateCommandList(s_pComputeCommandAllocator, &commandListDesc);
+		if (s_pComputeCommandList == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Could not create Compute CommandList");
+			return false;
+		}
+
+		fenceDesc.DebugName		= "ResourceLoader Compute Fence";
+		fenceDesc.InitalValue	= 0;
+		s_pComputeFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
+		if (s_pComputeFence == nullptr)
+		{
+			LOG_ERROR("[ResourceLoader]: Could not create Compute Fence");
+			return false;
+		}
+
+		// Init glslang
 		glslang::InitializeProcess();
 
 		// Cubemap Gen
@@ -631,8 +674,9 @@ namespace LambdaEngine
 		EFormat format,
 		bool generateMips)
 	{
+		UNREFERENCED_VARIABLE(generateMips);
+
 		const String filepath = dir + ConvertSlashes(filename);
-		
 		int32 texWidth	= 0;
 		int32 texHeight	= 0;
 		int32 bpp		= 0;
@@ -650,8 +694,9 @@ namespace LambdaEngine
 		// Create texture for panorama image
 		TextureDesc panoramaDesc;
 		panoramaDesc.DebugName		= name + " Staging-Panorama";
-		panoramaDesc.Flags			=	FTextureFlag::TEXTURE_FLAG_COPY_DST | 
-										FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+		panoramaDesc.Flags			=	
+			FTextureFlag::TEXTURE_FLAG_COPY_DST | 
+			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
 		panoramaDesc.Depth			= 1;
 		panoramaDesc.ArrayCount		= 1;
 		panoramaDesc.Format			= EFormat::FORMAT_R32G32B32A32_SFLOAT;
@@ -669,6 +714,25 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+		// Create textureview
+		TextureViewDesc panoramaViewDesc;
+		panoramaViewDesc.DebugName		= name + " Staging-Panorama-View";
+		panoramaViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		panoramaViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+		panoramaViewDesc.Format			= panoramaDesc.Format;
+		panoramaViewDesc.ArrayCount		= panoramaDesc.ArrayCount;
+		panoramaViewDesc.ArrayIndex		= 0;
+		panoramaViewDesc.MiplevelCount	= panoramaDesc.Miplevels;
+		panoramaViewDesc.Miplevel		= 0;
+		panoramaViewDesc.pTexture		= panoramaTexture.Get();
+		
+		TSharedRef<TextureView> panoramaTextureView = RenderAPI::GetDevice()->CreateTextureView(&panoramaViewDesc);
+		if (!panoramaTextureView)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to create panorama textureview");
+			return nullptr;
+		}
+		
 		// Staging buffer
 		const uint64 textureSize = texWidth * texHeight * 4ULL * 4ULL;
 		BufferDesc bufferDesc = { };
@@ -689,14 +753,76 @@ namespace LambdaEngine
 		memcpy(pTextureDataDst, pixels.Get(), textureSize);
 		stagingBuffer->Unmap();
 
+		// Create texturecube
+		TextureDesc textureCubeDesc;
+		textureCubeDesc.DebugName	= name;
+		textureCubeDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+		textureCubeDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+		textureCubeDesc.ArrayCount	= 6;
+		textureCubeDesc.Depth		= 1;
+		textureCubeDesc.Flags		= 
+			FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE |
+			FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
+			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureCubeDesc.Format		= format;
+		textureCubeDesc.Width		= size;
+		textureCubeDesc.Height		= size;
+		textureCubeDesc.Miplevels	= 1;
+		textureCubeDesc.SampleCount	= 1;
+
+		TSharedRef<Texture> skybox = RenderAPI::GetDevice()->CreateTexture(&textureCubeDesc);
+		if (!skybox)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to create skybox texture");
+			return nullptr;
+		}
+
+		// Create textureview
+		TextureViewDesc skyboxViewDesc;
+		skyboxViewDesc.DebugName		= name + " Staging-Skybox-View";
+		skyboxViewDesc.Flags			= 
+			FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
+			FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+		skyboxViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+		skyboxViewDesc.Format			= textureCubeDesc.Format;
+		skyboxViewDesc.ArrayCount		= textureCubeDesc.ArrayCount;
+		skyboxViewDesc.ArrayIndex		= 0;
+		skyboxViewDesc.MiplevelCount	= textureCubeDesc.Miplevels;
+		skyboxViewDesc.Miplevel			= 0;
+		skyboxViewDesc.pTexture			= skybox.Get();
+
+		TSharedRef<TextureView> skyboxTextureView = RenderAPI::GetDevice()->CreateTextureView(&skyboxViewDesc);
+		if (!skyboxTextureView)
+		{
+			LOG_ERROR("[ResourceLoader]: Failed to create skybox textureview");
+			return nullptr;
+		}
+
+		// Write DescriptorSet
+		Sampler* pNearestSampler = Sampler::GetNearestSampler();
+		s_pCubeMapGenDescriptorSet->WriteTextureDescriptors(
+			&panoramaTextureView, 
+			&pNearestSampler, 
+			ETextureState::TEXTURE_STATE_GENERAL, 
+			0, 1, 
+			EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, 
+			true);
+		s_pCubeMapGenDescriptorSet->WriteTextureDescriptors(
+			&skyboxTextureView,
+			&pNearestSampler,
+			ETextureState::TEXTURE_STATE_GENERAL,
+			1, 1,
+			EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE,
+			true);
+
 		// Start commandlist
-		const uint64 waitValue = s_SignalValue - 1;
-		s_pCopyFence->Wait(waitValue, UINT64_MAX);
+		const uint64 waitValue = s_ComputeSignalValue - 1;
+		s_pComputeFence->Wait(waitValue, UINT64_MAX);
 
-		s_pCopyCommandAllocator->Reset();
-		s_pCopyCommandList->Begin(nullptr);
+		s_pComputeCommandAllocator->Reset();
+		s_pComputeCommandList->Begin(nullptr);
 
-		s_pCopyCommandList->TransitionBarrier(
+		s_pComputeCommandList->TransitionBarrier(
 			panoramaTexture.Get(),
 			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
 			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
@@ -717,58 +843,64 @@ namespace LambdaEngine
 		copyDesc.ArrayIndex		= 0;
 		copyDesc.ArrayCount		= 1;
 
-		s_pCopyCommandList->CopyTextureFromBuffer(stagingBuffer.Get(), panoramaTexture.Get(), copyDesc);
+		s_pComputeCommandList->CopyTextureFromBuffer(stagingBuffer.Get(), panoramaTexture.Get(), copyDesc);
 
-		s_pCopyCommandList->TransitionBarrier(
+		s_pComputeCommandList->TransitionBarrier(
 			panoramaTexture.Get(),
 			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
 			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
 			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
 			ETextureState::TEXTURE_STATE_COPY_DST,
 			ETextureState::TEXTURE_STATE_GENERAL);
 
-		s_pCopyCommandList->End();
+		s_pComputeCommandList->TransitionBarrier(
+			skybox.Get(),
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			0,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+			ETextureState::TEXTURE_STATE_UNKNOWN,
+			ETextureState::TEXTURE_STATE_GENERAL);
 
-		if (!RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
-			&s_pCopyCommandList, 1,
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+		s_pComputeCommandList->SetConstantRange(
+			s_pCubeMapGenPipelineLayout, 
+			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
+			&size, 
+			4, 
+			0);
+
+		s_pComputeCommandList->BindComputePipeline(s_pCubeMapGenPipelineState);
+		s_pComputeCommandList->BindDescriptorSetCompute(s_pCubeMapGenDescriptorSet, s_pCubeMapGenPipelineLayout, 0);
+
+		s_pComputeCommandList->Dispatch(size, size, 6);
+
+		s_pComputeCommandList->TransitionBarrier(
+			skybox.Get(),
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			ETextureState::TEXTURE_STATE_GENERAL,
+			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+		s_pComputeCommandList->End();
+
+		if (!RenderAPI::GetComputeQueue()->ExecuteCommandLists(
+			&s_pComputeCommandList, 1,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
 			nullptr, 0,
-			s_pCopyFence, s_SignalValue))
+			s_pComputeFence, s_ComputeSignalValue))
 		{
-			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
+			LOG_ERROR("[ResourceLoader]: Texture could not be created as commandlist could not be executed for \"%s\"", name.c_str());
 			return nullptr;
 		}
 		else
 		{
-			s_SignalValue++;
+			s_ComputeSignalValue++;
 		}
 
-		//Todo: Remove this wait after garbage collection works
-		RenderAPI::GetGraphicsQueue()->Flush();
-
-		// Create texturecube
-		TextureDesc textureCubeDesc;
-		textureCubeDesc.DebugName	= name;
-		textureCubeDesc.ArrayCount	= 6;
-		textureCubeDesc.Depth		= 1;
-		textureCubeDesc.Flags		=	FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE |
-										FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
-										FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
-		textureCubeDesc.Format		= format;
-		textureCubeDesc.Width		= size;
-		textureCubeDesc.Height		= size;
-		textureCubeDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-		textureCubeDesc.Miplevels	= 1;
-		textureCubeDesc.SampleCount = 1;
-		textureCubeDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
-		
-		TSharedRef<Texture> skybox = RenderAPI::GetDevice()->CreateTexture(&textureCubeDesc);
-		if (!skybox)
-		{
-			LOG_ERROR("[ResourceLoader]: Failed to create skybox texture");
-			return nullptr;
-		}
+		RenderAPI::GetComputeQueue()->Flush();
 
 		// Adds a ref, this will be removed when sharedptr gets destroyed
 		return skybox.GetAndAddRef();
@@ -891,7 +1023,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		const uint64 waitValue = s_SignalValue - 1;
+		const uint64 waitValue = s_CopySignalValue - 1;
 		s_pCopyFence->Wait(waitValue, UINT64_MAX);
 
 		s_pCopyCommandAllocator->Reset();
@@ -976,7 +1108,7 @@ namespace LambdaEngine
 			&s_pCopyCommandList, 1, 
 			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
 			nullptr, 0,
-			s_pCopyFence, s_SignalValue))
+			s_pCopyFence, s_CopySignalValue))
 		{
 			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
 			SAFERELEASE(pTextureData);
@@ -985,7 +1117,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			s_SignalValue++;
+			s_CopySignalValue++;
 		}
 
 		//Todo: Remove this wait after garbage collection works
@@ -1245,7 +1377,8 @@ namespace LambdaEngine
 		//Create Descriptor Heap
 		{
 			DescriptorHeapInfo descriptorCountDesc = { };
-			descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 2;
+			descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 1;
+			descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 1;
 
 			DescriptorHeapDesc descriptorHeapDesc = { };
 			descriptorHeapDesc.DebugName			= "CubemapGen DescriptorHeap";
@@ -1265,7 +1398,7 @@ namespace LambdaEngine
 			TSharedRef<Sampler> sampler = MakeSharedRef(Sampler::GetLinearSampler());
 
 			DescriptorBindingDesc panoramaBinding = { };
-			panoramaBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			panoramaBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 			panoramaBinding.DescriptorCount	= 1;
 			panoramaBinding.Binding			= 0;
 			panoramaBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
@@ -1283,9 +1416,18 @@ namespace LambdaEngine
 				cubemapGenBinding,
 			};
 
+			ConstantRangeDesc pushConstantRange;
+			pushConstantRange.OffsetInBytes		= 0;
+			pushConstantRange.SizeInBytes		= 4;
+			pushConstantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+
 			PipelineLayoutDesc pPipelineLayoutDesc = { };
-			pPipelineLayoutDesc.DebugName				= "CubemapGen PipelineLayout";
-			pPipelineLayoutDesc.DescriptorSetLayouts	= 
+			pPipelineLayoutDesc.DebugName		= "CubemapGen PipelineLayout";
+			pPipelineLayoutDesc.ConstantRanges	=
+			{
+				pushConstantRange
+			};
+			pPipelineLayoutDesc.DescriptorSetLayouts = 
 			{ 
 				descriptorSetLayoutDesc 
 			};

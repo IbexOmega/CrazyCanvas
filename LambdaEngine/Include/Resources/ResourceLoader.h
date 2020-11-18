@@ -341,9 +341,13 @@ namespace LambdaEngine
 		static Shader*			s_pCubeMapGenShader;
 
 		// All resources
+		static CommandAllocator*	s_pComputeCommandAllocator;
+		static CommandList*			s_pComputeCommandList;
+		static Fence*				s_pComputeFence;
+		static uint64				s_ComputeSignalValue;
 		static CommandAllocator*	s_pCopyCommandAllocator;
 		static CommandList*			s_pCopyCommandList;
 		static Fence*				s_pCopyFence;
-		static uint64				s_SignalValue;
+		static uint64				s_CopySignalValue;
 	};
 }

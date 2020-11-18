@@ -237,6 +237,24 @@ namespace LambdaEngine
 
 	private:
 		void BindDescriptorSet(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint);
+		
+		FORCEINLINE void AddDeferredBarrier(DeferredImageBarrier& deferredBarrier, const VkImageMemoryBarrier& imageBarrier)
+		{
+			if (!m_DeferredBarriers.IsEmpty())
+			{
+				for (DeferredImageBarrier& barrier : m_DeferredBarriers)
+				{
+					if (barrier.HasCompatableStages(deferredBarrier))
+					{
+						barrier.Barriers.EmplaceBack(imageBarrier);
+						return;
+					}
+				}
+			}
+
+			deferredBarrier.Barriers.EmplaceBack(imageBarrier);
+			m_DeferredBarriers.EmplaceBack(Move(deferredBarrier));
+		}
 
 	private:
 		VkCommandBuffer							m_CmdBuffer				= VK_NULL_HANDLE;

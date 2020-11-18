@@ -91,17 +91,6 @@ void PlaySessionState::Init()
 		Match::CreateMatch(&matchDescription);
 	}
 
-	// Test Skybox
-	Texture* pSkybox = ResourceLoader::LoadTextureCubeFromPanoramaFile(
-		"veld_fire", 
-		TEXTURE_DIR, 
-		"Skybox/veld_fire.hdr",
-		512,
-		EFormat::FORMAT_R16G16B16A16_SFLOAT, 
-		false);
-
-	UNREFERENCED_VARIABLE(pSkybox);
-
 	m_HUDSystem.Init();
 
 	CommonApplication::Get()->SetMouseVisibility(false);

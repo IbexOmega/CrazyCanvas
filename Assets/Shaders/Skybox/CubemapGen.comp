@@ -6,17 +6,59 @@ layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 // Pushconstants
 layout(push_constant) uniform PushConstants
 {
-	uint Width;
-	uint Height;
+	uint Size;
 } u_PC;
 
 // Textures
-layout(binding = 0, set = 0, rgba32f) restrict readonly uniform image2D		u_Panorama;
+layout(binding = 0, set = 0) uniform sampler2D u_Panorama;
+
 layout(binding = 1, set = 0, rgba16f) restrict writeonly uniform imageCube	u_CubeMap;
+
+// Constants
+const vec2 INV_ATAN = vec2(0.1591f, 0.3183f);
+
+// Transform from dispatch ID to cubemap face direction
+const mat3 ROTATE_UV[6] = 
+{
+	// +X
+	mat3(  0,  0,  1,
+		   0, -1,  0,
+		  -1,  0,  0),
+	// -X
+	mat3(  0,  0, -1,
+		   0, -1,  0,
+		   1,  0,  0),
+	// +Y
+	mat3(  1,  0,  0,
+		   0,  0,  1,
+		   0,  1,  0),
+	// -Y
+	mat3(  1,  0,  0,
+		   0,  0, -1,
+		   0, -1,  0),
+	// +Z
+	mat3(  1,  0,  0,
+		   0, -1,  0,
+		   0,  0,  1),
+	// -Z
+	mat3( -1,  0,  0,
+		   0, -1,  0,
+		   0,  0, -1)
+};
 
 void main()
 {
-	ivec2 texCoord = ivec2(gl_GlobalInvocationID.xy);
-	vec4 color = imageLoad(u_Panorama, texCoord);
-	imageStore(u_CubeMap, ivec3(texCoord, 0), color);
+	vec2 texCoord	= vec2(gl_GlobalInvocationID.xy);
+	int face		= int(gl_GlobalInvocationID.z);
+
+	// Map the UV coords of the cubemap face to a direction
+	// [(0, 0), (1, 1)] => [(-0.5, -0.5), (0.5, 0.5)]
+	vec3 direction	= normalize(vec3((texCoord.xy / float(512)) - 0.5f, 0.5f));
+	direction		= normalize(ROTATE_UV[face] * direction);
+
+	// Convert the world space direction into U,V texture coordinates in the panorama texture.
+	// Source: http://gl.ict.usc.edu/Data/HighResProbes/
+	vec2 panoramaTexCoords = (vec2(atan(direction.z, direction.x), asin(direction.y)) * INV_ATAN) + 0.5f;
+	vec4 color = texture(u_Panorama, panoramaTexCoords);
+	imageStore(u_CubeMap, ivec3(texCoord, face), color);
 }
