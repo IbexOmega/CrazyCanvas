@@ -9,13 +9,13 @@
 layout(location = 0) in vec2 in_TexCoord;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
-{ 
-	SPerFrameBuffer val; 
-} u_PerFrameBuffer;
-layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
-	SLightsBuffer val; 
-	SPointLight pointLights[];  
+	SPerFrameBuffer val;
+} u_PerFrameBuffer;
+layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer
+{
+	SLightsBuffer val;
+	SPointLight pointLights[];
 } b_LightsBuffer;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAlbedo;
@@ -105,12 +105,12 @@ void main()
 			float distance = length(L);
 			L = normalize(L);
 			vec3 H = normalize(V + L);
-			
+
 			float inShadow 			= PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			float attenuation   	= 1.0f / (distance * distance);
 			vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
 			vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);
-		
+
 			float NDF   = Distribution(N, H, roughness);
 			float G     = Geometry(N, V, L, roughness);
 			vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
@@ -128,7 +128,7 @@ void main()
 
 			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
 		}
-		
+
 		vec3 ambient    = 0.03f * albedo * ao;
 		colorHDR      	= ambient + Lo;
 	}

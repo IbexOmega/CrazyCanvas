@@ -266,6 +266,7 @@ namespace LambdaEngine
 		 * @param forceNewMeshResources Forces new vertex and index buffers to be created even if the meshGUID has been registered before
 		*/
 		void AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated, bool forceNewMeshResources);
+		void RemoveRenderableEntity(Entity entity);
 
 		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
 		uint64			GetFrameIndex() const	 	{ return m_FrameIndex;		}
@@ -290,7 +291,6 @@ namespace LambdaEngine
 
 		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
-		void RemoveRenderableEntity(Entity entity);
 
 		void OnEmitterEntityRemoved(Entity entity);
 

@@ -99,6 +99,11 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 		ASSERT(drawArg.EntityIDs.GetSize() == 1);
 
 		const Entity entity = drawArg.EntityIDs.GetFront();
+		if (m_MarchingCubesGrids.HasElement(entity))
+		{
+			continue;
+		}
+
 		const uint64 gridCorners = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
 
 		const BufferDesc densityBufferDesc =
@@ -296,16 +301,16 @@ bool ProjectileRenderer::CreateCommonMesh()
 	constexpr const uint32 cellCount = cellGridWidth * cellGridWidth * cellGridWidth;
 	constexpr const uint32 vertexCount = cellCount * maxTrianglesPerCell * verticesPerTriangle;
 
-	Vertex vertices[vertexCount];
-	memset(vertices, 0, sizeof(Vertex) * vertexCount);
+	std::unique_ptr<Vertex> vertices(new Vertex[vertexCount]);
+	memset(vertices.get(), 0, sizeof(Vertex) * vertexCount);
 
 	uint32 indices[vertexCount];
 	for (uint32 i = 0; i < vertexCount; i++)
 	{
-		indices[i] = i;
+		indices[i] = vertexCount - 1 - i;
 	}
 
-	m_MarchingCubesMesh = ResourceManager::LoadMeshFromMemory("Marching Cubes Common Mesh", vertices, vertexCount, indices, vertexCount);
+	m_MarchingCubesMesh = ResourceManager::LoadMeshFromMemory("Marching Cubes Common Mesh", vertices.get(), vertexCount, indices, vertexCount);
 	return m_MarchingCubesMesh != GUID_NONE;
 }
 
@@ -469,5 +474,6 @@ void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 
 void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 {
+	// RenderSystem& renderSystem = RenderSystem::GetInstance();
 	m_MarchingCubesGrids.Pop(entity);
 }

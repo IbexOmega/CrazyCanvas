@@ -139,6 +139,9 @@ void main()
 		caseMask |= uint(nodes[nodeIdx].Density <= isoValue) << nodeIdx;
 	}
 
+	// If the triangle does not exist, use a default position
+	const vec3 defaultPosition = u_PC.SpherePositions[0].xyz;
+
 	/*	Each cell has 5 triangles at most. The triangles that do not exist have all their vertex positions as
 		(-1, -1, -1). These non-existing triangles are placed inside the center of sphere[0] to hide them. This is
 		motivated by the fact that the amount of vertices cannot vary because of ray tracing, so non-existing triangles
@@ -155,10 +158,6 @@ void main()
 		{
 			const SEdge edge = g_Edges[edgeIndices[edgeNr]];
 
-			// If the triangle does not exist, use a default position
-			vec3 defaultPosition = u_PC.SpherePositions[0].xyz;
-			defaultPosition[edgeNr] += EPSILON;
-
 			const SNode nodeA = nodes[edge.CornerIndexA];
 			const SNode nodeB = nodes[edge.CornerIndexB];
 			const float interpFactor = nodeB.Density / (nodeA.Density + nodeB.Density);
@@ -166,11 +165,10 @@ void main()
 			const vec3 edgeInterpPos = mix(nodeA.Position, nodeB.Position, interpFactor);
 			triangle.Vertices[edgeNr].Position = vec4(mix(defaultPosition, edgeInterpPos, triangleExists), 0.0);
 
-			const vec3 normal = -normalize(mix(nodeA.Gradient, nodeB.Gradient, interpFactor));
+			vec3 normal = normalize(mix(nodeA.Gradient, nodeB.Gradient, interpFactor));
 			triangle.Vertices[edgeNr].Normal = vec4(normal, 0.0);
 
-			const vec4 texCoords = vec4(normal.xy * 0.5 + vec2(0.5), 0.0, 0.0);
-			triangle.Vertices[edgeNr].TexCoord = texCoords;
+			triangle.Vertices[edgeNr].TexCoord = vec4(normal.xy * 0.5 + vec2(0.5), 0.0, 0.0);
 		}
 
 		const vec3 deltaPos1 = triangle.Vertices[1].Position.xyz - triangle.Vertices[0].Position.xyz;
@@ -180,8 +178,8 @@ void main()
 		const vec2 deltaUV1 = triangle.Vertices[1].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
 		const vec2 deltaUV2 = triangle.Vertices[2].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
 
-		const float r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
-		const vec4 tangent = vec4((deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y) * r, 0.0);
+		// const float r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
+		const vec4 tangent = vec4(normalize(deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y), 0.0);
 		triangle.Vertices[0].Tangent = tangent;
 		triangle.Vertices[1].Tangent = tangent;
 		triangle.Vertices[2].Tangent = tangent;
