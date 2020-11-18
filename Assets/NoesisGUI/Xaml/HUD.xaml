@@ -404,7 +404,7 @@
                             </Grid.ColumnDefinitions>
 
                             <Label Content="Fullscreen" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
-                            <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+                            <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" IsEnabled="False" VerticalAlignment="Center" />
                         </Grid>
     
                         <!--Volume-->
