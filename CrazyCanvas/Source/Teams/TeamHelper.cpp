@@ -6,19 +6,16 @@ bool TeamHelper::Init()
 {
 	using namespace LambdaEngine;
 
-	float32 baseAngle	= 240.0f;
-	float32 deltaAngle	= 360.0f / MAX_NUM_TEAMS;
-
 	// Load player textures
 	s_PlayerTextureGUID = ResourceManager::LoadTextureFromFile(
-		"Player/CharacterAlbedo.png", 
+		"Player/CharacterAlbedo.png",
 		EFormat::FORMAT_R8G8B8A8_UNORM,
 		true, true);
 
 	// Create materials
 	for (uint32 teamIndex = 0; teamIndex < MAX_NUM_TEAMS; teamIndex++)
 	{
-		glm::vec3 color = glm::rgbColor(glm::vec3(baseAngle + deltaAngle * float32(teamIndex), 1.0f, 1.0f));
+		glm::vec3 color = glm::vec3(0.0f, 1.0f, 0.0f);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(color, 1.0f);

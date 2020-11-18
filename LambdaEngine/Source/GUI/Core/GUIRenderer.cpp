@@ -36,21 +36,11 @@ namespace LambdaEngine
 	{
 		m_View.Reset();
 
+		if (m_pCurrentRenderTarget) m_pCurrentRenderTarget->Release();
+
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pVertexBuffer);
 		SAFERELEASE(m_pGUISampler);
-
-		for (Noesis::Ptr<Noesis::RenderTarget>& renderTarget : m_GUIRenderTargets)
-		{
-			renderTarget.Reset();
-		}
-		m_GUIRenderTargets.Clear();
-
-		for (Noesis::Ptr<Noesis::Texture>& texture : m_GUITextures)
-		{
-			texture.Reset();
-		}
-		m_GUITextures.Clear();
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
@@ -168,7 +158,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
-		m_GUIRenderTargets.PushBack(renderTarget);
 		return renderTarget;
 	}
 
@@ -185,7 +174,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
-		m_GUIRenderTargets.PushBack(renderTarget);
 		return renderTarget;
 	}
 
@@ -209,7 +197,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::Texture> texture = *pTexture;
-		m_GUITextures.PushBack(texture);
 		return texture;
 	}
 
@@ -248,7 +235,6 @@ namespace LambdaEngine
 #endif
 			}
 		}
-
 	}
 
 	void GUIRenderer::SetRenderTarget(Noesis::RenderTarget* pSurface)
@@ -722,7 +708,7 @@ namespace LambdaEngine
 			CommandList* pUtilityCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
 			CommandList* pRenderCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
 
-			if (pUtilityCommandList->IsBegin())
+			if (pUtilityCommandList->IsRecording())
 			{
 				pUtilityCommandList->End();
 				(*ppFirstExecutionStage)		= pUtilityCommandList;
@@ -749,7 +735,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			SecondaryCommandListBeginDesc beginDesc = {};
 
@@ -764,7 +750,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			SecondaryCommandListBeginDesc beginDesc = {};
 

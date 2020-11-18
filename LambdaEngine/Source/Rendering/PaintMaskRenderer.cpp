@@ -1,9 +1,8 @@
-#include "PreCompiled.h"
 #include "Rendering/PaintMaskRenderer.h"
-
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
@@ -20,9 +19,10 @@
 #include "Rendering/Core/API/Shader.h"
 #include "Rendering/Core/API/Buffer.h"
 #include "Rendering/EntityMaskManager.h"
-#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
+#include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -33,6 +33,7 @@
 
 namespace LambdaEngine
 {
+	TArray<Entity>							PaintMaskRenderer::s_ServerResets;
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ServerCollisions;
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ClientCollisions;
 
@@ -140,7 +141,7 @@ namespace LambdaEngine
 			PaintMaskRenderer::AddHitPoint(pos, dir, paintMode, ERemoteMode::SERVER, ETeam::RED, 0);
 			});
 
-		return false;
+		return true;
 	}
 
 	bool PaintMaskRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
@@ -318,11 +319,9 @@ namespace LambdaEngine
 		for (uint32 d = 0; d < count; d++)
 		{
 			const DrawArg& drawArg = pDrawArgs[d];
-
 			for (uint32 i = 0; i < drawArg.InstanceCount; i++)
 			{
 				DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
-
 				if (extensionGroup)
 				{
 					// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
@@ -336,9 +335,16 @@ namespace LambdaEngine
 
 						if ((flag & meshPaintFlag) != invertedUInt)
 						{
-							DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-							TextureView* pTextureView = extension.ppTextureViews[0];
-							m_RenderTargets.PushBack({ .pTextureView = pTextureView, .DrawArgIndex = d, .InstanceIndex = i });
+							DrawArgExtensionData& extension	= extensionGroup->pExtensions[e];
+							TextureView*	pTextureView	= extension.ppTextureViews[0];
+							Buffer*			pReadBackBuffer	= extension.ppReadBackBuffers[0];
+							m_RenderTargets.PushBack(
+								{ 
+									.pTextureView		= pTextureView, 
+									.pReadBackbuffer	= pReadBackBuffer,
+									.DrawArgIndex		= d, 
+									.InstanceIndex		= i 
+								});
 						}
 					}
 				}
@@ -357,6 +363,9 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 		UNREFERENCED_VARIABLE(sleeping);
 
+		// Tick MeshPaintComponentOwner to release resources
+		MeshPaintComponentOwner::GetInstance()->Tick(modFrameIndex);
+
 		// Add a reset hit point at the end of the client collisions.
 		if (s_ShouldReset)
 		{
@@ -364,26 +373,151 @@ namespace LambdaEngine
 			s_ShouldReset = false;
 		}
 
-		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
-
-		if ((m_RenderTargets.IsEmpty() || (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())))
+		// Return if there are no rendertargets
+		if (m_RenderTargets.IsEmpty())
 		{
 			return;
 		}
 
+		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
+		
 		// Delete old resources
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
 		{
-			m_pDeviceResourcesToDestroy.Clear();
+			currentFrameDeviceResourcesToDestroy.Clear();
 		}
 
-		m_ppRenderCommandAllocators[modFrameIndex]->Reset();
-		pCommandList->Begin(nullptr);
+		// Clear all rendertargets
+		if (!s_ServerResets.IsEmpty())
+		{
+			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+
+			// Clear server textures
+			const float32 clearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+			for (Entity entity : s_ServerResets)
+			{
+				for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
+				{
+					RenderTarget&	renderTargetDesc	= m_RenderTargets[t];
+					const uint32	drawArgIndex		= renderTargetDesc.DrawArgIndex;
+					const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
+				
+					// Check if this rendertarget should be cleared
+					bool shouldClear = false;
+					for (Entity drawArgEntity : drawArg.EntityIDs)
+					{
+						if (drawArgEntity == entity)
+						{
+							shouldClear = true;
+							break;
+						}
+					}
+
+					if (!shouldClear)
+					{
+						continue;
+					}
+
+					// Clear texture
+					TextureView*	pRenderTarget	= renderTargetDesc.pTextureView;
+					Texture*		pTexture		= pRenderTarget->GetTexture();
+
+					pCommandList->TransitionBarrier(
+						pTexture,
+						FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+						FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+						ETextureState::TEXTURE_STATE_COPY_DST);
+
+					pCommandList->ClearColorTexture(pTexture, ETextureState::TEXTURE_STATE_COPY_DST, clearColor);
+
+					pCommandList->TransitionBarrier(
+						pTexture,
+						FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+						FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+						FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+						ETextureState::TEXTURE_STATE_COPY_DST,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+					// Generate miplevels and copy to readbackbuffer
+					if (MultiplayerUtils::IsServer() && pTexture->GetDesc().Miplevels > 1)
+					{
+						ETextureState afterState =
+							renderTargetDesc.pReadBackbuffer ?
+							ETextureState::TEXTURE_STATE_COPY_SRC :
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+						pCommandList->GenerateMiplevels(
+							pTexture,
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+							afterState,
+							false);
+
+						// Copy over to readback
+						if (renderTargetDesc.pReadBackbuffer)
+						{
+							CopyTextureBufferDesc copyDesc;
+							copyDesc.ArrayCount		= 1;
+							copyDesc.ArrayIndex		= 0;
+							copyDesc.Depth			= 1;
+							copyDesc.Height			= 32;
+							copyDesc.Width			= 32;
+							copyDesc.Miplevel		= 4;
+							copyDesc.MiplevelCount	= 1;
+							copyDesc.OffsetX		= 0;
+							copyDesc.OffsetY		= 0;
+							copyDesc.OffsetZ		= 0;
+							copyDesc.BufferHeight	= 0;
+							copyDesc.BufferOffset	= 0;
+							copyDesc.BufferRowPitch	= 0;
+
+							pCommandList->CopyTextureToBuffer(
+								pTexture,
+								renderTargetDesc.pReadBackbuffer,
+								copyDesc);
+
+							pCommandList->TransitionBarrier(
+								pTexture,
+								FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+								FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+								FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+								FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+								ETextureState::TEXTURE_STATE_COPY_SRC,
+								ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+						}
+					}
+				}
+			}
+
+			s_ServerResets.Clear();
+		}
+
+		// Return if there are no collisions
+		if (s_ClientCollisions.IsEmpty() && s_ServerCollisions.IsEmpty())
+		{
+			if (pCommandList->IsRecording())
+			{
+				pCommandList->End();
+				(*ppFirstExecutionStage) = pCommandList;
+			}
+
+			return;
+		}
+
+		// Begin commandlist
+		if (!pCommandList->IsRecording())
+		{
+			m_ppRenderCommandAllocators[modFrameIndex]->Reset();
+			pCommandList->Begin(nullptr);
+		}
 
 		// "combine" both arrays to loop through
-		TArray<TArray<UnwrapData>*> collisions{&s_ClientCollisions, &s_ServerCollisions};
-
+		TArray<TArray<UnwrapData>*> collisions = { &s_ClientCollisions, &s_ServerCollisions };
 		for (uint32 index = 0; auto& collisionArray : collisions)
 		{
 			bool isServer = false;
@@ -394,8 +528,7 @@ namespace LambdaEngine
 			if (!collisionArray->IsEmpty())
 			{
 				TSharedRef<Buffer> unwrapDataCopyBuffer = m_UnwrapDataCopyBuffers[modFrameIndex][index++];
-
-				byte* pUniformMapping	= reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
+				byte* pUniformMapping = reinterpret_cast<byte*>(unwrapDataCopyBuffer->Map());
 
 				const UnwrapData& data	= collisionArray->GetBack();
 				isServer = data.RemoteMode == ERemoteMode::SERVER ? true : false;
@@ -406,7 +539,7 @@ namespace LambdaEngine
 				// Current limit is 10 draw calls per frame - might change in future if needed
 				if (collisionArray->GetSize() > MAX_PAINT_PER_FRAME)
 				{
-					size = 10;
+					size = 10; 
 					memcpy(pUniformMapping, collisionArray->GetData(), sizeof(UnwrapData) * size);
 
 					// Handle the swaperino
@@ -425,8 +558,8 @@ namespace LambdaEngine
 					memcpy(pUniformMapping, collisionArray->GetData(), sizeof(UnwrapData) * size);
 					collisionArray->Clear();
 				}
-
 				unwrapDataCopyBuffer->Unmap();
+
 				pCommandList->CopyBuffer(unwrapDataCopyBuffer.Get(), 0, m_UnwrapDataBuffer.Get(), 0, sizeof(UnwrapData) * size);
 				frameSettings.PaintCount = size;
 			}
@@ -436,20 +569,22 @@ namespace LambdaEngine
 				continue;
 			}
 
+			// Render
 			for (uint32 t = 0; t < m_RenderTargets.GetSize(); t++)
 			{
-				RenderTarget	renderTargetDesc	= m_RenderTargets[t];
-				uint32			drawArgIndex		= renderTargetDesc.DrawArgIndex;
-				uint32			instanceIndex		= renderTargetDesc.InstanceIndex;
+				RenderTarget&	renderTargetDesc	= m_RenderTargets[t];
+				const uint32	drawArgIndex		= renderTargetDesc.DrawArgIndex;
+				const uint32	instanceIndex		= renderTargetDesc.InstanceIndex;
 				const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
-				TextureView*	renderTarget		= renderTargetDesc.pTextureView;
+				TextureView*	pRenderTarget		= renderTargetDesc.pTextureView;
 
-				uint32 width	= renderTarget->GetDesc().pTexture->GetDesc().Width;
-				uint32 height	= renderTarget->GetDesc().pTexture->GetDesc().Height;
+				const TextureViewDesc& textureViewDesc = pRenderTarget->GetDesc();
+				const uint32 width	= textureViewDesc.pTexture->GetDesc().Width;
+				const uint32 height	= textureViewDesc.pTexture->GetDesc().Height;
 
 				BeginRenderPassDesc beginRenderPassDesc = {};
 				beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
-				beginRenderPassDesc.ppRenderTargets		= &renderTarget;
+				beginRenderPassDesc.ppRenderTargets		= &pRenderTarget;
 				beginRenderPassDesc.RenderTargetCount	= 1;
 				beginRenderPassDesc.Width				= width;
 				beginRenderPassDesc.Height				= height;
@@ -473,6 +608,8 @@ namespace LambdaEngine
 				ScissorRect scissorRect = {};
 				scissorRect.Width	= width;
 				scissorRect.Height	= height;
+				scissorRect.x		= 0;
+				scissorRect.y		= 0;
 				pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 				if (isServer)
@@ -482,32 +619,92 @@ namespace LambdaEngine
 
 				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-				if (m_PerFrameBufferDescriptorSet.Get())
+				if (m_PerFrameBufferDescriptorSet)
 				{
 					pCommandList->BindDescriptorSetGraphics(m_PerFrameBufferDescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 				}
 
-				if (m_BrushMaskDescriptorSet.Get())
+				if (m_BrushMaskDescriptorSet)
 				{
 					pCommandList->BindDescriptorSetGraphics(m_BrushMaskDescriptorSet.Get(), m_PipelineLayout.Get(), 1);
 				}
 
-				if (m_UnwrapDataDescriptorSet.Get())
+				pCommandList->BindDescriptorSetGraphics(
+					m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex], 
+					m_PipelineLayout.Get(), 2);
+
+				if (m_UnwrapDataDescriptorSet)
 				{
 					pCommandList->BindDescriptorSetGraphics(m_UnwrapDataDescriptorSet.Get(), m_PipelineLayout.Get(), 3);
 				}
 
-				pCommandList->BindDescriptorSetGraphics(m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex], m_PipelineLayout.Get(), 2);
+				pCommandList->SetConstantRange(
+					m_PipelineLayout.Get(), 
+					FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, 
+					&instanceIndex, 
+					sizeof(uint32), 
+					0);
 
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, &instanceIndex, sizeof(uint32), 0);
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &frameSettings, sizeof(FrameSettings), sizeof(uint32));
+				pCommandList->SetConstantRange(
+					m_PipelineLayout.Get(), 
+					FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, 
+					&frameSettings, 
+					sizeof(FrameSettings), 
+					sizeof(uint32));
 
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
 				pCommandList->EndRenderPass();
 
-				if (renderTarget->GetTexture()->GetDesc().Miplevels > 1)
-					pCommandList->GenerateMiplevels(renderTarget->GetTexture(), ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, false);
+				// Generate miplevels and copy to readbackbuffer
+				if (MultiplayerUtils::IsServer() && textureViewDesc.pTexture->GetDesc().Miplevels > 1)
+				{
+					Texture* pTexture = pRenderTarget->GetTexture();
+
+					ETextureState afterState =
+						renderTargetDesc.pReadBackbuffer ?
+						ETextureState::TEXTURE_STATE_COPY_SRC :
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+					pCommandList->GenerateMiplevels(
+						pTexture,
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+						afterState,
+						false);
+
+					// Copy over to readback
+					if (renderTargetDesc.pReadBackbuffer)
+					{
+						CopyTextureBufferDesc copyDesc;
+						copyDesc.ArrayCount		= 1;
+						copyDesc.ArrayIndex		= 0;
+						copyDesc.Depth			= 1;
+						copyDesc.Height			= 32;
+						copyDesc.Width			= 32;
+						copyDesc.Miplevel		= 4;
+						copyDesc.MiplevelCount	= 1;
+						copyDesc.OffsetX		= 0;
+						copyDesc.OffsetY		= 0;
+						copyDesc.OffsetZ		= 0;
+						copyDesc.BufferHeight	= 0;
+						copyDesc.BufferOffset	= 0;
+						copyDesc.BufferRowPitch	= 0;
+
+						pCommandList->CopyTextureToBuffer(
+							pTexture,
+							renderTargetDesc.pReadBackbuffer,
+							copyDesc);
+
+						pCommandList->TransitionBarrier(
+							pTexture,
+							FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+							FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+							ETextureState::TEXTURE_STATE_COPY_SRC,
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+					}
+				}
 			}
 		}
 
@@ -540,6 +737,11 @@ namespace LambdaEngine
 	void PaintMaskRenderer::ResetClient()
 	{
 		s_ShouldReset = true;
+	}
+
+	void PaintMaskRenderer::ResetServer(Entity entity)
+	{
+		s_ServerResets.EmplaceBack(entity);
 	}
 
 	bool PaintMaskRenderer::CreateCopyCommandList()
@@ -745,12 +947,12 @@ namespace LambdaEngine
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET };
 
 		RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
-		subpassDependencyDesc.SrcSubpass		= EXTERNAL_SUBPASS;
-		subpassDependencyDesc.DstSubpass		= 0;
-		subpassDependencyDesc.SrcAccessMask		= 0;
-		subpassDependencyDesc.DstAccessMask		= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
-		subpassDependencyDesc.SrcStageMask		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
-		subpassDependencyDesc.DstStageMask		= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.SrcSubpass	= EXTERNAL_SUBPASS;
+		subpassDependencyDesc.DstSubpass	= 0;
+		subpassDependencyDesc.SrcAccessMask	= 0;
+		subpassDependencyDesc.DstAccessMask	= FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+		subpassDependencyDesc.SrcStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+		subpassDependencyDesc.DstStageMask	= FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
 
 		RenderPassDesc renderPassDesc = {};
 		renderPassDesc.DebugName			= "Paint Mask Renderer Render Pass";
@@ -765,9 +967,9 @@ namespace LambdaEngine
 
 	bool PaintMaskRenderer::CreatePipelineState()
 	{
-		m_PipelineStateBothID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G);
-		m_PipelineStateServerID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_R);
-		m_PipelineStateClientID = InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_G);
+		m_PipelineStateBothID	= InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G);
+		m_PipelineStateServerID	= InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_R);
+		m_PipelineStateClientID	= InternalCreatePipelineState(m_VertexShaderGUID, m_PixelShaderGUID, COLOR_COMPONENT_FLAG_G);
 
 		return true;
 	}

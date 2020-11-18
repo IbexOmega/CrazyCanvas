@@ -130,14 +130,19 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 
 	if (PlayerManagerServer::HasPlayerAuthority(event.pClient))
 	{
-		LOG_INFO("Configuring Server With The Following Settings:");
-		LOG_INFO("Players: %hhu", packet.Players);
-		LOG_INFO("MapID: %hhu", packet.MapID);
-
 		m_GameSettings = packet;
 		m_MapName = LevelManager::GetLevelNames()[packet.MapID];
 		ServerHelper::SendBroadcast(packet, nullptr, event.pClient);
 		ServerHelper::SetMaxClients(packet.Players);
+
+		LOG_INFO("\nConfiguring Server With The Following Settings:");
+		LOG_INFO("Name:       %s", packet.ServerName);
+		LOG_INFO("Players:    %hhu", packet.Players);
+		LOG_INFO("Map:        %s", m_MapName.c_str());
+		LOG_INFO("MaxTime:    %hu", packet.MaxTime);
+		LOG_INFO("FlagsToWin: %hhu", packet.FlagsToWin);
+		LOG_INFO("Visible:    %s", packet.Visible ? "True" : "False");
+		LOG_INFO("ChangeTeam: %s\n", packet.ChangeTeam ? "True" : "False");
 	}
 	else
 	{

@@ -691,9 +691,9 @@ namespace LambdaEngine
 			pTextureData->Unmap();
 
 			CopyTextureBufferDesc copyDesc = {};
-			copyDesc.SrcOffset		= bufferOffset;
-			copyDesc.SrcRowPitch	= 0;
-			copyDesc.SrcHeight		= 0;
+			copyDesc.BufferOffset	= bufferOffset;
+			copyDesc.BufferRowPitch	= 0;
+			copyDesc.BufferHeight	= 0;
 			copyDesc.Width			= width;
 			copyDesc.Height			= height;
 			copyDesc.Depth			= 1;

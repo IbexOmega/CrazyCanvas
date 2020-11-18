@@ -52,9 +52,8 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
 	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",			{ "4", "6", "8", "10" }, 3);
-	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
-	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);
-
+	/*AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
+	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
 
 	m_IsInitiated = true;
 }
@@ -95,26 +94,26 @@ void LobbyGUI::AddPlayer(const Player& player)
 void LobbyGUI::RemovePlayer(const Player& player)
 {
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
+	const LambdaEngine::String& uidGrid = uid + "_grid";
 
-	Grid* pGrid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
-	if (pGrid)
+	Grid* pGrid = FrameworkElement::FindName<Grid>(uidGrid.c_str());
+
+	if (m_pBlueTeamStackPanel->GetChildren()->Contains(pGrid))
 	{
 		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
-
-		if (player.IsHost())
-			FrameworkElement::GetView()->GetContent()->UnregisterName("host_icon");
-
-		return;
 	}
-
-	pGrid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
-	if (pGrid)
+	else
 	{
 		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
-
-		if(player.IsHost())
-			FrameworkElement::GetView()->GetContent()->UnregisterName("host_icon");
 	}
+
+	UnregisterName(uidGrid);
+	UnregisterName(uid + "_checkmark");
+	UnregisterName(uid + "_name");
+	UnregisterName(uid + "_ping");
+
+	if (player.IsHost())
+		UnregisterName("host_icon");
 }
 
 void LobbyGUI::UpdatePlayerPing(const Player& player)
@@ -176,6 +175,13 @@ void LobbyGUI::UpdatePlayerReady(const Player& player)
 	}
 }
 
+void LobbyGUI::UpdatePlayerScore(const Player& player)
+{
+	RemovePlayer(player);
+	AddPlayer(player);
+	UpdatePlayerHost(player);
+}
+
 void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 {
 	const ChatMessage& chatMessage = event.Message;
@@ -205,7 +211,7 @@ void LobbyGUI::SetHostMode(bool isHost)
 		pReadyButton->SetContent("Start");
 		m_pSettingsClientStackPanel->SetVisibility(Visibility_Hidden);
 		m_pSettingsHostStackPanel->SetVisibility(Visibility_Visible);
-		ClientHelper::Send(m_GameSettings);
+		SendGameSettings();
 	}
 	else
 	{
@@ -220,30 +226,38 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 	if (!PlayerManagerClient::GetPlayerLocal()->IsHost()) 
 	{
 		Label* pSettingServerName = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_SERVER_NAME) + "_client").c_str());
-		pSettingServerName->SetContent(packet.ServerName);
+		if(pSettingServerName)
+			pSettingServerName->SetContent(packet.ServerName);
 
 		Label* pSettingMap = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAP) + "_client").c_str());
-		pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
+		if (pSettingMap)
+			pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
 
 		Label* pSettingMaxTime = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_TIME) + "_client").c_str());
-		pSettingMaxTime->SetContent((std::to_string(packet.MaxTime / 60) + " min").c_str());
+		if (pSettingMaxTime)
+			pSettingMaxTime->SetContent((std::to_string(packet.MaxTime / 60) + " min").c_str());
 
 		Label* pSettingFlagsToWin = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_client").c_str());
-		pSettingFlagsToWin->SetContent(std::to_string(packet.FlagsToWin).c_str());
+		if (pSettingFlagsToWin)
+			pSettingFlagsToWin->SetContent(std::to_string(packet.FlagsToWin).c_str());
 
 		Label* pSettingMaxPlayers = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_PLAYERS) + "_client").c_str());
-		pSettingMaxPlayers->SetContent(std::to_string(packet.Players).c_str());
+		if (pSettingMaxPlayers)
+			pSettingMaxPlayers->SetContent(std::to_string(packet.Players).c_str());
 
 		Label* pSettingVisibility = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_VISIBILITY) + "_client").c_str());
-		pSettingVisibility->SetContent(packet.Visible ? "True" : "False");
+		if (pSettingVisibility)
+			pSettingVisibility->SetContent(packet.Visible ? "True" : "False");
 
 		Label* pSettingChangeTeam = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_client").c_str());
-		pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
+		if (pSettingChangeTeam)
+			pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
 	} 
 	else 
 	{
 		TextBox* pServerNameTextBox = FrameworkElement::FindName<TextBox>((LambdaEngine::String(SETTING_SERVER_NAME) + "_host").c_str());
-		pServerNameTextBox->SetText(packet.ServerName);
+		if (pServerNameTextBox)
+			pServerNameTextBox->SetText(packet.ServerName);
 	}
 
 	m_GameSettings = packet;
@@ -297,7 +311,9 @@ void LobbyGUI::AddSettingTextBox(
 	settingTextBox->SetStyle(pStyle);
 	settingTextBox->SetName((settingKey + "_host").c_str());
 	settingTextBox->TextChanged() += MakeDelegate(this, &LobbyGUI::OnTextBoxChanged);
-	settingTextBox->SetText(settingValue.c_str());
+	settingTextBox->SetMaxLength(MAX_NAME_LENGTH - 1);
+	settingTextBox->SetMaxLines(1);
+	settingTextBox->SetText(settingValue.substr(0, glm::min<int32>((int32)settingValue.length(), settingTextBox->GetMaxLength())).c_str());
 	RegisterName(settingTextBox->GetName(), settingTextBox);
 	m_pSettingsHostStackPanel->GetChildren()->Add(settingTextBox);
 }
@@ -357,6 +373,12 @@ void LobbyGUI::TrySendChatMessage()
 	ChatManager::SendChatMessage(message);
 }
 
+void LobbyGUI::SendGameSettings() const
+{
+	if (m_IsInitiated)
+		ClientHelper::Send(m_GameSettings);
+}
+
 void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args)
 {
 	ComboBox* pComboBox = static_cast<ComboBox*>(pSender);
@@ -392,10 +414,7 @@ void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const 
 		m_GameSettings.ChangeTeam = textSelected == "True";
 	}
 
-	if (m_IsInitiated)
-	{
-		ClientHelper::Send(m_GameSettings);
-	}
+	SendGameSettings();
 }
 
 const PacketGameSettings& LobbyGUI::GetSettings() const
@@ -411,10 +430,7 @@ void LobbyGUI::OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::Ro
 	{
 		strcpy(m_GameSettings.ServerName, pTextBox->GetText());
 
-		if (m_IsInitiated)
-		{
-			ClientHelper::Send(m_GameSettings);
-		}
+		SendGameSettings();
 	}
 }
 
@@ -447,6 +463,11 @@ void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel
 void LobbyGUI::RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* comp)
 {
 	FrameworkElement::GetView()->GetContent()->RegisterName(name.c_str(), comp);
+}
+
+void LobbyGUI::UnregisterName(const LambdaEngine::String& name)
+{
+	FrameworkElement::GetView()->GetContent()->UnregisterName(name.c_str());
 }
 
 void LobbyGUI::CreateHostIcon(Noesis::Panel* parent)

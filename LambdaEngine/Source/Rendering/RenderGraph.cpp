@@ -228,12 +228,12 @@ namespace LambdaEngine
 				{
 					CommandList* pGraphicsCopyCommandList = m_ppGraphicsCopyCommandLists[b];
 
-					if (pGraphicsCopyCommandList->IsBegin())
+					if (pGraphicsCopyCommandList->IsRecording())
 						pGraphicsCopyCommandList->End();
 
 					CommandList* pComputeCopyCommandList = m_ppComputeCopyCommandLists[b];
 
-					if (pComputeCopyCommandList->IsBegin())
+					if (pComputeCopyCommandList->IsRecording())
 						pComputeCopyCommandList->End();
 				}
 			}
@@ -737,17 +737,25 @@ namespace LambdaEngine
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pRenderStage->DrawArgsMaskDesc.FullMask);
 					
-					if (pRenderStage->UsesCustomRenderer)
+					if (drawArgsMaskToArgsIt->second.IsDirty)
 					{
-						pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
-							pResource->Name,
-							drawArgsMaskToArgsIt->second.Args.GetData(),
-							drawArgsMaskToArgsIt->second.Args.GetSize());
+						if (pRenderStage->UsesCustomRenderer)
+						{
+							pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
+								pResource->Name,
+								drawArgsMaskToArgsIt->second.Args.GetData(),
+								drawArgsMaskToArgsIt->second.Args.GetSize());
+						}
+						else
+						{
+							pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
+						}
 					}
-					else
-					{
-						pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
-					}
+				}
+
+				for (auto& drawArgPair : pResource->DrawArgs.FullMaskToArgs)
+				{
+					drawArgPair.second.IsDirty = false;
 				}
 			}
 
@@ -889,7 +897,7 @@ namespace LambdaEngine
 		{
 			CommandList* pGraphicsCopyCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-			if (pGraphicsCopyCommandList->IsBegin())
+			if (pGraphicsCopyCommandList->IsRecording())
 			{
 				pGraphicsCopyCommandList->End();
 				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pGraphicsCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
@@ -898,7 +906,7 @@ namespace LambdaEngine
 
 			CommandList* pComputeCopyCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-			if (pComputeCopyCommandList->IsBegin())
+			if (pComputeCopyCommandList->IsRecording())
 			{
 				pComputeCopyCommandList->End();
 				RenderAPI::GetComputeQueue()->ExecuteCommandLists(&pComputeCopyCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
@@ -950,13 +958,14 @@ namespace LambdaEngine
 
 			if (!currentBatch.IsEmpty())
 			{
+				const uint32 batchSize = currentBatch.GetSize();
 				if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS)
 				{
-					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
+					RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(currentBatch.GetData(), batchSize, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 				else if (currentBatchType == ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE)
 				{
-					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), currentBatch.GetSize(), FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
+					RenderAPI::GetComputeQueue()->ExecuteCommandLists(currentBatch.GetData(), batchSize, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, m_SignalValue - 1, s_pMaterialFence, m_SignalValue);
 				}
 
 				m_SignalValue++;
@@ -971,7 +980,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 			pCommandList->Begin(nullptr);
@@ -984,7 +993,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 			pCommandList->Begin(nullptr);
@@ -3561,7 +3570,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3573,7 +3582,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3583,6 +3592,8 @@ namespace LambdaEngine
 				}
 			}
 		}
+
+		LOG_MESSAGE("Updating Resource: %s", pResource->Name.c_str());
 
 		if (pResource->ResourceBindings.GetSize() > 0)
 		{
@@ -3601,6 +3612,8 @@ namespace LambdaEngine
 
 		if (drawArgsArgsIt != pResource->DrawArgs.FullMaskToArgs.end())
 		{
+			drawArgsArgsIt->second.IsDirty = true;
+
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);
@@ -3830,12 +3843,12 @@ namespace LambdaEngine
 								for (uint32 t = 0; t < numTextures; t++)
 								{
 									const TextureDesc& textureDesc = extension.ppTextures[t]->GetDesc();
-									initialMaskTexturesTransitionBarrier.pTexture = extension.ppTextures[t];
-									initialMaskTexturesTransitionBarrier.TextureFlags = textureDesc.Flags;
-									initialMaskTexturesTransitionBarrier.ArrayCount = textureDesc.ArrayCount;
-									initialMaskTexturesTransitionBarrier.ArrayIndex = 0;
-									initialMaskTexturesTransitionBarrier.Miplevel = 0;
-									initialMaskTexturesTransitionBarrier.MiplevelCount = textureDesc.Miplevels;
+									initialMaskTexturesTransitionBarrier.pTexture		= extension.ppTextures[t];
+									initialMaskTexturesTransitionBarrier.TextureFlags	= textureDesc.Flags;
+									initialMaskTexturesTransitionBarrier.ArrayCount		= textureDesc.ArrayCount;
+									initialMaskTexturesTransitionBarrier.ArrayIndex		= 0;
+									initialMaskTexturesTransitionBarrier.Miplevel		= 0;
+									initialMaskTexturesTransitionBarrier.MiplevelCount	= textureDesc.Miplevels;
 									intialTextureBarriers.PushBack(initialMaskTexturesTransitionBarrier);
 								}
 							}
@@ -3854,7 +3867,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3871,7 +3884,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3896,7 +3909,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -3908,7 +3921,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -4001,7 +4014,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppGraphicsCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);
@@ -4013,7 +4026,7 @@ namespace LambdaEngine
 				{
 					CommandList* pCommandList = m_ppComputeCopyCommandLists[m_ModFrameIndex];
 
-					if (!pCommandList->IsBegin())
+					if (!pCommandList->IsRecording())
 					{
 						m_ppComputeCopyCommandAllocators[m_ModFrameIndex]->Reset();
 						pCommandList->Begin(nullptr);

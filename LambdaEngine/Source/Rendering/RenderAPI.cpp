@@ -84,6 +84,16 @@ namespace LambdaEngine
 		s_GraphicsQueue->Flush();
 		s_ComputeQueue->Flush();
 		s_CopyQueue->Flush();
+		
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		{
+			TArray<DeviceChild*>& deviceResourcesToRelease = s_DeviceResourcesToRelease[b];
+			for (DeviceChild* pResource : deviceResourcesToRelease)
+			{
+				SAFERELEASE(pResource);
+			}
+			deviceResourcesToRelease.Clear();
+		}
 
 		Sampler::ReleaseDefaults();
 		PipelineStateManager::Release();
@@ -94,5 +104,22 @@ namespace LambdaEngine
 
 	void RenderAPI::Tick()
 	{
+		std::scoped_lock<SpinLock> lock(s_ReleaseResourceLock);
+
+		s_ModFrameIndex++;
+		if (s_ModFrameIndex >= BACK_BUFFER_COUNT) s_ModFrameIndex = 0;
+
+		TArray<DeviceChild*>& deviceResourcesToRelease = s_DeviceResourcesToRelease[s_ModFrameIndex];
+		for (DeviceChild* pResource : deviceResourcesToRelease)
+		{
+			SAFERELEASE(pResource);
+		}
+		deviceResourcesToRelease.Clear();
+	}
+
+	void RenderAPI::EnqueueResourceRelease(DeviceChild* pResource)
+	{
+		std::scoped_lock<SpinLock> lock(s_ReleaseResourceLock);
+		s_DeviceResourcesToRelease[s_ModFrameIndex].PushBack(pResource);
 	}
 }

@@ -51,11 +51,6 @@ bool Match::ResetMatch()
 	return false;
 }
 
-bool Match::ReleaseMatch()
-{
-	return false;
-}
-
 void Match::StartMatch()
 {
 	s_pMatchInstance->MatchStart();
@@ -64,11 +59,6 @@ void Match::StartMatch()
 void Match::BeginLoading()
 {
 	s_pMatchInstance->BeginLoading();
-}
-
-void Match::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
-{
-	s_pMatchInstance->KillPlayer(entityToKill, killedByEntity);
 }
 
 void Match::Tick(LambdaEngine::Timestamp deltaTime)

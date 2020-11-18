@@ -10,6 +10,8 @@
 
 #include "States/PlaySessionState.h"
 
+#include "GUI/GUIHelpers.h"
+
 using namespace LambdaEngine;
 
 LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
@@ -27,6 +29,7 @@ LobbyState::~LobbyState()
 	EventQueue::UnregisterEventHandler<PlayerHostUpdatedEvent>(this, &LobbyState::OnPlayerHostUpdatedEvent);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
 	EventQueue::UnregisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
+	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &LobbyState::OnPlayerScoreUpdatedEvent);
 	EventQueue::UnregisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
 
@@ -42,21 +45,11 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PlayerHostUpdatedEvent>(this, &LobbyState::OnPlayerHostUpdatedEvent);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
 	EventQueue::RegisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
+	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &LobbyState::OnPlayerScoreUpdatedEvent);
 	EventQueue::RegisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", true);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", true);
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
+	
+	DisablePlaySessionsRenderstages();
 
 	m_LobbyGUI = *new LobbyGUI();
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
@@ -64,7 +57,6 @@ void LobbyState::Init()
 
 	m_LobbyGUI->InitGUI(m_Name);
 
-	PlayerManagerClient::Reset();
 	PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
 }
 
@@ -119,6 +111,12 @@ bool LobbyState::OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event)
 bool LobbyState::OnPlayerReadyUpdatedEvent(const PlayerReadyUpdatedEvent& event)
 {
 	m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
+	return false;
+}
+
+bool LobbyState::OnPlayerScoreUpdatedEvent(const PlayerScoreUpdatedEvent& event)
+{
+	m_LobbyGUI->UpdatePlayerScore(*event.pPlayer);
 	return false;
 }
 

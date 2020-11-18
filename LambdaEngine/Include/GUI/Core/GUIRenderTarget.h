@@ -16,10 +16,10 @@ namespace LambdaEngine
 
 	struct GUIRenderTargetDesc
 	{
-		String		DebugName		= "";
-		uint32		Width			= 0;
-		uint32		Height			= 0;
-		uint32		SampleCount		= 0;
+		String			DebugName		= "";
+		uint32			Width			= 0;
+		uint32			Height			= 0;
+		uint32			SampleCount		= 0;
 	};
 
 	class GUIRenderTarget : public Noesis::RenderTarget
