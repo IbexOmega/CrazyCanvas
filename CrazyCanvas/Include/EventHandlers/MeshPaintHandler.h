@@ -38,22 +38,6 @@ public:
 	void Init();
 
 private:
-	struct PaintPoint
-	{
-		glm::vec3 Position;
-		glm::vec3 Direction;
-		LambdaEngine::EPaintMode	PaintMode	= LambdaEngine::EPaintMode::NONE;
-		LambdaEngine::ERemoteMode	RemoteMode	= LambdaEngine::ERemoteMode::UNDEFINED;
-		LambdaEngine::ETeam			Team		= LambdaEngine::ETeam::NONE;
-		uint32 Angle;
-	};
-
-private:
 	bool OnProjectileHit(const ProjectileHitEvent& projectileHitEvent);
 	bool OnPacketProjectileHitReceived(const PacketReceivedEvent<PacketProjectileHit>& event);
-
-	bool IsPaintPointEqual(PaintPoint& a, PaintPoint& b);
-
-private:
-	std::queue<PaintPoint> m_PaintPointsOnClient;
 };
