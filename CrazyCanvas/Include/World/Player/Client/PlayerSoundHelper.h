@@ -12,7 +12,6 @@ class PlayerSoundHelper
 {
 public:
 	static void HandleMovementSound(
-		const LambdaEngine::PositionComponent& positionComponent,
 		const LambdaEngine::VelocityComponent& velocityComponent,
 		LambdaEngine::AudibleComponent& audibleComponent,
 		const glm::i8vec3& deltaAction,

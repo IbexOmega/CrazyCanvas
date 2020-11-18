@@ -116,7 +116,6 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 
 		const PacketPlayerActionResponse& lastReceivedGameState = packetComponent.GetLastReceivedPacket();
 		PlayerSoundHelper::HandleMovementSound(
-			positionComponent,
 			velocityComponent,
 			audibleComponent,
 			lastReceivedGameState.DeltaAction,

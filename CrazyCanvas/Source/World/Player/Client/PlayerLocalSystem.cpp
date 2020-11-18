@@ -132,7 +132,7 @@ void PlayerLocalSystem::DoAction(
 	bool walking = InputActionSystem::IsActive(EAction::ACTION_MOVE_WALK);
 
 	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity);
-	PlayerSoundHelper::HandleMovementSound(positionComponent, velocityComponent, audibleComponent, deltaAction, walking, inAir);
+	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, deltaAction, walking, inAir);
 
 	pGameState->DeltaAction		= deltaAction;
 	pGameState->Walking			= walking;
