@@ -39,6 +39,7 @@ protected:
 private:
 	static void HandlePlayerLeftServer(LambdaEngine::IClient* pClient);
 	static void FillPacketPlayerScore(PacketPlayerScore* pPacket, const Player* pPlayer);
+	static void AutoSelectTeam(Player* pPlayer);
 
 protected:
 	static LambdaEngine::Timestamp s_Timer;

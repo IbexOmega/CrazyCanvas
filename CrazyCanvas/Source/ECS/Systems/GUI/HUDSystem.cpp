@@ -70,7 +70,9 @@ void HUDSystem::Init()
 			.ComponentAccesses =
 			{
 				{ R,	ProjectedGUIComponent::Type() }
-			}
+			},
+			.OnEntityAdded		= std::bind_front(&HUDSystem::OnProjectedEntityAdded, this),
+			.OnEntityRemoval	= std::bind_front(&HUDSystem::RemoveProjectedEntity, this)
 		},
 		{
 			.pSubscriber = &m_CameraEntities,
@@ -113,6 +115,8 @@ void HUDSystem::Init()
 	}
 
 	GUIApplication::SetView(m_View);
+
+	m_LocalTeamIndex = PlayerManagerClient::GetPlayerLocal()->GetTeam();
 }
 
 void HUDSystem::Tick(LambdaEngine::Timestamp deltaTime)
@@ -127,19 +131,12 @@ void HUDSystem::FixedTick(Timestamp delta)
 	const ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
 	const ComponentArray<ViewProjectionMatricesComponent>* pViewProjMats = pECS->GetComponentArray<ViewProjectionMatricesComponent>();
 	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 
 	for (Entity player : m_PlayerEntities)
 	{
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
 		m_HUDGUI->UpdateScore();
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
-
-		if (m_LocalTeamIndex == UINT32_MAX)
-		{
-			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			m_LocalTeamIndex = pTeamComponents->GetConstData(player).TeamIndex;
-		}
 
 		{
 			std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
@@ -187,11 +184,10 @@ void HUDSystem::FixedTick(Timestamp delta)
 			for (Entity entity : m_ProjectedGUIEntities)
 			{
 				const PositionComponent& worldPosition = pPositionComponents->GetConstData(entity);
-				const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(entity);
 
 				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
-
-				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, projectedGUIComponent.GUIType);
+			
+				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity);
 			}
 		}
 	}
@@ -277,6 +273,34 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
 {
 	m_HUDGUI->UpdateCountdown(event.CountDownTime);
+
+	return false;
+}
+
+bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
+{
+	ECSCore* pECS = ECSCore::GetInstance();
+	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
+	const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(projectedEntity);
+
+
+	if (projectedGUIComponent.GUIType == IndicatorTypeGUI::FLAG_INDICATOR)
+	{
+		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		const TeamComponent& teamComponent = pTeamComponents->GetConstData(projectedEntity);
+		m_HUDGUI->CreateProjectedGUIElement(projectedEntity, m_LocalTeamIndex, teamComponent.TeamIndex);
+	}
+	else
+	{
+		m_HUDGUI->CreateProjectedGUIElement(projectedEntity, m_LocalTeamIndex);
+	}
+
+	return false;
+}
+
+bool HUDSystem::RemoveProjectedEntity(LambdaEngine::Entity projectedEntity)
+{
+	m_HUDGUI->RemoveProjectedGUIElement(projectedEntity);
 
 	return false;
 }

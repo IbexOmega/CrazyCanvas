@@ -67,7 +67,6 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 	IClient* pClient = ClientSystem::GetInstance().GetClient();
 
 	ASSERT(s_Players.empty());
-	ASSERT(pClient->IsConnected());
 	ASSERT(!MultiplayerUtils::IsServer());
 
 	PacketJoin packet;

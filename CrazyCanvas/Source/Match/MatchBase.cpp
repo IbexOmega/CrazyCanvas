@@ -26,6 +26,8 @@ bool MatchBase::Init(const MatchDescription* pDesc)
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
 	m_MatchDesc = *pDesc;
 
+	m_GameModeHasFlag = GameModeRequiresFlag(m_MatchDesc.GameMode);
+
 	if (m_pLevel == nullptr)
 	{
 		return false;

@@ -131,6 +131,24 @@ namespace LambdaEngine
 		{
 			LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
 		}
+	}
 
+	void PipelineContext::UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTLASUpdateDesc& descriptorUpdateDesc, bool shouldCopy)
+	{
+		auto descriptorSet = m_DescriptorCache.GetDescriptorSet(debugname, m_PipelineLayout.Get(), setIndex, pDescriptorHeap, shouldCopy);
+		if (descriptorSet != nullptr)
+		{
+			descriptorSet->WriteAccelerationStructureDescriptors(
+				descriptorUpdateDesc.ppTLAS,
+				descriptorUpdateDesc.FirstBinding,
+				descriptorUpdateDesc.DescriptorCount
+			);
+
+			m_DescriptorSets[setIndex] = descriptorSet;
+		}
+		else
+		{
+			LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+		}
 	}
 }

@@ -148,14 +148,13 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			CreatePlayerDesc createPlayerDesc =
 			{
-				.ClientUID			= packet.Player.ClientUID,
+				.pPlayer			= PlayerManagerClient::GetPlayer(packet.Player.ClientUID),
 				.IsLocal			= packet.Player.ClientUID == event.pClient->GetUID(),
 				.PlayerNetworkUID	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 				.Position			= packet.Position,
 				.Forward			= packet.Forward,
 				.Scale				= glm::vec3(1.0f),
-				.TeamIndex			= packet.Player.TeamIndex,
 				.pCameraDesc		= &cameraDesc,
 			};
 
@@ -185,6 +184,7 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				.Position		= packet.Position,
 				.Scale			= glm::vec3(1.0f),
 				.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.TeamIndex		= packet.Flag.TeamIndex
 			};
 
 			TArray<Entity> createdFlagEntities;
