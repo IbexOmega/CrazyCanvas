@@ -41,6 +41,8 @@
 #include "Game/StateManager.h"
 #include "States/MainMenuState.h"
 
+#include "GUI/GUIHelpers.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
@@ -64,21 +66,14 @@ PlaySessionState::~PlaySessionState()
 	}
 
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
+
+	Match::Release();
+	PlayerManagerClient::Reset();
 }
 
 void PlaySessionState::Init()
 {
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
+	EnablePlaySessionsRenderstages();
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();

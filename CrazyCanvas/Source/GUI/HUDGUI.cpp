@@ -1,3 +1,11 @@
+#include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
+#include "Audio/AudioAPI.h"
+#include "Engine/EngineConfig.h"
+
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/StateManager.h"
+#include "Game/State.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
@@ -8,9 +16,13 @@
 
 #include "Game/State.h"
 
+#include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
+#include "Match/Match.h"
+#include "Multiplayer/ClientHelper.h"
 #include "Multiplayer/Packet/PacketType.h"
-
 #include "NoesisPCH.h"
+#include "States/MainMenuState.h"
 
 #include "Application/API/Events/EventQueue.h"
 #include "Application/API/CommonApplication.h"
@@ -38,13 +50,30 @@ HUDGUI::HUDGUI() :
 HUDGUI::~HUDGUI()
 {
 	m_PlayerGrids.clear();
+
+	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
+	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
 }
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
-	UNREFERENCED_VARIABLE(pSource);
-	UNREFERENCED_VARIABLE(pEvent);
-	UNREFERENCED_VARIABLE(pHandler);
+	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
+
+	// Escape
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonBackClick);
+
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonResumeClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSettingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonLeaveClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonExitClick);
+
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplySettingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelSettingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeKeyBindingsClick);
+
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyKeyBindingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelKeyBindingsClick);
 
 	return false;
 }
@@ -78,11 +107,11 @@ bool HUDGUI::UpdateScore()
 
 
 	// poor solution to handle bug if Match being reset before entering
-	
+
 	if (m_GUIState.Scores[0] != blueScore && blueScore != 0)	//Blue
 	{
 		m_GUIState.Scores[0] = blueScore;
-		
+
 		m_pBlueScoreGrid->GetChildren()->Get(5 - blueScore)->SetVisibility(Visibility::Visibility_Visible);
 	}
 	else if (m_GUIState.Scores[1] != redScore && redScore != 0) //Red
@@ -130,6 +159,221 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	}
 
 	return true;
+}
+
+void HUDGUI::ToggleEscapeMenu()
+{
+	if (Input::GetCurrentInputmode() == EInputLayer::GAME)
+	{
+		Input::PushInputMode(EInputLayer::GUI);
+		m_MouseEnabled = !m_MouseEnabled;
+		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
+
+		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Visible);
+		m_ContextStack.push(m_pEscapeGrid);
+	}
+	else if (Input::GetCurrentInputmode() == EInputLayer::GUI)
+	{
+		m_MouseEnabled = !m_MouseEnabled;
+		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
+		Noesis::FrameworkElement* pElement = m_ContextStack.top();
+		pElement->SetVisibility(Noesis::Visibility_Collapsed);
+		m_ContextStack.pop();
+		Input::PopInputMode();
+	}
+}
+
+void HUDGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
+
+	m_ContextStack.pop();
+	Noesis::FrameworkElement* pCurrentElement = m_ContextStack.top();
+	pCurrentElement->SetVisibility(Noesis::Visibility_Visible);
+}
+
+void HUDGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	m_MouseEnabled = !m_MouseEnabled;
+	CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
+	Noesis::FrameworkElement* pElement = m_ContextStack.top();
+	pElement->SetVisibility(Noesis::Visibility_Collapsed);
+	m_ContextStack.pop();
+	Input::PopInputMode();
+}
+
+void HUDGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
+
+	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
+	m_ContextStack.push(m_pSettingsGrid);
+}
+
+void HUDGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	ClientHelper::Disconnect("Left by choice");
+	SetRenderStagesInactive();
+
+	Noesis::FrameworkElement* pElement = m_ContextStack.top();
+	pElement->SetVisibility(Noesis::Visibility_Collapsed);
+	m_ContextStack.pop();
+
+	State* pMainMenuState = DBG_NEW MainMenuState();
+	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
+
+	Input::PopInputMode();
+}
+
+void HUDGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	CommonApplication::Get()->Terminate();
+}
+
+void HUDGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	// Ray Tracing
+	Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+
+	// Mesh Shader
+	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	m_MeshShadersEnabled = pMeshShaderCheckBox->GetIsChecked().GetValue();
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, m_MeshShadersEnabled);
+
+	// Volume
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	EngineConfig::WriteToFile();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void HUDGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	SetDefaultSettings();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
+
+	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
+	m_ContextStack.push(m_pKeyBindingsGrid);
+}
+
+void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	// Starts listening to callbacks with specific button to be changed. This action is deferred to
+	// the callback functions of KeyboardCallback and MouseButtonCallback.
+
+	Noesis::Button* pCalledButton = static_cast<Noesis::Button*>(pSender);
+	LambdaEngine::String buttonName = pCalledButton->GetName();
+
+	m_pSetKeyButton = FrameworkElement::FindName<Button>(buttonName.c_str());
+	m_ListenToCallbacks = true;
+}
+
+void HUDGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Go through all keys to set - and set them
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	for (auto& stringPair : m_KeysToSet)
+	{
+		InputActionSystem::ChangeKeyBinding(StringToAction(stringPair.first), stringPair.second);
+	}
+	m_KeysToSet.clear();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void HUDGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Reset
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	for (auto& stringPair : m_KeysToSet)
+	{
+		EAction action = StringToAction(stringPair.first);
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			LambdaEngine::String keyStr = KeyToString(key);
+			FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(keyStr.c_str());
+		}
+		if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			LambdaEngine::String mouseButtonStr = ButtonToString(mouseButton);
+			FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(mouseButtonStr.c_str());
+		}
+	}
+	m_KeysToSet.clear();
+
+	OnButtonBackClick(pSender, args);
 }
 
 void HUDGUI::UpdateCountdown(uint8 countDownTime)
@@ -467,6 +711,124 @@ void HUDGUI::InitGUI()
 
 	m_WindowSize.x = CommonApplication::Get()->GetMainWindow()->GetWidth();
 	m_WindowSize.y = CommonApplication::Get()->GetMainWindow()->GetHeight();
+
+	// Main Grids
+	m_pEscapeGrid			= FrameworkElement::FindName<Grid>("EscapeGrid");
+	m_pSettingsGrid			= FrameworkElement::FindName<Grid>("SettingsGrid");
+	m_pKeyBindingsGrid		= FrameworkElement::FindName<Grid>("KeyBindingsGrid");
+
+	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
+	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
+
+	SetDefaultSettings();
+}
+
+void HUDGUI::SetDefaultSettings()
+{
+	// Set inital volume
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	NS_ASSERT(pVolumeSlider);
+	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
+	pVolumeSlider->SetValue(volume);
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	SetDefaultKeyBindings();
+
+	// Ray Tracing Toggle
+	m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+	CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	NS_ASSERT(pToggleRayTracing);
+	pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
+
+	// Mesh Shader Toggle
+	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	NS_ASSERT(pToggleMeshShader);
+	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
+}
+
+void HUDGUI::SetDefaultKeyBindings()
+{
+	TArray<EAction> actions = {
+		// Movement
+		EAction::ACTION_MOVE_FORWARD,
+		EAction::ACTION_MOVE_BACKWARD,
+		EAction::ACTION_MOVE_LEFT,
+		EAction::ACTION_MOVE_RIGHT,
+		EAction::ACTION_MOVE_JUMP,
+		EAction::ACTION_MOVE_SPRINT,
+
+		// Attack
+		EAction::ACTION_ATTACK_PRIMARY,
+		EAction::ACTION_ATTACK_SECONDARY,
+		EAction::ACTION_ATTACK_RELOAD,
+	};
+
+	for (EAction action : actions)
+	{
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(KeyToString(key));
+		}
+		else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(ButtonToString(mouseButton));
+		}
+	}
+}
+
+void HUDGUI::SetRenderStagesInactive()
+{
+	/*
+	* Inactivate all rendering when entering main menu
+	*OBS! At the moment, sleeping doesn't work correctly and needs a fix
+	* */
+	DisablePlaySessionsRenderstages();
+}
+
+bool HUDGUI::KeyboardCallback(const LambdaEngine::KeyPressedEvent& event)
+{
+	if (m_ListenToCallbacks)
+	{
+		LambdaEngine::String keyStr = KeyToString(event.Key);
+
+		m_pSetKeyButton->SetContent(keyStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = keyStr;
+
+		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
+
+		return true;
+	}
+	else if (event.Key == EKey::KEY_ESCAPE)
+	{
+		ToggleEscapeMenu();
+
+		return true;
+	}
+
+	return false;
+}
+
+bool HUDGUI::MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event)
+{
+	if (m_ListenToCallbacks)
+	{
+		LambdaEngine::String mouseButtonStr = ButtonToString(event.Button);
+
+		m_pSetKeyButton->SetContent(mouseButtonStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = mouseButtonStr;
+
+		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
+
+		return true;
+	}
+
+	return false;
 }
 
 void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)

@@ -19,9 +19,9 @@ namespace LambdaEngine
 	Noesis::Ptr<Noesis::IView> GUIApplication::s_pView = nullptr;
 	GUIRenderer* GUIApplication::s_pRenderer = nullptr;
 
-	NoesisApp::LocalXamlProvider*		GUIApplication::m_pXAMLProvider		= nullptr;
-	NoesisApp::LocalFontProvider*		GUIApplication::m_pFontProvider		= nullptr;
-	NoesisApp::LocalTextureProvider*	GUIApplication::m_pTextureProvider	= nullptr;
+	NoesisApp::LocalXamlProvider*		GUIApplication::s_pXAMLProvider		= nullptr;
+	NoesisApp::LocalFontProvider*		GUIApplication::s_pFontProvider		= nullptr;
+	NoesisApp::LocalTextureProvider*	GUIApplication::s_pTextureProvider	= nullptr;
 
 	bool GUIApplication::Init()
 	{
@@ -65,9 +65,9 @@ namespace LambdaEngine
 
 		SAFEDELETE(s_pRenderer);
 		
-		m_pXAMLProvider->Release();
-		m_pFontProvider->Release();
-		m_pTextureProvider->Release();
+		s_pXAMLProvider->Release();
+		s_pFontProvider->Release();
+		s_pTextureProvider->Release();
 		Noesis::GUI::Shutdown();
 
 		return true;
@@ -99,15 +99,15 @@ namespace LambdaEngine
 		// Init 26/10
 		Noesis::GUI::Init("IbexOmega", "pafzHzrv8x8dIux79u3WNnpctU8qFestYmp/4JUmJ9C3TcQj");
 
-		m_pXAMLProvider		= new NoesisApp::LocalXamlProvider("../Assets/NoesisGUI/Xaml");
-		m_pFontProvider		= new NoesisApp::LocalFontProvider("../Assets/NoesisGUI/Fonts");
-		m_pTextureProvider	= new NoesisApp::LocalTextureProvider("../Assets/NoesisGUI/Textures");
+		s_pXAMLProvider		= new NoesisApp::LocalXamlProvider("../Assets/NoesisGUI/Xaml");
+		s_pFontProvider		= new NoesisApp::LocalFontProvider("../Assets/NoesisGUI/Fonts");
+		s_pTextureProvider	= new NoesisApp::LocalTextureProvider("../Assets/NoesisGUI/Textures");
 
 		//Application Resources
 		NoesisApp::SetThemeProviders(
-			m_pXAMLProvider,
-			m_pFontProvider,
-			m_pTextureProvider);
+			s_pXAMLProvider,
+			s_pFontProvider,
+			s_pTextureProvider);
 
 		Noesis::GUI::LoadApplicationResources("Theme/NoesisTheme.DarkBlue.xaml");
 
