@@ -70,6 +70,7 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplySettingsClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelSettingsClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeKeyBindingsClick);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnVolumeSliderChanged);
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyKeyBindingsClick);
@@ -314,6 +315,18 @@ void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 
 	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pKeyBindingsGrid);
+}
+
+void HUDGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	// Update volume for easier changing of it. Do not save it however as that should
+	// only be done when the user presses "Apply"
+
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
 }
 
 void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -727,7 +740,7 @@ void HUDGUI::SetDefaultSettings()
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
-	pVolumeSlider->SetValue(volume);
+	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	SetDefaultKeyBindings();

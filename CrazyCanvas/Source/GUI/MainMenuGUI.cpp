@@ -311,7 +311,7 @@ void MainMenuGUI::SetDefaultSettings()
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
-	volumeSlider->SetValue(volume * volumeSlider->GetMaximum());
+	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	SetDefaultKeyBindings();
