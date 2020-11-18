@@ -51,19 +51,21 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 	ECSCore* pECS = ECSCore::GetInstance();
 	float32 dt = (float32)deltaTime.AsSeconds();
 
-	const ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-	ComponentArray<CharacterColliderComponent>* pCharacterColliders = pECS->GetComponentArray<CharacterColliderComponent>();
-	ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	const ComponentArray<PacketComponent<PacketPlayerActionResponse>>* pPacketComponents = pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
+	const ComponentArray<NetworkPositionComponent>* pNetPosComponents						= pECS->GetComponentArray<NetworkPositionComponent>();
+	ComponentArray<CharacterColliderComponent>* pCharacterColliders							= pECS->GetComponentArray<CharacterColliderComponent>();
+	ComponentArray<VelocityComponent>* pVelocityComponents									= pECS->GetComponentArray<VelocityComponent>();
+	const ComponentArray<PositionComponent>* pPositionComponents							= pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>* pRotationComponents									= pECS->GetComponentArray<RotationComponent>();
+	const ComponentArray<PacketComponent<PacketPlayerActionResponse>>* pPacketComponents	= pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
 
 	for (Entity entity : m_Entities)
 	{
-		const NetworkPositionComponent& constNetPosComponent = pNetPosComponents->GetConstData(entity);
-		const PositionComponent& positionComponent = pPositionComponents->GetConstData(entity);
-		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entity);
-		const PacketComponent<PacketPlayerActionResponse>& packetComponent = pPacketComponents->GetConstData(entity);
+		const NetworkPositionComponent& constNetPosComponent	= pNetPosComponents->GetConstData(entity);
+		const PositionComponent& positionComponent				= pPositionComponents->GetConstData(entity);
+		VelocityComponent& velocityComponent					= pVelocityComponents->GetData(entity);
+		CharacterColliderComponent& characterColliderComponent	= pCharacterColliders->GetData(entity);
+
+		const PacketComponent<PacketPlayerActionResponse>& packetComponent	= pPacketComponents->GetConstData(entity);
 
 		const TArray<PacketPlayerActionResponse>& gameStates = packetComponent.GetPacketsReceived();
 
@@ -91,12 +93,12 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 
 				velocityComponent.Velocity = gameState.Velocity;
 
-				CharacterControllerHelper::TickForeignCharacterController(dt, entity, pCharacterColliders, pNetPosComponents, pVelocityComponents);
+				CharacterControllerHelper::TickForeignCharacterController(dt, characterColliderComponent, constNetPosComponent, velocityComponent);
 			}
 		}
 		else //Data does not exist for the current frame :(
 		{
-			velocityComponent.Velocity.y -= GRAVITATIONAL_ACCELERATION * dt;
+			CharacterControllerHelper::ApplyGravity(dt, velocityComponent.Velocity);
 
 			NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
 			netPosComponent.PositionLast = positionComponent.Position;
@@ -104,7 +106,7 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 			netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 			netPosComponent.Dirty = true;
 
-			CharacterControllerHelper::TickForeignCharacterController(dt, entity, pCharacterColliders, pNetPosComponents, pVelocityComponents);
+			CharacterControllerHelper::TickForeignCharacterController(dt, characterColliderComponent, constNetPosComponent, velocityComponent);
 		}
 	}
 }

@@ -1,4 +1,5 @@
 #include "World/Player/PlayerActionSystem.h"
+#include "World/Player/PlayerSettings.h"
 
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
@@ -94,41 +95,39 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 	return false;
 }
 
-void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, glm::vec3& result)
+void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity)
 {
 	bool horizontalMovement = deltaAction.x != 0 || deltaAction.z != 0;
 	bool verticalMovement = deltaAction.y != 0;
-	bool anyMovement = horizontalMovement || verticalMovement;
 
-	if (!Match::HasBegun() || !anyMovement)
+	if (!Match::HasBegun())
 	{
-		result.x = 0.0f;
-		result.z = 0.0f;
+		velocity.x = 0.0f;
+		velocity.z = 0.0f;
 		return;
 	}
 
 	if (horizontalMovement)
 	{
-		float32 moveSpeed = 4.0f;
 		glm::vec3 currentVelocity;
 		currentVelocity		= rotation * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
 		currentVelocity.y	= 0.0f;
 		currentVelocity		= glm::normalize(currentVelocity);
-		currentVelocity		*= moveSpeed;
+		currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking));
 
-		result.x = currentVelocity.x;
-		result.z = currentVelocity.z;
+		velocity.x = currentVelocity.x;
+		velocity.z = currentVelocity.z;
 	}
 	else
 	{
-		result.x = 0.0f;
-		result.z = 0.0f;
+		float32 relativeVelocity = 1.0f / (1.0f + PLAYER_DRAG * dt);
+		velocity.x *= relativeVelocity;
+		velocity.z *= relativeVelocity;
 	}
 
 	if (verticalMovement)
 	{
-		float32 jumpSpeed = 5.0f;
-		result.y = result.y * float32(1 - deltaAction.y) + jumpSpeed * float32(deltaAction.y);
+		velocity.y = velocity.y * float32(1 - deltaAction.y) + PLAYER_JUMP_SPEED * float32(deltaAction.y);
 	}
 }
 

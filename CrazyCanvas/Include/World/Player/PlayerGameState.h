@@ -10,6 +10,7 @@ struct PlayerGameState
 	glm::vec3 Velocity;
 	glm::quat Rotation;
 	glm::i8vec3 DeltaAction;
+	bool Walking;
 };
 
 struct GameStateComparator

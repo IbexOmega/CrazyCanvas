@@ -325,7 +325,7 @@ void MainMenuGUI::SetDefaultKeyBindings()
 		EAction::ACTION_MOVE_LEFT,
 		EAction::ACTION_MOVE_RIGHT,
 		EAction::ACTION_MOVE_JUMP,
-		EAction::ACTION_MOVE_SPRINT,
+		EAction::ACTION_MOVE_WALK,
 
 		// Attack
 		EAction::ACTION_ATTACK_PRIMARY,

@@ -70,6 +70,7 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		const PositionComponent& constPositionComponent = pPositionComponents->GetConstData(entityPlayer);
 		VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 		const RotationComponent& constRotationComponent = pRotationComponents->GetConstData(entityPlayer);
+		CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entityPlayer);
 
 		const TArray<PacketPlayerAction>& gameStates = playerActionComponent.GetPacketsReceived();
 		for (const PacketPlayerAction& gameState : gameStates)
@@ -85,8 +86,8 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 				rotationComponent.Dirty			= true;
 			}
 
-			PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, velocityComponent.Velocity);
-			CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+			PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity);
+			CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, netPosComponent, velocityComponent);
 
 			PacketPlayerActionResponse packet;
 			packet.SimulationTick	= gameState.SimulationTick;
