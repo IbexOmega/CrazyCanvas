@@ -1,4 +1,5 @@
 #include "Resources/ResourceLoader.h"
+#include "Resources/ResourcePaths.h"
 
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
@@ -677,7 +678,7 @@ namespace LambdaEngine
 		bufferDesc.SizeInBytes	= textureSize;
 
 		TSharedRef<Buffer> stagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		if (stagingBuffer)
+		if (!stagingBuffer)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to create staging buffer for \"%s\"", name.c_str());
 			return nullptr;
@@ -1309,7 +1310,7 @@ namespace LambdaEngine
 
 			// Create Shaders
 			s_pCubeMapGenShader = LoadShaderFromFile(
-				"Skybox/CubemapGen.comp", 
+				String(SHADER_DIR) + "Skybox/CubemapGen.comp",
 				FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
 				EShaderLang::SHADER_LANG_GLSL, 
 				"main");

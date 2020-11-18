@@ -1,5 +1,6 @@
 #pragma once
 #include "ResourceLoader.h"
+#include "ResourcePaths.h"
 
 #include "Containers/TSet.h"
 #include "Containers/THashTable.h"
@@ -28,13 +29,6 @@ namespace LambdaEngine
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_MASK_MAP		= GUID_TEXTURE_DEFAULT_NORMAL_MAP + 1;
 
 	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_DEFAULT_MASK_MAP + 1;
-
-	constexpr const char* SCENE_DIR			= "../Assets/Scenes/";
-	constexpr const char* MESH_DIR			= "../Assets/Meshes/";
-	constexpr const char* ANIMATIONS_DIR	= MESH_DIR; // Equal to mesh dir for now
-	constexpr const char* TEXTURE_DIR		= "../Assets/Textures/";
-	constexpr const char* SHADER_DIR		= "../Assets/Shaders/";
-	constexpr const char* SOUND_DIR			= "../Assets/Sounds/";
 
 	struct SceneLoadDesc
 	{
