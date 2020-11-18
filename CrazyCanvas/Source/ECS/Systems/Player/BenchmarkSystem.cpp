@@ -103,7 +103,7 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		//Calculate Weapon Fire Properties (Position, Velocity and Team)
 		glm::vec3 firePosition;
 		glm::vec3 fireVelocity;
-		uint32 playerTeam;
+		uint8 playerTeam;
 		weaponSystem.CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
 
 		weaponSystem.Fire(weaponEntity, weaponComponent, EAmmoType::AMMO_TYPE_PAINT, firePosition, fireVelocity, playerTeam, 0);

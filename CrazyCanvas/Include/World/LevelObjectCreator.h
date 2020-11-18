@@ -82,7 +82,7 @@ struct CreateProjectileDesc
 	glm::vec3	FirePosition;
 	glm::vec3	InitalVelocity;
 	int32		PlayerFiredNetworkUID = -1;
-	uint32		TeamIndex;
+	uint8		TeamIndex;
 	LambdaEngine::Entity			WeaponOwner;
 	LambdaEngine::CollisionCallback	Callback;
 	LambdaEngine::MeshComponent		MeshComponent;

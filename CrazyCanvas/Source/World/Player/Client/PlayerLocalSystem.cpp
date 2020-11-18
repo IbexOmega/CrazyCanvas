@@ -101,7 +101,7 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 	mutableNetPosComponent.PositionLast = positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
 	mutableNetPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 
-	DoAction(dt, positionComponent, velocityComponent, audibleComponent, characterColliderComponent, rotationComponent, pGameState);
+	DoAction(dt, velocityComponent, audibleComponent, characterColliderComponent, rotationComponent, pGameState);
 
 	CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, networkPositionComponent, velocityComponent);
 
@@ -111,7 +111,6 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 
 void PlayerLocalSystem::DoAction(
 	float32 dt,
-	const LambdaEngine::PositionComponent& positionComponent,
 	LambdaEngine::VelocityComponent& velocityComponent,
 	LambdaEngine::AudibleComponent& audibleComponent,
 	LambdaEngine::CharacterColliderComponent& characterColliderComponent,

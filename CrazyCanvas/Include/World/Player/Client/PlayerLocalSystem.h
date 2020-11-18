@@ -29,7 +29,6 @@ public:
 	void TickLocalPlayerAction(float32 dt, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
 	void DoAction(
 		float32 dt,
-		const LambdaEngine::PositionComponent& positionComponent,
 		LambdaEngine::VelocityComponent& velocityComponent,
 		LambdaEngine::AudibleComponent& audibleComponent,
 		LambdaEngine::CharacterColliderComponent& characterColliderComponent,
