@@ -23,7 +23,7 @@ private:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 public:
-	static void ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result);
+	static void ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, glm::vec3& result);
 	static void SetMouseEnabled(bool isEnabled);
 
 private:

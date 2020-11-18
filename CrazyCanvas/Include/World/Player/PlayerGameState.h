@@ -9,8 +9,7 @@ struct PlayerGameState
 	glm::vec3 Position;
 	glm::vec3 Velocity;
 	glm::quat Rotation;
-	int8 DeltaForward = 0;
-	int8 DeltaLeft = 0;
+	glm::i8vec3 DeltaAction;
 };
 
 struct GameStateComparator

@@ -1106,7 +1106,7 @@ bool LevelObjectCreator::CreateProjectile(
 	{
 		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
 		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
-				.HitMask = 0xFF
+				.HitMask = 0x02
 			});
 
 		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{

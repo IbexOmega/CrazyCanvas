@@ -109,6 +109,8 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		}
 		else if(netPosComponent.Dirty)
 		{
+
+			PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, velocityComponent.Velocity);
 			CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 		}
 	}

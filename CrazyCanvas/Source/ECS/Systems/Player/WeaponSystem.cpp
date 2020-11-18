@@ -233,7 +233,7 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	playerRotation.z = 0;
 	playerRotation = glm::normalize(playerRotation);
 
-	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.2f;
+	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.5f;
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
 	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;

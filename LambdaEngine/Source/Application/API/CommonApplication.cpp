@@ -33,7 +33,7 @@ namespace LambdaEngine
 
 		// Create mainwindow
 		WindowDesc windowDesc = { };
-		windowDesc.Title 	= "Lambda Engine";
+		windowDesc.Title 	= "Crazy Canvas";
 		windowDesc.Width 	= static_cast<uint16>(EngineConfig::GetIntArrayProperty(EConfigOption::CONFIG_OPTION_WINDOW_SIZE).GetFront());
 		windowDesc.Height 	= static_cast<uint16>(EngineConfig::GetIntArrayProperty(EConfigOption::CONFIG_OPTION_WINDOW_SIZE).GetBack());
 		windowDesc.Style	=
