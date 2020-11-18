@@ -370,6 +370,8 @@ namespace LambdaEngine
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
 				const ComponentArray<WeaponComponent>* pWeaponComponents = pECSCore->GetComponentArray<WeaponComponent>();
 
+				LOG_MESSAGE("JA FIM: %u", m_DrawCount);
+
 				m_PlayerData.Clear();
 				TArray<WeaponData> weapons;
 
@@ -378,7 +380,7 @@ namespace LambdaEngine
 					constexpr DescriptorSetIndex setIndex = 2U;
 
 					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList2[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 2 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+					m_DescriptorSetList2[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 2 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
 
 					if (m_DescriptorSetList2[d] != nullptr)
 					{
@@ -476,7 +478,7 @@ namespace LambdaEngine
 					constexpr DescriptorSetIndex setIndex = 3U;
 
 					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
 
 					if (m_DescriptorSetList3[d] != nullptr)
 					{
@@ -531,7 +533,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs");
+				m_DrawCount = 0;
 			}
 		}
 	}
@@ -540,9 +542,6 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
-
-		if (Sleeping)
-			return;
 
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
@@ -576,19 +575,23 @@ namespace LambdaEngine
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		pCommandList->SetViewports(&viewport, 0, 1);
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		if (m_DrawCount > 0)
+		if (!Sleeping)
 		{
-			// Render enemy with no culling to see backface of paint
-			bool renderEnemies = true;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
+			pCommandList->SetViewports(&viewport, 0, 1);
+			pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-			// Team members are transparent, Front Culling- and Back Culling is needed
-			renderEnemies = false;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			if (m_DrawCount > 0)
+			{
+				// Render enemy with no culling to see backface of paint
+				bool renderEnemies = true;
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
+
+				// Team members are transparent, Front Culling- and Back Culling is needed
+				renderEnemies = false;
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			}
 		}
 
 		pCommandList->EndRenderPass();

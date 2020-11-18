@@ -1337,13 +1337,6 @@ namespace LambdaEngine
 
 			meshAndInstancesIt->second.ExtensionGroups.PushBack(pExtensionGroup);
 
-			if (meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet != nullptr)
-			{
-				m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
-			}
-
-			meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
-
 			WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
 		}
 
@@ -1360,7 +1353,6 @@ namespace LambdaEngine
 
 				Texture* pTexture			= comp.pTexture;
 				TextureView* pTextureView	= comp.pTextureView;
-				Sampler* pNearestSampler	= Sampler::GetNearestSampler();
 
 				// If the texture has not been added before, update resource
 				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
@@ -1375,17 +1367,7 @@ namespace LambdaEngine
 					m_PaintMaskTextures.PushBack(pTexture);
 					m_PaintMaskTextureViews.PushBack(pTextureView);
 
-					ResourceUpdateDesc unwrappedTextureUpdate = {};
-					unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
-					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
-					unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
-					unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
-					unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
-					unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
-					unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
-					unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
-
-					RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
+					m_RayTracingPaintMaskTexturesResourceDirty = true;
 				}
 			}
 		}
@@ -1400,9 +1382,13 @@ namespace LambdaEngine
 			RayTracedComponent rayTracedComponent = {};
 			ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent);
 
+			uint32 shiftedMaterialIndex	= (materialIndex & 0xFF) << 8;
+			uint32 paintIndex			= m_PaintMaskTextures.GetSize() - 1;
+			uint32 shiftedPaintIndex	= hasPaintMask ? (std::max(0u, paintIndex)) & 0xFF : 0;
+
 			uint32 customIndex =
-				((materialIndex & 0xFF) << 8) |
-				(hasPaintMask ? (std::max(0u, m_PaintMaskTextures.GetSize() - 1)) & 0xFF : 0);
+				shiftedMaterialIndex |
+				shiftedPaintIndex;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
 			ASInstanceDesc asInstanceDesc =
@@ -1415,6 +1401,11 @@ namespace LambdaEngine
 			};
 
 			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
+
+			if (hasPaintMask)
+			{
+				m_PaintMaskASInstanceIndices[paintIndex].PushBack(asInstanceIndex);
+			}
 
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
@@ -1482,9 +1473,11 @@ namespace LambdaEngine
 
 		if (m_RayTracingEnabled)
 		{
-			// Remove ASInstance
+			//Extract Paint Texture Data (stored in CustomIndex) before removing the ASInstance
 			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceIndex];
 			const uint32 textureIndex = m_pASBuilder->GetInstance(asInstanceIndex).CustomIndex & 0xFF;
+
+			// Remove ASInstance
 			m_pASBuilder->RemoveInstance(asInstanceIndex);
 			
 			//Swap Removed with Back
@@ -1492,39 +1485,41 @@ namespace LambdaEngine
 			meshAndInstancesIt->second.ASInstanceIndices.PopBack();
 
 			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
-			ECSCore* pECS = ECSCore::GetInstance();
-			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
-			if (pMeshPaintComponents->HasComponent(entity))
+			if (auto meshPaintInstancesIt = m_PaintMaskASInstanceIndices.find(textureIndex); meshPaintInstancesIt != m_PaintMaskASInstanceIndices.end())
 			{
-				uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
-				m_PaintMaskTextures[textureIndex]		= m_PaintMaskTextures.GetBack();
-				m_PaintMaskTextures.PopBack();
-				m_PaintMaskTextureViews[textureIndex]	= m_PaintMaskTextureViews.GetBack();
-				m_PaintMaskTextureViews.PopBack();
+				if (auto removedMeshPaintInstanceIt = std::find(meshPaintInstancesIt->second.Begin(), meshPaintInstancesIt->second.End(), asInstanceIndex);
+					removedMeshPaintInstanceIt != meshPaintInstancesIt->second.End())
+				{
+					uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
+					m_PaintMaskTextures[textureIndex] = m_PaintMaskTextures.GetBack();
+					m_PaintMaskTextures.PopBack();
+					m_PaintMaskTextureViews[textureIndex] = m_PaintMaskTextureViews.GetBack();
+					m_PaintMaskTextureViews.PopBack();
 
-				// Update custom indicies
-				m_pASBuilder->UpdateInstances(
-					[changedIndex, textureIndex](AccelerationStructureInstance& asInstance)
+					meshPaintInstancesIt->second.Erase(removedMeshPaintInstanceIt);
+
+					TArray<uint32>& asInstancesToBeUpdated = m_PaintMaskASInstanceIndices[changedIndex];
+					for (uint32 asInstanceIndexToBeUpdated : asInstancesToBeUpdated)
 					{
-						if (changedIndex == (asInstance.CustomIndex & 0xFF))
-						{
-							asInstance.CustomIndex &= 0xFFFF00;
-							asInstance.CustomIndex |= textureIndex;
-						}
-					});
+						m_pASBuilder->UpdateInstance(
+							asInstanceIndexToBeUpdated,
+							[textureIndex](AccelerationStructureInstance& asInstance)
+							{
+								asInstance.CustomIndex &= 0xFFFF00;
+								asInstance.CustomIndex |= textureIndex;
+							});
 
-				Sampler* pNearestSampler = Sampler::GetNearestSampler();
-				ResourceUpdateDesc unwrappedTextureUpdate = {};
-				unwrappedTextureUpdate.ResourceName = "PAINT_MASK_TEXTURES";
-				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
-				unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
-				unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
-				unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
-				unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= &pNearestSampler;
-				unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
-				unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
+						meshPaintInstancesIt->second.PushBack(asInstanceIndexToBeUpdated);
+					}
+					asInstancesToBeUpdated.Clear();
 
-				RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&unwrappedTextureUpdate);
+					if (meshPaintInstancesIt->second.IsEmpty())
+					{
+						m_PaintMaskASInstanceIndices.erase(meshPaintInstancesIt);
+					}
+
+					m_RayTracingPaintMaskTexturesResourceDirty = true;
+				}
 			}
 		}
 
@@ -1595,6 +1590,7 @@ namespace LambdaEngine
 
 			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
 			{
+				VALIDATE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 				DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
@@ -1602,9 +1598,6 @@ namespace LambdaEngine
 
 				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
 				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
-
-				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
-				m_ResourcesToRemove[m_ModFrameIndex].PushBack(meshAndInstancesIt->second.pStagingMatrixBuffer);
 
 				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
 				DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
@@ -1905,6 +1898,12 @@ namespace LambdaEngine
 			}
 		}
 
+		if (meshEntry.pDrawArgDescriptorExtensionsSet != nullptr)
+		{
+			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshEntry.pDrawArgDescriptorExtensionsSet);
+		}
+
+		meshEntry.pDrawArgDescriptorExtensionsSet = m_pRenderGraph->CreateDrawArgExtensionDataDescriptorSet(nullptr);
 		meshEntry.pDrawArgDescriptorExtensionsSet->WriteTextureDescriptors(
 			extensionTextureViews.GetData(),
 			extensionSamplers.GetData(),
@@ -2473,10 +2472,28 @@ namespace LambdaEngine
 			m_PaintMaskColorsResourceDirty = false;
 		}
 
+		if (m_RayTracingPaintMaskTexturesResourceDirty)
+		{
+			ResourceUpdateDesc unwrappedTextureUpdate = {};
+			unwrappedTextureUpdate.ResourceName												= "PAINT_MASK_TEXTURES";
+			unwrappedTextureUpdate.ExternalTextureUpdate.ppTextures							= m_PaintMaskTextures.GetData();
+			unwrappedTextureUpdate.ExternalTextureUpdate.ppTextureViews						= m_PaintMaskTextureViews.GetData();
+			unwrappedTextureUpdate.ExternalTextureUpdate.ppPerSubImageTextureViews			= nullptr;
+			unwrappedTextureUpdate.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= 0;
+			unwrappedTextureUpdate.ExternalTextureUpdate.ppSamplers							= Sampler::GetNearestSamplerToBind();
+			unwrappedTextureUpdate.ExternalTextureUpdate.TextureCount						= m_PaintMaskTextures.GetSize();
+			unwrappedTextureUpdate.ExternalTextureUpdate.SamplerCount						= 1;
+
+			m_pRenderGraph->UpdateResource(&unwrappedTextureUpdate);
+
+			m_RayTracingPaintMaskTexturesResourceDirty = false;
+		}
+
 		// Update Particle Resources
 		{
 			m_ParticleManager.UpdateResources(m_pRenderGraph);
 		}
+
 
 		if (m_MaterialsResourceDirty)
 		{

@@ -12,6 +12,7 @@
 #include <regex>
 #include <imgui.h>
 
+
 namespace LambdaEngine
 {
 	bool GameConsole::Init()
@@ -829,7 +830,7 @@ namespace LambdaEngine
 		{
 			m_IsActive = !m_IsActive;
 			if (m_IsActive)
-				Input::PushInputMode(EInputLayer::GUI);
+				Input::PushInputMode(EInputLayer::DEBUG);
 			else
 				Input::PopInputMode();
 			return true;
