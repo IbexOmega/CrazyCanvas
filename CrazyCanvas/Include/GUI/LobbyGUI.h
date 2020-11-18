@@ -41,6 +41,12 @@ public:
 		LambdaEngine::TArray<LambdaEngine::String> settingValues,
 		uint8 defaultIndex);
 
+	void AddSettingColorBox(
+		const LambdaEngine::String& settingKey,
+		const LambdaEngine::String& settingText,
+		const LambdaEngine::TArray<glm::vec3>& settingColors,
+		uint8 defaultIndex);
+
 	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::String& settingValue);
 
 	// Noesis events
@@ -57,6 +63,7 @@ private:
 	// Helpers
 	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* pColumnCollection, float width);
 	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
+	void AddColorBoxWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const glm::vec3& color);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* pComp);
 	void UnregisterName(const LambdaEngine::String& name);
 	void CreateHostIcon(Noesis::Panel* pParent);
@@ -81,11 +88,13 @@ private:
 	bool m_IsInitiated;
 
 private:
-	static constexpr char* SETTING_SERVER_NAME	= "SERVER_NAME";
-	static constexpr char* SETTING_MAP			= "MAP";
-	static constexpr char* SETTING_MAX_TIME		= "MAX_TIME";
-	static constexpr char* SETTING_FLAGS_TO_WIN = "FLAGS_TO_WIN";
-	static constexpr char* SETTING_MAX_PLAYERS	= "MAX_PLAYERS";
-	static constexpr char* SETTING_VISIBILITY	= "VISIBILITY";
-	static constexpr char* SETTING_CHANGE_TEAM	= "CHANGE_TEAM";
+	static constexpr char* SETTING_SERVER_NAME			= "SERVER_NAME";
+	static constexpr char* SETTING_MAP					= "MAP";
+	static constexpr char* SETTING_MAX_TIME				= "MAX_TIME";
+	static constexpr char* SETTING_FLAGS_TO_WIN			= "FLAGS_TO_WIN";
+	static constexpr char* SETTING_MAX_PLAYERS			= "MAX_PLAYERS";
+	static constexpr char* SETTING_VISIBILITY			= "VISIBILITY";
+	static constexpr char* SETTING_CHANGE_TEAM			= "CHANGE_TEAM";
+	static constexpr char* SETTING_CHANGE_TEAM_0_COLOR	= "CHANGE_TEAM_0_COLOR";
+	static constexpr char* SETTING_CHANGE_TEAM_1_COLOR	= "CHANGE_TEAM_1_COLOR";
 };

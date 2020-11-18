@@ -110,7 +110,7 @@ void SandboxState::Init()
 	}
 
 	// Set Team Colors
-	RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
+	RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
 
 	{
 		GUID_Lambda characterMeshGUID;

@@ -16,5 +16,7 @@ struct PacketGameSettings
 	uint8 FlagsToWin		= 5;
 	bool Visible			= false;
 	bool ChangeTeam			= false;
+	uint8 TeamColor0		= 0;
+	uint8 TeamColor1		= 1;
 };
 #pragma pack(pop)

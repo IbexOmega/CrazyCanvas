@@ -16,6 +16,8 @@
 
 #include "World/LevelManager.h"
 
+#include "Teams/TeamHelper.h"
+
 using namespace Noesis;
 using namespace LambdaEngine;
 
@@ -47,6 +49,8 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 {
 	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
 
+	TArray<glm::vec3> colors = TeamHelper::GetAllAvailableColors();
+
 	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_GameSettings.ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
 	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
@@ -54,6 +58,9 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",			{ "4", "6", "8", "10" }, 3);
 	/*AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
+	AddSettingColorBox(SETTING_CHANGE_TEAM_0_COLOR, "Team Color 0", colors, 0);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team Color 1", colors, 1);
+
 
 	m_IsInitiated = true;
 }
@@ -255,6 +262,26 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		Label* pSettingChangeTeam = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_client").c_str());
 		if (pSettingChangeTeam)
 			pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
+		
+		TextBlock* pSettingChangeTeamColor0 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_0_COLOR) + "_client").c_str());
+		if (pSettingChangeTeamColor0)
+		{
+			glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor0);
+
+			Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+			pBrush->SetColor(Color(color.r, color.g, color.b));
+			pSettingChangeTeamColor0->SetBackground(pBrush);
+		}
+
+		TextBlock* pSettingChangeTeamColor1 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_1_COLOR) + "_client").c_str());
+		if (pSettingChangeTeamColor1)
+		{
+			glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor1);
+
+			Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+			pBrush->SetColor(Color(color.r, color.g, color.b));
+			pSettingChangeTeamColor1->SetBackground(pBrush);
+		}
 	} 
 	else 
 	{
@@ -296,6 +323,36 @@ void LobbyGUI::AddSettingComboBox(
 	settingComboBox->SetSelectedIndex(defaultIndex);
 }
 
+void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::TArray<glm::vec3>& settingColors, uint8 defaultIndex)
+{
+	// Add setting text
+	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
+
+	// Add setting client text (default value is set as content)
+	AddColorBoxWithStyle(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientStyle", TeamHelper::GetAvailableColor(defaultIndex));
+
+	// Add setting combobox for colors
+	Ptr<ComboBox> settingComboBox = *new ComboBox();
+	Style* pStyle = FrameworkElement::FindResource<Style>("SettingsHostStyle");
+	settingComboBox->SetStyle(pStyle);
+	settingComboBox->SetName((settingKey + "_host").c_str());
+	settingComboBox->SelectionChanged() += MakeDelegate(this, &LobbyGUI::OnComboBoxSelectionChanged);
+	RegisterName(settingComboBox->GetName(), settingComboBox);
+	m_pSettingsHostStackPanel->GetChildren()->Add(settingComboBox);
+
+	for (auto& color : settingColors)
+	{
+		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+		pBrush->SetColor(Color(color.r, color.g, color.b));
+
+		Ptr<TextBlock> settingTextBlock = *new TextBlock();
+		settingTextBlock->SetText("");
+		settingTextBlock->SetBackground(pBrush);
+		settingComboBox->GetItems()->Add(settingTextBlock);
+	}
+	settingComboBox->SetSelectedIndex(defaultIndex);
+
+}
 
 void LobbyGUI::AddSettingTextBox(
 	const LambdaEngine::String& settingKey,
@@ -416,6 +473,25 @@ void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const 
 	{
 		m_GameSettings.ChangeTeam = textSelected == "True";
 	}
+	else if (setting == SETTING_CHANGE_TEAM_0_COLOR || setting == SETTING_CHANGE_TEAM_1_COLOR)
+	{
+		// Update combobox display color
+		glm::vec3 color = TeamHelper::GetAvailableColor(indexSelected);
+		
+		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+		pBrush->SetColor(Color(color.r, color.g, color.b));
+
+		pComboBox->SetBackground(pBrush);
+
+		if (setting == SETTING_CHANGE_TEAM_0_COLOR)
+		{
+			m_GameSettings.TeamColor0 = (uint8)indexSelected;
+		}
+		else
+		{
+			m_GameSettings.TeamColor1 = (uint8)indexSelected;
+		}
+	}
 
 	SendGameSettings();
 }
@@ -445,7 +521,7 @@ void LobbyGUI::AddColumnDefinitionStar(ColumnDefinitionCollection* columnCollect
 	columnCollection->Add(col);
 }
 
-void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* parent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content)
+void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content)
 {
 	Ptr<Label> label = *new Label();
 
@@ -460,7 +536,29 @@ void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel
 
 	Style* pStyle = FrameworkElement::FindResource<Style>(styleKey.c_str());
 	label->SetStyle(pStyle);
-	parent->GetChildren()->Add(label);
+	pParent->GetChildren()->Add(label);
+}
+
+void LobbyGUI::AddColorBoxWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey,const glm::vec3& color)
+{
+	Ptr<TextBlock> textBlock = *new TextBlock();
+
+	if (name != "")
+	{
+		textBlock->SetName(name.c_str());
+		RegisterName(name, textBlock);
+	}
+
+	// Temporary until textblock can be adjusted to fit
+	textBlock->SetText("---------------");
+
+	Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+	pBrush->SetColor(Color(color.r, color.g, color.b));
+	textBlock->SetBackground(pBrush);
+
+	Style* pStyle = FrameworkElement::FindResource<Style>(styleKey.c_str());
+	textBlock->SetStyle(pStyle);
+	pParent->GetChildren()->Add(textBlock);
 }
 
 void LobbyGUI::RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* comp)
