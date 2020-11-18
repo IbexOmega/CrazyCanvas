@@ -28,6 +28,7 @@ public:
 	void AddPlayer(const Player& player);
 	void RemovePlayer(const Player& player);
 	void UpdatePlayerReady(const Player& player);
+	void UpdatePlayerScore(const Player& player);
 	void UpdatePlayerPing(const Player& player);
 	void UpdatePlayerHost(const Player& player);
 	void WriteChatMessage(const ChatEvent& event);
@@ -57,6 +58,7 @@ private:
 	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* pColumnCollection, float width);
 	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* pComp);
+	void UnregisterName(const LambdaEngine::String& name);
 	void CreateHostIcon(Noesis::Panel* pParent);
 	Noesis::Grid* GetPlayerGrid(const Player& player);
 

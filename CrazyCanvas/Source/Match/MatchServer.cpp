@@ -263,7 +263,7 @@ void MatchServer::SpawnPlayer(const Player& player)
 	{
 		const TeamComponent& teamComponent = pTeamComponents->GetConstData(spawnPoint);
 
-		if (teamComponent.TeamIndex == m_NextTeamIndex)
+		if (teamComponent.TeamIndex == player.GetTeam())
 		{
 			const PositionComponent& positionComponent = pPositionComponents->GetConstData(spawnPoint);
 			position = positionComponent.Position + glm::vec3(0.0f, 1.0f, 0.0f);
@@ -274,11 +274,10 @@ void MatchServer::SpawnPlayer(const Player& player)
 
 	CreatePlayerDesc createPlayerDesc =
 	{
-		.ClientUID	= player.GetUID(),
+		.pPlayer	= &player,
 		.Position	= position,
 		.Forward	= forward,
 		.Scale		= glm::vec3(1.0f),
-		.TeamIndex	= m_NextTeamIndex,
 	};
 
 	TArray<Entity> createdPlayerEntities;
@@ -290,7 +289,6 @@ void MatchServer::SpawnPlayer(const Player& player)
 		packet.LevelObjectType	= ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 		packet.Position			= position;
 		packet.Forward			= forward;
-		packet.Player.TeamIndex = m_NextTeamIndex;
 
 		ComponentArray<ChildComponent>* pCreatedChildComponents = pECS->GetComponentArray<ChildComponent>();
 		for (Entity playerEntity : createdPlayerEntities)
@@ -306,8 +304,6 @@ void MatchServer::SpawnPlayer(const Player& player)
 	{
 		LOG_ERROR("[MatchServer]: Failed to create Player");
 	}
-
-	m_NextTeamIndex = (m_NextTeamIndex + 1) % 2;
 }
 
 void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
