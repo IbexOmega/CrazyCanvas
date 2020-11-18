@@ -269,9 +269,9 @@ namespace LambdaEngine
 		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
 		/*
-		* Set Paintmask colors (index 0 = team 0 & index = 1 = team 0)
+		* Set Paintmask colors (index 1 -> team 1 & index = 2 -> team 0)
 		*/
-		void SetPaintMaskColor(uint32 index, const glm::vec4& color);
+		void SetPaintMaskColor(uint32 index, const glm::vec3& color);
 
 		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
 		uint64			GetFrameIndex() const	 	{ return m_FrameIndex;		}
