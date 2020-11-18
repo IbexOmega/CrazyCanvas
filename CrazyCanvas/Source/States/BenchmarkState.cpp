@@ -42,6 +42,8 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 BenchmarkState::BenchmarkState()
 {
 	using namespace LambdaEngine;
@@ -315,16 +317,17 @@ bool BenchmarkState::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent
 
 		constexpr const uint32 playerCount = 9;
 
+		PlayerManagerClient::RegisterLocalPlayer("Benchmark", true);
+
 		CreatePlayerDesc createPlayerDesc =
 		{
-			.ClientUID			= event.pClient->GetUID(),
+			.pPlayer			= PlayerManagerClient::GetPlayerLocal(),
 			.IsLocal 			= false,
 			.PlayerNetworkUID 	= packet.NetworkUID,
 			.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 			.Position 			= packet.Position,
 			.Forward 			= glm::normalize(glm::vec3(0.1f, -1.0f, 0.0f)),
 			.Scale 				= glm::vec3(1.0f),
-			.TeamIndex 			= 0,
 			.pCameraDesc 		= &cameraDesc
 		};
 

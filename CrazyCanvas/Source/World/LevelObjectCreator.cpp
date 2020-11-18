@@ -652,6 +652,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 	const CreatePlayerDesc* pPlayerDesc = reinterpret_cast<const CreatePlayerDesc*>(pData);
 
+	const Player* pPlayer = pPlayerDesc->pPlayer;
+
 	ECSCore* pECS = ECSCore::GetInstance();
 	const Entity playerEntity = pECS->CreateEntity();
 	createdEntities.PushBack(playerEntity);
@@ -660,8 +662,6 @@ bool LevelObjectCreator::CreatePlayer(
 	const glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
 
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
-	EntityMaskManager::AddExtensionToEntity(playerEntity,		PlayerBaseComponent::Type(), nullptr);
-
 	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
 
@@ -678,7 +678,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<RotationComponent>(playerEntity,			RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
-	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
+	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
 	pECS->AddComponent<PacketComponent<PacketPlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PacketPlayerActionResponse>>(playerEntity, { });
 
@@ -711,7 +711,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
-	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayerDesc->TeamIndex });
+	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
 	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 256, 256, false));
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
@@ -923,7 +923,7 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });
 			pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 			pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
-			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->CreateAudioListener() });
+			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->GetAudioListener(false) });
 
 			const ViewProjectionMatricesComponent viewProjComp =
 			{
@@ -963,7 +963,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 
-	PlayerManagerBase::RegisterPlayerEntity(pPlayerDesc->ClientUID, playerEntity);
+	PlayerManagerBase::SetPlayerEntity(pPlayer, playerEntity);
 
 	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
 	D_LOG_INFO("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);

@@ -2,10 +2,11 @@
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 
-MultiplayerClient::MultiplayerClient() : 
+MultiplayerClient::MultiplayerClient() :
 	m_PlayerLocal(),
 	m_PlayerForeignSystem(),
-	m_NetworkPositionSystem()
+	m_NetworkPositionSystem(),
+	m_ReplaySystem()
 {
 }
 
