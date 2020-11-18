@@ -13,10 +13,11 @@ namespace LambdaEngine
 	{
 		TSharedRef<DescriptorSet> ds;
 
-		if (m_AvailableDescriptorSets.find(descriptorLayoutIndex) != m_AvailableDescriptorSets.end() && !m_AvailableDescriptorSets[descriptorLayoutIndex].IsEmpty())
+		if (auto availableDescriptorSetsIt = m_AvailableDescriptorSets.find(descriptorLayoutIndex);
+			availableDescriptorSetsIt != m_AvailableDescriptorSets.end() && !availableDescriptorSetsIt->second.IsEmpty())
 		{
-			ds = m_AvailableDescriptorSets[descriptorLayoutIndex].GetBack();
-			m_AvailableDescriptorSets[descriptorLayoutIndex].PopBack();
+			ds = availableDescriptorSetsIt->second.GetBack();
+			availableDescriptorSetsIt->second.PopBack();
 		}
 		else
 		{
@@ -29,28 +30,36 @@ namespace LambdaEngine
 			}
 		}
 
-		// Copy Descriptor set in use into Descriptor if it exists
-		uint32 inUseIndex = 0;
-		if (!m_InUseDescriptorSets[descriptorLayoutIndex].IsEmpty() && shouldCopy)
-		{
-			inUseIndex = m_InUseDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
-			if (inUseIndex < m_InUseDescriptorSets[descriptorLayoutIndex].GetSize())
-			{
-				RenderAPI::GetDevice()->CopyDescriptorSet(m_InUseDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
-			}
-		}
+		TArray<TSharedRef<DescriptorSet>>& newDescriptorSets = m_NewDescriptorSets[descriptorLayoutIndex];
 
-		if (!m_NewDescriptorSets[descriptorLayoutIndex].IsEmpty() && shouldCopy)
+		if (shouldCopy)
 		{
-			inUseIndex = m_NewDescriptorSets[descriptorLayoutIndex].GetSize() - 1;
-			if (inUseIndex < m_NewDescriptorSets[descriptorLayoutIndex].GetSize())
+			// Copy Descriptor set in use into Descriptor if it exists
+			uint32 inUseIndex = 0;
+
+			TArray<TSharedRef<DescriptorSet>>& inUseDescriptorSets = m_InUseDescriptorSets[descriptorLayoutIndex];
+	
+			if (!inUseDescriptorSets.IsEmpty())
 			{
-				RenderAPI::GetDevice()->CopyDescriptorSet(m_NewDescriptorSets[descriptorLayoutIndex][inUseIndex].Get(), ds.Get());
+				inUseIndex = inUseDescriptorSets.GetSize() - 1;
+				if (inUseIndex < inUseDescriptorSets.GetSize())
+				{
+					RenderAPI::GetDevice()->CopyDescriptorSet(inUseDescriptorSets[inUseIndex].Get(), ds.Get());
+				}
+			}
+			
+			if (!newDescriptorSets.IsEmpty())
+			{
+				inUseIndex = newDescriptorSets.GetSize() - 1;
+				if (inUseIndex < newDescriptorSets.GetSize())
+				{
+					RenderAPI::GetDevice()->CopyDescriptorSet(newDescriptorSets[inUseIndex].Get(), ds.Get());
+				}
 			}
 		}
 
 		// Track Descriptor sets in use
-		m_NewDescriptorSets[descriptorLayoutIndex].PushBack(ds);
+		newDescriptorSets.PushBack(ds);
 		m_DirtySetIndices.insert(descriptorLayoutIndex);
 
 		return ds;
@@ -66,18 +75,38 @@ namespace LambdaEngine
 		// Go through descriptorSet and see if they are still in use
 		for (auto& setIndexArray : m_UnavailableDescriptorSets)
 		{
-			for (auto descriptorSet = setIndexArray.second.begin(); descriptorSet != setIndexArray.second.end();)
+			for (auto descriptorSetIt = setIndexArray.second.begin(); descriptorSetIt != setIndexArray.second.end();)
 			{
-				// Move to available list if 3 frames have pasted since Descriptor Set stopped being used
-				if (descriptorSet->second == modFrameIndex)
+				// Move descriptorSetIt available list if 3 frames have pasted since Descriptor Set stopped being used
+				if (descriptorSetIt->second == modFrameIndex)
 				{
-					m_AvailableDescriptorSets[setIndexArray.first].PushBack(descriptorSet->first);
-					descriptorSet = setIndexArray.second.Erase(descriptorSet);
+					m_AvailableDescriptorSets[setIndexArray.first].PushBack(descriptorSetIt->first);
+					descriptorSetIt = setIndexArray.second.Erase(descriptorSetIt);
 				}
 				else
-					descriptorSet++;
+					descriptorSetIt++;
 			}
 		}
+	}
+
+	void DescriptorCache::LogStatistics(const String& cacheName)
+	{
+		uint32 newCount = 0;
+		uint32 inUseCount = 0;
+		uint32 unavailableCount = 0;
+		uint32 availableCount = 0;
+
+		for (auto newDescriptorSetPair : m_NewDescriptorSets)					newCount			+= newDescriptorSetPair.second.GetSize();
+		for (auto inUseDescriptorSetPair : m_InUseDescriptorSets)				inUseCount			+= inUseDescriptorSetPair.second.GetSize();
+		for (auto unavailableDescriptorSetPair : m_UnavailableDescriptorSets)	unavailableCount	+= unavailableDescriptorSetPair.second.GetSize();
+		for (auto availableDescriptorSetPair : m_AvailableDescriptorSets)		availableCount		+= availableDescriptorSetPair.second.GetSize();
+
+		LOG_INFO("[DescriptorCache]: %s", cacheName.c_str());
+		LOG_INFO("\t #New DS: %u", newCount);
+		LOG_INFO("\t #In Use DS: %u", inUseCount);
+		LOG_INFO("\t #Unavailable DS: %u", unavailableCount);
+		LOG_INFO("\t #Available DS: %u", availableCount);
+		LOG_INFO("\t #Total DS: %u\n", newCount + inUseCount + unavailableCount + availableCount);
 	}
 
 	void DescriptorCache::HandleDirtyDescriptors()
@@ -85,23 +114,31 @@ namespace LambdaEngine
 		for (auto dirtySetIndex : m_DirtySetIndices)
 		{
 			// Check if there is a descriptor sets in use on layout index and put it in unavailable list
-			if (m_InUseDescriptorSets.find(dirtySetIndex) != m_InUseDescriptorSets.end() && !m_InUseDescriptorSets[dirtySetIndex].IsEmpty())
+			if (auto inUseDescriptorSetIt = m_InUseDescriptorSets.find(dirtySetIndex); 
+				inUseDescriptorSetIt != m_InUseDescriptorSets.end() && !inUseDescriptorSetIt->second.IsEmpty())
 			{
-				for (auto descriptorSet : m_InUseDescriptorSets[dirtySetIndex])
+				TArray<std::pair<TSharedRef<DescriptorSet>, ReleaseFrame>>& unavailableDescriptorSets = m_UnavailableDescriptorSets[dirtySetIndex];
+
+				for (auto descriptorSet : inUseDescriptorSetIt->second)
 				{
-					m_UnavailableDescriptorSets[dirtySetIndex].PushBack(std::make_pair(descriptorSet, m_CurrModFrameIndex));
+					unavailableDescriptorSets.PushBack(std::make_pair(descriptorSet, m_CurrModFrameIndex));
 				}
-				m_InUseDescriptorSets[dirtySetIndex].Clear();
+
+				inUseDescriptorSetIt->second.Clear();
 			}
 
 			// Move new descriptor sets on layout index to inUse
-			if (m_NewDescriptorSets.find(dirtySetIndex) != m_NewDescriptorSets.end() && !m_NewDescriptorSets[dirtySetIndex].IsEmpty())
+			if (auto newDescriptorSetIt = m_NewDescriptorSets.find(dirtySetIndex);
+				newDescriptorSetIt != m_NewDescriptorSets.end() && !newDescriptorSetIt->second.IsEmpty())
 			{
-				for (auto descriptorSet : m_NewDescriptorSets[dirtySetIndex])
+				TArray<TSharedRef<DescriptorSet>>& inUseDescriptorSets = m_InUseDescriptorSets[dirtySetIndex];
+
+				for (auto descriptorSet : newDescriptorSetIt->second)
 				{
-					m_InUseDescriptorSets[dirtySetIndex].PushBack(descriptorSet);
+					inUseDescriptorSets.PushBack(descriptorSet);
 				}
-				m_NewDescriptorSets[dirtySetIndex].Clear();
+
+				newDescriptorSetIt->second.Clear();
 			}
 		}
 
