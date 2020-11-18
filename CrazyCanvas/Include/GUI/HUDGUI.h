@@ -106,6 +106,7 @@ public:
 
 	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
 	void CreateProjectedGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
+	void RemoveProjectedGUIElement(LambdaEngine::Entity entity);
 
 	void SetWindowSize(uint32 width, uint32 height);
 

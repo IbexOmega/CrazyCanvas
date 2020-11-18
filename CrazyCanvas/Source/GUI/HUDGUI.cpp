@@ -863,6 +863,16 @@ void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint
 	}
 }
 
+void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	m_pHUDGrid->GetChildren()->Remove(indicator->second);
+
+	m_ProjectedElements.erase(indicator->first);
+}
+
 void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, Entity entity)
 {
 	auto indicator = m_ProjectedElements.find(entity);
