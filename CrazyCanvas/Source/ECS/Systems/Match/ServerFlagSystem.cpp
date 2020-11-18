@@ -232,8 +232,10 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 
 		if (flagParentComponent.Attached)
 		{
+			Entity entityPlayer = flagParentComponent.Parent;
+
 			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			const TeamComponent& playerTeamComponent = pTeamComponents->GetConstData(flagParentComponent.Parent);
+			const TeamComponent& playerTeamComponent = pTeamComponents->GetConstData(entityPlayer);
 
 			TeamComponent flagTeamComponent = {};
 			
@@ -257,7 +259,7 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 					FlagComponent flagComponent = pECS->GetComponent<FlagComponent>(flagEntity);
 					flagComponent.HasBeenPickedUp = false;
 
-					EventQueue::SendEvent<FlagDeliveredEvent>(FlagDeliveredEvent(flagEntity, flagTeamComponent.TeamIndex, playerTeamComponent.TeamIndex));
+					EventQueue::SendEvent<FlagDeliveredEvent>(FlagDeliveredEvent(flagEntity, entityPlayer, flagTeamComponent.TeamIndex, playerTeamComponent.TeamIndex));
 				}
 			}
 		}

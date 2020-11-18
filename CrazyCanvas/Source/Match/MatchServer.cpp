@@ -424,6 +424,9 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 {
 	using namespace LambdaEngine;
 
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(event.EntityPlayer);
+	PlayerManagerServer::SetPlayerFlagsCaptured(pPlayer, pPlayer->GetFlagsCaptured() + 1);
+
 	glm::vec3 flagPosition;
 
 	if (CreateFlagSpawnProperties(event.FlagTeamIndex, flagPosition))
@@ -545,6 +548,24 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 	const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
 	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
 	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
+
+	if (pPlayerKiller)
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
+		for (uint32 f = 0; f < flagEntities.GetSize(); f++)
+		{
+			Entity flagEntity = flagEntities[f];
+			const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+
+			if (parentComponent.Parent == entityToKill)
+			{
+				PlayerManagerServer::SetPlayerFlagsDefended(pPlayerKiller, pPlayerKiller->GetFlagsDefended() + 1);
+				break;
+			}
+		}
+	}
 
 	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
 	m_PlayersToKill.EmplaceBack(entityToKill);
