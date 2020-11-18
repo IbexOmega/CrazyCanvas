@@ -3,10 +3,17 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+
 #include "Resources/ResourceManager.h"
+
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
+#include "Rendering/EntityMaskManager.h"
+
 #include "RenderStages/PlayerRenderer.h"
+
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -19,28 +26,25 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "Game/Multiplayer/Client/ClientSystem.h"
-#include "Game/Multiplayer/Server/ServerSystem.h"
-
 #include "Engine/EngineConfig.h"
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "ECS/Components/Player/WeaponComponent.h"
+
 #include "Multiplayer/Packet/PacketType.h"
+
 #include "Lobby/PlayerManagerClient.h"
 #include "Lobby/PlayerManagerServer.h"
+
 #include "Chat/ChatManager.h"
+
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/GameOverGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
-
 #include "GUI/Core/GUIApplication.h"
-
-#include "Rendering/EntityMaskManager.h"
-
-#include "ECS/Components/Player/WeaponComponent.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -181,7 +185,7 @@ bool CrazyCanvas::LoadRendererResources()
 		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
 			"Skybox/veld_fire.hdr",
 			EFormat::FORMAT_R16G16B16A16_SFLOAT,
-			512,
+			768,
 			false);
 
 		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
