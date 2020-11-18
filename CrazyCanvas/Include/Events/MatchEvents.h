@@ -53,11 +53,12 @@ public:
 struct FlagDeliveredEvent : public LambdaEngine::Event
 {
 public:
-	inline FlagDeliveredEvent(LambdaEngine::Entity entity, uint8 flagTeamIndex, uint8 scoringTeamIndex)
+	inline FlagDeliveredEvent(LambdaEngine::Entity entity, LambdaEngine::Entity entityPlayer, uint8 flagTeamIndex, uint8 scoringTeamIndex)
 		: Event()
 		, Entity(entity)
 		, FlagTeamIndex(flagTeamIndex)
 		, ScoringTeamIndex(scoringTeamIndex)
+		, EntityPlayer(entityPlayer)
 	{
 	}
 
@@ -69,6 +70,7 @@ public:
 	}
 
 	LambdaEngine::Entity Entity;
+	LambdaEngine::Entity EntityPlayer;
 	uint8 FlagTeamIndex = 0;
 	uint8 ScoringTeamIndex = 0;
 };

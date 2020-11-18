@@ -144,22 +144,29 @@ bool LevelObjectCreator::Init()
 			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
 			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
 #endif
+
+			// Load player textures
+			s_PlayerTextureGUID = ResourceManager::LoadTextureFromFile(
+				"Player/CharacterAlbedo.png",
+				EFormat::FORMAT_R8G8B8A8_UNORM,
+				true, true);
+
 			MaterialProperties playerMaterialProperties = {};
 			playerMaterialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 			playerMaterialProperties.AO = 1.0f;
 			playerMaterialProperties.Metallic = 0.0f;
 			playerMaterialProperties.Metallic = 0.0f;
 
-			s_PlayerMaterial = ResourceManager::LoadMaterialFromMemory(
+			s_PlayerMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 				"Player Material",
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				s_PlayerTextureGUID,
 				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				GUID_TEXTURE_DEFAULT_COLOR_MAP,
 				playerMaterialProperties);
 
-			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMesh, s_WeaponMaterial);
+			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMeshGUID, s_WeaponMaterialGUID);
 		}
 	}
 
@@ -788,7 +795,7 @@ bool LevelObjectCreator::CreatePlayer(
 		MeshComponent
 		{
 			.MeshGUID		= s_PlayerMeshGUID,
-			.MaterialGUID	= s_PlayerMaterial
+			.MaterialGUID	= s_PlayerMaterialGUID
 		});
 
 	const bool readback = MultiplayerUtils::IsServer();
@@ -811,8 +818,8 @@ bool LevelObjectCreator::CreatePlayer(
 	{
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
-				.MeshGUID = s_WeaponMesh,
-				.MaterialGUID = s_WeaponMaterial,
+				.MeshGUID = s_WeaponMeshGUID,
+				.MaterialGUID = s_WeaponMaterialGUID,
 			});
 
 		pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
