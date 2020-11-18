@@ -1,8 +1,6 @@
 #pragma once
 #include "Physics/PhysicsEvents.h"
 
-#include "Rendering/PaintMaskRenderer.h"
-
 #include "Multiplayer/Packet/PacketPlayerAliveChanged.h"
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 
