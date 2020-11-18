@@ -27,7 +27,7 @@ void PlayerManagerBase::Reset()
 
 uint8 PlayerManagerBase::GetPlayerCount()
 {
-	return s_Players.size();
+	return (uint8)s_Players.size();
 }
 
 const Player* PlayerManagerBase::GetPlayer(uint64 uid)
