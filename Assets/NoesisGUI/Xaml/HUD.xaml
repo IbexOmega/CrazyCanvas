@@ -77,7 +77,7 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
-                <Grid x:Name="HEALTH_DISPLAY_GRID" Margin="25,0,-25,25" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4" >
+                <Grid x:Name="HEALTH_DISPLAY_GRID" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4" Margin="25,0,-25,-25">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
                         <ColumnDefinition />
