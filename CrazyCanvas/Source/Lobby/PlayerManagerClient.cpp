@@ -67,7 +67,6 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 	IClient* pClient = ClientSystem::GetInstance().GetClient();
 
 	ASSERT(s_Players.empty());
-	ASSERT(pClient->IsConnected());
 	ASSERT(!MultiplayerUtils::IsServer());
 
 	PacketJoin packet;
@@ -286,6 +285,10 @@ bool PlayerManagerClient::OnPacketPlayerAliveChangedReceived(const PacketReceive
 		if (pPlayer->m_IsDead != packet.IsDead)
 		{
 			pPlayer->m_IsDead = packet.IsDead;
+			if (pPlayer->m_IsDead)
+			{
+				LOG_INFO("CLIENT PLAYER DIED Entity=%u", pPlayer->GetEntity());
+			}
 
 			PlayerAliveUpdatedEvent playerAliveUpdatedEvent(pPlayer, GetPlayerNoConst(packet.KillerUID));
 			EventQueue::SendEventImmediate(playerAliveUpdatedEvent);

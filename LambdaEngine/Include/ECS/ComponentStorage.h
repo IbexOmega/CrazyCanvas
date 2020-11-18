@@ -30,7 +30,13 @@ namespace LambdaEngine
 		Comp& GetComponent(Entity entity);
 
 		template<typename Comp>
+		bool GetComponentIf(Entity entity, Comp& comp);
+
+		template<typename Comp>
 		const Comp& GetConstComponent(Entity entity) const;
+
+		template<typename Comp>
+		bool GetConstComponentIf(Entity entity, Comp& comp) const;
 
 		bool DeleteComponent(Entity entity, const ComponentType* pComponentType);
 
@@ -124,6 +130,15 @@ namespace LambdaEngine
 
 		return pCompArray->GetData(entity);
 	}
+	
+	template<typename Comp>
+	bool ComponentStorage::GetComponentIf(Entity entity, Comp& comp)
+	{
+		ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
+		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
+
+		return pCompArray->GetIf(entity, comp);
+	}
 
 	template<typename Comp>
 	inline const Comp& ComponentStorage::GetConstComponent(Entity entity) const
@@ -132,6 +147,15 @@ namespace LambdaEngine
 		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
 
 		return pCompArray->GetConstData(entity);
+	}
+	
+	template<typename Comp>
+	bool ComponentStorage::GetConstComponentIf(Entity entity, Comp& comp) const
+	{
+		const ComponentArray<Comp>* pCompArray = GetComponentArray<Comp>();
+		VALIDATE_MSG(pCompArray, "Trying to fetch an unregistered component type!");
+
+		return pCompArray->GetConstIf(entity, comp);
 	}
 
 	template<typename Comp>

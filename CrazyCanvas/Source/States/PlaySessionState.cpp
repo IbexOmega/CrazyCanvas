@@ -41,6 +41,8 @@
 #include "Game/StateManager.h"
 #include "States/MainMenuState.h"
 
+#include "GUI/GUIHelpers.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
@@ -64,21 +66,14 @@ PlaySessionState::~PlaySessionState()
 	}
 
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
+
+	Match::Release();
+	PlayerManagerClient::Reset();
 }
 
 void PlaySessionState::Init()
 {
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
+	EnablePlaySessionsRenderstages();
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
@@ -91,12 +86,11 @@ void PlaySessionState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[m_GameSettings.MapID]
+			.LevelHash = levelHashes[m_GameSettings.MapID],
+			.GameMode = ConvertGameMode(m_GameSettings.GameMode),
 		};
 		Match::CreateMatch(&matchDescription);
 	}
-
-	m_HUDSystem.Init();
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 
@@ -109,6 +103,8 @@ void PlaySessionState::Init()
 		//Called to tell the server we are ready to start the match
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
+
+	m_HUDSystem.Init();
 }
 
 void PlaySessionState::Tick(Timestamp delta)

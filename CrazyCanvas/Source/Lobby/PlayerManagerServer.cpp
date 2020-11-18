@@ -3,12 +3,14 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Multiplayer/ServerHelper.h"
-
 #include "Multiplayer/Packet/PacketPlayerAliveChanged.h"
 #include "Multiplayer/Packet/PacketPlayerHost.h"
 #include "Multiplayer/Packet/PacketPlayerPing.h"
 
+#include "ECS/Systems/Player/HealthSystemServer.h"
+
 #include "Events/PlayerEvents.h"
+
 #include "Application/API/Events/EventQueue.h"
 
 using namespace LambdaEngine;
@@ -70,10 +72,19 @@ void PlayerManagerServer::FixedTick(Timestamp deltaTime)
 
 bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJoin>& event)
 {
+	PacketJoin packet = event.Packet;
 	IClient* pClient = event.pClient;
 	Player* pPlayer = HandlePlayerJoined(pClient->GetUID(), event.Packet);
 
-	ServerHelper::SendBroadcast(event.Packet, nullptr, pClient);
+	packet.UID = pClient->GetUID();
+
+	AutoSelectTeam(pPlayer);
+
+	ServerHelper::SendBroadcast(packet, nullptr, pClient);
+
+	PacketPlayerScore packetPlayerScore;
+	FillPacketPlayerScore(&packetPlayerScore, pPlayer);
+	ServerHelper::SendBroadcast(packetPlayerScore);
 
 	Player* hostPlayer = nullptr;
 	for (auto& pair : s_Players)
@@ -104,9 +115,9 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 			packetPlayerReady.IsReady	= player.IsReady();
 			ServerHelper::Send(pClient, packetPlayerReady);
 
-			PacketPlayerScore packetPlayerScore;
-			FillPacketPlayerScore(&packetPlayerScore, &player);
-			ServerHelper::Send(pClient, packetPlayerScore);
+			PacketPlayerScore packetPlayerScore2;
+			FillPacketPlayerScore(&packetPlayerScore2, &player);
+			ServerHelper::Send(pClient, packetPlayerScore2);
 		}
 	}
 
@@ -233,6 +244,8 @@ void PlayerManagerServer::SetPlayerAlive(const Player* pPlayer, bool alive, cons
 
 		if (pPl->m_IsDead)
 			pPl->m_Deaths++;
+		else
+			HealthSystemServer::ResetHealth(pPl->GetEntity());
 
 		PacketPlayerAliveChanged packet;
 		packet.UID		= pPl->m_UID;
@@ -435,4 +448,13 @@ void PlayerManagerServer::FillPacketPlayerScore(PacketPlayerScore* pPacket, cons
 	pPacket->Deaths			= pPlayer->m_Deaths;
 	pPacket->FlagsCaptured	= pPlayer->m_FlagsCaptured;
 	pPacket->FlagsDefended	= pPlayer->m_FlagsDefended;
+}
+
+void PlayerManagerServer::AutoSelectTeam(Player* pPlayer)
+{
+	TArray<const Player*> pPlayersTeam0;
+	TArray<const Player*> pPlayersTeam1;
+	GetPlayersOfTeam(pPlayersTeam0, 0);
+	GetPlayersOfTeam(pPlayersTeam1, 1);
+	pPlayer->m_Team = pPlayersTeam0.GetSize() > pPlayersTeam1.GetSize() ? 1 : 0;
 }

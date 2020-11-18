@@ -8,6 +8,7 @@
 #include "World/Level.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
@@ -21,8 +22,6 @@
 #include "Lobby/PlayerManagerClient.h"
 
 #include "Events/MatchEvents.h"
-
-#include "Application/API/Events/EventQueue.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -140,23 +139,22 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			const CameraDesc cameraDesc =
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
-				.Width = (float)window->GetWidth(),
-				.Height = (float)window->GetHeight(),
-				.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
-				.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
+				.FOVDegrees	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
+				.Width		= (float)window->GetWidth(),
+				.Height		= (float)window->GetHeight(),
+				.NearPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+				.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
 			CreatePlayerDesc createPlayerDesc =
 			{
-				.ClientUID			= event.pClient->GetUID(),
+				.pPlayer			= PlayerManagerClient::GetPlayer(packet.Player.ClientUID),
 				.IsLocal			= packet.Player.ClientUID == event.pClient->GetUID(),
 				.PlayerNetworkUID	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 				.Position			= packet.Position,
 				.Forward			= packet.Forward,
 				.Scale				= glm::vec3(1.0f),
-				.TeamIndex			= packet.Player.TeamIndex,
 				.pCameraDesc		= &cameraDesc,
 			};
 
@@ -181,11 +179,12 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			CreateFlagDesc createFlagDesc =
 			{
-				.NetworkUID = packet.NetworkUID,
-				.ParentEntity = parentEntity,
-				.Position = packet.Position,
-				.Scale = glm::vec3(1.0f),
-				.Rotation = glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.NetworkUID		= packet.NetworkUID,
+				.ParentEntity	= parentEntity,
+				.Position		= packet.Position,
+				.Scale			= glm::vec3(1.0f),
+				.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.TeamIndex		= packet.Flag.TeamIndex
 			};
 
 			TArray<Entity> createdFlagEntities;

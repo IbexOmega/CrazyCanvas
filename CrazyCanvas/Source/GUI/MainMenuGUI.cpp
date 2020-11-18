@@ -14,8 +14,10 @@
 #include "States/SandboxState.h"
 #include "States/MultiplayerState.h"
 
-#include "Application/API/Events/EventQueue.h"
+#include "Resources/ResourceManager.h"
 
+#include "Application/API/Events/EventQueue.h"
+#include "GUI/GUIHelpers.h"
 
 using namespace Noesis;
 using namespace LambdaEngine;
@@ -33,6 +35,11 @@ MainMenuGUI::MainMenuGUI()
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &MainMenuGUI::KeyboardCallback);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseButtonCallback);
+
+
+	m_MainMenuMusic = LambdaEngine::ResourceManager::LoadMusicFromFile("MainMenuCC.mp3");
+
+	LambdaEngine::ResourceManager::GetMusic(m_MainMenuMusic)->Play();
 
 	SetDefaultSettings();
 }
@@ -85,12 +92,12 @@ void MainMenuGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Noesis::FrameworkElement* prevElement = m_ContextStack.top();
-	prevElement->SetVisibility(Noesis::Visibility_Collapsed);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_ContextStack.pop();
-	Noesis::FrameworkElement* currentElement = m_ContextStack.top();
-	currentElement->SetVisibility(Noesis::Visibility_Visible);
+	Noesis::FrameworkElement* pCurrentElement = m_ContextStack.top();
+	pCurrentElement->SetVisibility(Noesis::Visibility_Visible);
 }
 
 /*
@@ -103,8 +110,8 @@ void MainMenuGUI::OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Noesis::FrameworkElement* prevElement = m_ContextStack.top();
-	prevElement->SetVisibility(Noesis::Visibility_Collapsed);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_pPlayGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pPlayGrid);
@@ -115,8 +122,8 @@ void MainMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Noesis::FrameworkElement* prevElement = m_ContextStack.top();
-	prevElement->SetVisibility(Noesis::Visibility_Collapsed);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pSettingsGrid);
@@ -142,9 +149,9 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
-	SetRenderStagesSleeping();
 	PacketGameSettings settings;
 	settings.MapID = 5;
+	settings.GameMode = ConvertGameMode(EGameMode::CTF_TEAM_FLAG);
 	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -213,8 +220,8 @@ void MainMenuGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender,
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	Noesis::FrameworkElement* prevElement = m_ContextStack.top();
-	prevElement->SetVisibility(Noesis::Visibility_Collapsed);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
 	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pKeyBindingsGrid);
@@ -283,28 +290,16 @@ void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender,
 */
 void MainMenuGUI::SetRenderStagesSleeping()
 {
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",			false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("DIRL_SHADOWMAP",					false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("FXAA",								false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("POINTL_SHADOW",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SKYBOX_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("PLAYER_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("SHADING_PASS",						false);
-	RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", true);
-
-	RenderSystem::GetInstance().SetRenderStageSleeping("RAY_TRACING", !m_RayTracingEnabled);
-
+	DisablePlaySessionsRenderstages();
 }
 
 void MainMenuGUI::SetDefaultSettings()
 {
 	// Set inital volume
-	Noesis::Slider* volumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
-	NS_ASSERT(volumeSlider);
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
-	volumeSlider->SetValue(volume);
+	pVolumeSlider->SetValue(volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	SetDefaultKeyBindings();

@@ -348,12 +348,28 @@ namespace LambdaEngine
 		asInstance.Transform = glm::transpose(transform);
 	}
 
+	void ASBuilder::UpdateInstance(uint32 instanceIndex, std::function<void(AccelerationStructureInstance&)> updateFunc)
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+
+		VALIDATE(instanceIndex < m_InstanceIndices.GetSize());
+
+		//Get True (Indirect) Instance Index
+		uint32 trueInstanceIndex = m_InstanceIndices[instanceIndex];
+
+		VALIDATE(trueInstanceIndex < m_Instances.GetSize());
+
+		AccelerationStructureInstance& asInstance = m_Instances[trueInstanceIndex];
+		updateFunc(asInstance);
+	}
+
 	void ASBuilder::UpdateInstances(std::function<void(AccelerationStructureInstance&)> updateFunc)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		for (AccelerationStructureInstance& asInstance : m_Instances)
+		for (uint32 instanceIndex = 0; instanceIndex < m_Instances.GetSize(); instanceIndex++)
 		{
+			AccelerationStructureInstance& asInstance = m_Instances[instanceIndex];
 			updateFunc(asInstance);
 		}
 	}
@@ -616,7 +632,7 @@ namespace LambdaEngine
 		}
 	}
 
-	AccelerationStructureInstance& ASBuilder::GetInstance(uint32 instanceIndex)
+	const AccelerationStructureInstance& ASBuilder::GetInstance(uint32 instanceIndex) const
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 

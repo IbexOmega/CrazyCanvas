@@ -42,17 +42,14 @@ bool Match::CreateMatch(const MatchDescription* pDesc)
 		return false;
 	}
 
+	EventQueue::SendEvent<MatchInitializedEvent>(MatchInitializedEvent(pDesc->GameMode));
+
 	return true;
 }
 
 bool Match::ResetMatch()
 {
 	s_pMatchInstance->ResetMatch();
-	return false;
-}
-
-bool Match::ReleaseMatch()
-{
 	return false;
 }
 
@@ -64,11 +61,6 @@ void Match::StartMatch()
 void Match::BeginLoading()
 {
 	s_pMatchInstance->BeginLoading();
-}
-
-void Match::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
-{
-	s_pMatchInstance->KillPlayer(entityToKill, killedByEntity);
 }
 
 void Match::Tick(LambdaEngine::Timestamp deltaTime)

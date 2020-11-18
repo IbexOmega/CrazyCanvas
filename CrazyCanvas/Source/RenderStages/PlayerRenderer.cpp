@@ -12,7 +12,9 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Team/TeamComponent.h"
 #include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Player/WeaponComponent.h"
 
+#include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 
@@ -363,63 +365,97 @@ namespace LambdaEngine
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
 				const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+				const ComponentArray<PlayerRelatedComponent>* pPlayerRelatedComponents = pECSCore->GetComponentArray<PlayerRelatedComponent>();
 				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
+				const ComponentArray<WeaponComponent>* pWeaponComponents = pECSCore->GetComponentArray<WeaponComponent>();
+
+				LOG_MESSAGE("JA FIM: %u", m_DrawCount);
 
 				m_PlayerData.Clear();
+				TArray<WeaponData> weapons;
+
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					constexpr DescriptorSetIndex setIndex = 2U;
 
 					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList2[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 2 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+					m_DescriptorSetList2[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 2 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
 
 					if (m_DescriptorSetList2[d] != nullptr)
 					{
-						// Assume EntityIDs is always 1 in length. (Because animated meshes.)
-						Entity entity = m_pDrawArgs[d].EntityIDs[0];
-
-						// Used to sort by distance in render()
-						if (pTeamComponents->HasComponent(entity))
+						for (uint32 i = 0; i < m_pDrawArgs[d].EntityIDs.GetSize(); i++)
 						{
-							PlayerData playerData;
-							playerData.DrawArgIndex = d;
-							playerData.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
-							playerData.Position = pPositionComponents->GetConstData(entity).Position;
-							m_PlayerData.PushBack(playerData);
-
-							if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
+							Entity entity = m_pDrawArgs[d].EntityIDs[i];
+							if (pPlayerRelatedComponents->HasComponent(entity))
 							{
-								m_Viewer.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
-								m_Viewer.EntityId = entity;
-								m_Viewer.DrawArgIndex = d;
-								m_Viewer.Positon = pPositionComponents->GetConstData(entity).Position;
+								// Store weapons for later use. Easier to map to players
+								if (pWeaponComponents->HasComponent(entity))
+								{
+									weapons.PushBack({ .EntityId = entity, .DrawArgIndex = d, .InstanceIndex = i});
+								}
+								else 
+								{
+									// Set player data for distance and weapon sorting
+									PlayerData playerData;
+									playerData.DrawArgIndex = d;
+									playerData.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
+									playerData.Position = pPositionComponents->GetConstData(entity).Position;
+									playerData.EntityId = entity;
+									m_PlayerData.PushBack(playerData);
+								}
+
+								// Set viewer data
+								if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
+								{
+									m_Viewer.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
+									m_Viewer.EntityId = entity;
+									m_Viewer.DrawArgIndex = d;
+									m_Viewer.Positon = pPositionComponents->GetConstData(entity).Position;
+								}
+								else
+								{
+									// Set Vertex and Instance buffer for rendering
+									Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
+									uint64 pOffsets[2] = { 0, 0 };
+									uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
+
+									m_DescriptorSetList2[d]->WriteBufferDescriptors(
+										ppBuffers,
+										pOffsets,
+										pSizes,
+										0,
+										2,
+										EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+									);
+								}
 							}
 							else
 							{
-								// Set Vertex and Instance buffer for rendering
-								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
-								uint64 pOffsets[2] = { 0, 0 };
-								uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
-
-								m_DescriptorSetList2[d]->WriteBufferDescriptors(
-									ppBuffers,
-									pOffsets,
-									pSizes,
-									0,
-									2,
-									EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
-								);
+								LOG_ERROR("[PlayerRenderer]: A entity must have a TeamComponent for it to be processed by PlayerRenderer!");
 							}
-						}
-						else
-						{
-							LOG_ERROR("[PlayerRenderer]: A entity must have a TeamComponent for it to be processed by PlayerRenderer!");
 						}
 					}
 					else
 					{
 						LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs vertices and instance buffers");
+					}
+				}
+
+				// Decide weapon for all players
+				for (auto const& weapon : weapons)
+				{
+					auto weaponOwner = pWeaponComponents->GetConstData(weapon.EntityId).WeaponOwner;
+					auto it = std::find_if(m_PlayerData.Begin(), m_PlayerData.End(),
+						[&weaponOwner](const PlayerData& pd) { return pd.EntityId == weaponOwner; });
+
+					if (it != m_PlayerData.end())
+					{
+						it->Weapon = weapon;
+					}
+					else
+					{
+						LOG_WARNING("[PlayerRenderer] A Weapon %d without a player is present.", weapon.EntityId);
 					}
 				}
 
@@ -436,13 +472,13 @@ namespace LambdaEngine
 					}
 				}
 
-				// Get Paint Mask Texture from each player
+				// Get Paint Mask Texture from each player & weapon
 				for (uint32 d = 0; d < count; d++)
 				{
 					constexpr DescriptorSetIndex setIndex = 3U;
 
 					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
 
 					if (m_DescriptorSetList3[d] != nullptr)
 					{
@@ -497,7 +533,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs");
+				m_DrawCount = 0;
 			}
 		}
 	}
@@ -506,9 +542,6 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
-
-		if (Sleeping)
-			return;
 
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
@@ -542,19 +575,23 @@ namespace LambdaEngine
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		pCommandList->SetViewports(&viewport, 0, 1);
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		if (m_DrawCount > 0)
+		if (!Sleeping)
 		{
-			// Render enemy with no culling to see backface of paint
-			bool renderEnemies = true;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
+			pCommandList->SetViewports(&viewport, 0, 1);
+			pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-			// Team members are transparent, Front Culling- and Back Culling is needed
-			renderEnemies = false;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			if (m_DrawCount > 0)
+			{
+				// Render enemy with no culling to see backface of paint
+				bool renderEnemies = true;
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
+
+				// Team members are transparent, Front Culling- and Back Culling is needed
+				renderEnemies = false;
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			}
 		}
 
 		pCommandList->EndRenderPass();
@@ -568,7 +605,6 @@ namespace LambdaEngine
 									uint64& pipelineId) 
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
-
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
 
@@ -591,23 +627,31 @@ namespace LambdaEngine
 				bool isEnemy = (player.TeamId == 1);
 				bool isTeamMate = (player.TeamId == 0);
 
-				// Filter enemies if rendering teamates
+				// Remove enemies if rendering teamates
 				if (!renderEnemy && isEnemy) {
 					continue;
 				}
 
-				// Filter teammates if rendering enemies
+				// Remove teammates if rendering enemies
 				if (renderEnemy && isTeamMate) {
 					continue;
 				}
 
+				// Draw player
 				const DrawArg& drawArg = m_pDrawArgs[player.DrawArgIndex];
-
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
 				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
 				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+
+				// Draw player weapon
+				const DrawArg& drawArgWeapon = m_pDrawArgs[player.Weapon.DrawArgIndex];
+				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
+				pCommandList->BindIndexBuffer(drawArgWeapon.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
+				pCommandList->DrawIndexInstanced(drawArgWeapon.IndexCount, 1, 0, 0, player.Weapon.InstanceIndex);
 			}
 
 		}

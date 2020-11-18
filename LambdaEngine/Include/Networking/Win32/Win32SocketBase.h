@@ -20,7 +20,7 @@ namespace LambdaEngine
 {
 	template <typename IBase>
 	class Win32SocketBase : public IBase
-	{	
+	{
 		friend class Win32SocketFactory;
 
 	public:
@@ -94,13 +94,13 @@ namespace LambdaEngine
 		*/
 		virtual bool EnableBlocking(bool enable) override
 		{
-			if (ioctlsocket(m_Socket, FIONBIO, &((u_long)enable)) != NO_ERROR)
+			if (ioctlsocket(m_Socket, FIONBIO, ((u_long*)&enable)) != NO_ERROR)
 			{
 				LOG_ERROR_CRIT("Failed to change blocking mode to [%sBlocking] ", enable ? "Non " : "");
 				PrintLastError();
 				return false;
 			}
-			
+
 			m_NonBlocking = enable;
 			return true;
 		};

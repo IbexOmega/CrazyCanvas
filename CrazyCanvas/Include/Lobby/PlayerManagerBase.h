@@ -28,7 +28,8 @@ public:
 	static const Player* GetPlayer(const LambdaEngine::IClient* pClient);
 	static const Player* GetPlayer(LambdaEngine::Entity entity);
 	static const LambdaEngine::THashTable<uint64, Player>& GetPlayers();
-	static void RegisterPlayerEntity(uint64 uid, LambdaEngine::Entity entity);
+	static void GetPlayersOfTeam(LambdaEngine::TArray<const Player*>& players, uint8 team);
+	static void SetPlayerEntity(const Player* pPlayer, LambdaEngine::Entity entity);
 
 protected:
 	static void Init();

@@ -9,6 +9,7 @@
 #include "NsGui/Panel.h"
 #include "NsGui/TextBox.h"
 #include "NsGui/Selector.h"
+#include "NsGui/Label.h"
 
 #include "Lobby/Player.h"
 #include "Events/ChatEvents.h"
@@ -22,12 +23,13 @@ class LobbyGUI : public Noesis::Grid
 public:
 	LobbyGUI();
 	~LobbyGUI();
-	
+
 	void InitGUI(LambdaEngine::String name);
 
 	void AddPlayer(const Player& player);
 	void RemovePlayer(const Player& player);
 	void UpdatePlayerReady(const Player& player);
+	void UpdatePlayerScore(const Player& player);
 	void UpdatePlayerPing(const Player& player);
 	void UpdatePlayerHost(const Player& player);
 	void WriteChatMessage(const ChatEvent& event);
@@ -55,8 +57,9 @@ public:
 private:
 	// Helpers
 	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* pColumnCollection, float width);
-	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
+	Noesis::Label* AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* pComp);
+	void UnregisterName(const LambdaEngine::String& name);
 	void CreateHostIcon(Noesis::Panel* pParent);
 	Noesis::Grid* GetPlayerGrid(const Player& player);
 
@@ -69,6 +72,7 @@ private:
 
 	Noesis::StackPanel* m_pBlueTeamStackPanel		= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel		= nullptr;
+	Noesis::ScrollViewer* m_pChatScrollViewer		= nullptr;
 	Noesis::StackPanel* m_pChatPanel				= nullptr;
 	Noesis::StackPanel* m_pSettingsNamesStackPanel	= nullptr;
 	Noesis::StackPanel* m_pSettingsHostStackPanel	= nullptr;
@@ -79,11 +83,11 @@ private:
 	bool m_IsInitiated;
 
 private:
-	static constexpr char* SETTING_SERVER_NAME	= "SERVER_NAME";
-	static constexpr char* SETTING_MAP			= "MAP";
-	static constexpr char* SETTING_MAX_TIME		= "MAX_TIME";
-	static constexpr char* SETTING_FLAGS_TO_WIN = "FLAGS_TO_WIN";
-	static constexpr char* SETTING_MAX_PLAYERS	= "MAX_PLAYERS";
-	static constexpr char* SETTING_VISIBILITY	= "VISIBILITY";
-	static constexpr char* SETTING_CHANGE_TEAM	= "CHANGE_TEAM";
+	static constexpr const char* SETTING_SERVER_NAME	= "SERVER_NAME";
+	static constexpr const char* SETTING_MAP			= "MAP";
+	static constexpr const char* SETTING_MAX_TIME		= "MAX_TIME";
+	static constexpr const char* SETTING_FLAGS_TO_WIN	= "FLAGS_TO_WIN";
+	static constexpr const char* SETTING_MAX_PLAYERS	= "MAX_PLAYERS";
+	static constexpr const char* SETTING_VISIBILITY		= "VISIBILITY";
+	static constexpr const char* SETTING_CHANGE_TEAM	= "CHANGE_TEAM";
 };

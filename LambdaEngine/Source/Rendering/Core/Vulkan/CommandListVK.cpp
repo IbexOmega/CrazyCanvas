@@ -148,7 +148,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_IsBegin = true;
+			m_IsRecording = true;
 			return true;
 		}
 	}
@@ -167,7 +167,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			m_IsBegin = false;
+			m_IsRecording = false;
 			return true;
 		}
 	}
@@ -358,7 +358,37 @@ namespace LambdaEngine
 		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CmdBuffer, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
-	void CommandListVK::CopyBuffer(const Buffer* pSrc, uint64 srcOffset, Buffer* pDst, uint64 dstOffset, uint64 sizeInBytes)
+	void CommandListVK::ClearColorTexture(
+		Texture* pTexture, 
+		ETextureState textureState, 
+		const float32 color[4])
+	{
+		VALIDATE(pTexture != nullptr);
+
+		TextureVK* pVkTexture = static_cast<TextureVK*>(pTexture);
+
+		VkClearColorValue colorValue;
+		memcpy(colorValue.float32, color, sizeof(color));
+
+		VkImageSubresourceRange range;
+		range.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
+		range.baseArrayLayer	= 0;
+		range.layerCount		= VK_REMAINING_ARRAY_LAYERS;
+		range.baseMipLevel		= 0;
+		range.levelCount		= VK_REMAINING_MIP_LEVELS;
+
+		FlushDeferredBarriers();
+
+		VkImageLayout imageLayout = ConvertTextureState(textureState);
+		vkCmdClearColorImage(m_CmdBuffer, pVkTexture->GetImage(), imageLayout, &colorValue, 1, &range);
+	}
+
+	void CommandListVK::CopyBuffer(
+		const Buffer* pSrc, 
+		uint64 srcOffset, 
+		Buffer* pDst, 
+		uint64 dstOffset, 
+		uint64 sizeInBytes)
 	{
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
@@ -386,9 +416,9 @@ namespace LambdaEngine
 		TextureVK*		pVkDst	= reinterpret_cast<TextureVK*>(pDst);
 
 		VkBufferImageCopy copyRegion = {};
-		copyRegion.bufferImageHeight				= desc.SrcHeight;
-		copyRegion.bufferOffset						= desc.SrcOffset;
-		copyRegion.bufferRowLength					= uint32(desc.SrcRowPitch);
+		copyRegion.bufferImageHeight				= desc.BufferHeight;
+		copyRegion.bufferOffset						= desc.BufferOffset;
+		copyRegion.bufferRowLength					= uint32(desc.BufferRowPitch);
 		copyRegion.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT; //TODO: Other aspects
 		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
 		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;
@@ -415,9 +445,9 @@ namespace LambdaEngine
 		const TextureVK*	pVkSrc = reinterpret_cast<const TextureVK*>(pSrc);
 
 		VkBufferImageCopy copyRegion = {};
-		copyRegion.bufferImageHeight				= desc.SrcHeight;
-		copyRegion.bufferOffset						= desc.SrcOffset;
-		copyRegion.bufferRowLength					= uint32(desc.SrcRowPitch);
+		copyRegion.bufferImageHeight				= desc.BufferHeight;
+		copyRegion.bufferOffset						= desc.BufferOffset;
+		copyRegion.bufferRowLength					= uint32(desc.BufferRowPitch);
 		copyRegion.imageSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT; //TODO: Other aspects
 		copyRegion.imageSubresource.baseArrayLayer	= desc.ArrayIndex;
 		copyRegion.imageSubresource.layerCount		= desc.ArrayCount;
@@ -478,7 +508,7 @@ namespace LambdaEngine
 		ETextureState beforeState, 
 		ETextureState afterState)
 	{
-		TransitionBarrier(pTexture, srcStage, dstStage, srcAccessMask, destAccessMask, 0, pTexture->GetDesc().ArrayCount, beforeState, afterState);
+		TransitionBarrier(pTexture, srcStage, dstStage, srcAccessMask, destAccessMask, 0, VK_REMAINING_ARRAY_LAYERS, beforeState, afterState);
 	}
 
 	void CommandListVK::TransitionBarrier(
@@ -493,7 +523,6 @@ namespace LambdaEngine
 		ETextureState afterState)
 	{
 		TextureVK* pTextureVk = reinterpret_cast<TextureVK*>(pTexture);
-		const TextureDesc& desc = pTextureVk->GetDesc();
 
 		// Create barrier
 		VkImageMemoryBarrier imageBarrier = { };
@@ -505,7 +534,7 @@ namespace LambdaEngine
 		imageBarrier.oldLayout							= ConvertTextureState(beforeState);
 		imageBarrier.newLayout							= ConvertTextureState(afterState);
 		imageBarrier.subresourceRange.baseMipLevel		= 0;
-		imageBarrier.subresourceRange.levelCount		= desc.Miplevels;
+		imageBarrier.subresourceRange.levelCount		= VK_REMAINING_MIP_LEVELS;
 		imageBarrier.subresourceRange.baseArrayLayer	= arrayIndex;
 		imageBarrier.subresourceRange.layerCount		= arrayCount;
 		imageBarrier.subresourceRange.aspectMask		= pTextureVk->GetAspectFlags();

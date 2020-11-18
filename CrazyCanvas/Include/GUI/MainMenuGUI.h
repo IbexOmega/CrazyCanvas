@@ -45,6 +45,8 @@ public:
 	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 private:
+	friend class HUDGUI;
+
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void SetRenderStagesSleeping();
 	void SetDefaultSettings();
@@ -64,6 +66,8 @@ private:
 	Noesis::Grid*	m_pPlayGrid			= nullptr;
 	Noesis::Grid*	m_pSettingsGrid 	= nullptr;
 	Noesis::Grid*	m_pKeyBindingsGrid 	= nullptr;
+
+	GUID_Lambda m_MainMenuMusic;
 
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
 

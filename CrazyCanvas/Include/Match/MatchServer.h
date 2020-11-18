@@ -17,9 +17,6 @@ public:
 	MatchServer() = default;
 	~MatchServer();
 
-	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
-	virtual void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity) override final;
-
 protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
@@ -31,7 +28,7 @@ protected:
 
 	void SpawnPlayer(const Player& player);
 
-	void SpawnFlag();
+	void SpawnFlag(uint8 teamIndex);
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 	
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
@@ -39,12 +36,20 @@ protected:
 private:
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
+	bool OnFlagRespawn(const FlagRespawnEvent& event);
 
-	void KillPlayerInternal(LambdaEngine::Entity playerEntity);
+	void DoKillPlayer(LambdaEngine::Entity playerEntity);
+
+	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
+	void InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
+
+public:
+	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
+
+	bool CreateFlagSpawnProperties(uint8 teamIndex, glm::vec3& position);
 
 private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
-	uint8 m_NextTeamIndex = 0;
 	bool m_ShouldBeginMatch = false;
 };
