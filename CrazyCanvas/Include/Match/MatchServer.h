@@ -11,7 +11,7 @@
 
 #include "Lobby/Player.h"
 
-typedef std::pair<LambdaEngine::Entity, float32> PlayerTimers;
+typedef std::pair<LambdaEngine::Entity, float32> PlayerRespawnTimers;
 
 class MatchServer : public MatchBase
 {
@@ -57,10 +57,7 @@ private:
 
 	LambdaEngine::SpinLock m_PlayersToRespawnLock;
 	//LambdaEngine::TQueue<PlayerTimers> m_PlayersToRespawn;
-	LambdaEngine::TArray<PlayerTimers> m_PlayersToRespawn;
+	LambdaEngine::TArray<PlayerRespawnTimers> m_PlayersToRespawn;
 
-
-	bool m_ShouldErase = false;
-	uint8 m_NextTeamIndex = 0;
 	bool m_ShouldBeginMatch = false;
 };
