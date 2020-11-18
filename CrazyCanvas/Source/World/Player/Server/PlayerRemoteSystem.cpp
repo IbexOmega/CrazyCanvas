@@ -88,7 +88,7 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 					rotationComponent.Dirty			= true;
 				}
 
-				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaForward, gameState.DeltaLeft, velocityComponent.Velocity);
+				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, velocityComponent.Velocity);
 				CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 
 				PacketPlayerActionResponse packet;
@@ -109,8 +109,6 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		}
 		else if(netPosComponent.Dirty)
 		{
-
-			PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, velocityComponent.Velocity);
 			CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
 		}
 	}
