@@ -619,10 +619,6 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity)
 {
 
-	UNREFERENCED_VARIABLE(viewProj);
-	UNREFERENCED_VARIABLE(worldPos);
-	UNREFERENCED_VARIABLE(entity);
-
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
@@ -865,6 +861,16 @@ void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint
 	{
 		LOG_ERROR("Could not add Proj Element");
 	}
+}
+
+void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	m_pHUDGrid->GetChildren()->Remove(indicator->second);
+
+	m_ProjectedElements.erase(indicator->first);
 }
 
 void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, Entity entity)

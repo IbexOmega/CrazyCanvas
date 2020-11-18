@@ -70,8 +70,8 @@ void HUDSystem::Init()
 			{
 				{ R,	ProjectedGUIComponent::Type() }
 			},
-			.OnEntityAdded		= std::bind_front(&HUDSystem::OnProjectedEntityAdded, this)/*,
-			.OnEntityRemoval	= std::bind_front(&HUDSystem::RemoveProjectedEntity, this)*/
+			.OnEntityAdded		= std::bind_front(&HUDSystem::OnProjectedEntityAdded, this),
+			.OnEntityRemoval	= std::bind_front(&HUDSystem::RemoveProjectedEntity, this)
 		},
 		{
 			.pSubscriber = &m_CameraEntities,
@@ -299,6 +299,8 @@ bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 
 bool HUDSystem::RemoveProjectedEntity(LambdaEngine::Entity projectedEntity)
 {
+	m_HUDGUI->RemoveProjectedGUIElement(projectedEntity);
+
 	return false;
 }
 
