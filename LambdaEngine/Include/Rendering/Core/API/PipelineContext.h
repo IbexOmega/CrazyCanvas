@@ -29,6 +29,13 @@ namespace LambdaEngine
 		bool UniqueSamplers;
 	};
 
+	struct SDescriptorTLASUpdateDesc
+	{
+		const AccelerationStructure* const* ppTLAS;
+		uint32 FirstBinding;
+		uint32 DescriptorCount;
+	};
+
 	using SetIndex = uint32;
 
 	class PipelineContext
@@ -57,6 +64,7 @@ namespace LambdaEngine
 
 		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorBufferUpdateDesc& descriptorUpdateDesc, bool shouldCopy = true);
 		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTextureUpdateDesc& descriptorUpdateDesc, bool shouldCopy = true);
+		void UpdateDescriptorSet(const String& debugname, uint32 setIndex, DescriptorHeap* pDescriptorHeap, const SDescriptorTLASUpdateDesc& descriptorUpdateDesc, bool shouldCopy = true);
 
 		void SetVertexShader(GUID_Lambda vertexShader) { m_VertexShaderGUID = vertexShader; };
 		void SetFragmentShader(GUID_Lambda fragmentShader) { m_FragmentShaderGUID = fragmentShader; };

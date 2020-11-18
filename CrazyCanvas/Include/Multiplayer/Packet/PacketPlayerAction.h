@@ -11,8 +11,7 @@ struct PacketPlayerAction : Packet
 	DECL_PACKET(PacketPlayerAction);
 
 	glm::quat Rotation;
-	int8 DeltaForward	= 0;
-	int8 DeltaLeft		= 0;
+	glm::i8vec3 DeltaAction;
 	bool StartedReload	= false;
 	EAmmoType FiredAmmo	= EAmmoType::AMMO_TYPE_NONE; // Default is that we fired no projectiles
 	uint32 Angle		= 0;

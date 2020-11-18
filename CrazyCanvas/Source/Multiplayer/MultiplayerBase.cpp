@@ -16,6 +16,8 @@ MultiplayerBase::~MultiplayerBase()
 	{
 		LOG_ERROR("Match Release Failed");
 	}
+
+	HealthSystem::Release();
 }
 
 void MultiplayerBase::InitInternal()

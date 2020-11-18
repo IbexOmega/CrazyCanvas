@@ -1,5 +1,6 @@
 #version 460
 #extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 
 #include "../Defines.glsl"
@@ -55,9 +56,6 @@ layout (binding = 7, set = 0) restrict buffer AccelerationStructureInstance
 {
 	SAccelerationStructureInstance Val[];
 } b_ASInstance;
-
-layout(binding = 0, set = 1) uniform sampler2D u_DepthTexture;
-layout(binding = 0, set = 2) uniform sampler2D u_NormalTexture;
 
 void UpdateParticleTransform(vec3 position, SEmitter emitter, uint particleIndex, inout SParticle particle, inout SAccelerationStructureInstance ASInstance)
 {
@@ -121,25 +119,14 @@ void main()
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
 		}
 
-		vec3 nextPos = particle.Transform[3].xyz + particle.Velocity*dt;
-		vec4 vpPos = frameBuffer.Projection * frameBuffer.View * vec4(nextPos, 1.f);
-		vpPos.xy = vpPos.xy/vpPos.w * 0.5f + 0.5f;
-		vpPos.y = 1.f - vpPos.y;
-		vec2 uv = vpPos.xy;
-		vec3 normal = UnpackNormal(texture(u_NormalTexture, uv).xyz);
-		float depth = texture(u_DepthTexture, uv).r;
-		float pDepth = vpPos.z/vpPos.w;
-		if(vpPos.w < EPSILON)
-			pDepth = 0.f;
-
 		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
-		if(pDepth > depth && uv.x > 0.f && uv.y > 0.f && uv.x <= 1.f && uv.y <= 1.f)
+
+        // If we will skip to bounce the particles, this should not be named Bounciness. If not, this should be removed.
+		if(particle.Bounciness > 1.5f)
 		{
-			//vec3 preV = particle.Velocity;
-			//particle.Velocity *= particle.FrictionFactor;
-			//particle.Velocity -= dot(preV, normal) * normal * particle.Bounciness;
+			particle.Velocity = vec3(0.f);
 		}
-		
+
 		UpdateParticleTransform(particle.Transform[3].xyz + particle.Velocity*dt, emitter, particleIndex, particle, ASInstance);
 		particle.CurrentLife -= dt;
 
