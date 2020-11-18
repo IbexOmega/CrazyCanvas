@@ -81,8 +81,7 @@ void PlayerLocalSystem::SendGameState(const PlayerGameState& gameState, Entity e
 	PacketPlayerAction packet		= {};
 	packet.SimulationTick	= gameState.SimulationTick;
 	packet.Rotation			= gameState.Rotation;
-	packet.DeltaForward		= gameState.DeltaForward;
-	packet.DeltaLeft		= gameState.DeltaLeft;
+	packet.DeltaAction		= gameState.DeltaAction;
 
 	pPacketComponent.SendPacket(packet);
 }
@@ -119,23 +118,29 @@ void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, Playe
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	glm::i8vec2 deltaVelocity =
-	{
-		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),		// X: Right
-		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD) - InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD))	// Y: Forward
-	};
+	const ComponentArray<RotationComponent>* pRotationComponents			= pECS->GetComponentArray<RotationComponent>();
+	const ComponentArray<CharacterColliderComponent>* pCharacterColliders	= pECS->GetComponentArray<CharacterColliderComponent>();
+	ComponentArray<VelocityComponent>* pVelocityComponents					= pECS->GetComponentArray<VelocityComponent>();
 
-	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+	const CharacterColliderComponent& characterColliderComponent = pCharacterColliders->GetConstData(entityPlayer);
+
+	physx::PxControllerState playerControllerState;
+	characterColliderComponent.pController->getState(playerControllerState);
+
+	glm::i8vec3 deltaAction =
+	{
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),			// X: Right
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_JUMP)) * int8(playerControllerState.touchedShape != nullptr),				// Y: Up
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD) - InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD)),	// Z: Forward
+	};
 
 	const RotationComponent& rotationComponent = pRotationComponents->GetConstData(entityPlayer);
 	VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
 
-	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaVelocity.x, deltaVelocity.y, velocityComponent.Velocity);
+	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, velocityComponent.Velocity);
 
-	pGameState->DeltaForward = deltaVelocity.x;
-	pGameState->DeltaLeft = deltaVelocity.y;
-	pGameState->Rotation = rotationComponent.Quaternion;
+	pGameState->DeltaAction		= deltaAction;
+	pGameState->Rotation		= rotationComponent.Quaternion;
 }
 
 void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
@@ -179,7 +184,7 @@ void PlayerLocalSystem::ReplayGameState(Timestamp deltaTime, float32 dt, PlayerG
 	/*
 	* Returns the velocity based on key presses
 	*/
-	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaForward, clientState.DeltaLeft, velocityComponent.Velocity);
+	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaAction, velocityComponent.Velocity);
 
 	/*
 	* Sets the position of the PxController taken from the PositionComponent.
