@@ -37,6 +37,7 @@ private:
 	bool OnPlayerScoreUpdatedEvent(const PlayerScoreUpdatedEvent& event);
 	bool OnChatEvent(const ChatEvent& event);
 	bool OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& packet);
+	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 
 private:
 	Noesis::Ptr<LobbyGUI> m_LobbyGUI;

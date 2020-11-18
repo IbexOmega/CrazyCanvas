@@ -25,6 +25,11 @@ void PlayerManagerBase::Reset()
 	s_PlayerEntityToUID.clear();
 }
 
+uint8 PlayerManagerBase::GetPlayerCount()
+{
+	return s_Players.size();
+}
+
 const Player* PlayerManagerBase::GetPlayer(uint64 uid)
 {
 	auto pair = s_Players.find(uid);

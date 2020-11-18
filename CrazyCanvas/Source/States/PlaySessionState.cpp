@@ -87,7 +87,7 @@ void PlaySessionState::Init()
 		MatchDescription matchDescription =
 		{
 			.LevelHash = levelHashes[m_GameSettings.MapID],
-			.GameMode = ConvertGameMode(m_GameSettings.GameMode),
+			.GameMode = m_GameSettings.GameMode,
 		};
 		Match::CreateMatch(&matchDescription);
 	}

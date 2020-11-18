@@ -135,10 +135,16 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 		ServerHelper::SendBroadcast(packet, nullptr, event.pClient);
 		ServerHelper::SetMaxClients(packet.Players);
 
+		if (PlayerManagerServer::GetPlayerCount() > packet.Players)
+		{
+			PlayerManagerServer::KickPlayers(PlayerManagerServer::GetPlayerCount() - packet.Players);
+		}
+
 		LOG_INFO("\nConfiguring Server With The Following Settings:");
 		LOG_INFO("Name:       %s", packet.ServerName);
 		LOG_INFO("Players:    %hhu", packet.Players);
 		LOG_INFO("Map:        %s", m_MapName.c_str());
+		LOG_INFO("GameMode:   %s", GameModeToString(packet.GameMode));
 		LOG_INFO("MaxTime:    %hu", packet.MaxTime);
 		LOG_INFO("FlagsToWin: %hhu", packet.FlagsToWin);
 		LOG_INFO("Visible:    %s", packet.Visible ? "True" : "False");
@@ -175,7 +181,7 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 			MatchDescription matchDescription =
 			{
 				.LevelHash = levelHashes[m_GameSettings.MapID],
-				.GameMode = ConvertGameMode(m_GameSettings.GameMode),
+				.GameMode = m_GameSettings.GameMode,
 			};
 			Match::CreateMatch(&matchDescription);
 			Match::BeginLoading();

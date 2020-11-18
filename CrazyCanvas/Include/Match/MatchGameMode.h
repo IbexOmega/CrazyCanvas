@@ -43,3 +43,29 @@ constexpr FORCEINLINE bool GameModeRequiresFlag(EGameMode gameMode)
 
 	return false;
 }
+
+constexpr FORCEINLINE const char* GameModeToString(EGameMode gameMode)
+{
+	switch (gameMode)
+	{
+	case EGameMode::CTF_COMMON_FLAG:	return "One Flag CTF";
+	case EGameMode::CTF_TEAM_FLAG:		return "Multi Flag CTF";
+	default: return "NONE";
+	}
+}
+
+FORCEINLINE EGameMode GameModeParseString(const char* gameMode)
+{
+	if(strcmp(gameMode, "One Flag CTF") == 0)
+		return EGameMode::CTF_COMMON_FLAG;
+	else if (strcmp(gameMode, "Multi Flag CTF") == 0)
+		return EGameMode::CTF_TEAM_FLAG;
+	else
+		return EGameMode::NONE;
+}
+
+FORCEINLINE void GameModesQuery(LambdaEngine::TArray<EGameMode>& gameModes)
+{
+	gameModes.PushBack(EGameMode::CTF_COMMON_FLAG);
+	gameModes.PushBack(EGameMode::CTF_TEAM_FLAG);
+}

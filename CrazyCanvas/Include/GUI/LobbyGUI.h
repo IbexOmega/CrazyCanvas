@@ -66,6 +66,7 @@ private:
 	bool OnKeyPressedEvent(const LambdaEngine::KeyPressedEvent& event);
 	void TrySendChatMessage();
 	void SendGameSettings() const;
+	void UpdatePlayersLabel();
 
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
@@ -78,6 +79,7 @@ private:
 	Noesis::StackPanel* m_pSettingsHostStackPanel	= nullptr;
 	Noesis::StackPanel* m_pSettingsClientStackPanel	= nullptr;
 	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
+	Noesis::Label*		m_pPlayersLabel				= nullptr;
 
 	PacketGameSettings m_GameSettings;
 	bool m_IsInitiated;
@@ -85,6 +87,7 @@ private:
 private:
 	static constexpr const char* SETTING_SERVER_NAME	= "SERVER_NAME";
 	static constexpr const char* SETTING_MAP			= "MAP";
+	static constexpr const char* SETTING_GAME_MODE		= "GAME_MODE";
 	static constexpr const char* SETTING_MAX_TIME		= "MAX_TIME";
 	static constexpr const char* SETTING_FLAGS_TO_WIN	= "FLAGS_TO_WIN";
 	static constexpr const char* SETTING_MAX_PLAYERS	= "MAX_PLAYERS";

@@ -33,6 +33,7 @@ LobbyGUI::LobbyGUI() :
 	m_pSettingsHostStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsClientStackPanel");
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
 	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
+	m_pPlayersLabel				= FrameworkElement::FindName<Label>("PlayersLabel");
 
 	m_pChatInputTextBox->SetMaxLines(1);
 	m_pChatInputTextBox->SetMaxLength(128);
@@ -51,8 +52,15 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 {
 	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
 
+	LambdaEngine::TArray<LambdaEngine::String> gameModeNames;
+	LambdaEngine::TArray<EGameMode> gameModes;
+	GameModesQuery(gameModes);
+	for (EGameMode gameMode : gameModes)
+		gameModeNames.PushBack(GameModeToString(gameMode));
+
 	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_GameSettings.ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
+	AddSettingComboBox(SETTING_GAME_MODE,		"Game Mode",			gameModeNames, 0);
 	AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
 	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",			{ "4", "6", "8", "10" }, 3);
@@ -93,6 +101,8 @@ void LobbyGUI::AddPlayer(const Player& player)
 	playerGrid->GetChildren()->Add(image);
 
 	pPanel->GetChildren()->Add(playerGrid);
+
+	UpdatePlayersLabel();
 }
 
 void LobbyGUI::RemovePlayer(const Player& player)
@@ -118,6 +128,8 @@ void LobbyGUI::RemovePlayer(const Player& player)
 
 	if (player.IsHost())
 		UnregisterName("host_icon");
+
+	UpdatePlayersLabel();
 }
 
 void LobbyGUI::UpdatePlayerPing(const Player& player)
@@ -253,6 +265,10 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		if (pSettingMap)
 			pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
 
+		Label* pSettingGameMode = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_GAME_MODE) + "_client").c_str());
+		if (pSettingGameMode)
+			pSettingGameMode->SetContent(GameModeToString(packet.GameMode));
+
 		Label* pSettingMaxTime = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_TIME) + "_client").c_str());
 		if (pSettingMaxTime)
 			pSettingMaxTime->SetContent((std::to_string(packet.MaxTime / 60) + " min").c_str());
@@ -278,6 +294,8 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		TextBox* pServerNameTextBox = FrameworkElement::FindName<TextBox>((LambdaEngine::String(SETTING_SERVER_NAME) + "_host").c_str());
 		if (pServerNameTextBox)
 			pServerNameTextBox->SetText(packet.ServerName);
+
+		UpdatePlayersLabel();
 	}
 
 	m_GameSettings = packet;
@@ -311,6 +329,7 @@ void LobbyGUI::AddSettingComboBox(
 		settingComboBox->GetItems()->Add(settingTextBlock);
 	}
 	settingComboBox->SetSelectedIndex(defaultIndex);
+	settingComboBox->SetFocusable(false);
 }
 
 
@@ -399,6 +418,12 @@ void LobbyGUI::SendGameSettings() const
 		ClientHelper::Send(m_GameSettings);
 }
 
+void LobbyGUI::UpdatePlayersLabel()
+{
+	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
+	m_pPlayersLabel->SetContent((std::to_string(players.size()) + "/" + std::to_string(m_GameSettings.Players) + " Players").c_str());
+}
+
 void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const SelectionChangedEventArgs& args)
 {
 	ComboBox* pComboBox = static_cast<ComboBox*>(pSender);
@@ -412,6 +437,10 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	{
 		m_GameSettings.MapID = (uint8)indexSelected;
 	}
+	else if (setting == SETTING_GAME_MODE)
+	{
+		m_GameSettings.GameMode = GameModeParseString(textSelected.c_str());
+	}
 	else if (setting == SETTING_MAX_TIME)
 	{
 		textSelected = textSelected.substr(0, textSelected.find_last_of(" min"));
@@ -424,6 +453,7 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	else if (setting == SETTING_MAX_PLAYERS)
 	{
 		m_GameSettings.Players = (uint8)std::stoi(textSelected);
+		UpdatePlayersLabel();
 	}
 	else if (setting == SETTING_VISIBILITY)
 	{
