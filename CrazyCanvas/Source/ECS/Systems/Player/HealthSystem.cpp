@@ -37,6 +37,11 @@ bool HealthSystem::Init()
 	return s_Instance->InitInternal();
 }
 
+void HealthSystem::Release()
+{
+	s_Instance.Reset();
+}
+
 void HealthSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg)
 {
 	using namespace LambdaEngine;

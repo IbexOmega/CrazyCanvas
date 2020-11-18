@@ -8,6 +8,8 @@
 
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 PlayerAnimationSystem::PlayerAnimationSystem()
 {
 }
@@ -85,7 +87,7 @@ void PlayerAnimationSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			}
 		}
 #ifdef USE_ALL_ANIMATIONS
-		else 
+		else if (!MultiplayerUtils::IsServer())
 		{
 			glm::vec3 forwardDirection = GetForward(rotationComponent.Quaternion);
 			glm::vec3 rightDirection = GetRight(rotationComponent.Quaternion);

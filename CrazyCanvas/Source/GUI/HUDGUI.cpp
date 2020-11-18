@@ -70,6 +70,7 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplySettingsClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelSettingsClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeKeyBindingsClick);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnVolumeSliderChanged);
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyKeyBindingsClick);
@@ -314,6 +315,18 @@ void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 
 	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pKeyBindingsGrid);
+}
+
+void HUDGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	// Update volume for easier changing of it. Do not save it however as that should
+	// only be done when the user presses "Apply"
+
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
 }
 
 void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -616,8 +629,9 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
-void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type)
+void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity)
 {
+
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
@@ -633,7 +647,7 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 	{
 		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
 		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
-		SetIndicatorOpacity(glm::max(0.1f, vecLength), type);
+		SetIndicatorOpacity(glm::max(0.1f, vecLength), entity);
 	}
 	else
 	{
@@ -644,8 +658,8 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 
 		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
 	}
-
-	TranslateIndicator(translation, type);
+	
+	TranslateIndicator(translation, entity);
 }
 
 void HUDGUI::SetWindowSize(uint32 width, uint32 height)
@@ -692,7 +706,7 @@ void HUDGUI::InitGUI()
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
 
-	m_pFlagIndicator = FrameworkElement::FindName<Noesis::Rectangle>("FLAG_INDICATOR");
+	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	std::string ammoString;
 
@@ -700,9 +714,6 @@ void HUDGUI::InitGUI()
 
 	m_pWaterAmmoText->SetText(ammoString.c_str());
 	m_pPaintAmmoText->SetText(ammoString.c_str());
-
-	/*FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");*/
 
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	CommonApplication::Get()->SetMouseVisibility(false);
@@ -727,7 +738,7 @@ void HUDGUI::SetDefaultSettings()
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
-	pVolumeSlider->SetValue(volume);
+	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	SetDefaultKeyBindings();
@@ -829,36 +840,64 @@ bool HUDGUI::MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& ev
 	return false;
 }
 
-void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, IndicatorTypeGUI type)
+void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
-	switch (type)
-	{
-	case IndicatorTypeGUI::FLAG_INDICATOR:
-	{
-		m_pFlagIndicator->SetRenderTransform(pTranslation);
-		break;
-	}
-	default:
-		break;
-	}
-}
+	Noesis::Ptr<Noesis::Rectangle> indicator = *new Noesis::Rectangle();
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
-void HUDGUI::SetIndicatorOpacity(float32 value, IndicatorTypeGUI type)
-{
+	translation->SetY(100.0f);
+	translation->SetX(100.0f);
+
+	indicator->SetRenderTransform(translation);
+	indicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
 
-	brush->SetOpacity(value);
+	if (teamIndex != UINT8_MAX)
+	{
+		if (localTeamIndex == teamIndex)
+			brush->SetColor(Noesis::Color::Blue());
+		else
+			brush->SetColor(Noesis::Color::Red());
+	}
+	else
+		brush->SetColor(Noesis::Color::Green());
 
-	switch (type)
+	indicator->SetHeight(40);
+	indicator->SetWidth(40);
+
+	indicator->SetFill(brush);
+
+	m_ProjectedElements[entity] = indicator;
+
+	if (m_pHUDGrid->GetChildren()->Add(indicator) == -1)
 	{
-	case IndicatorTypeGUI::FLAG_INDICATOR:
-	{
-		brush->SetColor(Noesis::Color::Red());
-		m_pFlagIndicator->SetFill(brush);
-		break;
+		LOG_ERROR("Could not add Proj Element");
 	}
-	default:
-		break;
-	}
+}
+
+void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	m_pHUDGrid->GetChildren()->Remove(indicator->second);
+
+	m_ProjectedElements.erase(indicator->first);
+}
+
+void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	indicator->second->SetRenderTransform(pTranslation);
+}
+
+void HUDGUI::SetIndicatorOpacity(float32 value, Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	indicator->second->GetFill()->SetOpacity(value);
 }

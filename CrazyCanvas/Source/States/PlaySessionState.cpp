@@ -86,12 +86,11 @@ void PlaySessionState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[m_GameSettings.MapID]
+			.LevelHash = levelHashes[m_GameSettings.MapID],
+			.GameMode = ConvertGameMode(m_GameSettings.GameMode),
 		};
 		Match::CreateMatch(&matchDescription);
 	}
-
-	m_HUDSystem.Init();
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 
@@ -104,6 +103,8 @@ void PlaySessionState::Init()
 		//Called to tell the server we are ready to start the match
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
+
+	m_HUDSystem.Init();
 }
 
 void PlaySessionState::Tick(Timestamp delta)

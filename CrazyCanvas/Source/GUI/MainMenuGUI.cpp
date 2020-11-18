@@ -69,6 +69,7 @@ bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 
 	// SettingsGrid
 	NS_CONNECT_EVENT(Button, Click, OnButtonChangeKeyBindingsClick);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnVolumeSliderChanged);
 
 	// Settings
 	NS_CONNECT_EVENT(Button, Click, OnButtonApplySettingsClick);
@@ -150,7 +151,8 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	PacketGameSettings settings;
-	settings.MapID = 0;
+	settings.MapID = 5;
+	settings.GameMode = ConvertGameMode(EGameMode::CTF_TEAM_FLAG);
 	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -226,6 +228,18 @@ void MainMenuGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender,
 	m_ContextStack.push(m_pKeyBindingsGrid);
 }
 
+void MainMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	// Update volume for easier changing of it. Do not save it however as that should
+	// only be done when the user presses "Apply"
+
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+}
+
 /*
 *
 *	KEYBINDINGS BUTTONS
@@ -298,7 +312,7 @@ void MainMenuGUI::SetDefaultSettings()
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
-	pVolumeSlider->SetValue(volume);
+	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
 	SetDefaultKeyBindings();
