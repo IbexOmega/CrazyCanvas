@@ -177,28 +177,23 @@ bool CrazyCanvas::LoadRendererResources()
 
 	// For Skybox RenderGraph
 	{
-		String skybox[]
-		{
-			"Skybox/px.png",
-			"Skybox/nx.png",
-			"Skybox/py.png",
-			"Skybox/ny.png",
-			"Skybox/pz.png",
-			"Skybox/nz.png"
-		};
+		// Test Skybox
+		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
+			"Skybox/veld_fire.hdr",
+			EFormat::FORMAT_R16G16B16A16_SFLOAT,
+			512,
+			false);
 
-		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
-
-		Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
-		TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
-		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
+		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
+		TextureView*	pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+		Sampler*		pLinearSampler		= Sampler::GetLinearSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};
 		cubeTextureUpdateDesc.ResourceName										= "SKYBOX";
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures					= &pCubeTexture;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews				= &pCubeTextureView;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews	= &pCubeTextureView;
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers					= &pNearestSampler;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers					= &pLinearSampler;
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}

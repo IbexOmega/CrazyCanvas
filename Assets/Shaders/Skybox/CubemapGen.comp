@@ -21,13 +21,13 @@ const vec2 INV_ATAN = vec2(0.1591f, 0.3183f);
 const mat3 ROTATE_UV[6] = 
 {
 	// +X
-	mat3(  0,  0,  1,
-		   0, -1,  0,
-		  -1,  0,  0),
-	// -X
 	mat3(  0,  0, -1,
 		   0, -1,  0,
 		   1,  0,  0),
+	// -X
+	mat3(  0,  0,  1,
+		   0, -1,  0,
+		  -1,  0,  0),
 	// +Y
 	mat3(  1,  0,  0,
 		   0,  0,  1,
@@ -46,6 +46,17 @@ const mat3 ROTATE_UV[6] =
 		   0,  0, -1)
 };
 
+const vec3 COLOR[6] = 
+{
+	vec3(1.0f, 0.0f, 0.0f),
+	vec3(0.0f, 1.0f, 0.0f),
+	vec3(0.0f, 0.0f, 1.0f),
+
+	vec3(1.0f, 1.0f, 1.0f),
+	vec3(1.0f, 1.0f, 1.0f),
+	vec3(1.0f, 1.0f, 1.0f),
+};
+
 void main()
 {
 	vec2 texCoord	= vec2(gl_GlobalInvocationID.xy);
@@ -53,12 +64,13 @@ void main()
 
 	// Map the UV coords of the cubemap face to a direction
 	// [(0, 0), (1, 1)] => [(-0.5, -0.5), (0.5, 0.5)]
-	vec3 direction	= normalize(vec3((texCoord.xy / float(512)) - 0.5f, 0.5f));
+	vec3 direction	= normalize(vec3((texCoord.xy / float(u_PC.Size)) - 0.5f, 0.5f));
 	direction		= normalize(ROTATE_UV[face] * direction);
 
 	// Convert the world space direction into U,V texture coordinates in the panorama texture.
 	// Source: http://gl.ict.usc.edu/Data/HighResProbes/
-	vec2 panoramaTexCoords = (vec2(atan(direction.z, direction.x), asin(direction.y)) * INV_ATAN) + 0.5f;
+	vec2 panoramaTexCoords = (vec2(atan(direction.z, direction.x), acos(direction.y)) * INV_ATAN);
 	vec4 color = texture(u_Panorama, panoramaTexCoords);
+	// color.rgb = color.rgb * COLOR[face];
 	imageStore(u_CubeMap, ivec3(texCoord, face), color);
 }

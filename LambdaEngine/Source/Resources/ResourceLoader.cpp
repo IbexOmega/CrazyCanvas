@@ -228,6 +228,10 @@ namespace LambdaEngine
 		SAFERELEASE(s_pCopyCommandList);
 		SAFERELEASE(s_pCopyFence);
 
+		SAFERELEASE(s_pComputeCommandAllocator);
+		SAFERELEASE(s_pComputeCommandList);
+		SAFERELEASE(s_pComputeFence);
+
 		glslang::FinalizeProcess();
 
 		return true;
