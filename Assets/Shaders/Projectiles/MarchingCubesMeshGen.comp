@@ -133,10 +133,9 @@ void main()
 	/*	The 8 first (right-most) bits represent one node each. If the node's density is less than or equal to the iso
 		value, the bit is 1. */
 	uint caseMask = 0;
-	const float isoValue = SPHERE_RADIUS * float(u_PC.SphereCount) + 1.0;
 	for (uint nodeIdx = 0; nodeIdx < 8; nodeIdx++)
 	{
-		caseMask |= uint(nodes[nodeIdx].Density <= isoValue) << nodeIdx;
+		caseMask |= uint(nodes[nodeIdx].Density >= 1.0) << nodeIdx;
 	}
 
 	// If the triangle does not exist, use a default position
@@ -149,7 +148,7 @@ void main()
 	for (uint triangleNr = 0; triangleNr < MAX_TRIANGLES_PER_CELL; triangleNr++)
 	{
 		STriangle triangle;
-		const ivec3 edgeIndices = g_CaseToEdgeList[caseMask][triangleNr];
+		const uvec3 edgeIndices = g_CaseToEdgeList[caseMask][triangleNr];
 
 		// A 13th edge does not exist, index 12 denotes a non-existing triangle
 		const float triangleExists = float(edgeIndices[0] != 12);
@@ -160,12 +159,12 @@ void main()
 
 			const SNode nodeA = nodes[edge.CornerIndexA];
 			const SNode nodeB = nodes[edge.CornerIndexB];
-			const float interpFactor = nodeB.Density / (nodeA.Density + nodeB.Density);
 
-			const vec3 edgeInterpPos = mix(nodeA.Position, nodeB.Position, interpFactor);
+			const float interpFactor = (1.0 - nodeA.Density) / (nodeB.Density - nodeA.Density);
+			const vec3 edgeInterpPos = nodeA.Position + interpFactor * (nodeB.Position - nodeA.Position);
 			triangle.Vertices[edgeNr].Position = vec4(mix(defaultPosition, edgeInterpPos, triangleExists), 0.0);
 
-			vec3 normal = normalize(mix(nodeA.Gradient, nodeB.Gradient, interpFactor));
+			vec3 normal = -normalize(nodeA.Gradient + interpFactor * (nodeB.Gradient - nodeA.Gradient));
 			triangle.Vertices[edgeNr].Normal = vec4(normal, 0.0);
 
 			triangle.Vertices[edgeNr].TexCoord = vec4(normal.xy * 0.5 + vec2(0.5), 0.0, 0.0);
@@ -178,7 +177,6 @@ void main()
 		const vec2 deltaUV1 = triangle.Vertices[1].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
 		const vec2 deltaUV2 = triangle.Vertices[2].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
 
-		// const float r = 1.0 / (deltaUV1.x * deltaUV2.y - deltaUV1.y * deltaUV2.x);
 		const vec4 tangent = vec4(normalize(deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y), 0.0);
 		triangle.Vertices[0].Tangent = tangent;
 		triangle.Vertices[1].Tangent = tangent;

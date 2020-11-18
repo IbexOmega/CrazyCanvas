@@ -3,7 +3,7 @@
 
 #define MAX_SPHERE_COUNT 7
 #define MAX_TRIANGLES_PER_CELL 5
-#define SPHERE_RADIUS 0.3
+#define SPHERE_RADIUS 0.4
 #define SPHERE_RADIUS_SQUARE SPHERE_RADIUS * SPHERE_RADIUS
 
 struct SEdge
@@ -12,7 +12,7 @@ struct SEdge
 	int CornerIndexB;
 };
 
-const ivec3 g_CaseToEdgeList[256][MAX_TRIANGLES_PER_CELL] =
+const uvec3 g_CaseToEdgeList[256][MAX_TRIANGLES_PER_CELL] =
 {
 	{ { 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 } },
 	{ { 0,  8,  3 },	{ 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 },	{ 12, 12, 12 } },
