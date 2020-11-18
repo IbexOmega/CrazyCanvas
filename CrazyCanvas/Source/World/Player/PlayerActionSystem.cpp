@@ -94,23 +94,25 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 	return false;
 }
 
-void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
+void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, glm::vec3& result)
 {
-	if (!Match::HasBegun() || (deltaForward == 0 && deltaLeft == 0))
+	if (!Match::HasBegun() || (deltaAction.x == 0 && deltaAction.y == 0 && deltaAction.z == 0))
 	{
 		result.x = 0.0f;
 		result.z = 0.0f;
 		return;
 	}
 
-	float32 movespeed = 4.0f;
+	float32 moveSpeed = 4.0f;
+	float32 jumpSpeed = 20.0f;
 	glm::vec3 currentVelocity;
-	currentVelocity		= rotation * glm::vec3(deltaForward, 0.0f, deltaLeft);
+	currentVelocity		= rotation * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
 	currentVelocity.y	= 0.0f;
 	currentVelocity		= glm::normalize(currentVelocity);
-	currentVelocity		*= movespeed;
+	currentVelocity		*= moveSpeed;
 
 	result.x = currentVelocity.x;
+	result.y = result.y * float32(1 - deltaAction.y) + jumpSpeed * float32(deltaAction.y);
 	result.z = currentVelocity.z;
 }
 

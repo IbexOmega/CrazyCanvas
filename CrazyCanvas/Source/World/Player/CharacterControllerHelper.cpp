@@ -65,6 +65,7 @@ void CharacterControllerHelper::TickCharacterController(
 	// Update velocity
 	glm::vec3& velocity = velocityComp.Velocity;
 	velocity.y -= GRAVITATIONAL_ACCELERATION;
+	LOG_WARNING("TRANSLATION: %f, %f, %f", velocity.x, velocity.y, velocity.z);
 
 	// Calculate Tick Translation
 	PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
