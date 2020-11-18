@@ -47,9 +47,17 @@ namespace LambdaEngine
 		template<typename Comp>
 		Comp& GetComponent(Entity entity);
 
+		// Fetch a reference to a component for a specific entity if it exists, returns true if the component exists, otherwise returns false.
+		template<typename Comp>
+		bool GetComponentIf(Entity entity, Comp& comp);
+
 		// Fetch a const reference to a component for a specific entity.
 		template<typename Comp>
 		const Comp& GetConstComponent(Entity entity) const;
+
+		// Fetch a const reference to a component for a specific entity if it exists, returns true if the component exists, otherwise returns false.
+		template<typename Comp>
+		bool GetConstComponentIf(Entity entity, Comp& comp) const;
 
 		// Fetch a pointer to an array containing all components of a specific type.
 		template<typename Comp>
@@ -175,9 +183,21 @@ namespace LambdaEngine
 	}
 
 	template<typename Comp>
+	inline bool ECSCore::GetComponentIf(Entity entity, Comp& comp)
+	{
+		return m_ComponentStorage.GetComponent<Comp>(entity);
+	}
+
+	template<typename Comp>
 	inline const Comp& ECSCore::GetConstComponent(Entity entity) const
 	{
 		return m_ComponentStorage.GetConstComponent<Comp>(entity);
+	}
+
+	template<typename Comp>
+	inline bool ECSCore::GetConstComponentIf(Entity entity, Comp& comp) const
+	{
+		return m_ComponentStorage.GetConstComponentIf<Comp>(entity, comp);
 	}
 
 	template<typename Comp>

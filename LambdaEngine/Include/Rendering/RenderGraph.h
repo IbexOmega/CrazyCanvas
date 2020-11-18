@@ -181,6 +181,7 @@ namespace LambdaEngine
 
 		struct DrawArgsData
 		{
+			bool						IsDirty = false;
 			PipelineBufferBarrierDesc	InitialTransitionBarrierTemplate;
 			PipelineTextureBarrierDesc	InitialTextureTransitionBarrierTemplate;
 			TArray<DrawArg>				Args;

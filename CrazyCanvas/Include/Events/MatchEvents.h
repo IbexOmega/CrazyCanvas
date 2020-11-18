@@ -1,9 +1,32 @@
 #pragma once
 
 #include "Application/API/Events/Event.h"
+#include "Match/MatchGameMode.h"
 
 /*
-* FlagDeliveredEvent
+* MatchInitializedEvent
+*/
+struct MatchInitializedEvent : public LambdaEngine::Event
+{
+public:
+	inline MatchInitializedEvent(EGameMode gameMode)
+		: Event()
+		, GameMode(gameMode)
+	{
+	}
+
+	DECLARE_EVENT_TYPE(MatchInitializedEvent);
+
+	virtual LambdaEngine::String ToString() const override
+	{
+		return LambdaEngine::String("MatchInitializedEvent");
+	}
+
+	EGameMode GameMode = EGameMode::NONE;
+};
+
+/*
+* MatchCountdownEvent
 */
 struct MatchCountdownEvent : public LambdaEngine::Event
 {
@@ -27,13 +50,14 @@ public:
 /*
 * FlagDeliveredEvent
 */
-
 struct FlagDeliveredEvent : public LambdaEngine::Event
 {
 public:
-	inline FlagDeliveredEvent(uint8 teamIndex)
+	inline FlagDeliveredEvent(LambdaEngine::Entity entity, uint8 flagTeamIndex, uint8 scoringTeamIndex)
 		: Event()
-		, TeamIndex(teamIndex)
+		, Entity(entity)
+		, FlagTeamIndex(flagTeamIndex)
+		, ScoringTeamIndex(scoringTeamIndex)
 	{
 	}
 
@@ -44,7 +68,33 @@ public:
 		return LambdaEngine::String("FlagDeliveredEvent");
 	}
 
-	uint8 TeamIndex = 0;
+	LambdaEngine::Entity Entity;
+	uint8 FlagTeamIndex = 0;
+	uint8 ScoringTeamIndex = 0;
+};
+
+/*
+* FlagRespawnEvent
+*/
+struct FlagRespawnEvent : public LambdaEngine::Event
+{
+public:
+	inline FlagRespawnEvent(LambdaEngine::Entity entity, uint8 flagTeamIndex)
+		: Event()
+		, Entity(entity)
+		, FlagTeamIndex(flagTeamIndex)
+	{
+	}
+
+	DECLARE_EVENT_TYPE(FlagRespawnEvent);
+
+	virtual LambdaEngine::String ToString() const override
+	{
+		return LambdaEngine::String("FlagRespawnEvent");
+	}
+
+	LambdaEngine::Entity Entity;
+	uint8 FlagTeamIndex = 0;
 };
 
 
