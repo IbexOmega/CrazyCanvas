@@ -356,7 +356,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName = "Physics Renderer Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount = 456;
+		descriptorHeapDesc.DescriptorSetCount = 256;
 		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
 
 		m_DescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
