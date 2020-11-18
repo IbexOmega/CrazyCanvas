@@ -180,33 +180,11 @@ namespace LambdaEngine
 				m_pDrawArgs = pDrawArgs;
 				m_DrawCount = count;
 
-				constexpr DescriptorSetIndex setIndex = 1U;
-
 				m_DrawArgsDescriptorSets.Clear();
 				m_DrawArgsDescriptorSets.Resize(m_DrawCount);
-
-				// Create DrawArgs Descriptors
-				// TODO: Get descriptors instead of reacreating them
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
-					// Create a new descriptor or use an old descriptor
-					m_DrawArgsDescriptorSets[d] = m_DescriptorCache.GetDescriptorSet("Light Renderer Descriptor Set " + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
-
-					if (m_DrawArgsDescriptorSets[d] != nullptr)
-					{
-						Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
-						uint64 pOffsets[2]	 = { 0, 0 };
-						uint64 pSizes[2]	 = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
-
-						m_DrawArgsDescriptorSets[d]->WriteBufferDescriptors(
-							ppBuffers,
-							pOffsets,
-							pSizes,
-							0,
-							2,
-							EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
-						);
-					}
+					m_DrawArgsDescriptorSets[d] = MakeSharedRef(pDrawArgs[d].pDescriptorSet);
 				}
 			}
 			else
@@ -312,13 +290,31 @@ namespace LambdaEngine
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		verticesBindingDesc.DescriptorCount = 1;
 		verticesBindingDesc.Binding = 0;
-		verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 		DescriptorBindingDesc instanceBindingDesc = {};
 		instanceBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		instanceBindingDesc.DescriptorCount = 1;
 		instanceBindingDesc.Binding = 1;
-		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+		DescriptorBindingDesc meshletsDesc = {};
+		meshletsDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		meshletsDesc.DescriptorCount = 1;
+		meshletsDesc.Binding = 2;
+		meshletsDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+		DescriptorBindingDesc uniqueIndicesDesc = {};
+		uniqueIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		uniqueIndicesDesc.DescriptorCount = 1;
+		uniqueIndicesDesc.Binding = 3;
+		uniqueIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+		DescriptorBindingDesc primitiveIndicesDesc = {};
+		primitiveIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		primitiveIndicesDesc.DescriptorCount = 1;
+		primitiveIndicesDesc.Binding = 4;
+		primitiveIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 		DescriptorBindingDesc lightsBindingDesc = {};
 		lightsBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -330,7 +326,7 @@ namespace LambdaEngine
 		descriptorSetLayoutDesc1.DescriptorBindings = { lightsBindingDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
+		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, meshletsDesc, uniqueIndicesDesc, primitiveIndicesDesc };
 
 		ConstantRangeDesc constantRangeDesc = {};
 		constantRangeDesc.OffsetInBytes = 0U;
@@ -354,7 +350,7 @@ namespace LambdaEngine
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 0;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 3;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 6;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 
