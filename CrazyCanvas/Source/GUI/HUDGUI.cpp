@@ -50,7 +50,7 @@ HUDGUI::HUDGUI() :
 HUDGUI::~HUDGUI()
 {
 	m_PlayerGrids.clear();
-	//EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &HUDGUI::OnLANServerFound);
+
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
 	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
 }
