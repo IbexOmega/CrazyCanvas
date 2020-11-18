@@ -163,8 +163,9 @@ private:
 	Noesis::Button* m_pSetKeyButton			= nullptr;
 	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
 
-	bool			m_RayTracingEnabled		= false;
+	// bool			m_RayTracingEnabled		= false;
 	bool			m_MeshShadersEnabled	= false;
+	bool			m_FullscreenEnabled		= false;
 	bool			m_EscapeMenuEnabled		= false;
 
 	bool			m_MouseEnabled			= false;
