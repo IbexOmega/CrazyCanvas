@@ -56,6 +56,7 @@ private:
 	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
 
 	LambdaEngine::SpinLock m_PlayersToRespawnLock;
+	//LambdaEngine::TQueue<PlayerTimers> m_PlayersToRespawn;
 	LambdaEngine::TArray<PlayerTimers> m_PlayersToRespawn;
 
 

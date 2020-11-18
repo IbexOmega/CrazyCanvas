@@ -324,7 +324,8 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 
 	{
 		std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
-		for (PlayerTimers player : m_PlayersToRespawn)
+
+		for (PlayerTimers& player : m_PlayersToRespawn)
 		{
 			player.second -= float32(deltaTime.AsSeconds());
 
@@ -332,9 +333,9 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 			{
 				RespawnPlayer(player.first);
 				LOG_INFO("SERVER: Player=%u RESPAWNED", player.first);
+				m_PlayersToRespawn.Erase(m_PlayersToRespawn.Begin());
 			}
 		}
-		m_PlayersToRespawn.Clear();
 	}
 }
 
