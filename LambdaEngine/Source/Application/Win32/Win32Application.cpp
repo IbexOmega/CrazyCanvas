@@ -598,11 +598,15 @@ namespace LambdaEngine
 		::WNDCLASS wc = { };
 		ZERO_MEMORY(&wc, sizeof(::WNDCLASS));
 
+		const wchar_t* path = L".\\..\\Assets\\guy.ico";
+		HICON hIcon = static_cast<HICON>(LoadImage(NULL, path, IMAGE_ICON, 0, 0, LR_LOADFROMFILE));
+
 		wc.hInstance		= Win32Application::Get().GetInstanceHandle();
 		wc.lpszClassName	= WINDOW_CLASS;
 		wc.hbrBackground	= (HBRUSH)::GetStockObject(BLACK_BRUSH);
 		wc.hCursor			= LoadCursor(NULL, IDC_ARROW);
 		wc.lpfnWndProc		= Win32Application::WindowProc;
+		wc.hIcon			= hIcon;
 
 		ATOM classAtom = ::RegisterClass(&wc);
 		if (classAtom == 0)
