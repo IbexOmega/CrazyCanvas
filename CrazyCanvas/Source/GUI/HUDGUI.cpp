@@ -503,8 +503,6 @@ void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint
 	{
 		LOG_ERROR("Could not add Proj Element");
 	}
-
-	LOG_INFO("Grid Contains %d Items", m_pHUDGrid->GetChildren()->Count());
 }
 
 void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, Entity entity)
