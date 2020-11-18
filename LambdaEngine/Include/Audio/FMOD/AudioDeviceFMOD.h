@@ -22,7 +22,7 @@ namespace LambdaEngine
 
 		virtual void UpdateAudioListener(uint32 index, const AudioListenerDesc* pDesc) override final;
 
-		virtual uint32				CreateAudioListener()									override final;
+		virtual uint32				GetAudioListener(bool requestNew)						override final;
 		virtual IMusic*				CreateMusic(const MusicDesc* pDesc)						override final;
 		virtual ISoundEffect3D*		Create3DSoundEffect(const SoundEffect3DDesc* pDesc)		override final;
 		virtual ISoundEffect2D*		Create2DSoundEffect(const SoundEffect2DDesc* pDesc)		override final;

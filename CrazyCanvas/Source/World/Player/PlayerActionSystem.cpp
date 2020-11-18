@@ -33,7 +33,7 @@ PlayerActionSystem::~PlayerActionSystem()
 
 void PlayerActionSystem::Init()
 {
-		
+
 }
 
 void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer)
@@ -45,7 +45,7 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 	float addedPitch = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
 	float addedYaw = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
-	if (m_MouseEnabled)
+	if (m_MouseEnabled && Input::GetCurrentInputmode() == EInputLayer::GAME)
 	{
 		const MouseState& mouseState = Input::GetMouseState(EInputLayer::GAME);
 

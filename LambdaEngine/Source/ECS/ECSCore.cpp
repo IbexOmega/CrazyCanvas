@@ -83,14 +83,23 @@ namespace LambdaEngine
 		const EntityRegistryPage& page = m_EntityRegistry.GetTopRegistryPage();
 		const auto& entityComponentSets = page.GetVec();
 		const TArray<Entity>& entities = page.GetIDs();
+		TArray<const ComponentType*> componentTypes;
 
-		for (uint32 entityIdx = 0; entityIdx < entities.GetSize(); entityIdx++)
+		uint32 entityCount = entities.GetSize();
+		for (uint32 entityNr = 0; entityNr < entityCount; entityNr++)
 		{
-			Entity entity = entities[entityIdx];
-			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[entityIdx];
+			Entity entity = entities[entityNr];
+			const std::unordered_set<const ComponentType*>& typeSet = entityComponentSets[entityNr];
+			componentTypes.Assign(typeSet.begin(), typeSet.end());
 
-			for (const ComponentType* pComponentType : typeSet)
-				DeleteComponent(entity, pComponentType);
+			for (const ComponentType* pComponentType : componentTypes)
+				m_EntityRegistry.DeregisterComponentType(entity, pComponentType);
+
+			for (const ComponentType* pComponentType : componentTypes)
+			{
+				m_EntityPublisher.UnpublishComponent(entity, pComponentType);
+				m_ComponentStorage.DeleteComponent(entity, pComponentType);
+			}
 		}
 
 		m_EntityRegistry.RemovePage();
@@ -258,15 +267,24 @@ namespace LambdaEngine
 
 		for (Entity entity : m_EntitiesToDelete)
 		{
-			// Delete every component belonging to the entity
-			const std::unordered_set<const ComponentType*>& componentTypesSet = registryPage.IndexID(entity);
-			componentTypes.Assign(componentTypesSet.begin(), componentTypesSet.end());
+			if (registryPage.HasElement(entity))
+			{
+				// Delete every component belonging to the entity
+				const std::unordered_set<const ComponentType*>& componentTypesSet = registryPage.IndexID(entity);
+				componentTypes.Assign(componentTypesSet.begin(), componentTypesSet.end());
 
-			for (const ComponentType* pComponentType : componentTypes)
-				DeleteComponent(entity, pComponentType);
+				for (const ComponentType* pComponentType : componentTypes)
+					m_EntityRegistry.DeregisterComponentType(entity, pComponentType);
 
-			// Free the entity ID
-			m_EntityRegistry.DeregisterEntity(entity);
+				for (const ComponentType* pComponentType : componentTypes)
+				{
+					m_EntityPublisher.UnpublishComponent(entity, pComponentType);
+					m_ComponentStorage.DeleteComponent(entity, pComponentType);
+				}
+
+				// Free the entity ID
+				m_EntityRegistry.DeregisterEntity(entity);
+			}
 		}
 
 		m_EntitiesToDelete.clear();

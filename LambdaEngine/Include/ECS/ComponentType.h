@@ -8,18 +8,18 @@ namespace LambdaEngine
 	class ComponentType
 	{
 	public:
-		constexpr ComponentType::ComponentType(const ConstString& className) :
+		constexpr ComponentType(const ConstString& className) :
 			m_ClassName(className)
 		{
 
 		}
 
-		constexpr uint32 ComponentType::GetHash() const
+		constexpr uint32 GetHash() const
 		{
 			return m_ClassName.Hash;
 		}
 
-		constexpr const char* ComponentType::GetName() const
+		constexpr const char* GetName() const
 		{
 			return m_ClassName.Name;
 		}
