@@ -10,7 +10,6 @@ namespace Obj
 	struct Player
 	{
 		uint64 ClientUID;
-		uint8 TeamIndex;
 		int32 WeaponNetworkUID;
 	};
 #pragma pack(pop)

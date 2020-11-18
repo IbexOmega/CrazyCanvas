@@ -29,6 +29,7 @@ LobbyState::~LobbyState()
 	EventQueue::UnregisterEventHandler<PlayerHostUpdatedEvent>(this, &LobbyState::OnPlayerHostUpdatedEvent);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
 	EventQueue::UnregisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
+	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &LobbyState::OnPlayerScoreUpdatedEvent);
 	EventQueue::UnregisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
 
@@ -44,6 +45,7 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PlayerHostUpdatedEvent>(this, &LobbyState::OnPlayerHostUpdatedEvent);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &LobbyState::OnPlayerPingUpdatedEvent);
 	EventQueue::RegisterEventHandler<PlayerReadyUpdatedEvent>(this, &LobbyState::OnPlayerReadyUpdatedEvent);
+	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &LobbyState::OnPlayerScoreUpdatedEvent);
 	EventQueue::RegisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
 	
@@ -109,6 +111,12 @@ bool LobbyState::OnPlayerPingUpdatedEvent(const PlayerPingUpdatedEvent& event)
 bool LobbyState::OnPlayerReadyUpdatedEvent(const PlayerReadyUpdatedEvent& event)
 {
 	m_LobbyGUI->UpdatePlayerReady(*event.pPlayer);
+	return false;
+}
+
+bool LobbyState::OnPlayerScoreUpdatedEvent(const PlayerScoreUpdatedEvent& event)
+{
+	m_LobbyGUI->UpdatePlayerScore(*event.pPlayer);
 	return false;
 }
 

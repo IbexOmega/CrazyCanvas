@@ -14,6 +14,8 @@
 
 #include "ECS/Components/Player/ProjectileComponent.h"
 
+#include "Lobby/Player.h"
+
 namespace LambdaEngine
 {
 	class IClient;
@@ -59,14 +61,13 @@ struct CreateFlagDesc
 
 struct CreatePlayerDesc
 {
-	uint64								ClientUID			= 0;
+	const Player*						pPlayer				= nullptr;
 	bool								IsLocal				= false;
 	int32								PlayerNetworkUID	= -1;
 	int32								WeaponNetworkUID	= -1;
 	glm::vec3							Position			= glm::vec3(0.0f);
 	glm::vec3							Forward				= glm::vec3(1.0f, 0.0f, 0.0f);
 	glm::vec3							Scale				= glm::vec3(1.0f);
-	uint8								TeamIndex			= 0;
 	const LambdaEngine::CameraDesc*		pCameraDesc			= nullptr;
 };
 
