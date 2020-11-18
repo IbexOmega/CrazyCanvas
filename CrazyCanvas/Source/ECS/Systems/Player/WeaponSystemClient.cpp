@@ -9,6 +9,8 @@
 
 #include "Math/Random.h"
 
+#include "Match/Match.h"
+
 /*
 * WeaponSystemClients
 */
@@ -258,7 +260,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 	VALIDATE(ammoState != weaponComponent.WeaponTypeAmmo.end());
 
 	const bool hasAmmo = (ammoState->second.first > 0);
-	if (hasAmmo)
+	if (Match::HasBegun() && hasAmmo)
 	{
 		// If we try to shoot when reloading we abort the reload
 		const bool isReloading = weaponComponent.ReloadClock > 0.0f;
