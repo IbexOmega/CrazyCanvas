@@ -60,7 +60,7 @@ private:
 	LambdaEngine::TArray<PlayerTimers> m_PlayersToRespawn;
 
 
-
+	bool m_ShouldErase = false;
 	uint8 m_NextTeamIndex = 0;
 	bool m_ShouldBeginMatch = false;
 };

@@ -324,6 +324,7 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 
 	{
 		std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
+		TArray<PlayerTimers> deferredPlayersToRespawn;
 
 		for (PlayerTimers& player : m_PlayersToRespawn)
 		{
@@ -331,10 +332,15 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 
 			if (player.second <= 0.0f)
 			{
-				RespawnPlayer(player.first);
-				LOG_INFO("SERVER: Player=%u RESPAWNED", player.first);
-				m_PlayersToRespawn.Erase(m_PlayersToRespawn.Begin());
+				deferredPlayersToRespawn.PushBack(player);
 			}
+		}
+
+		for (PlayerTimers& player : deferredPlayersToRespawn)
+		{
+			RespawnPlayer(player.first);
+			LOG_INFO("SERVER: Player=%u RESPAWNED", player.first);
+			m_PlayersToRespawn.Erase(m_PlayersToRespawn.Begin());
 		}
 	}
 }
@@ -522,11 +528,12 @@ void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity)
 
 		const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
 		
-		LOG_INFO("SERVER: Moving player[%s] to [%.4f, %.4f, %.4f]", 
+		LOG_INFO("SERVER: Moving player[%s] to jail at [%.4f, %.4f, %.4f] With entity: %d", 
 			pPlayer->GetName().c_str(), 
 			jailPosition.x,
 			jailPosition.y,
-			jailPosition.z);
+			jailPosition.z,
+			playerEntity);
 
 		// Drop flag if player carries it
 		TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
@@ -616,11 +623,18 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 		}
 	}
 
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(entity);
+	LOG_INFO("SERVER: Moving player[%s] to spawn at [%.4f, %.4f, %.4f] With entity: %d",
+		pPlayer->GetName().c_str(),
+		spawnPosition.x,
+		spawnPosition.y,
+		spawnPosition.z,
+		entity);
+
 	// Spawn position
 	positionComp.Position = spawnPosition;
 
 	//Set player alive again
-	const Player* pPlayer = PlayerManagerServer::GetPlayer(entity);
 	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 }
 
