@@ -14,5 +14,4 @@ public:
 
 private:
 	inline static GUID_Lambda s_TeamColorMaterialGUIDs[MAX_NUM_TEAMS];
-	inline static GUID_Lambda s_PlayerTextureGUID = GUID_NONE;
 };
