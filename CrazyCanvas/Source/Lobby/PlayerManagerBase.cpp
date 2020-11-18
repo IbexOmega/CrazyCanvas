@@ -81,7 +81,6 @@ Player* PlayerManagerBase::GetPlayerNoConst(Entity entity)
 
 void PlayerManagerBase::SetPlayerEntity(const Player* pPlayer, Entity entity)
 {
-	ASSERT(pPlayer->GetEntity() == UINT32_MAX);
 	Player* pPl = const_cast<Player*>(pPlayer);
 	pPl->m_Entity = entity;
 	s_PlayerEntityToUID.insert({ entity, pPlayer->GetUID() });

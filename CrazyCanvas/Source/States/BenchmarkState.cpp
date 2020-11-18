@@ -317,8 +317,6 @@ bool BenchmarkState::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent
 
 		constexpr const uint32 playerCount = 9;
 
-		PlayerManagerClient::RegisterLocalPlayer("Benchmark", true);
-
 		CreatePlayerDesc createPlayerDesc =
 		{
 			.pPlayer			= PlayerManagerClient::GetPlayerLocal(),
