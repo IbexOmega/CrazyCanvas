@@ -102,7 +102,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Volume" Foreground="White" FontSize="29.333" />
-                <Slider x:Name="VolumeSlider" Grid.Column="1" VerticalAlignment="Center" />
+                <Slider x:Name="VolumeSlider" ValueChanged="OnVolumeSliderChanged" Grid.Column="1" VerticalAlignment="Center" />
             </Grid>
 
             <!--Key Bindings-->
