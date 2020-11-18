@@ -96,24 +96,40 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 
 void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, glm::vec3& result)
 {
-	if (!Match::HasBegun() || (deltaAction.x == 0 && deltaAction.y == 0 && deltaAction.z == 0))
+	bool horizontalMovement = deltaAction.x != 0 || deltaAction.z != 0;
+	bool verticalMovement = deltaAction.y != 0;
+	bool anyMovement = horizontalMovement || verticalMovement;
+
+	if (!Match::HasBegun() || !anyMovement)
 	{
 		result.x = 0.0f;
 		result.z = 0.0f;
 		return;
 	}
 
-	float32 moveSpeed = 4.0f;
-	float32 jumpSpeed = 20.0f;
-	glm::vec3 currentVelocity;
-	currentVelocity		= rotation * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
-	currentVelocity.y	= 0.0f;
-	currentVelocity		= glm::normalize(currentVelocity);
-	currentVelocity		*= moveSpeed;
+	if (horizontalMovement)
+	{
+		float32 moveSpeed = 4.0f;
+		glm::vec3 currentVelocity;
+		currentVelocity		= rotation * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
+		currentVelocity.y	= 0.0f;
+		currentVelocity		= glm::normalize(currentVelocity);
+		currentVelocity		*= moveSpeed;
 
-	result.x = currentVelocity.x;
-	result.y = result.y * float32(1 - deltaAction.y) + jumpSpeed * float32(deltaAction.y);
-	result.z = currentVelocity.z;
+		result.x = currentVelocity.x;
+		result.z = currentVelocity.z;
+	}
+	else
+	{
+		result.x = 0.0f;
+		result.z = 0.0f;
+	}
+
+	if (verticalMovement)
+	{
+		float32 jumpSpeed = 5.0f;
+		result.y = result.y * float32(1 - deltaAction.y) + jumpSpeed * float32(deltaAction.y);
+	}
 }
 
 void PlayerActionSystem::SetMouseEnabled(bool isEnabled)

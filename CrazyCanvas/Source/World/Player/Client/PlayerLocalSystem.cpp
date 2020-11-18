@@ -118,15 +118,21 @@ void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, Playe
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
+	const ComponentArray<RotationComponent>* pRotationComponents			= pECS->GetComponentArray<RotationComponent>();
+	const ComponentArray<CharacterColliderComponent>* pCharacterColliders	= pECS->GetComponentArray<CharacterColliderComponent>();
+	ComponentArray<VelocityComponent>* pVelocityComponents					= pECS->GetComponentArray<VelocityComponent>();
+
+	const CharacterColliderComponent& characterColliderComponent = pCharacterColliders->GetConstData(entityPlayer);
+
+	physx::PxControllerState playerControllerState;
+	characterColliderComponent.pController->getState(playerControllerState);
+
 	glm::i8vec3 deltaAction =
 	{
 		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),			// X: Right
-		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_JUMP)),																	// Y: Up
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_JUMP)) * int8(playerControllerState.touchedShape != nullptr),				// Y: Up
 		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD) - InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD)),	// Z: Forward
 	};
-
-	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
 
 	const RotationComponent& rotationComponent = pRotationComponents->GetConstData(entityPlayer);
 	VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
