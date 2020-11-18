@@ -56,6 +56,7 @@
 #include "Physics/CollisionGroups.h"
 
 #include "Lobby/PlayerManagerBase.h"
+#include "Lobby/PlayerManagerClient.h"
 
 bool LevelObjectCreator::Init()
 {
@@ -134,27 +135,6 @@ bool LevelObjectCreator::Init()
 			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
 			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
 #endif
-
-			// Load player textures
-			s_PlayerTextureGUID = ResourceManager::LoadTextureFromFile(
-				"Player/CharacterAlbedo.png",
-				EFormat::FORMAT_R8G8B8A8_UNORM,
-				true, true);
-
-			MaterialProperties playerMaterialProperties = {};
-			playerMaterialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-			playerMaterialProperties.AO = 1.0f;
-			playerMaterialProperties.Metallic = 0.0f;
-			playerMaterialProperties.Metallic = 0.0f;
-
-			s_PlayerMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-				"Player Material",
-				s_PlayerTextureGUID,
-				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				playerMaterialProperties);
 
 			s_PlayerStepSoundGUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
 		}
@@ -732,13 +712,6 @@ bool LevelObjectCreator::CreatePlayer(
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
 
-	pECS->AddComponent<MeshComponent>(playerEntity,
-		MeshComponent
-		{
-			.MeshGUID		= s_PlayerMeshGUID,
-			.MaterialGUID	= s_PlayerMaterialGUID
-		});
-
 	const bool readback = MultiplayerUtils::IsServer();
 	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
 
@@ -752,11 +725,15 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 
+	GUID_Lambda playerMaterialGUID;
+
 	// Server/Client 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
+		playerMaterialGUID = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam() ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamColorMaterialGUID(pPlayer->GetTeam());
+
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
 				.MeshGUID = s_WeaponMeshGUID,
@@ -979,9 +956,17 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 	else
 	{
+		playerMaterialGUID = TeamHelper::GetMyTeamPlayerMaterialGUID();
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
 	}
+
+	pECS->AddComponent<MeshComponent>(playerEntity,
+		MeshComponent
+		{
+			.MeshGUID = s_PlayerMeshGUID,
+			.MaterialGUID = playerMaterialGUID
+		});
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<ChildComponent>(playerEntity, playerChildComp);
