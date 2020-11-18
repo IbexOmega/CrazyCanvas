@@ -53,6 +53,7 @@ struct CreateFlagDesc
 	glm::vec3				Position		= glm::vec3(0.0f);
 	glm::vec3				Scale			= glm::vec3(1.0f);
 	glm::quat				Rotation		= glm::quat();
+	uint8					TeamIndex		= UINT8_MAX;
 };
 
 /*
@@ -174,13 +175,15 @@ private:
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
 
+	static bool FindTeamIndex(const LambdaEngine::String& objectName, uint8& teamIndex);
+
 private:
 	inline static LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc> s_LevelObjectOnLoadDescriptions;
 	inline static LambdaEngine::THashTable<LambdaEngine::String, LevelObjectCreateByPrefixFunc> s_LevelObjectByPrefixCreateFunctions;
 	inline static LambdaEngine::THashTable<ELevelObjectType, LevelObjectCreateByTypeFunc> s_LevelObjectByTypeCreateFunctions;
 
 	inline static GUID_Lambda s_FlagMeshGUID		= GUID_NONE;
-	inline static GUID_Lambda s_FlagMaterialGUID	= GUID_NONE;
+	inline static GUID_Lambda s_FlagCommonMaterialGUID	= GUID_NONE;
 
 	inline static GUID_Lambda s_PlayerMeshGUID = GUID_NONE;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerIdleGUIDs;
@@ -190,7 +193,9 @@ private:
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
+	inline static GUID_Lambda s_PlayerTextureGUID = GUID_NONE;
+	inline static GUID_Lambda s_PlayerMaterialGUID = GUID_NONE;
 
-	inline static GUID_Lambda s_WeaponMesh = GUID_NONE;
-	inline static GUID_Lambda s_WeaponMaterial = GUID_NONE;
+	inline static GUID_Lambda s_WeaponMeshGUID = GUID_NONE;
+	inline static GUID_Lambda s_WeaponMaterialGUID = GUID_NONE;
 };

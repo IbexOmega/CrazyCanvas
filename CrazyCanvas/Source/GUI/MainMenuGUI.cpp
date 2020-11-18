@@ -150,7 +150,8 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	PacketGameSettings settings;
-	settings.MapID = 0;
+	settings.MapID = 5;
+	settings.GameMode = ConvertGameMode(EGameMode::CTF_TEAM_FLAG);
 	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }

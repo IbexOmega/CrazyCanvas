@@ -17,7 +17,6 @@ enum EFlagColliderType : uint8
 struct FlagSpawnComponent
 {
 	DECL_COMPONENT(FlagSpawnComponent);
-	float Radius = 1.0f;
 };
 
 struct FlagDeliveryPointComponent
@@ -28,8 +27,10 @@ struct FlagDeliveryPointComponent
 struct FlagComponent
 {
 	DECL_COMPONENT(FlagComponent);
-	LambdaEngine::Timestamp PickupAvailableTimestamp;
+	LambdaEngine::Timestamp DroppedTimestamp;
 	LambdaEngine::Timestamp PickupCooldown;
+	LambdaEngine::Timestamp RespawnCooldown;
+	bool HasBeenPickedUp = false;
 };
 
 enum EFlagPacketType : uint8
