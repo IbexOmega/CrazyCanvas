@@ -120,7 +120,7 @@ namespace LambdaEngine
 		*/
 		virtual void UpdateAccelerationStructureResource(
 			const String& resourceName,
-			const AccelerationStructure* pAccelerationStructure)
+			const AccelerationStructure* const* pAccelerationStructure)
 		{
 			UNREFERENCED_VARIABLE(resourceName);
 			UNREFERENCED_VARIABLE(pAccelerationStructure);
