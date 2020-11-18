@@ -883,11 +883,12 @@ namespace LambdaEngine
 		for (uint32 i = 0; i < bindingCount; i++)
 		{
 			DescriptorBindingDesc binding = pSrcVk->GetDescriptorBindingDesc(i);
+			uint32 writtenDescriptorCount = pSrcVk->GetBindingDescriptorCount(binding.Binding);
+			pDstVk->SetBindingDescriptorCount(binding.Binding, writtenDescriptorCount);
 
-			copyDescriptorSet.descriptorCount	= binding.DescriptorCount;
+			copyDescriptorSet.descriptorCount	= writtenDescriptorCount;
 			copyDescriptorSet.srcBinding		= binding.Binding;
 			copyDescriptorSet.dstBinding		= copyDescriptorSet.srcBinding;
-
 			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}
 
@@ -911,9 +912,13 @@ namespace LambdaEngine
 		descriptorSetCopies.Reserve(copyBindingCount);
 		for (uint32 i = 0; i < copyBindingCount; i++)
 		{
-			copyDescriptorSet.descriptorCount	= pCopyBindings[i].DescriptorCount;
-			copyDescriptorSet.dstBinding		= pCopyBindings[i].DstBinding;
-			copyDescriptorSet.srcBinding		= pCopyBindings[i].SrcBinding;
+			const CopyDescriptorBindingDesc& copyBindingDesc = pCopyBindings[i];
+			uint32 writtenDescriptorCount = pSrcVk->GetBindingDescriptorCount(copyBindingDesc.SrcBinding);
+			pDstVk->SetBindingDescriptorCount(copyBindingDesc.DstBinding, writtenDescriptorCount);
+
+			copyDescriptorSet.descriptorCount	= writtenDescriptorCount;
+			copyDescriptorSet.dstBinding		= copyBindingDesc.DstBinding;
+			copyDescriptorSet.srcBinding		= copyBindingDesc.SrcBinding;
 
 			descriptorSetCopies.PushBack(copyDescriptorSet);
 		}

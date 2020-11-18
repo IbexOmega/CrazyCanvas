@@ -6,12 +6,6 @@ bool TeamHelper::Init()
 {
 	using namespace LambdaEngine;
 
-	// Load player textures
-	s_PlayerTextureGUID = ResourceManager::LoadTextureFromFile(
-		"Player/CharacterAlbedo.png",
-		EFormat::FORMAT_R8G8B8A8_UNORM,
-		true, true);
-
 	// Create materials
 	for (uint32 teamIndex = 0; teamIndex < MAX_NUM_TEAMS; teamIndex++)
 	{
@@ -22,11 +16,11 @@ bool TeamHelper::Init()
 
 		s_TeamColorMaterialGUIDs[teamIndex] = ResourceManager::LoadMaterialFromMemory(
 			"Team " + std::to_string(teamIndex) + " Color Material",
-			s_PlayerTextureGUID,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			s_PlayerTextureGUID,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			materialProperties);
 
 		s_TeamColors[teamIndex] = color;
@@ -61,11 +55,11 @@ void TeamHelper::SetTeamColor(uint32 teamIndex, const glm::vec3& color)
 
 	s_TeamColorMaterialGUIDs[teamIndex] = ResourceManager::LoadMaterialFromMemory(
 		"Team " + std::to_string(teamIndex) + " Color Material",
-		s_PlayerTextureGUID,
+		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
-		s_PlayerTextureGUID,
+		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		materialProperties);
 
 	// Store Team Color

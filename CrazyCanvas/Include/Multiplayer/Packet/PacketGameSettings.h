@@ -3,6 +3,7 @@
 #include "Multiplayer/Packet/Packet.h"
 
 #include "Multiplayer/Packet/PacketJoin.h"
+#include "Match/MatchGameMode.h"
 
 #pragma pack(push, 1)
 struct PacketGameSettings
@@ -16,6 +17,7 @@ struct PacketGameSettings
 	uint8 FlagsToWin		= 5;
 	bool Visible			= false;
 	bool ChangeTeam			= false;
+	uint8 GameMode			= ConvertGameMode(EGameMode::CTF_TEAM_FLAG);
 	uint8 TeamColor0		= 0;
 	uint8 TeamColor1		= 1;
 };

@@ -29,6 +29,7 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+#include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
 
@@ -103,7 +104,7 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[5]
+			.LevelHash = levelHashes[0]
 		};
 
 		Match::CreateMatch(&matchDescription);
@@ -190,8 +191,9 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
@@ -205,8 +207,9 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
@@ -220,8 +223,9 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
@@ -255,8 +259,9 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		// Audio
 		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("halo_theme.wav");
@@ -276,22 +281,22 @@ void SandboxState::Init()
 
 	// Emitter
 	{
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		pECS->AddComponent<ParticleEmitterComponent>(entity,
-			ParticleEmitterComponent{
-				.ParticleCount = 5,
-				.EmitterShape = EEmitterShape::TUBE,
-				.Velocity = 1.0f,
-				.Acceleration = 0.0f,
-				.BeginRadius = 0.5f,
-				.TileIndex = 16,
-				.AnimationCount = 4,
-				.FirstAnimationIndex = 16,
-				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
-			}
-		);
+		//Entity entity = pECS->CreateEntity();
+		//pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
+		//pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		//pECS->AddComponent<ParticleEmitterComponent>(entity,
+		//	ParticleEmitterComponent{
+		//		.ParticleCount = 5,
+		//		.EmitterShape = EEmitterShape::TUBE,
+		//		.Velocity = 1.0f,
+		//		.Acceleration = 0.0f,
+		//		.BeginRadius = 0.5f,
+		//		.TileIndex = 16,
+		//		.AnimationCount = 4,
+		//		.FirstAnimationIndex = 16,
+		//		.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+		//	}
+		//);
 	}
 
 
@@ -614,12 +619,23 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		if (!m_Entities.IsEmpty())
 		{
 			const uint32 numEntities = m_Entities.GetSize();
-			const uint32 index = Random::UInt32(0, numEntities-1);
+
+			static uint32 removeCounter = 0;
+			static uint32 removeIndices[] = {
+				3,
+				2,
+				0,
+				1,
+				0
+			};
+			const uint32 index = removeIndices[removeCounter++];
+
+			//const uint32 index = Random::UInt32(0, numEntities-1);
 			Entity entity = m_Entities[index];
 			m_Entities.Erase(m_Entities.Begin() + index);
 			ECSCore::GetInstance()->RemoveEntity(entity);
 
-			std::string info = "Removed entity with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
+			std::string info = "Removed entity[" + std::to_string(entity) + "] with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
 			GameConsole::Get().PushInfo(info);
 			LOG_INFO(info.c_str());
 		}

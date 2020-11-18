@@ -62,7 +62,7 @@ namespace LambdaEngine
 
 		virtual void UpdateAudioListener(uint32 index, const AudioListenerDesc* pDesc) = 0;
 
-		virtual uint32				CreateAudioListener()									= 0;
+		virtual uint32				GetAudioListener(bool requestNew)						= 0;
 		virtual IMusic*				CreateMusic(const MusicDesc* pDesc)						= 0;
 		virtual ISoundEffect3D*		Create3DSoundEffect(const SoundEffect3DDesc* pDesc)		= 0;
 		virtual ISoundEffect2D*		Create2DSoundEffect(const SoundEffect2DDesc* pDesc)		= 0;

@@ -24,7 +24,6 @@ public:
 private:
 	inline static glm::vec3		s_TeamColors[MAX_NUM_TEAMS];
 	inline static GUID_Lambda	s_TeamColorMaterialGUIDs[MAX_NUM_TEAMS];
-	inline static GUID_Lambda	s_PlayerTextureGUID = GUID_NONE;
 	
 	inline static LambdaEngine::TArray<glm::vec3>	s_AvailableColors =
 	{
