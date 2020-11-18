@@ -409,8 +409,9 @@ namespace LambdaEngine
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
 		// PAINT_MASK_TEXTURES
-		TArray<Texture*>			m_PaintMaskTextures;
-		TArray<TextureView*>		m_PaintMaskTextureViews;
+		TArray<Texture*>					m_PaintMaskTextures;
+		TArray<TextureView*>				m_PaintMaskTextureViews;
+		THashTable<uint32, TArray<uint32>>	m_PaintMaskASInstanceIndices;
 
 		// Materials
 		TArray<Texture*>			m_AlbedoMaps;
@@ -444,11 +445,12 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>	m_AnimationDescriptorHeap;
 
 		// Pending/Dirty
-		bool						m_MaterialsPropertiesBufferDirty	= false;
-		bool						m_MaterialsResourceDirty			= false;
-		bool						m_LightsResourceDirty				= false;
-		bool						m_PerFrameResourceDirty				= true;
-		bool						m_PaintMaskColorsResourceDirty		= true;
+		bool						m_MaterialsPropertiesBufferDirty			= false;
+		bool						m_MaterialsResourceDirty					= false;
+		bool						m_LightsResourceDirty						= false;
+		bool						m_PerFrameResourceDirty						= true;
+		bool						m_PaintMaskColorsResourceDirty				= true;
+		bool						m_RayTracingPaintMaskTexturesResourceDirty	= false;
 		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
 		TSet<MeshEntry*>			m_AnimationsToUpdate;

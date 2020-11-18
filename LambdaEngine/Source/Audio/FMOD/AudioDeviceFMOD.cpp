@@ -113,15 +113,22 @@ namespace LambdaEngine
 		FMOD_System_Set3DListenerAttributes(pSystem, index, &fmodPosition, &fmodVelocity, &fmodForward, &fmodUp);
 	}
 
-	uint32 AudioDeviceFMOD::CreateAudioListener()
+	uint32 AudioDeviceFMOD::GetAudioListener(bool requestNew)
 	{
-		if (m_NumAudioListeners >= m_MaxNumAudioListeners)
+		if (requestNew)
 		{
-			LOG_WARNING("[AudioDeviceFMOD]: Audio Listener could not be created, max amount reached for %s!", m_pName);
-			return UINT32_MAX;
+			if (m_NumAudioListeners < m_MaxNumAudioListeners)
+			{
+				return m_NumAudioListeners++;
+			}
+			else
+			{
+				LOG_WARNING("[AudioDeviceFMOD]: Audio Listener could not be created, max amount reached for %s!", m_pName);
+				return UINT32_MAX;
+			}
 		}
 
-		return m_NumAudioListeners++;
+		return 0;
 	}
 
 	IMusic* AudioDeviceFMOD::CreateMusic(const MusicDesc* pDesc)

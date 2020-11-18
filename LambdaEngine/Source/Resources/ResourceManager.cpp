@@ -286,6 +286,7 @@ namespace LambdaEngine
 		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
 			meshGUID = loadedMeshGUID->second;
+			return;
 		}
 
 		int32 assimpFlags =
@@ -326,6 +327,8 @@ namespace LambdaEngine
 			{
 				animations = loadedAnimations->second;
 			}
+
+			return;
 		}
 
 		int32 assimpFlags =
@@ -488,6 +491,8 @@ namespace LambdaEngine
 
 			auto loadedMaterialGUID = s_MaterialNamesToGUIDs.find(filename);
 			materialGUID = loadedMaterialGUID != s_MaterialNamesToGUIDs.end() ? loadedMaterialGUID->second : GUID_MATERIAL_DEFAULT;
+
+			return;
 		}
 
 		int32 assimpFlags =
@@ -1442,9 +1447,18 @@ namespace LambdaEngine
 		auto textureIt = s_Textures.find(guid);
 		if (textureIt != s_Textures.end())
 		{
+			auto textureViewIt = s_TextureViews.find(guid);
+			if (textureViewIt == s_TextureViews.end())
+			{
+				LOG_ERROR("[ResourceManager]: UnloadTexture Failed at s_TextureViews GUID: %d", guid);
+				return false;
+			}
+
 			D_LOG_WARNING("Deleted Texture GUID: %d", guid);
 
-			SAFEDELETE(textureIt->second);
+			SAFERELEASE(textureViewIt->second);
+			s_TextureViews.erase(textureViewIt);
+			SAFERELEASE(textureIt->second);
 			s_Textures.erase(textureIt);
 
 			auto textureGUIDToNameIt = s_TextureGUIDsToNames.find(guid);
@@ -1489,7 +1503,7 @@ namespace LambdaEngine
 		{
 			D_LOG_WARNING("Deleted Shader GUID: %d", guid);
 
-			SAFEDELETE(shaderIt->second);
+			SAFERELEASE(shaderIt->second);
 			s_Shaders.erase(shaderIt);
 
 			auto shaderGUIDToNameIt = s_ShaderGUIDsToNames.find(guid);

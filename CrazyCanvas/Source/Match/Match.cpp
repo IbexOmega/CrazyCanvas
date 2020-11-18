@@ -51,11 +51,6 @@ bool Match::ResetMatch()
 	return false;
 }
 
-bool Match::ReleaseMatch()
-{
-	return false;
-}
-
 void Match::StartMatch()
 {
 	s_pMatchInstance->MatchStart();

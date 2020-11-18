@@ -113,6 +113,16 @@ namespace LambdaEngine
 		return true;
 	}
 
+	bool EngineLoop::ReleaseComponentOwners()
+	{
+		if (!MeshPaintComponentOwner::GetInstance()->Release())
+		{
+			return false;
+		}
+
+		return true;
+	}
+
 	bool EngineLoop::InitSystems()
 	{
 		if (!NetworkSystem::GetInstance().Init())
@@ -416,6 +426,11 @@ namespace LambdaEngine
 
 		EventQueue::UnregisterAll();
 		ECSCore::Release();
+
+		if (!ReleaseComponentOwners())
+		{
+			return false;
+		}
 
 		if (!ThreadPool::Release())
 		{

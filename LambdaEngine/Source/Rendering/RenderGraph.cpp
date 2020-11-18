@@ -737,17 +737,25 @@ namespace LambdaEngine
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pRenderStage->DrawArgsMaskDesc.FullMask);
 					
-					if (pRenderStage->UsesCustomRenderer)
+					if (drawArgsMaskToArgsIt->second.IsDirty)
 					{
-						pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
-							pResource->Name,
-							drawArgsMaskToArgsIt->second.Args.GetData(),
-							drawArgsMaskToArgsIt->second.Args.GetSize());
+						if (pRenderStage->UsesCustomRenderer)
+						{
+							pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
+								pResource->Name,
+								drawArgsMaskToArgsIt->second.Args.GetData(),
+								drawArgsMaskToArgsIt->second.Args.GetSize());
+						}
+						else
+						{
+							pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
+						}
 					}
-					else
-					{
-						pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
-					}
+				}
+
+				for (auto& drawArgPair : pResource->DrawArgs.FullMaskToArgs)
+				{
+					drawArgPair.second.IsDirty = false;
 				}
 			}
 
@@ -3585,6 +3593,8 @@ namespace LambdaEngine
 			}
 		}
 
+		LOG_MESSAGE("Updating Resource: %s", pResource->Name.c_str());
+
 		if (pResource->ResourceBindings.GetSize() > 0)
 		{
 			m_DirtyBoundTextureResources.insert(pResource);
@@ -3602,6 +3612,8 @@ namespace LambdaEngine
 
 		if (drawArgsArgsIt != pResource->DrawArgs.FullMaskToArgs.end())
 		{
+			drawArgsArgsIt->second.IsDirty = true;
+
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);

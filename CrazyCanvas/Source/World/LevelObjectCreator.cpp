@@ -560,7 +560,7 @@ bool LevelObjectCreator::CreateFlag(
 		const DynamicCollisionCreateInfo collisionCreateInfo =
 		{
 			/* Entity */	 		flagEntity,
-            /* Detection Method */	ECollisionDetection::DISCRETE,
+			/* Detection Method */	ECollisionDetection::DISCRETE,
 			/* Position */	 		positionComponent,
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
@@ -626,8 +626,6 @@ bool LevelObjectCreator::CreatePlayer(
 	const glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
 
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
-	EntityMaskManager::AddExtensionToEntity(playerEntity,		PlayerBaseComponent::Type(), nullptr);
-
 	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
 
@@ -889,7 +887,7 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = pPlayerDesc->Position + offsetComponent.Offset });
 			pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 			pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
-			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->CreateAudioListener() });
+			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->GetAudioListener(false) });
 
 			const ViewProjectionMatricesComponent viewProjComp =
 			{
