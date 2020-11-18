@@ -194,10 +194,11 @@ bool CrazyCanvas::LoadRendererResources()
 		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};
-		cubeTextureUpdateDesc.ResourceName							= "SKYBOX";
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+		cubeTextureUpdateDesc.ResourceName										= "SKYBOX";
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures					= &pCubeTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews				= &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews	= &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers					= &pNearestSampler;
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}

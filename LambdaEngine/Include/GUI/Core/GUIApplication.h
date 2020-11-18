@@ -56,8 +56,8 @@ namespace LambdaEngine
 		static Noesis::Ptr<Noesis::IView> s_pView;
 		static GUIRenderer* s_pRenderer;
 
-		static NoesisApp::LocalXamlProvider*	m_pXAMLProvider;
-		static NoesisApp::LocalFontProvider*	m_pFontProvider;
-		static NoesisApp::LocalTextureProvider*	m_pTextureProvider;
+		static NoesisApp::LocalXamlProvider*	s_pXAMLProvider;
+		static NoesisApp::LocalFontProvider*	s_pFontProvider;
+		static NoesisApp::LocalTextureProvider*	s_pTextureProvider;
 	};
 }

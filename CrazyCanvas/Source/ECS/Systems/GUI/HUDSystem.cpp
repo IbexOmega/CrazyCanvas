@@ -190,7 +190,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 				const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(entity);
 
 				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
-			
+
 				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, projectedGUIComponent.GUIType);
 			}
 		}
@@ -289,7 +289,7 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
-		
+
 		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 		{
 			m_DeferredDamageTakenHitEvents.EmplaceBack(event);
@@ -301,7 +301,7 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 
 			if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
 			{
-				if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity)) 
+				if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
 				{
 					const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
 
@@ -335,7 +335,7 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 		uint8 kills = pPlayer->GetKills();
 		uint8 deaths = pPlayer->GetDeaths();
 		uint8 flags = pPlayer->GetFlagsCaptured();
-		
+
 		if (kills >= mostKills.first)
 			mostKills = std::make_pair(kills, pPlayer);
 

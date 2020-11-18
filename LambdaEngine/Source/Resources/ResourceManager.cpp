@@ -286,6 +286,7 @@ namespace LambdaEngine
 		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
 			meshGUID = loadedMeshGUID->second;
+			return;
 		}
 
 		int32 assimpFlags =
@@ -326,6 +327,8 @@ namespace LambdaEngine
 			{
 				animations = loadedAnimations->second;
 			}
+
+			return;
 		}
 
 		int32 assimpFlags =
@@ -488,6 +491,8 @@ namespace LambdaEngine
 
 			auto loadedMaterialGUID = s_MaterialNamesToGUIDs.find(filename);
 			materialGUID = loadedMaterialGUID != s_MaterialNamesToGUIDs.end() ? loadedMaterialGUID->second : GUID_MATERIAL_DEFAULT;
+
+			return;
 		}
 
 		int32 assimpFlags =

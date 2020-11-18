@@ -9,9 +9,6 @@
 
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices         { SVertex val[]; }      b_Vertices;
 layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances        { SInstance val[]; }    b_Instances;
-layout(binding = 2, set = DRAW_SET_INDEX) restrict readonly buffer Meshlets			{ SMeshlet Val[]; } 	b_Meshlets;
-layout(binding = 3, set = DRAW_SET_INDEX) restrict readonly buffer UniqueIndices	{ uint Val[]; } 		b_UniqueIndices;
-layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndices	{ uint Val[]; } 		b_PrimitiveIndices;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer
 {
