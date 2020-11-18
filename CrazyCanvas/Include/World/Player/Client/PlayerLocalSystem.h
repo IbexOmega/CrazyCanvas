@@ -12,6 +12,7 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
 
 class PlayerLocalSystem : public ReplaySystem<PlayerGameState, PacketPlayerActionResponse>
 {
@@ -27,10 +28,12 @@ public:
 
 	void TickLocalPlayerAction(float32 dt, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
 	void DoAction(
-		float32 dt, 
-		LambdaEngine::VelocityComponent& velocityComponent, 
-		LambdaEngine::CharacterColliderComponent& characterColliderComponent, 
-		const LambdaEngine::RotationComponent& rotationComponent, 
+		float32 dt,
+		const LambdaEngine::PositionComponent& positionComponent,
+		LambdaEngine::VelocityComponent& velocityComponent,
+		LambdaEngine::AudibleComponent& audibleComponent,
+		LambdaEngine::CharacterColliderComponent& characterColliderComponent,
+		const LambdaEngine::RotationComponent& rotationComponent,
 		PlayerGameState* pGameState);
 
 protected:

@@ -98,7 +98,6 @@ void CharacterControllerHelper::TickCharacterController(
 
 void CharacterControllerHelper::ApplyGravity(float32 dt, glm::vec3& velocity)
 {
-	
 	float32 gravityMultiplier = 1.0f + float32(velocity.y < 0.0f) * PLAYER_FALLING_MULTIPLIER;
 	velocity.y -= GRAVITATIONAL_ACCELERATION * gravityMultiplier * dt;
 }

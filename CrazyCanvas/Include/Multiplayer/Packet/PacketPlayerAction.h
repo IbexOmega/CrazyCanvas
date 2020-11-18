@@ -10,11 +10,11 @@ struct PacketPlayerAction : Packet
 {
 	DECL_PACKET(PacketPlayerAction);
 
-	glm::quat Rotation;
-	glm::i8vec3 DeltaAction;
-	bool Walking;
-	bool StartedReload	= false;
-	EAmmoType FiredAmmo	= EAmmoType::AMMO_TYPE_NONE; // Default is that we fired no projectiles
-	uint32 Angle		= 0;
+	glm::quat	Rotation;
+	glm::i8vec3	DeltaAction;
+	bool		Walking;
+	bool		StartedReload	= false;
+	EAmmoType	FiredAmmo		= EAmmoType::AMMO_TYPE_NONE; // Default is that we fired no projectiles
+	uint32		Angle			= 0;
 };
 #pragma pack(pop)

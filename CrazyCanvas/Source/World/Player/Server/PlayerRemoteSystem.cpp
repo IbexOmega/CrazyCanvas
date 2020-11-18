@@ -89,11 +89,20 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 			PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity);
 			CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, netPosComponent, velocityComponent);
 
+			physx::PxControllerState playerControllerState;
+			characterColliderComponent.pController->getState(playerControllerState);
+
 			PacketPlayerActionResponse packet;
 			packet.SimulationTick	= gameState.SimulationTick;
+
 			packet.Position			= netPosComponent.Position;
 			packet.Velocity			= velocityComponent.Velocity;
 			packet.Rotation			= constRotationComponent.Quaternion;
+
+			packet.DeltaAction		= gameState.DeltaAction;
+			packet.Walking			= gameState.Walking;
+			packet.InAir			= playerControllerState.touchedShape == nullptr;
+
 			packet.Angle			= currentGameState.Angle;
 			playerActionResponseComponent.SendPacket(packet);
 

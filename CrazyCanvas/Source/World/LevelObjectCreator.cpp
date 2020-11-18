@@ -7,6 +7,7 @@
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
 #include "Game/ECS/Components/Audio/ListenerComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
@@ -114,7 +115,7 @@ bool LevelObjectCreator::Init()
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]	= &LevelObjectCreator::CreateProjectile;
 	}
 
-	//Load Object Meshes & Materials
+	//Load Object Resources
 	{
 		//Flag
 		{
@@ -134,6 +135,11 @@ bool LevelObjectCreator::Init()
 			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
 #endif
 
+			s_PlayerStepSoundGUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
+		}
+
+		//Weapon
+		{
 			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMesh, s_WeaponMaterial);
 		}
 	}
@@ -680,7 +686,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
-
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
 
@@ -854,6 +859,21 @@ bool LevelObjectCreator::CreatePlayer(
 		pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
 				.HitMask = 0xFF
 			});
+
+		//Add Audio Instances
+		{
+			SoundInstance3DDesc soundInstanceDesc = {};
+			soundInstanceDesc.pName			= "Step";
+			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(s_PlayerStepSoundGUID);
+			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+			soundInstanceDesc.Position		= pPlayerDesc->Position;
+			soundInstanceDesc.Volume		= 1.0f;
+
+			AudibleComponent audibleComponent = {};
+			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+
+			pECS->AddComponent<AudibleComponent>(playerEntity, audibleComponent);
+		}
 
 		if (!pPlayerDesc->IsLocal)
 		{

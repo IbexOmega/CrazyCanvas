@@ -25,6 +25,8 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
 
+#include "World/Player/Client/PlayerSoundHelper.h"
+
 #define EPSILON 0.01f
 
 using namespace LambdaEngine;
@@ -93,12 +95,13 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 	VelocityComponent& velocityComponent						= pECS->GetComponent<VelocityComponent>(entityPlayer);
 	const PositionComponent& positionComponent					= pECS->GetConstComponent<PositionComponent>(entityPlayer);
 	const RotationComponent& rotationComponent					= pECS->GetConstComponent<RotationComponent>(entityPlayer);
+	AudibleComponent& audibleComponent							= pECS->GetComponent<AudibleComponent>(entityPlayer);
 
 	NetworkPositionComponent& mutableNetPosComponent = const_cast<NetworkPositionComponent&>(networkPositionComponent);
 	mutableNetPosComponent.PositionLast = positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
 	mutableNetPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 
-	DoAction(dt, velocityComponent, characterColliderComponent, rotationComponent, pGameState);
+	DoAction(dt, positionComponent, velocityComponent, audibleComponent, characterColliderComponent, rotationComponent, pGameState);
 
 	CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, networkPositionComponent, velocityComponent);
 
@@ -108,24 +111,28 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 
 void PlayerLocalSystem::DoAction(
 	float32 dt,
+	const LambdaEngine::PositionComponent& positionComponent,
 	LambdaEngine::VelocityComponent& velocityComponent,
+	LambdaEngine::AudibleComponent& audibleComponent,
 	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
 	const LambdaEngine::RotationComponent& rotationComponent,
 	PlayerGameState* pGameState)
 {
 	physx::PxControllerState playerControllerState;
 	characterColliderComponent.pController->getState(playerControllerState);
+	bool inAir = playerControllerState.touchedShape == nullptr;
 
 	glm::i8vec3 deltaAction =
 	{
 		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),			// X: Right
-		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_JUMP)) * int8(playerControllerState.touchedShape != nullptr),				// Y: Up
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_JUMP)) * int8(!inAir),													// Y: Up
 		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD) - InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD)),	// Z: Forward
 	};
 
 	bool walking = InputActionSystem::IsActive(EAction::ACTION_MOVE_WALK);
 
 	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity);
+	PlayerSoundHelper::HandleMovementSound(positionComponent, velocityComponent, audibleComponent, deltaAction, walking, inAir);
 
 	pGameState->DeltaAction		= deltaAction;
 	pGameState->Walking			= walking;

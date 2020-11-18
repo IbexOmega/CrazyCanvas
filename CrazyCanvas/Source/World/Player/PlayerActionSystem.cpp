@@ -58,8 +58,6 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 
 		if (glm::length(mouseDelta) > glm::epsilon<float>())
 		{
-			//Todo: Move this into some settings file
-			constexpr const float MOUSE_SPEED_FACTOR = 0.35f;
 			addedYaw -= MOUSE_SPEED_FACTOR * (float)mouseDelta.x * dt;
 			addedPitch -= MOUSE_SPEED_FACTOR * (float)mouseDelta.y * dt;
 		}

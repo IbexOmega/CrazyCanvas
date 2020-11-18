@@ -189,6 +189,7 @@ private:
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
+	inline static GUID_Lambda s_PlayerStepSoundGUID = GUID_NONE;
 
 	inline static GUID_Lambda s_WeaponMesh = GUID_NONE;
 	inline static GUID_Lambda s_WeaponMaterial = GUID_NONE;

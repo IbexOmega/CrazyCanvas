@@ -3,6 +3,7 @@
 
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
@@ -11,6 +12,8 @@
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
+
+#include "World/Player/Client/PlayerSoundHelper.h"
 
 using namespace LambdaEngine;
 
@@ -56,6 +59,7 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 	ComponentArray<VelocityComponent>* pVelocityComponents									= pECS->GetComponentArray<VelocityComponent>();
 	const ComponentArray<PositionComponent>* pPositionComponents							= pECS->GetComponentArray<PositionComponent>();
 	ComponentArray<RotationComponent>* pRotationComponents									= pECS->GetComponentArray<RotationComponent>();
+	ComponentArray<AudibleComponent>* pAudibleComponent										= pECS->GetComponentArray<AudibleComponent>();
 	const ComponentArray<PacketComponent<PacketPlayerActionResponse>>* pPacketComponents	= pECS->GetComponentArray<PacketComponent<PacketPlayerActionResponse>>();
 
 	for (Entity entity : m_Entities)
@@ -63,6 +67,7 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		const NetworkPositionComponent& constNetPosComponent	= pNetPosComponents->GetConstData(entity);
 		const PositionComponent& positionComponent				= pPositionComponents->GetConstData(entity);
 		VelocityComponent& velocityComponent					= pVelocityComponents->GetData(entity);
+		AudibleComponent& audibleComponent						= pAudibleComponent->GetData(entity);
 		CharacterColliderComponent& characterColliderComponent	= pCharacterColliders->GetData(entity);
 
 		const PacketComponent<PacketPlayerActionResponse>& packetComponent	= pPacketComponents->GetConstData(entity);
@@ -108,5 +113,14 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 
 			CharacterControllerHelper::TickForeignCharacterController(dt, characterColliderComponent, constNetPosComponent, velocityComponent);
 		}
+
+		const PacketPlayerActionResponse& lastReceivedGameState = packetComponent.GetLastReceivedPacket();
+		PlayerSoundHelper::HandleMovementSound(
+			positionComponent,
+			velocityComponent,
+			audibleComponent,
+			lastReceivedGameState.DeltaAction,
+			lastReceivedGameState.Walking,
+			lastReceivedGameState.InAir);
 	}
 }
