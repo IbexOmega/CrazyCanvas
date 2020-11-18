@@ -619,10 +619,6 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity)
 {
 
-	UNREFERENCED_VARIABLE(viewProj);
-	UNREFERENCED_VARIABLE(worldPos);
-	UNREFERENCED_VARIABLE(entity);
-
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
