@@ -151,8 +151,8 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	PacketGameSettings settings;
-	settings.MapID = 5;
-	settings.GameMode = ConvertGameMode(EGameMode::CTF_TEAM_FLAG);
+	settings.MapID		= 5;
+	settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
 	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -172,8 +172,6 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 	UNREFERENCED_VARIABLE(args);
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
-
-	SetRenderStagesSleeping();
 
 	State* pStartingState = DBG_NEW BenchmarkState();
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
@@ -304,16 +302,6 @@ void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender,
 	m_KeysToSet.clear();
 
 	OnButtonBackClick(pSender, args);
-}
-
-/*
-*
-*	HELPER FUNCTIONS
-*
-*/
-void MainMenuGUI::SetRenderStagesSleeping()
-{
-	DisablePlaySessionsRenderstages();
 }
 
 void MainMenuGUI::SetDefaultSettings()

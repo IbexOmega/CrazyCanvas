@@ -408,12 +408,14 @@ namespace LambdaEngine
 	{
 		GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_SERVER_FULL));
 		TransmitPackets();
+		RequestTermination("Server Is Full");
 	}
 
 	void ClientRemoteBase::SendServerNotAccepting()
 	{
 		GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_SERVER_NOT_ACCEPTING));
 		TransmitPackets();
+		RequestTermination("Server Not Accepting");
 	}
 
 	void ClientRemoteBase::OnPacketDelivered(NetworkSegment* pPacket)
