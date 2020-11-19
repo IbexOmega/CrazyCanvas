@@ -124,7 +124,7 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 	}
 }
 
-void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam, uint32 angle)
+void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint8 playerTeam, uint32 angle)
 {
 	using namespace LambdaEngine;
 
@@ -272,7 +272,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		//Calculate Weapon Fire Properties (Position, Velocity and Team)
 		glm::vec3 firePosition;
 		glm::vec3 fireVelocity;
-		uint32 playerTeam;
+		uint8 playerTeam;
 		CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
 
 		uint32 angle = Random::UInt32(0, 360);
