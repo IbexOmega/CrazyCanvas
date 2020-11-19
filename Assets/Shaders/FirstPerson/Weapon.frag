@@ -28,11 +28,10 @@ layout(push_constant) uniform TeamIndex
 	uint Index;
 } p_TeamIndex;
 
-layout(binding = 0, set = BUFFER_SET_INDEX) uniform frameBuffer
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 { 
 	SPerFrameBuffer val; 
 } u_PerFrameBuffer;
-
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters 	{ SMaterialParameters val[]; }	b_MaterialParameters;
 layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
@@ -117,9 +116,8 @@ void main()
 		vec3 H = normalize(V + L);
 
 		vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(in_WorldPosition, 1.0);
-		float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 		vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-		vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
+		vec3 incomingRadiance    = outgoingRadiance;
 
 		float NDF   = Distribution(N, H, roughness);
 		float G     = Geometry(N, V, L, roughness);
@@ -149,10 +147,9 @@ void main()
 		L = normalize(L);
 		vec3 H = normalize(V + L);
 		
-		float inShadow 			= PointShadowDepthTest(in_WorldPosition, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 		float attenuation   	= 1.0f / (distance * distance);
 		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
-		vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);
+		vec3 incomingRadiance    = outgoingRadiance * attenuation;
 	
 		float NDF   = Distribution(N, H, roughness);
 		float G     = Geometry(N, V, L, roughness);

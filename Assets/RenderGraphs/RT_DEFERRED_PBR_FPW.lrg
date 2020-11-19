@@ -2123,7 +2123,7 @@
             "x_dim_var": 1.0,
             "y_dim_var": 1.0,
             "z_dim_var": 1.0,
-            "draw_type": "FULLSCREEN_QUAD",
+            "draw_type": "SCENE_INSTANCES",
             "depth_test_enabled": false,
             "alpha_blend_enabled": false,
             "cull_mode": "CULL_MODE_BACK",
@@ -2142,10 +2142,10 @@
                 {
                     "name": "SCENE_DRAW_ARGS",
                     "removable": true,
-                    "draw_args_include_mask": 1,
+                    "draw_args_include_mask": 15,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": ""
+                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
                 },
                 {
                     "name": "INTERMEDIATE_OUTPUT_IMAGE",

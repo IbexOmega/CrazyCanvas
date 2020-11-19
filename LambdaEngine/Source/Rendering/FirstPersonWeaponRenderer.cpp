@@ -1,3 +1,4 @@
+#include "Application/API/CommonApplication.h"
 #include "Rendering/FirstPersonWeaponRenderer.h"
 
 #include "Rendering/Core/API/CommandAllocator.h"
@@ -20,15 +21,15 @@
 
 namespace LambdaEngine
 {
-	FirstPersonWeapoRenderer* FirstPersonWeapoRenderer::s_pInstance = nullptr;
+	FirstPersonWeaponRenderer* FirstPersonWeaponRenderer::s_pInstance = nullptr;
 
-	FirstPersonWeapoRenderer::FirstPersonWeapoRenderer()
+	FirstPersonWeaponRenderer::FirstPersonWeaponRenderer()
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;
 	}
 
-	FirstPersonWeapoRenderer::~FirstPersonWeapoRenderer()
+	FirstPersonWeaponRenderer::~FirstPersonWeaponRenderer()
 	{
 		VALIDATE(s_pInstance != nullptr);
 		s_pInstance = nullptr;
@@ -46,14 +47,14 @@ namespace LambdaEngine
 		}
 	}
 
-	bool FirstPersonWeapoRenderer::Init()
+	bool FirstPersonWeaponRenderer::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 		m_UsingMeshShader = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 
 		if (!CreateBuffers())
 		{
-			LOG_ERROR("[LineRenderer]: Failed to create buffers");
+			LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to create buffers");
 			return false;
 		}
 
@@ -78,7 +79,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool FirstPersonWeapoRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
+	bool FirstPersonWeaponRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
 	{
 		VALIDATE(pPreInitDesc);
 
@@ -114,21 +115,21 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool FirstPersonWeapoRenderer::TextureInit()
+	bool FirstPersonWeaponRenderer::TextureInit()
 	{
 		TextureDesc tDesc
 		{
 			.DebugName = "FirstPersonWeapon Depth Texture",
-			.MemoryType = EMemoryType::MEMORY_TYPE_NONE,
-			.Format = EFormat::FORMAT_NONE,
-			.Type = ETextureType::TEXTURE_TYPE_NONE,
-			.Flags = FTextureFlag::TEXTURE_FLAG_NONE,
-			.Width = 0,
-			.Height = 0,
-			.Depth = 0,
-			.ArrayCount = 0,
-			.Miplevels = 0,
-			.SampleCount = 0
+			.MemoryType = EMemoryType::MEMORY_TYPE_GPU,
+			.Format = EFormat::FORMAT_D24_UNORM_S8_UINT,
+			.Type = ETextureType::TEXTURE_TYPE_2D,
+			.Flags = FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL,
+			.Width = CommonApplication::Get()->GetMainWindow()->GetWidth(),
+			.Height = CommonApplication::Get()->GetMainWindow()->GetHeight(),
+			.Depth = 1,
+			.ArrayCount = 1,
+			.Miplevels = 1,
+			.SampleCount = 1
 		};
 
 		m_DepthStencilTexture = RenderAPI::GetDevice()->CreateTexture(&tDesc);
@@ -137,11 +138,11 @@ namespace LambdaEngine
 		{
 			.DebugName = "FirstPersonWeapon Depth Texture View",
 			.pTexture = m_DepthStencilTexture.Get(),
-			.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE,
-			.Format = EFormat::FORMAT_NONE,
-			.Type = ETextureViewType::TEXTURE_VIEW_TYPE_NONE,
-			.MiplevelCount = 0,
-			.ArrayCount = 0,
+			.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL,
+			.Format = tDesc.Format,
+			.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D,
+			.MiplevelCount = 1,
+			.ArrayCount = 1,
 			.Miplevel = 0,
 			.ArrayIndex = 0
 		};
@@ -151,7 +152,7 @@ namespace LambdaEngine
 		return m_DepthStencilTexture.Get() != nullptr && m_DepthStencil.Get() != nullptr;
 	}
 
-	bool FirstPersonWeapoRenderer::CreateBuffers()
+	bool FirstPersonWeaponRenderer::CreateBuffers()
 	{
 		BufferDesc desc = {};
 		desc.DebugName = "FirstPersonWeapon Renderer Uniform Copy Buffer";
@@ -184,14 +185,14 @@ namespace LambdaEngine
 		return m_FrameBuffer != nullptr;
 	}
 
-	void FirstPersonWeapoRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+	void FirstPersonWeaponRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
 	}
 
-	void FirstPersonWeapoRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
+	void FirstPersonWeaponRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
 		UNREFERENCED_VARIABLE(ppPerImageSamplers);
@@ -256,7 +257,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void FirstPersonWeapoRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
+	void FirstPersonWeaponRenderer::UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(backBufferBound);
 		UNREFERENCED_VARIABLE(count);
@@ -330,7 +331,7 @@ namespace LambdaEngine
 
 	}
 
-	void FirstPersonWeapoRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
+	void FirstPersonWeaponRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
 		if (resourceName == SCENE_DRAW_ARGS)
 		{
@@ -348,7 +349,6 @@ namespace LambdaEngine
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
 				const ComponentArray<WeaponLocalComponent>* pWeaponLocalComponents = pECSCore->GetComponentArray<WeaponLocalComponent>();
-				const ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
 
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
@@ -362,10 +362,8 @@ namespace LambdaEngine
 						for (uint32 i = 0; i < m_pDrawArgs[d].EntityIDs.GetSize(); i++)
 						{
 							Entity entity = m_pDrawArgs[d].EntityIDs[i];
-							if (pWeaponLocalComponents->HasComponent(entity) && pCameraComponents->HasComponent(entity))
+							if (pWeaponLocalComponents->HasComponent(entity))
 							{
-								
-								//const auto& cameraComponent = pCameraComponents->GetConstData(entity);
 
 								// Set Vertex and Instance buffer for rendering
 								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
@@ -391,7 +389,7 @@ namespace LambdaEngine
 								{
 									m_DescriptorSet0->WriteBufferDescriptors(
 										&ppBuffers2,
-										pOffsets2,
+										&pOffsets2,
 										&pSizesInBytes2,
 										setIndex2,
 										1,
@@ -402,7 +400,7 @@ namespace LambdaEngine
 							}
 							else
 							{
-								LOG_ERROR("[FirstPersonWeaponRenderer]: A entity must have a TeamComponent for it to be processed by FirstPersonWeaponRenderer!");
+								LOG_ERROR("[FirstPersonWeaponRenderer]: A entity must have a WeaponLocalComponent for it to be processed by FirstPersonWeaponRenderer!");
 							}
 						}
 					}
@@ -478,7 +476,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void FirstPersonWeapoRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
+	void FirstPersonWeaponRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool Sleeping)
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
@@ -517,9 +515,6 @@ namespace LambdaEngine
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
-		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		pCommandList->SetViewports(&viewport, 0, 1);
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 		// Set Weapon Transformations
 		FrameBuffer fb = {
@@ -542,6 +537,10 @@ namespace LambdaEngine
 		m_FrameCopyBuffers[modFrameIndex]->Unmap();
 		pCommandList->CopyBuffer(m_FrameCopyBuffers[modFrameIndex].Get(), 0, m_FrameBuffer.Get(), 0, sizeof(FrameBuffer));
 
+		pCommandList->BeginRenderPass(&beginRenderPassDesc);
+		pCommandList->SetViewports(&viewport, 0, 1);
+		pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
 		if (m_DrawCount > 0)
 		{
 			RenderCull(pCommandList, m_PipelineStateIDFrontCull);
@@ -553,7 +552,7 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void FirstPersonWeapoRenderer::RenderCull(CommandList* pCommandList, uint64& pipelineId)
+	void FirstPersonWeaponRenderer::RenderCull(CommandList* pCommandList, uint64& pipelineId)
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
@@ -567,11 +566,11 @@ namespace LambdaEngine
 		pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 	}
 
-	bool FirstPersonWeapoRenderer::CreatePipelineLayout()
+	bool FirstPersonWeaponRenderer::CreatePipelineLayout()
 	{
 		/* VERTEX SHADER */
 		DescriptorBindingDesc frameBufferDesc = {};
-		frameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		frameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		frameBufferDesc.DescriptorCount = 1;
 		frameBufferDesc.Binding = 0;
 		frameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
@@ -676,7 +675,7 @@ namespace LambdaEngine
 		return m_PipelineLayout != nullptr;
 	}
 
-	bool FirstPersonWeapoRenderer::CreateDescriptorSets()
+	bool FirstPersonWeaponRenderer::CreateDescriptorSets()
 	{
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount = 0;
@@ -702,14 +701,14 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool FirstPersonWeapoRenderer::CreateShaders()
+	bool FirstPersonWeaponRenderer::CreateShaders()
 	{
 		m_VertexShaderPointGUID = ResourceManager::LoadShaderFromFile("/FirstPerson/Weapon.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		m_PixelShaderPointGUID = ResourceManager::LoadShaderFromFile("/FirstPerson/Weapon.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderPointGUID != GUID_NONE && m_PixelShaderPointGUID != GUID_NONE;
 	}
 
-	bool FirstPersonWeapoRenderer::CreateCommandLists()
+	bool FirstPersonWeaponRenderer::CreateCommandLists()
 	{
 		m_ppGraphicCommandAllocators = DBG_NEW CommandAllocator * [m_BackBufferCount];
 		m_ppGraphicCommandLists = DBG_NEW CommandList * [m_BackBufferCount];
@@ -739,9 +738,8 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool FirstPersonWeapoRenderer::CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc)
+	bool FirstPersonWeaponRenderer::CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc)
 	{
-
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format = pColorAttachmentDesc->Format; //VK_FORMAT_R8G8B8A8_UNORM
 		colorAttachmentDesc.SampleCount = 1;
@@ -786,7 +784,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool FirstPersonWeapoRenderer::CreatePipelineState()
+	bool FirstPersonWeaponRenderer::CreatePipelineState()
 	{
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
 		pipelineStateDesc.DebugName = "Player Renderer Pipeline Back Cull State";

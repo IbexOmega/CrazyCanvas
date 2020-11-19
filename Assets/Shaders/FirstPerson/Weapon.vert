@@ -25,6 +25,7 @@ layout(location = 10) out vec3 out_ViewDirection;
 void main()
 {
 	SVertex vertex					= b_Vertices.val[gl_VertexIndex];
+    SInstance instance				= b_Instances.val[gl_InstanceIndex];
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 
 	vec4 worldPosition		= instance.Transform * vec4(vertex.Position.xyz, 1.0f);

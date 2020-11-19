@@ -25,18 +25,17 @@ namespace LambdaEngine {
 		uint32 RandomSeed;
 	};
 
-	class FirstPersonWeapoRenderer : CustomRenderer
+	class FirstPersonWeaponRenderer : public CustomRenderer
 	{
 	public:
-		DECL_REMOVE_COPY(FirstPersonWeapoRenderer);
-		DECL_REMOVE_MOVE(FirstPersonWeapoRenderer);
+		DECL_REMOVE_COPY(FirstPersonWeaponRenderer);
+		DECL_REMOVE_MOVE(FirstPersonWeaponRenderer);
 
-		FirstPersonWeapoRenderer();
-		~FirstPersonWeapoRenderer();
+		FirstPersonWeaponRenderer();
+		~FirstPersonWeaponRenderer();
 		virtual bool Init() override final;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
-
 
 		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
@@ -113,7 +112,7 @@ namespace LambdaEngine {
 		bool									m_DirtyUniformBuffers = true;
 
 	private:
-		static FirstPersonWeapoRenderer* s_pInstance;
+		static FirstPersonWeaponRenderer* s_pInstance;
 	};
 
 }
