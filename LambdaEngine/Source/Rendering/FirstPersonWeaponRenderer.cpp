@@ -365,7 +365,7 @@ namespace LambdaEngine
 							if (pWeaponLocalComponents->HasComponent(entity) && pCameraComponents->HasComponent(entity))
 							{
 								
-								const auto& cameraComponent = pCameraComponents->GetConstData(entity);
+								//const auto& cameraComponent = pCameraComponents->GetConstData(entity);
 
 								// Set Vertex and Instance buffer for rendering
 								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
@@ -382,18 +382,18 @@ namespace LambdaEngine
 								);
 
 								// Set Frame Buffer
-								Buffer* ppBuffers = {m_FrameBuffer.Get()};
-								uint64 pOffsets = { 0 };
-								uint64 pSizesInBytes = { sizeof(FrameBuffer) };
-								uint64 setIndex = 0;
+								const Buffer* ppBuffers2 = { m_FrameBuffer.Get() };
+								const uint64 pOffsets2 = { 0 };
+								uint64 pSizesInBytes2 = { sizeof(FrameBuffer) };
+								uint32 setIndex2 = 0;
 								m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 								if (m_DescriptorSet0 != nullptr)
 								{
 									m_DescriptorSet0->WriteBufferDescriptors(
-										ppBuffers,
-										pOffsets,
-										&pSizesInBytes,
-										setIndex,
+										&ppBuffers2,
+										pOffsets2,
+										&pSizesInBytes2,
+										setIndex2,
 										1,
 										EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER
 									);
