@@ -4,6 +4,7 @@
 
 Level::Level()
 {
+	SetComponentOwner<LevelRegisteredComponent>({ .Destructor = std::bind_front(&Level::LevelRegisteredDestructor, this) });
 }
 
 Level::~Level()
@@ -13,6 +14,9 @@ Level::~Level()
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
+	m_EntityToLevelObjectTypeMap.clear();
+	m_EntityTypeMap.clear();
+
 	for (TArray<Entity>& levelEntitiesByType : m_LevelEntities)
 	{
 		for (Entity levelEntity : levelEntitiesByType)
@@ -21,22 +25,7 @@ Level::~Level()
 		}
 	}
 
-	for (TArray<TArray<Entity>>& levelChildEntitiesByType : m_LevelChildEntities)
-	{
-		for (TArray<Entity>& levelChildEntities : levelChildEntitiesByType)
-		{
-			for (Entity childEntity : levelChildEntities)
-			{
-				pECS->RemoveEntity(childEntity);
-			}
-		}
-	}
-
-	m_EntityToLevelObjectTypeMap.clear();
-	m_EntityTypeMap.clear();
-
 	m_LevelEntities.Clear();
-	m_LevelChildEntities.Clear();
 }
 
 bool Level::Init(const LevelCreateDesc* pDesc)
@@ -46,6 +35,8 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 	m_Name = pDesc->Name;
 
 	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
 
 	std::scoped_lock<SpinLock> lock(m_SpinLock);
 
@@ -74,9 +65,13 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 			if (!levelEntities.IsEmpty())
 			{
+				for (Entity entity : levelEntities)
+				{
+					pECS->AddComponent<LevelRegisteredComponent>(entity, LevelRegisteredComponent());
+				}
+
 				m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_STATIC_GEOMTRY] = m_LevelEntities.GetSize();
 				m_LevelEntities.PushBack(levelEntities);
-				m_LevelChildEntities.PushBack({});
 			}
 		}
 
@@ -96,9 +91,13 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 			if (!levelEntities.IsEmpty())
 			{
+				for (Entity entity : levelEntities)
+				{
+					pECS->AddComponent<LevelRegisteredComponent>(entity, LevelRegisteredComponent());
+				}
+
 				m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_DIR_LIGHT] = m_LevelEntities.GetSize();
 				m_LevelEntities.PushBack(levelEntities);
-				m_LevelChildEntities.PushBack({});
 			}
 		}
 
@@ -118,9 +117,13 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 			if (!levelEntities.IsEmpty())
 			{
+				for (Entity entity : levelEntities)
+				{
+					pECS->AddComponent<LevelRegisteredComponent>(entity, LevelRegisteredComponent());
+				}
+
 				m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_POINT_LIGHT] = levelEntities.GetSize();
 				m_LevelEntities.PushBack(levelEntities);
-				m_LevelChildEntities.PushBack({});
 			}
 		}
 
@@ -133,29 +136,25 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 				if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
 				{
+					TArray<Entity>* pLevelEntitiesOfType = nullptr;
+
 					if (auto levelObjectTypeIt = m_EntityTypeMap.find(levelObjectType); levelObjectTypeIt != m_EntityTypeMap.end())
 					{
-						TArray<Entity>& levelEntitiesOfType = m_LevelEntities[levelObjectTypeIt->second];
-						
-						for (uint32 i = 0; i < entities.GetSize(); i++)
-						{
-							Entity entity = entities[i];
-							levelEntitiesOfType.PushBack(entity);
-							m_EntityToLevelObjectTypeMap[entity] = levelObjectType;
-						}
+						pLevelEntitiesOfType = &m_LevelEntities[levelObjectTypeIt->second];
 					}
 					else
 					{
 						m_EntityTypeMap[levelObjectType] = m_LevelEntities.GetSize();
-						TArray<Entity>& levelEntitiesOfType = m_LevelEntities.PushBack({});
-						m_LevelChildEntities.PushBack({});
+						pLevelEntitiesOfType = &m_LevelEntities.PushBack({});
+					}
 
-						for (uint32 i = 0; i < entities.GetSize(); i++)
-						{
-							Entity entity = entities[i];
-							levelEntitiesOfType.PushBack(entity);
-							m_EntityToLevelObjectTypeMap[entity] = levelObjectType;
-						}
+					for (uint32 i = 0; i < entities.GetSize(); i++)
+					{
+						Entity entity = entities[i];
+						pECS->AddComponent<LevelRegisteredComponent>(entity, LevelRegisteredComponent());
+
+						pLevelEntitiesOfType->PushBack(entity);
+						m_EntityToLevelObjectTypeMap[entity] = levelObjectType;
 					}
 				}
 			}
@@ -165,11 +164,63 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 	return true;
 }
 
+bool Level::CreateObject(ELevelObjectType levelObjectType, const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities)
+{
+	using namespace LambdaEngine;
+	std::scoped_lock<SpinLock> lock(m_SpinLock);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
+	{
+		TArray<Entity> newEntities;
+		if (LevelObjectCreator::CreateLevelObjectOfType(levelObjectType, pData, newEntities))
+		{
+			TArray<Entity>* pLevelEntitiesOfType = nullptr;
+
+			if (auto levelObjectTypeIt = m_EntityTypeMap.find(levelObjectType); levelObjectTypeIt != m_EntityTypeMap.end())
+			{
+				pLevelEntitiesOfType = &m_LevelEntities[levelObjectTypeIt->second];
+			}
+			else
+			{
+				m_EntityTypeMap[levelObjectType] = m_LevelEntities.GetSize();
+				pLevelEntitiesOfType = &m_LevelEntities.PushBack({});
+			}
+
+			for (uint32 i = 0; i < newEntities.GetSize(); i++)
+			{
+				Entity entity = newEntities[i];
+				pECS->AddComponent<LevelRegisteredComponent>(entity, LevelRegisteredComponent());
+
+				pLevelEntitiesOfType->PushBack(entity);
+
+				m_EntityToLevelObjectTypeMap[entity] = levelObjectType;
+			}
+
+			createdEntities = newEntities;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool Level::DeleteObject(LambdaEngine::Entity entity)
 {
 	using namespace LambdaEngine;
 
 	ECSCore* pECS = ECSCore::GetInstance();
+	pECS->RemoveEntity(entity);
+
+	return RegisterObjectDeletion(entity);
+}
+
+bool Level::RegisterObjectDeletion(LambdaEngine::Entity entity)
+{
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_SpinLock);
 
 	auto levelObjectTypeIt = m_EntityToLevelObjectTypeMap.find(entity);
 	if (levelObjectTypeIt != m_EntityToLevelObjectTypeMap.end())
@@ -192,85 +243,8 @@ bool Level::DeleteObject(LambdaEngine::Entity entity)
 			if (entityIndex >= 0)
 			{
 				entities.Erase(entities.Begin() + entityIndex);
-				TArray<TArray<Entity>>& entitiesWithChildren = m_LevelChildEntities[index];
-				TArray<Entity>& childEntities = entitiesWithChildren[entityIndex];
-
-				for (uint32 i = 0; i < childEntities.GetSize(); i++)
-				{
-					pECS->RemoveEntity(childEntities[i]);
-				}
-
-				entitiesWithChildren.Erase(entitiesWithChildren.begin() + entityIndex);
-
-				pECS->RemoveEntity(entity);
 				return true;
 			}
-		}
-	}
-
-	return false;
-}
-
-bool Level::CreateObject(ELevelObjectType levelObjectType, const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities)
-{
-	using namespace LambdaEngine;
-	std::scoped_lock<SpinLock> lock(m_SpinLock);
-
-	if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
-	{
-		TArray<uint64> newSaltUIDs;
-		TArray<Entity> newEntities;
-		TArray<TArray<Entity>> newChildEntities;
-		if (LevelObjectCreator::CreateLevelObjectOfType(levelObjectType, pData, newEntities, newChildEntities))
-		{
-			if (auto levelObjectTypeIt = m_EntityTypeMap.find(levelObjectType); levelObjectTypeIt != m_EntityTypeMap.end())
-			{
-				TArray<Entity>& levelEntitiesOfType = m_LevelEntities[levelObjectTypeIt->second];
-				TArray<TArray<Entity>>& levelChildEntitiesOfType = m_LevelChildEntities[levelObjectTypeIt->second];
-
-				for (uint32 i = 0; i < newEntities.GetSize(); i++)
-				{
-					Entity entity = newEntities[i];
-					levelEntitiesOfType.PushBack(entity);
-
-					if (!newChildEntities.IsEmpty())
-					{
-						levelChildEntitiesOfType.PushBack(newChildEntities[i]);
-					}
-					else
-					{
-						levelChildEntitiesOfType.PushBack({});
-					}
-
-					m_EntityToLevelObjectTypeMap[entity] = levelObjectType;
-				}
-			}
-			else
-			{
-				m_EntityTypeMap[levelObjectType] = m_LevelEntities.GetSize();
-				TArray<Entity>& levelEntitiesOfType = m_LevelEntities.PushBack({});
-				TArray<TArray<Entity>>& levelChildEntitiesOfType = m_LevelChildEntities.PushBack({});
-
-				for (uint32 i = 0; i < newEntities.GetSize(); i++)
-				{
-					Entity entity = newEntities[i];
-					levelEntitiesOfType.PushBack(entity);
-
-					if (!newChildEntities.IsEmpty())
-					{
-						levelChildEntitiesOfType.PushBack(newChildEntities[i]);
-					}
-					else
-					{
-						levelChildEntitiesOfType.PushBack({});
-					}
-
-					m_EntityToLevelObjectTypeMap[entity] = levelObjectType;
-				}
-			}
-
-			createdEntities = newEntities;
-			return true;
 		}
 	}
 
@@ -291,16 +265,7 @@ LambdaEngine::TArray<LambdaEngine::Entity> Level::GetEntities(ELevelObjectType l
 	return {};
 }
 
-LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>> Level::GetChildEntities(ELevelObjectType levelObjectType)
+void Level::LevelRegisteredDestructor(LevelRegisteredComponent& levelRegisteredComponent, LambdaEngine::Entity entity)
 {
-	using namespace LambdaEngine;
-	std::scoped_lock<SpinLock> lock(m_SpinLock);
-
-	auto levelObjectTypeIt = m_EntityTypeMap.find(levelObjectType);
-	if (levelObjectTypeIt != m_EntityTypeMap.end())
-	{
-		return m_LevelChildEntities[levelObjectTypeIt->second];
-	}
-
-	return {};
+	RegisterObjectDeletion(entity);
 }

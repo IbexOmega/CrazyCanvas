@@ -15,13 +15,17 @@
 
 #include "Threading/API/SpinLock.h"
 
+#include "ECS/ComponentOwner.h"
+
+#include "ECS/Components/World/LevelRegisteredComponent.h"
+
 struct LevelCreateDesc
 {
 	LambdaEngine::String Name	=	"";
 	LambdaEngine::TArray<LevelModule*>		LevelModules;
 };
 
-class Level
+class Level : public LambdaEngine::ComponentOwner
 {
 public:
 	DECL_UNIQUE_CLASS(Level);
@@ -31,14 +35,14 @@ public:
 
 	bool Init(const LevelCreateDesc* pDesc);
 
-	bool DeleteObject(LambdaEngine::Entity entity);
 	bool CreateObject(ELevelObjectType levelObjectType, const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities);
+	bool DeleteObject(LambdaEngine::Entity entity);
+	bool RegisterObjectDeletion(LambdaEngine::Entity entity);
 
 	LambdaEngine::TArray<LambdaEngine::Entity> GetEntities(ELevelObjectType levelObjectType);
-	LambdaEngine::TArray< LambdaEngine::TArray<LambdaEngine::Entity>> GetChildEntities(ELevelObjectType levelObjectType);
 
 private:
-	//virtual LambdaEngine::Entity GetEntityPlayer(uint64 saltUID) override;
+	void LevelRegisteredDestructor(LevelRegisteredComponent& levelRegisteredComponent, LambdaEngine::Entity entity);
 
 private:
 	LambdaEngine::String m_Name = "";
@@ -48,5 +52,4 @@ private:
 	LambdaEngine::THashTable<ELevelObjectType, uint32> m_EntityTypeMap;
 
 	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>> m_LevelEntities;
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>> m_LevelChildEntities;
 };

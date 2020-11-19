@@ -99,7 +99,7 @@ class LevelObjectCreator
 	typedef bool(*LevelObjectCreateByTypeFunc)(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>&,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>&);
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>&);
 
 	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.8f;
 	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.2f;
@@ -132,8 +132,7 @@ public:
 	static bool CreateLevelObjectOfType(
 		ELevelObjectType levelObjectType,
 		const void* pData,
-		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities);
 
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc>& GetLevelObjectOnLoadDescriptions()
 	{
@@ -160,6 +159,7 @@ private:
 		const LambdaEngine::LevelObjectOnLoad& levelObject,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
+
 	static ELevelObjectType CreateKillPlane(
 		const LambdaEngine::LevelObjectOnLoad& levelObject,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
@@ -168,17 +168,17 @@ private:
 	static bool CreateFlag(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
 
 	static bool CreatePlayer(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
 
 	static bool CreateProjectile(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
 
 	static bool FindTeamIndex(const LambdaEngine::String& objectName, uint8& teamIndex);
 
