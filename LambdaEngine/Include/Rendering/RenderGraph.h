@@ -131,19 +131,19 @@ namespace LambdaEngine
 
 		struct ResourceBinding
 		{
-			RenderStage*	pRenderStage		= nullptr;
-			EDescriptorType DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
-			uint32			Binding				= 0;
+			RenderStage*	pRenderStage	= nullptr;
+			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
+			uint32			Binding			= 0;
 
-			ETextureState	TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
+			ETextureState	TextureState	= ETextureState::TEXTURE_STATE_UNKNOWN;
 		};
 
 		struct ResourceBarrierInfo
 		{
-			uint32				SynchronizationStageIndex	= 0;
-			uint32				SynchronizationTypeIndex	= 0;
-			uint32				BarrierIndex				= 0;
-			DrawArgMaskDesc		DrawArgsMaskDesc;
+			uint32			SynchronizationStageIndex	= 0;
+			uint32			SynchronizationTypeIndex	= 0;
+			uint32			BarrierIndex				= 0;
+			DrawArgMaskDesc	DrawArgsMaskDesc;
 		};
 
 		struct InternalResourceUpdateDesc
@@ -181,6 +181,7 @@ namespace LambdaEngine
 
 		struct DrawArgsData
 		{
+			bool						IsDirty = false;
 			PipelineBufferBarrierDesc	InitialTransitionBarrierTemplate;
 			PipelineTextureBarrierDesc	InitialTextureTransitionBarrierTemplate;
 			TArray<DrawArg>				Args;
@@ -451,12 +452,12 @@ namespace LambdaEngine
 		void UpdateRelativeResourceDimensions(InternalResourceUpdateDesc* pResourceUpdateDesc);
 
 		void ExecuteSynchronizationStage(
-			SynchronizationStage* pSynchronizationStage, 
-			CommandAllocator* pGraphicsCommandAllocator, 
-			CommandList* pGraphicsCommandList, 
-			CommandAllocator* pComputeCommandAllocator, 
-			CommandList* pComputeCommandList, 
-			CommandList** ppFirstExecutionStage, 
+			SynchronizationStage* pSynchronizationStage,
+			CommandAllocator* pGraphicsCommandAllocator,
+			CommandList* pGraphicsCommandList,
+			CommandAllocator* pComputeCommandAllocator,
+			CommandList* pComputeCommandList,
+			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondExecutionStage);
 		
 		void ExecuteGraphicsRenderStage(

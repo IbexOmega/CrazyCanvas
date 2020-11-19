@@ -77,7 +77,7 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
-                <Grid x:Name="HEALTH_DISPLAY_GRID" Margin="25,0,-25,25" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4" >
+                <Grid x:Name="HEALTH_DISPLAY_GRID" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4" Margin="25,0,-25,-25">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
                         <ColumnDefinition />
@@ -94,8 +94,8 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
-                    <Image Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Source="bar_background.png"   RenderTransformOrigin="0.5,0.75" HorizontalAlignment="Left" Width="319.205" Margin="15,0,0,80"/>
-                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="bar.png"   RenderTransformOrigin="0.5,0.75"  Width="400" Height=" 75" Margin="50,0,0,0">
+                    <Image Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Source="bar_background.png" RenderTransformOrigin="0.5,0.75" HorizontalAlignment="Left" Width="319.205" Margin="15,0,0,80"/>
+                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="bar.png" RenderTransformOrigin="0.12,0.5"  Width="400" Height=" 75" Margin="50,0,0,0">
                         <Image.RenderTransform>
                             <ScaleTransform/>
                         </Image.RenderTransform>
@@ -262,14 +262,342 @@
         <Viewbox Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="2" Grid.RowSpan="9" Stretch="Fill">
             <uc:GameOverGUI x:Name="GAME_OVER" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Viewbox>
+
+        <!--EscapeGrid-->
+        <Viewbox Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="4" Grid.RowSpan="5" Stretch="UniformToFill">
+            <Grid x:Name="EscapeGrid" MinWidth="768" MinHeight="415.38" Background="#CC101010" Visibility="Hidden">
+                <Image x:Name="splash_orange" Grid.Column="7" Grid.Row="9" Source="./splashes/splash_orange.png" Margin="0,0,-357,-326.441" Stretch="None"/>
+                <StackPanel x:Name="EscapeButtons" VerticalAlignment="Center">
+                    <Button Click="OnButtonResumeClick" Content="Resume" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="#00000000"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Button}">
+                                            <Border Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#80FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Click="OnButtonSettingsClick" Content="Settings" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="#00000000"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Button}">
+                                            <Border Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#80FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Click="OnButtonLeaveClick" Content="Leave" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="#00000000"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Button}">
+                                            <Border Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#80FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Click="OnButtonExitClick" Content="Exit" FontSize="48" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" Margin="10">
+                        <Button.Style>
+                            <Style TargetType="{x:Type Button}">
+                                <Setter Property="Background" Value="#00000000"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="{x:Type Button}">
+                                            <Border Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#80FFFFFF"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Viewbox>
+    
+        <!--SettingsGrid-->
+        <Viewbox Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="3" Grid.RowSpan="7" Stretch="UniformToFill">
+            <Grid x:Name="SettingsGrid" Background="#CC101010" Visibility="Hidden">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="6*"/>
+                </Grid.RowDefinitions>
+    
+                <Image x:Name="splash_pink" Grid.Column="0" Grid.Row="0" Source="./splashes/splash_pink.png" Margin="-264,-485.16,10,20.644" Stretch="None"/>
+    
+                <!--Title-->
+                <Grid Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="0" Grid.RowSpan="10" MinHeight="830">
+                    <Label Content="Settings" Foreground="White" FontSize="96" HorizontalAlignment="Center" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" VerticalAlignment="Top"/>
+                </Grid>
+    
+                <!--Settings-->
+                <Grid Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="0" Grid.RowSpan="10">
+                    <StackPanel MinWidth="1000" Grid.Row="1" MinHeight="830" Margin="200 0 200 0" VerticalAlignment="Center">
+                        <!--Mesh Shader Toggle-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Mesh Shader" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <CheckBox x:Name="MeshShaderCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+                        </Grid>
+    
+                        <!--Ray Tracing Toggle-->
+                        <!-- <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Ray Tracing" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <CheckBox x:Name="RayTracingCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+                        </Grid> -->
+
+                        <!--Ray Tracing Toggle-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Label Content="Fullscreen" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" IsEnabled="False" VerticalAlignment="Center" />
+                        </Grid>
+    
+                        <!--Volume-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Volume" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Slider x:Name="VolumeSlider" ValueChanged="OnVolumeSliderChanged" Grid.Column="1" VerticalAlignment="Center" />
+                        </Grid>
+    
+                        <!--Key Bindings-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Key Bindings" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonChangeKeyBindingsClick" Content="Change" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0" />
+                        </Grid>
+    
+                        <!--Finish Buttons-->
+                        <Grid Margin="0 50 0 0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Button Click="OnButtonApplySettingsClick" Content="Apply" Grid.Column="0" FontSize="29.333" Margin="50 0 50 0" />
+                            <Button Click="OnButtonCancelSettingsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0" />
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Viewbox>
+    
+        <!--Key bindings grid-->
+        <Viewbox Grid.Column="1" Grid.ColumnSpan="8" Grid.Row="2" Grid.RowSpan="9" Stretch="UniformToFill">
+            <Grid x:Name="KeyBindingsGrid" Background="#CC101010" Visibility="Hidden">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"/>
+                    <RowDefinition Height="6*"/>
+                </Grid.RowDefinitions>
+    
+                <Image x:Name="splash_red" Grid.Column="2" Grid.Row="0" Source="./splashes/splash_red.png" Margin="-264,500,0,-241.402" Stretch="None"/>
+    
+                <!--Title-->
+                <Grid Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="0" Grid.RowSpan="11" MinHeight="700">
+                    <Label Content="Key Bindings" Foreground="White" FontSize="96" HorizontalAlignment="Center" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" VerticalAlignment="Top"/>
+                </Grid>
+    
+                <!--Key Bindings-->
+                <Grid Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="0" Grid.RowSpan="11">
+                    <StackPanel Grid.Row="1" MinHeight="700" MinWidth="1200" Margin="200 0 200 0" VerticalAlignment="Center">
+                        <!--Movement Title-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Movement" Foreground="#FF05DFD7" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                        </Grid>
+                        <Separator/>
+    
+                        <!--Forward-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Forward" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_FORWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Backward-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Backward" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_BACKWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Left-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Left" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_LEFT" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Right-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Right" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_RIGHT" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Jump-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Jump" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_JUMP" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Walk-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Walk" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_WALK" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Attack Title-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Attack" Foreground="#FF05DFD7" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                        </Grid>
+                        <Separator/>
+    
+                        <!--Primary-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Primary" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_PRIMARY" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Secondary-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Secondary" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_SECONDARY" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Reload-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Label Content="Reload" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_RELOAD" Content="" Grid.Column="1" Margin="50 5 50 5" />
+                        </Grid>
+    
+                        <!--Finish Buttons-->
+                        <Grid Margin="0 50 0 0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+    
+                            <Button Click="OnButtonApplyKeyBindingsClick" Content="Apply" Grid.Column="0" FontSize="29.333" Margin="50 0 50 0" />
+                            <Button Click="OnButtonCancelKeyBindingsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0"/>
+                        </Grid>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Viewbox>
     </Grid>
-
-    <Rectangle x:Name="FLAG_INDICATOR" Fill="#FFD10000"  Width="40" Height="40" RenderTransformOrigin="0.5,0.5">
-        <Rectangle.RenderTransform>
-            <TranslateTransform/>
-        </Rectangle.RenderTransform>
-    </Rectangle>
-
 
     <Grid>
         <Grid.ColumnDefinitions>

@@ -11,6 +11,8 @@
 
 #include "World/LevelObjectCreator.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 namespace LambdaEngine
 {
 	void SingleplayerInitializer::Init()
@@ -32,11 +34,12 @@ namespace LambdaEngine
 			ClientSystem& clientSystem = ClientSystem::GetInstance();
 			ClientBase* pClient = clientSystem.GetClient();
 
+			PlayerManagerClient::RegisterLocalPlayer("Singleplayer", true);
+
 			PacketCreateLevelObject packet;
 			packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;
 			packet.Position = glm::vec3(0.0f, 2.0f, 0.0f);
 			packet.Forward = glm::vec3(1.0f, 0.0f, 0.0f);
-			packet.Player.TeamIndex = 0;
 			packet.Player.ClientUID = pClient->GetUID();
 			packet.Player.WeaponNetworkUID = 1;
 			packet.NetworkUID = 0;

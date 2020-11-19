@@ -11,6 +11,8 @@
 
 #include "Lobby/Player.h"
 
+typedef std::pair<LambdaEngine::Entity, float32> PlayerRespawnTimer;
+
 class MatchServer : public MatchBase
 {
 public:
@@ -28,7 +30,7 @@ protected:
 
 	void SpawnPlayer(const Player& player);
 
-	void SpawnFlag();
+	void SpawnFlag(uint8 teamIndex);
 	void DeleteGameLevelObject(LambdaEngine::Entity entity);
 	
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
@@ -36,7 +38,9 @@ protected:
 private:
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
+	bool OnFlagRespawn(const FlagRespawnEvent& event);
 
+	void RespawnPlayer(LambdaEngine::Entity entity);
 	void DoKillPlayer(LambdaEngine::Entity playerEntity);
 
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
@@ -45,9 +49,15 @@ private:
 public:
 	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
 
+	bool CreateFlagSpawnProperties(uint8 teamIndex, glm::vec3& position);
+
 private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
-	uint8 m_NextTeamIndex = 0;
+
+	LambdaEngine::SpinLock m_PlayersToRespawnLock;
+	//LambdaEngine::TQueue<PlayerTimers> m_PlayersToRespawn;
+	LambdaEngine::TArray<PlayerRespawnTimer> m_PlayersToRespawn;
+
 	bool m_ShouldBeginMatch = false;
 };

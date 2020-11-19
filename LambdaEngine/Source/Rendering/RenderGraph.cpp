@@ -650,7 +650,7 @@ namespace LambdaEngine
 						{
 							pRenderStage->pCustomRenderer->UpdateAccelerationStructureResource(
 								pResource->Name,
-								pResource->AccelerationStructure.pTLAS);
+								&pResource->AccelerationStructure.pTLAS);
 						}
 						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 						{
@@ -737,17 +737,25 @@ namespace LambdaEngine
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pRenderStage->DrawArgsMaskDesc.FullMask);
 					
-					if (pRenderStage->UsesCustomRenderer)
+					if (drawArgsMaskToArgsIt->second.IsDirty)
 					{
-						pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
-							pResource->Name,
-							drawArgsMaskToArgsIt->second.Args.GetData(),
-							drawArgsMaskToArgsIt->second.Args.GetSize());
+						if (pRenderStage->UsesCustomRenderer)
+						{
+							pRenderStage->pCustomRenderer->UpdateDrawArgsResource(
+								pResource->Name,
+								drawArgsMaskToArgsIt->second.Args.GetData(),
+								drawArgsMaskToArgsIt->second.Args.GetSize());
+						}
+						else
+						{
+							pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
+						}
 					}
-					else
-					{
-						pRenderStage->DrawArgs = drawArgsMaskToArgsIt->second.Args;
-					}
+				}
+
+				for (auto& drawArgPair : pResource->DrawArgs.FullMaskToArgs)
+				{
+					drawArgPair.second.IsDirty = false;
 				}
 			}
 
@@ -3585,6 +3593,8 @@ namespace LambdaEngine
 			}
 		}
 
+		LOG_MESSAGE("Updating Resource: %s", pResource->Name.c_str());
+
 		if (pResource->ResourceBindings.GetSize() > 0)
 		{
 			m_DirtyBoundTextureResources.insert(pResource);
@@ -3602,6 +3612,8 @@ namespace LambdaEngine
 
 		if (drawArgsArgsIt != pResource->DrawArgs.FullMaskToArgs.end())
 		{
+			drawArgsArgsIt->second.IsDirty = true;
+
 			drawArgsArgsIt->second.Args.Clear();
 
 			drawArgsArgsIt->second.Args.Resize(pDesc->ExternalDrawArgsUpdate.Count);
@@ -3700,7 +3712,6 @@ namespace LambdaEngine
 							drawBufferBarriers.PushBack(bufferBarrierTemplate);
 						}
 
-
 						// For draw arg extensions
 						if (pDrawArg->HasExtensions)
 						{
@@ -3718,13 +3729,13 @@ namespace LambdaEngine
 										for (uint32 t = 0; t < numTextures; t++)
 										{
 											//uint32 masks = extensionGroup->pExtensionMasks[e];
-											const TextureViewDesc& textureViewDesc = extension.ppTextureViews[t]->GetDesc();
-											textureBarrierTemplate.StateBefore = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
-											textureBarrierTemplate.StateAfter = ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
-											textureBarrierTemplate.pTexture = extension.ppTextures[t];
-											textureBarrierTemplate.Miplevel = textureViewDesc.Miplevel;
-											textureBarrierTemplate.MiplevelCount = textureViewDesc.MiplevelCount;
-											textureBarrierTemplate.ArrayIndex = textureViewDesc.ArrayIndex;
+											const TextureViewDesc& textureViewDesc	= extension.ppTextureViews[t]->GetDesc();
+											textureBarrierTemplate.StateBefore		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;// CalculateResourceTextureState(ERenderGraphResourceType::TEXTURE, pResourceSynchronizationDesc->PrevBindingType, pResource->Texture.Format);
+											textureBarrierTemplate.StateAfter		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+											textureBarrierTemplate.pTexture			= extension.ppTextures[t];
+											textureBarrierTemplate.Miplevel			= textureViewDesc.Miplevel;
+											textureBarrierTemplate.MiplevelCount	= textureViewDesc.MiplevelCount;
+											textureBarrierTemplate.ArrayIndex		= textureViewDesc.ArrayIndex;
 											drawTextureBarriers.PushBack(textureBarrierTemplate);
 										}
 									}

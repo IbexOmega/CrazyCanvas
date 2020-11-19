@@ -16,10 +16,10 @@ namespace LambdaEngine
 
 	struct GUIRenderTargetDesc
 	{
-		String		DebugName		= "";
-		uint32		Width			= 0;
-		uint32		Height			= 0;
-		uint32		SampleCount		= 0;
+		String			DebugName		= "";
+		uint32			Width			= 0;
+		uint32			Height			= 0;
+		uint32			SampleCount		= 0;
 	};
 
 	class GUIRenderTarget : public Noesis::RenderTarget
@@ -39,6 +39,9 @@ namespace LambdaEngine
 		FORCEINLINE TextureView* GetDepthStencil() { return m_pDepthStencilTextureView; }
 		FORCEINLINE const ClearColorDesc* GetClearColors() const { return m_pClearColorDesc; }
 		FORCEINLINE uint32 GetClearColorCount() const { return ARR_SIZE(m_pClearColorDesc); }
+
+		FORCEINLINE uint32 GetWidth() const { return m_Desc.Width; }
+		FORCEINLINE uint32 GetHeight() const { return m_Desc.Height; }
 
 	private:
 		bool CreateColorTextures(const GUIRenderTargetDesc* pDesc);
