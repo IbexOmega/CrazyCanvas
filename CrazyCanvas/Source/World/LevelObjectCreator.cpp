@@ -1092,8 +1092,8 @@ bool LevelObjectCreator::CreateProjectile(
 		}
 		else
 		{
-			pECS->AddComponent<MeshComponent>(projectileEntity, ResourceCatalog::PROJECTILE_MESH);
-			particleColor = ResourceCatalog::PROJECTILE_WATER_COLOR;
+			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
+			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 		}
 
 		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{

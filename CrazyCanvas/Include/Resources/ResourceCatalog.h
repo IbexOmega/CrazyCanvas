@@ -33,8 +33,7 @@ public:
 
 	// Projectile
 	inline static GUID_Lambda PROJECTILE_MESH_GUID = GUID_NONE;
-	inline static LambdaEngine::MeshComponent PROJECTILE_MESH;
-	inline static glm::vec4 PROJECTILE_WATER_COLOR = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
+	inline static GUID_Lambda PROJECTILE_WATER_MATERIAL = GUID_NONE;
 
 	//Weapon
 	inline static GUID_Lambda WEAPON_MESH_GUID = GUID_NONE;

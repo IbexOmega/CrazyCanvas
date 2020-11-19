@@ -46,11 +46,9 @@ bool ResourceCatalog::Init()
 		MaterialProperties projectileMaterialProperties;
 		projectileMaterialProperties.Metallic = 0.5f;
 		projectileMaterialProperties.Roughness = 0.1f;
-		projectileMaterialProperties.Albedo = PROJECTILE_WATER_COLOR;
+		projectileMaterialProperties.Albedo = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 
-		PROJECTILE_MESH = { };
-		PROJECTILE_MESH.MeshGUID = PROJECTILE_MESH_GUID;
-		PROJECTILE_MESH.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+		PROJECTILE_WATER_MATERIAL = ResourceManager::LoadMaterialFromMemory(
 			"Water Projectile",
 			GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
