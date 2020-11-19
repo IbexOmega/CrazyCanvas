@@ -807,6 +807,19 @@ namespace LambdaEngine
 
 	}
 
+	void RenderSystem::SetPaintMaskColor(uint32 index, const glm::vec3& color)
+	{
+		if (index < m_PaintMaskColors.GetSize())
+		{
+			m_PaintMaskColors[index] = glm::vec4(color, 1.0f);
+			m_PaintMaskColorsResourceDirty = true;
+		}
+		else
+		{
+			LOG_WARNING("[RenderSystem]: SetPaintMaskColor index out of range, colors unchanged");
+		}
+	}
+
 	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)
 	{
 		const ECSCore* pECSCore	= ECSCore::GetInstance();

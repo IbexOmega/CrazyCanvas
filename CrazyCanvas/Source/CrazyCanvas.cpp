@@ -7,6 +7,7 @@
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "Resources/ResourceManager.h"
+#include "Resources/ResourceCatalog.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
@@ -72,6 +73,11 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		ServerSystem::Init(pGameName);
 	}
 
+	if (!ResourceCatalog::Init())
+	{
+		LOG_ERROR("Failed to Load Resource Catalog Resources");
+	}
+
 	if (!RegisterGUIComponents())
 	{
 		LOG_ERROR("Failed to Register GUI Components");
@@ -99,7 +105,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PaintMaskRenderer());
 	RenderSystem::GetInstance().InitRenderGraphs();
 
-	LoadRendererResources();
+	InitRendererResources();
 
 	if (stateStr == "crazycanvas")
 	{
@@ -176,7 +182,7 @@ bool CrazyCanvas::RegisterGUIComponents()
 	return true;
 }
 
-bool CrazyCanvas::LoadRendererResources()
+bool CrazyCanvas::InitRendererResources()
 {
 	using namespace LambdaEngine;
 
@@ -205,10 +211,8 @@ bool CrazyCanvas::LoadRendererResources()
 
 	// For Mesh painting in RenderGraph
 	{
-		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV3.png", EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
-
-		Texture* pTexture = ResourceManager::GetTexture(brushMaskID);
-		TextureView* pTextureView = ResourceManager::GetTextureView(brushMaskID);
+		Texture* pTexture = ResourceManager::GetTexture(ResourceCatalog::BRUSH_MASK_GUID);
+		TextureView* pTextureView = ResourceManager::GetTextureView(ResourceCatalog::BRUSH_MASK_GUID);
 		Sampler* pNearestSampler = Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};
