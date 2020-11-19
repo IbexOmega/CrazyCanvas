@@ -85,7 +85,6 @@ struct CreateProjectileDesc
 	uint8		TeamIndex;
 	LambdaEngine::Entity			WeaponOwner;
 	LambdaEngine::CollisionCallback	Callback;
-	LambdaEngine::MeshComponent		MeshComponent;
 	uint32 Angle = 0;
 };
 
@@ -103,6 +102,8 @@ class LevelObjectCreator
 
 	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.8f;
 	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.2f;
+
+	inline static const glm::vec3 WATER_COLOR = glm::vec3( 87.0f / 255.0f, 217.0f / 255.0f, 1.0f );
 
 public:
 	DECL_STATIC_CLASS(LevelObjectCreator);
@@ -194,6 +195,9 @@ private:
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
 	inline static GUID_Lambda s_PlayerStepSoundGUID = GUID_NONE;
+
+	inline static GUID_Lambda s_ProjectileMeshGUID = GUID_NONE;
+	inline static LambdaEngine::MeshComponent s_WaterProjectileMeshComponent;
 
 	inline static GUID_Lambda s_WeaponMeshGUID = GUID_NONE;
 	inline static GUID_Lambda s_WeaponMaterialGUID = GUID_NONE;

@@ -275,7 +275,6 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.InitalVelocity = event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
-	createProjectileDesc.MeshComponent	= event.MeshComponent;
 	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
 	createProjectileDesc.Angle			= event.Angle;
 
