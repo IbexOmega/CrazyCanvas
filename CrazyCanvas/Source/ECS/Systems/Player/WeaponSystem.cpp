@@ -121,7 +121,6 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 		playerTeam,
 		angle);
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
-	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
 	EventQueue::SendEventImmediate(firedEvent);
 }
 

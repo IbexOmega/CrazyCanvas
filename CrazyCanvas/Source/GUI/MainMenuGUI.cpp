@@ -36,11 +36,6 @@ MainMenuGUI::MainMenuGUI()
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &MainMenuGUI::KeyboardCallback);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseButtonCallback);
 
-
-	m_MainMenuMusic = LambdaEngine::ResourceManager::LoadMusicFromFile("MainMenuCC.mp3");
-
-	LambdaEngine::ResourceManager::GetMusic(m_MainMenuMusic)->Play();
-
 	SetDefaultSettings();
 }
 
