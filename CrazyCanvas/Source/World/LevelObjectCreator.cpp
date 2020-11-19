@@ -58,6 +58,8 @@
 #include "Lobby/PlayerManagerBase.h"
 #include "Lobby/PlayerManagerClient.h"
 
+#include "Resources/ResourceCatalog.h"
+
 bool LevelObjectCreator::Init()
 {
 	using namespace LambdaEngine;
@@ -125,35 +127,6 @@ bool LevelObjectCreator::Init()
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]		= &LevelObjectCreator::CreateFlag;
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]		= &LevelObjectCreator::CreatePlayer;
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]	= &LevelObjectCreator::CreateProjectile;
-	}
-
-	//Load Object Resources
-	{
-		//Flag
-		{
-			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagCommonMaterialGUID);
-		}
-
-		//Player
-		{
-			ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
-
-#ifdef USE_ALL_ANIMATIONS
-			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
-			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.glb");
-			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.glb");
-			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.glb");
-			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
-			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
-#endif
-
-			s_PlayerStepSoundGUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
-		}
-
-		//Weapon
-		{
-			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMeshGUID, s_WeaponMaterialGUID);
-		}
 	}
 
 	return true;
@@ -574,7 +547,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity flagEntity = pECS->CreateEntity();
 
-	GUID_Lambda flagMaterialGUID = s_FlagCommonMaterialGUID;
+	GUID_Lambda flagMaterialGUID = ResourceCatalog::FLAG_COMMON_MATERIAL_GUID;
 
 	if (pFlagDesc->TeamIndex != UINT8_MAX)
 	{
@@ -588,7 +561,7 @@ bool LevelObjectCreator::CreateFlag(
 	const PositionComponent	positionComponent{ true, pFlagDesc->Position };
 	const ScaleComponent	scaleComponent{ true, pFlagDesc->Scale };
 	const RotationComponent	rotationComponent{ true, pFlagDesc->Rotation };
-	const MeshComponent		meshComponent{ s_FlagMeshGUID, flagMaterialGUID };
+	const MeshComponent		meshComponent{ ResourceCatalog::FLAG_MESH_GUID, flagMaterialGUID };
 	const ProjectedGUIComponent	projectedGUIComponent{ IndicatorTypeGUI::FLAG_INDICATOR };
 
 	pECS->AddComponent<FlagComponent>(flagEntity,			flagComponent);
@@ -780,10 +753,10 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
 
 	AnimationComponent animationComponent = {};
-	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
+	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::PLAYER_MESH_GUID)->pSkeleton;
 
 	AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
-	pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
+	pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::PLAYER_IDLE_GUIDs[0]));
 	pAnimationGraph->TransitionToState("Idle");
 	animationComponent.pGraph = pAnimationGraph;
 
@@ -800,8 +773,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
-				.MeshGUID = s_WeaponMeshGUID,
-				.MaterialGUID = s_WeaponMaterialGUID,
+				.MeshGUID = ResourceCatalog::WEAPON_MESH_GUID,
+				.MaterialGUID = ResourceCatalog::WEAPON_MATERIAL_GUID,
 			});
 
 		pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
@@ -818,15 +791,15 @@ bool LevelObjectCreator::CreatePlayer(
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
 #ifdef USE_ALL_ANIMATIONS
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", s_PlayerStrafeRightGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Left", s_PlayerStrafeLeftGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", ResourceCatalog::PLAYER_RUN_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", ResourceCatalog::PLAYER_RUN_BACKWARD_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Left", ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]));
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Left");
-			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			ClipNode* pRunning = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_MIRRORED_GUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -834,8 +807,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Right");
-			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
-			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			ClipNode* pRunning = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_GUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -843,8 +816,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Left");
-			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_BACKWARD_MIRRORED_GUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -852,8 +825,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Right");
-			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
-			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_BACKWARD_GUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -948,7 +921,7 @@ bool LevelObjectCreator::CreatePlayer(
 		{
 			SoundInstance3DDesc soundInstanceDesc = {};
 			soundInstanceDesc.pName			= "Step";
-			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(s_PlayerStepSoundGUID);
+			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
 			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
 			soundInstanceDesc.Position		= pPlayerDesc->Position;
 			soundInstanceDesc.Volume		= 1.0f;
@@ -984,7 +957,7 @@ bool LevelObjectCreator::CreatePlayer(
 			playerChildComp.AddChild(cameraEntity, "camera");
 
 			//Todo: Better implementation for this somehow maybe?
-			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
+			const Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::PLAYER_MESH_GUID);
 			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
@@ -1028,7 +1001,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<MeshComponent>(playerEntity,
 		MeshComponent
 		{
-			.MeshGUID = s_PlayerMeshGUID,
+			.MeshGUID = ResourceCatalog::PLAYER_MESH_GUID,
 			.MaterialGUID = playerMaterialGUID
 		});
 

@@ -46,6 +46,8 @@
 
 #include "GUI/GUIHelpers.h"
 
+#include "Resources/ResourceCatalog.h"
+
 BenchmarkState::BenchmarkState()
 {
 	using namespace LambdaEngine;
@@ -68,6 +70,7 @@ void BenchmarkState::Init()
 	using namespace LambdaEngine;
 
 	EnablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
 
 	Input::Disable();
 

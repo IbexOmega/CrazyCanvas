@@ -337,7 +337,7 @@ namespace LambdaEngine
 		FORCEINLINE static std::unordered_map<GUID_Lambda, Shader*>&			GetShaderGUIDMap()			{ return s_Shaders; }
 		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect3D*>&	GetSoundEffect3DGUIDMap()	{ return s_SoundEffects3D; }
 		FORCEINLINE static std::unordered_map<GUID_Lambda, ISoundEffect2D*>&	GetSoundEffect2DGUIDMap()	{ return s_SoundEffects2D; }
-		FORCEINLINE static std::unordered_map<GUID_Lambda, IMusic*>&			GetmusicGUIDMap()			{ return s_Music; }
+		FORCEINLINE static std::unordered_map<GUID_Lambda, IMusic*>&			GetMusicGUIDMap()			{ return s_Music; }
 
 	private:
 		static bool OnShaderRecompileEvent(const ShaderRecompileEvent& event);
