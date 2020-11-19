@@ -1536,20 +1536,21 @@ namespace LambdaEngine
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
 			Vertex vertex;
-			vertex.Position.x = pMeshAI->mVertices[vertexIdx].x;
-			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
-			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
+			vertex.PositionXYZPaintBitsW.x = pMeshAI->mVertices[vertexIdx].x;
+			vertex.PositionXYZPaintBitsW.y = pMeshAI->mVertices[vertexIdx].y;
+			vertex.PositionXYZPaintBitsW.z = pMeshAI->mVertices[vertexIdx].z;
+			vertex.PositionXYZPaintBitsW.w = 0.0f;
 
-			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.Position.x));
-			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.Position.y));
-			maxExtent.z = glm::max<float>(maxExtent.z, glm::abs(vertex.Position.z));
+			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.PositionXYZPaintBitsW.x));
+			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.PositionXYZPaintBitsW.y));
+			maxExtent.z = glm::max<float>(maxExtent.z, glm::abs(vertex.PositionXYZPaintBitsW.z));
 
-			minExtent.x = glm::min<float>(minExtent.x, glm::abs(vertex.Position.x));
-			minExtent.y = glm::min<float>(minExtent.y, glm::abs(vertex.Position.y));
-			minExtent.z = glm::min<float>(minExtent.z, glm::abs(vertex.Position.z));
+			minExtent.x = glm::min<float>(minExtent.x, glm::abs(vertex.PositionXYZPaintBitsW.x));
+			minExtent.y = glm::min<float>(minExtent.y, glm::abs(vertex.PositionXYZPaintBitsW.y));
+			minExtent.z = glm::min<float>(minExtent.z, glm::abs(vertex.PositionXYZPaintBitsW.z));
 
 			//Moving Average
-			pMesh->BoundingBox.Centroid += (vertex.Position - pMesh->BoundingBox.Centroid) / float32(vertexIdx + 1);
+			pMesh->BoundingBox.Centroid += (vertex.ExtractPosition() - pMesh->BoundingBox.Centroid) / float32(vertexIdx + 1);
 
 			if (pMeshAI->HasNormals())
 			{

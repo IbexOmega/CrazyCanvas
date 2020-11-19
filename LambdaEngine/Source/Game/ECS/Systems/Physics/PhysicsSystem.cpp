@@ -294,7 +294,7 @@ namespace LambdaEngine
 
 		for (const Vertex& vertex : vertices)
 		{
-			squareRadius = std::max(squareRadius, glm::length2(vertex.Position));
+			squareRadius = std::max(squareRadius, glm::length2(vertex.ExtractPosition()));
 		}
 
 		return std::sqrtf(squareRadius);
@@ -311,7 +311,7 @@ namespace LambdaEngine
 
 		for (const Vertex& vertex : vertices)
 		{
-			const glm::vec3& position = vertex.Position;
+			const glm::vec3& position = vertex.ExtractPosition();
 			squareRadiusXZ = std::max(squareRadiusXZ, glm::length2(glm::vec3(position.x, 0.0f, position.z)));
 			halfHeight = std::max(halfHeight, std::abs(position.y));
 		}
