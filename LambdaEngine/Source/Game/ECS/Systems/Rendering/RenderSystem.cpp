@@ -40,6 +40,7 @@
 #include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
+
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 namespace LambdaEngine
@@ -160,6 +161,15 @@ namespace LambdaEngine
 					},
 					.OnEntityAdded = std::bind_front(&RenderSystem::OnPointLightEntityAdded, this),
 					.OnEntityRemoval = std::bind_front(&RenderSystem::OnPointLightEntityRemoved, this)
+				},
+				{
+					.pSubscriber = &m_GlobalLightProbeEntities,
+					.ComponentAccesses =
+					{
+						{ R, GlobalLightProbeComponent::Type() },
+					},
+					.OnEntityAdded		= std::bind_front(&RenderSystem::OnGlobalLightProbeEntityAdded, this),
+					.OnEntityRemoval	= std::bind_front(&RenderSystem::OnGlobalLightProbeEntityRemoved, this)
 				},
 				{
 					.pSubscriber = &m_CameraEntities,
@@ -502,6 +512,9 @@ namespace LambdaEngine
 			SAFERELEASE(m_CubeSubImageTextureViews[f]);
 		}
 
+		// Remove lightprobes
+		m_GlobalLightProbe.Release();
+
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
 			TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[b];
@@ -646,6 +659,16 @@ namespace LambdaEngine
 			const auto& scaleComp		= pScaleComponents->GetConstData(entity);
 
 			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
+		}
+
+		if (m_GlobalLightProbeDirty)
+		{
+			ComponentArray<GlobalLightProbeComponent>* pGlobalLightProbeComponent = pECSCore->GetComponentArray<GlobalLightProbeComponent>();
+			for (Entity entity : m_GlobalLightProbeEntities)
+			{
+				const GlobalLightProbeComponent& lightProbeComp = pGlobalLightProbeComponent->GetConstData(entity);
+				UpdateLightProbe(m_GlobalLightProbe, lightProbeComp.Data);
+			}
 		}
 
 		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
@@ -910,11 +933,10 @@ namespace LambdaEngine
 	void RenderSystem::OnPointLightEntityAdded(Entity entity)
 	{
 		const ECSCore* pECSCore = ECSCore::GetInstance();
+		const auto& pointLight	= pECSCore->GetConstComponent<PointLightComponent>(entity);
+		const auto& position	= pECSCore->GetConstComponent<PositionComponent>(entity);
 
-		const auto& pointLight = pECSCore->GetConstComponent<PointLightComponent>(entity);
-		const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
-
-		uint32 pointLightIndex = m_PointLights.GetSize();
+		const uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
 		m_PointLightToEntity[pointLightIndex] = entity;
 
@@ -927,7 +949,7 @@ namespace LambdaEngine
 		else
 		{
 			// Check for free texture index instead of creating new index
-			uint32 textureIndex = m_FreeTextureIndices.GetBack();
+			const uint32 textureIndex = m_FreeTextureIndices.GetBack();
 			m_FreeTextureIndices.PopBack();
 
 			m_PointLights.GetBack().TextureIndex = textureIndex;
@@ -948,15 +970,15 @@ namespace LambdaEngine
 		if (m_PointLights.IsEmpty())
 			return;
 
-		uint32 lastIndex = m_PointLights.GetSize() - 1U;
-		uint32 lastEntity = m_PointLightToEntity[lastIndex];
-		uint32 currentIndex = m_EntityToPointLight[entity];
+		const uint32 lastIndex		= m_PointLights.GetSize() - 1U;
+		const uint32 lastEntity		= m_PointLightToEntity[lastIndex];
+		const uint32 currentIndex	= m_EntityToPointLight[entity];
 
-		uint32 freeTexIndex = m_PointLights[currentIndex].TextureIndex;
+		const uint32 freeTexIndex	= m_PointLights[currentIndex].TextureIndex;
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
 
-		m_EntityToPointLight[lastEntity] = currentIndex;
-		m_PointLightToEntity[currentIndex] = lastEntity;
+		m_EntityToPointLight[lastEntity]	= currentIndex;
+		m_PointLightToEntity[currentIndex]	= lastEntity;
 
 		m_PointLightToEntity.erase(lastIndex);
 		m_EntityToPointLight.erase(entity);
@@ -986,10 +1008,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnGlobalLightProbeEntityAdded(Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+		m_GlobalLightProbeDirty = true;
 	}
 
 	void RenderSystem::OnGlobalLightProbeEntityRemoved(Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+		m_GlobalLightProbeDirty = true;
 	}
 
 	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
@@ -1665,6 +1691,128 @@ namespace LambdaEngine
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsBufferDirty = true;
+	}
+
+	void RenderSystem::UpdateLightProbe(LightProbe& lightProbe, const LightProbeData& data)
+	{
+		const uint32 modFrameIndex = GetModFrameIndex();
+		if (lightProbe.DiffuseResolution != data.DiffuseResolution)
+		{
+			lightProbe.DiffuseResolution = data.DiffuseResolution;
+
+			if (lightProbe.Diffuse)
+			{
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.Diffuse.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.DiffuseSRV.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.DiffuseUAV.GetAndAddRef());
+			}
+
+			TextureDesc textureDesc;
+			textureDesc.DebugName	= "LightProbe Diffuse";
+			textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+			textureDesc.ArrayCount	= 6;
+			textureDesc.Depth		= 1;
+			textureDesc.Flags = 
+				FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS | 
+				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+			textureDesc.Width		= data.DiffuseResolution;
+			textureDesc.Height		= data.DiffuseResolution;
+			textureDesc.Format		= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+			textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+			textureDesc.Miplevels	= 1;
+			textureDesc.SampleCount = 1;
+			
+			lightProbe.Diffuse = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+			if (!lightProbe.Diffuse)
+			{
+				LOG_WARNING("[RenderSystem] Failed to create diffuse lightprobe");
+			}
+
+			TextureViewDesc textureViewDesc;
+			textureViewDesc.DebugName		= "LightProbe Diffuse SRV";
+			textureViewDesc.ArrayCount		= 6;
+			textureViewDesc.Format			= textureDesc.Format;
+			textureViewDesc.ArrayIndex		= 0;
+			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			textureViewDesc.Miplevel		= 0;
+			textureViewDesc.MiplevelCount	= 1;
+			textureViewDesc.pTexture		= lightProbe.Diffuse.Get();
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+
+			lightProbe.DiffuseSRV = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+			if (!lightProbe.DiffuseSRV)
+			{
+				LOG_WARNING("[RenderSystem] Failed to create Diffuse lightprobe SRV");
+			}
+
+			textureViewDesc.DebugName	= "LightProbe Specular UAV";
+			textureViewDesc.Flags		= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+
+			lightProbe.DiffuseUAV = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+			if (!lightProbe.DiffuseUAV)
+			{
+				LOG_WARNING("[RenderSystem] Failed to create diffuse lightprobe UAV");
+			}
+		}
+
+		if (lightProbe.SpecularResolution != data.SpecularResolution)
+		{
+			lightProbe.SpecularResolution = data.SpecularResolution;
+
+			if (lightProbe.Specular)
+			{
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.Specular.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.SpecularSRV.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.SpecularUAV.GetAndAddRef());
+			}
+
+			TextureDesc textureDesc;
+			textureDesc.DebugName	= "LightProbe Specular";
+			textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+			textureDesc.ArrayCount	= 6;
+			textureDesc.Depth		= 1;
+			textureDesc.Flags =
+				FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
+				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+			textureDesc.Width		= data.SpecularResolution;
+			textureDesc.Height		= data.SpecularResolution;
+			textureDesc.Format		= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+			textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+			textureDesc.Miplevels	= 1;
+			textureDesc.SampleCount = 1;
+
+			lightProbe.Specular = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+			if (!lightProbe.Specular)
+			{
+				LOG_WARNING("[RenderSystem] Failed to create Specular lightprobe");
+			}
+
+			TextureViewDesc textureViewDesc;
+			textureViewDesc.DebugName		= "LightProbe Specular SRV";
+			textureViewDesc.ArrayCount		= 6;
+			textureViewDesc.ArrayIndex		= 0;
+			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			textureViewDesc.Miplevel		= 0;
+			textureViewDesc.MiplevelCount	= 1;
+			textureViewDesc.Format			= textureDesc.Format;
+			textureViewDesc.pTexture		= lightProbe.Specular.Get();
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+
+			lightProbe.SpecularSRV = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+			if (!lightProbe.SpecularSRV)
+			{
+				LOG_WARNING("[RenderSystem] Failed to create specular lightprobe SRV");
+			}
+
+			textureViewDesc.DebugName	= "LightProbe Specular UAV";
+			textureViewDesc.Flags		= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+
+			lightProbe.SpecularUAV = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+			if (!lightProbe.SpecularUAV)
+			{
+				LOG_WARNING("[RenderSystem] Failed to create specular lightprobe UAV");
+			}
+		}
 	}
 
 	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane)
