@@ -761,6 +761,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 
 	Entity weaponEntity = pECS->CreateEntity();
+	childEntities.PushBack(weaponEntity);
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
