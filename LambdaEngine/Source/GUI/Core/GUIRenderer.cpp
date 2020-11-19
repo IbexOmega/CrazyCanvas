@@ -251,6 +251,9 @@ namespace LambdaEngine
 
 	void GUIRenderer::BeginTile(const Noesis::Tile& tile, uint32_t surfaceWidth, uint32_t surfaceHeight)
 	{
+		UNREFERENCED_VARIABLE(surfaceWidth);
+		UNREFERENCED_VARIABLE(surfaceHeight);
+		
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
 		
 		// Do not set to false here will check in end tile if we were in a renderpass
@@ -274,9 +277,6 @@ namespace LambdaEngine
 
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		m_CurrentSurfaceWidth	= surfaceWidth;
-		m_CurrentSurfaceHeight	= surfaceHeight;
-
 #ifdef PRINT_FUNC
 		LOG_INFO("BeginTile W: %u, H: %u", m_CurrentSurfaceWidth, m_CurrentSurfaceHeight);
 #endif
@@ -286,8 +286,6 @@ namespace LambdaEngine
 	{
 		EndCurrentRenderPass();
 		m_TileBegun					= false;
-		//m_CurrentSurfaceWidth		= 0;
-		//m_CurrentSurfaceHeight	= 0;
 #ifdef PRINT_FUNC
 		LOG_INFO("EndTile");
 #endif
@@ -799,8 +797,8 @@ namespace LambdaEngine
 				beginRenderPass.ppRenderTargets		= m_pCurrentRenderTarget->GetRenderTargets();
 				beginRenderPass.RenderTargetCount	= 2; // The rendertarget + resolve target
 				beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
-				beginRenderPass.Width				= m_CurrentSurfaceWidth;
-				beginRenderPass.Height				= m_CurrentSurfaceHeight;
+				beginRenderPass.Width				= m_pCurrentRenderTarget->GetWidth();
+				beginRenderPass.Height				= m_pCurrentRenderTarget->GetHeight();
 				beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
 				beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
 				beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
