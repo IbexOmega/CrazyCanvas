@@ -6,6 +6,7 @@
 #include "Game/State.h"
 
 #include "ECS/Systems/GUI/HUDSystem.h"
+#include "ECS/Systems/Camera/CameraChangeSystem.h"
 
 #include "Application/API/Events/NetworkEvents.h"
 
@@ -47,6 +48,7 @@ private:
 
 	/* Systems */
 	HUDSystem m_HUDSystem;
+	CameraChangeSystem m_CamSystem;
 	MultiplayerClient m_MultiplayerClient;
 
 	/* Event handlers */
