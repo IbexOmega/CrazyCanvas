@@ -136,7 +136,7 @@ namespace LambdaEngine
 		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateGraphicsPipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
-			uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
 			s_GraphicsPipelineStateDescriptions[pipelineIndex] 	= *pDesc;
 			s_PipelineStates[pipelineIndex] 					= pPipelineState;
 			return pipelineIndex;
@@ -154,7 +154,7 @@ namespace LambdaEngine
 		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
-			uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
 			s_ComputePipelineStateDescriptions[pipelineIndex] 	= *pDesc;
 			s_PipelineStates[pipelineIndex] 					= pPipelineState;
 			return pipelineIndex;
@@ -172,7 +172,7 @@ namespace LambdaEngine
 		PipelineState*	pPipelineState	= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
-			uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
 			s_RayTracingPipelineStateDescriptions[pipelineIndex] 	= *pDesc;
 			s_PipelineStates[pipelineIndex] 						= pPipelineState;
 			return pipelineIndex;

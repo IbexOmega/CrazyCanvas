@@ -12,12 +12,8 @@ layout(push_constant) uniform PushConstants
 } u_PC;
 
 // Textures
-layout(binding = 0, set = 0) uniform sampler2D u_Panorama;
-
+layout(binding = 0, set = 0) uniform samplerCube u_Source;
 layout(binding = 1, set = 0, rgba16f) restrict writeonly uniform imageCube	u_CubeMap;
-
-// Constants
-const vec2 INV_ATAN = vec2(0.1591f, 0.3183f);
 
 void main()
 {
@@ -33,11 +29,7 @@ void main()
 	// [(0, 0), (1, 1)] => [(-0.5, -0.5), (0.5, 0.5)]
 	vec3 direction	= normalize(vec3((texCoord.xy / float(u_PC.Size)) - 0.5f, 0.5f));
 	direction		= normalize(ROTATE_UV[face] * direction);
-
-	// Convert the world space direction into U,V texture coordinates in the panorama texture.
-	// Source: http://gl.ict.usc.edu/Data/HighResProbes/
-	vec2 panoramaTexCoords = (vec2(atan(direction.z, direction.x), acos(direction.y)) * INV_ATAN);
-	vec4 color = texture(u_Panorama, panoramaTexCoords);
-	// color.rgb = color.rgb * COLOR[face];
+	
+	vec4 color = texture(u_Source, direction);
 	imageStore(u_CubeMap, ivec3(texCoord, face), color);
 }

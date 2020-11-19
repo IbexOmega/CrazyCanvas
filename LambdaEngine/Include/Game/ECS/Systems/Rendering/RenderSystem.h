@@ -252,22 +252,18 @@ namespace LambdaEngine
 			FORCEINLINE void Release()
 			{
 				Specular.Reset();
-				SpecularUAV.Reset();
-				SpecularSRV.Reset();
+				SpecularView.Reset();
 				Diffuse.Reset();
-				DiffuseUAV.Reset();
-				DiffuseSRV.Reset();
+				DiffuseView.Reset();
 
 				SpecularResolution	= 0;
 				DiffuseResolution	= 0;
 			}
 
 			TSharedRef<Texture>		Specular;
-			TSharedRef<TextureView>	SpecularUAV;
-			TSharedRef<TextureView>	SpecularSRV;
+			TSharedRef<TextureView>	SpecularView;
 			TSharedRef<Texture>		Diffuse;
-			TSharedRef<TextureView>	DiffuseUAV;
-			TSharedRef<TextureView>	DiffuseSRV;
+			TSharedRef<TextureView>	DiffuseView;
 			uint32 SpecularResolution	= 0;
 			uint32 DiffuseResolution	= 0;
 		};
@@ -437,7 +433,6 @@ namespace LambdaEngine
 		bool						m_LightsBufferDirty			= true;
 		bool						m_PointLightsDirty			= true;
 		bool						m_DirectionalExist			= false;
-		bool						m_GlobalLightProbeDirty		= true;
 		bool						m_RemoveTexturesOnDeletion	= false;
 		TArray<LightUpdateData>		m_PointLightTextureUpdateQueue;
 		TArray<uint32>				m_FreeTextureIndices;
@@ -452,6 +447,8 @@ namespace LambdaEngine
 
 		// Global lightprobe, there can only be one global
 		LightProbe m_GlobalLightProbe;
+		bool m_GlobalLightProbeDirty		= false;
+		bool m_GlobalLightProbeNeedsUpdate	= false;
 
 		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;

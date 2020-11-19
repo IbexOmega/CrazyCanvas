@@ -224,8 +224,8 @@ namespace LambdaEngine
 				return false;
 			}
 
-			m_ppBackBuffers = DBG_NEW Texture * [BACK_BUFFER_COUNT];
-			m_ppBackBufferViews = DBG_NEW TextureView * [BACK_BUFFER_COUNT];
+			m_ppBackBuffers			= DBG_NEW Texture*[BACK_BUFFER_COUNT];
+			m_ppBackBufferViews		= DBG_NEW TextureView * [BACK_BUFFER_COUNT];
 
 			m_FrameIndex++;
 			m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
@@ -236,19 +236,19 @@ namespace LambdaEngine
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
 				BufferDesc perFrameCopyBufferDesc = {};
-				perFrameCopyBufferDesc.DebugName		= "Scene Per Frame Staging Buffer " + std::to_string(b);
-				perFrameCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				perFrameCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				perFrameCopyBufferDesc.SizeInBytes		= sizeof(PerFrameBuffer);
+				perFrameCopyBufferDesc.DebugName	= "Scene Per Frame Staging Buffer " + std::to_string(b);
+				perFrameCopyBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				perFrameCopyBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				perFrameCopyBufferDesc.SizeInBytes	= sizeof(PerFrameBuffer);
 
 				m_ppPerFrameStagingBuffers[b] = RenderAPI::GetDevice()->CreateBuffer(&perFrameCopyBufferDesc);
 			}
 
 			BufferDesc perFrameBufferDesc = {};
-			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
-			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
-			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
+			perFrameBufferDesc.DebugName	= "Scene Per Frame Buffer";
+			perFrameBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+			perFrameBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+			perFrameBufferDesc.SizeInBytes	= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
 		} 
@@ -366,6 +366,15 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers				= { };
 
+			// AS Builder
+			if (m_RayTracingEnabled)
+			{
+				m_pASBuilder = DBG_NEW ASBuilder();
+				m_pASBuilder->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+			}
+
 			// Light Renderer
 			bool isServer = MultiplayerUtils::IsServer();
 			if (!isServer)
@@ -395,15 +404,6 @@ namespace LambdaEngine
 				m_pLightProbeRenderer = DBG_NEW LightProbeRenderer();
 				m_pLightProbeRenderer->Init();
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
-			}
-
-			// AS Builder
-			if (m_RayTracingEnabled)
-			{
-				m_pASBuilder = DBG_NEW ASBuilder();
-				m_pASBuilder->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
 			}
 
 			//GUI Renderer
@@ -482,6 +482,7 @@ namespace LambdaEngine
 
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);
+		SAFEDELETE(m_pLightProbeRenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
 		SAFEDELETE(m_pParticleCollider);
@@ -654,7 +655,7 @@ namespace LambdaEngine
 			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 		}
 
-		if (m_GlobalLightProbeDirty)
+		if (m_GlobalLightProbeNeedsUpdate)
 		{
 			ComponentArray<GlobalLightProbeComponent>* pGlobalLightProbeComponent = pECSCore->GetComponentArray<GlobalLightProbeComponent>();
 			for (Entity entity : m_GlobalLightProbeEntities)
@@ -662,6 +663,9 @@ namespace LambdaEngine
 				const GlobalLightProbeComponent& lightProbeComp = pGlobalLightProbeComponent->GetConstData(entity);
 				UpdateLightProbe(m_GlobalLightProbe, lightProbeComp.Data);
 			}
+
+			m_GlobalLightProbeDirty			= true;
+			m_GlobalLightProbeNeedsUpdate	= false;
 		}
 
 		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
@@ -995,13 +999,13 @@ namespace LambdaEngine
 	void RenderSystem::OnGlobalLightProbeEntityAdded(Entity entity)
 	{
 		UNREFERENCED_VARIABLE(entity);
-		m_GlobalLightProbeDirty = true;
+		m_GlobalLightProbeNeedsUpdate = true;
 	}
 
 	void RenderSystem::OnGlobalLightProbeEntityRemoved(Entity entity)
 	{
 		UNREFERENCED_VARIABLE(entity);
-		m_GlobalLightProbeDirty = true;
+		m_GlobalLightProbeNeedsUpdate = true;
 	}
 
 	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
@@ -1689,8 +1693,7 @@ namespace LambdaEngine
 			if (lightProbe.Diffuse)
 			{
 				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.Diffuse.GetAndAddRef());
-				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.DiffuseSRV.GetAndAddRef());
-				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.DiffuseUAV.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.DiffuseView.GetAndAddRef());
 			}
 
 			TextureDesc textureDesc;
@@ -1715,29 +1718,22 @@ namespace LambdaEngine
 			}
 
 			TextureViewDesc textureViewDesc;
-			textureViewDesc.DebugName		= "LightProbe Diffuse SRV";
+			textureViewDesc.DebugName		= "LightProbe Diffuse View";
 			textureViewDesc.ArrayCount		= 6;
 			textureViewDesc.Format			= textureDesc.Format;
 			textureViewDesc.ArrayIndex		= 0;
-			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			textureViewDesc.Flags			= 
+				FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
+				FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
 			textureViewDesc.Miplevel		= 0;
 			textureViewDesc.MiplevelCount	= 1;
 			textureViewDesc.pTexture		= lightProbe.Diffuse.Get();
 			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
 
-			lightProbe.DiffuseSRV = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-			if (!lightProbe.DiffuseSRV)
+			lightProbe.DiffuseView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+			if (!lightProbe.DiffuseView)
 			{
-				LOG_WARNING("[RenderSystem] Failed to create Diffuse lightprobe SRV");
-			}
-
-			textureViewDesc.DebugName	= "LightProbe Specular UAV";
-			textureViewDesc.Flags		= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
-
-			lightProbe.DiffuseUAV = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-			if (!lightProbe.DiffuseUAV)
-			{
-				LOG_WARNING("[RenderSystem] Failed to create diffuse lightprobe UAV");
+				LOG_WARNING("[RenderSystem] Failed to create Diffuse lightprobe View");
 			}
 		}
 
@@ -1748,8 +1744,7 @@ namespace LambdaEngine
 			if (lightProbe.Specular)
 			{
 				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.Specular.GetAndAddRef());
-				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.SpecularSRV.GetAndAddRef());
-				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.SpecularUAV.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.SpecularView.GetAndAddRef());
 			}
 
 			TextureDesc textureDesc;
@@ -1774,29 +1769,22 @@ namespace LambdaEngine
 			}
 
 			TextureViewDesc textureViewDesc;
-			textureViewDesc.DebugName		= "LightProbe Specular SRV";
+			textureViewDesc.DebugName		= "LightProbe Specular View";
 			textureViewDesc.ArrayCount		= 6;
 			textureViewDesc.ArrayIndex		= 0;
-			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			textureViewDesc.Flags =
+				FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
+				FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
 			textureViewDesc.Miplevel		= 0;
 			textureViewDesc.MiplevelCount	= 1;
 			textureViewDesc.Format			= textureDesc.Format;
 			textureViewDesc.pTexture		= lightProbe.Specular.Get();
 			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
 
-			lightProbe.SpecularSRV = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-			if (!lightProbe.SpecularSRV)
+			lightProbe.SpecularView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+			if (!lightProbe.SpecularView)
 			{
-				LOG_WARNING("[RenderSystem] Failed to create specular lightprobe SRV");
-			}
-
-			textureViewDesc.DebugName	= "LightProbe Specular UAV";
-			textureViewDesc.Flags		= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
-
-			lightProbe.SpecularUAV = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-			if (!lightProbe.SpecularUAV)
-			{
-				LOG_WARNING("[RenderSystem] Failed to create specular lightprobe UAV");
+				LOG_WARNING("[RenderSystem] Failed to create specular lightprobe view");
 			}
 		}
 	}
@@ -2649,6 +2637,29 @@ namespace LambdaEngine
 			m_ParticleManager.UpdateResources(m_pRenderGraph);
 		}
 
+		// Update global light probe
+		if (m_GlobalLightProbeDirty)
+		{
+			ResourceUpdateDesc globalSpecularProbeUpdateDesc = {};
+			globalSpecularProbeUpdateDesc.ResourceName							= "GLOBAL_SPECULAR_PROBE";
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppTextures		= m_GlobalLightProbe.Specular.GetAddressOf();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_GlobalLightProbe.SpecularView.GetAddressOf();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.TextureCount	= 1;
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetLinearSamplerToBind();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
+			m_pRenderGraph->UpdateResource(&globalSpecularProbeUpdateDesc);
+
+			ResourceUpdateDesc globalDiffuseProbeMapsUpdateDesc = {};
+			globalDiffuseProbeMapsUpdateDesc.ResourceName							= "GLOBAL_DIFFUSE_PROBE";
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_GlobalLightProbe.Diffuse.GetAddressOf();
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_GlobalLightProbe.DiffuseView.GetAddressOf();
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= 1;
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetLinearSamplerToBind();
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+			m_pRenderGraph->UpdateResource(&globalDiffuseProbeMapsUpdateDesc);
+
+			m_GlobalLightProbeDirty = false;
+		}
 
 		if (m_MaterialsResourceDirty)
 		{
@@ -2678,12 +2689,12 @@ namespace LambdaEngine
 			normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
 			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
-			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_CombinedMaterialMaps.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_CombinedMaterialMapViews.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pLinearSamplers;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_CombinedMaterialMaps.GetSize();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+			combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_CombinedMaterialMaps.GetData();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_CombinedMaterialMapViews.GetData();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount	= m_CombinedMaterialMaps.GetSize();
+			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
 
 			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
 			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
