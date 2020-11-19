@@ -159,20 +159,29 @@ namespace LambdaEngine
 		desc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
 		desc.SizeInBytes = sizeof(FrameBuffer);
 
-		m_FrameBuffers.Resize(m_BackBufferCount);
+		m_FrameCopyBuffers.Resize(m_BackBufferCount);
 		for (uint32 b = 0; b < m_BackBufferCount; b++)
 		{
 			TSharedRef<Buffer> buffer = RenderAPI::GetDevice()->CreateBuffer(&desc);
 			if (buffer != nullptr)
 			{
-				m_FrameBuffers[b] = buffer;
+				m_FrameCopyBuffers[b] = buffer;
 			}
 			else
 			{
 				return false;
 			}
 		}
-		return true;
+
+		BufferDesc desc2 = {};
+		desc2.DebugName = "FirstPersonWeapon Renderer Data Buffer";
+		desc2.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+		desc2.Flags = FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+		desc2.SizeInBytes = desc.SizeInBytes;
+
+		m_FrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&desc2);
+
+		return m_FrameBuffer != nullptr;
 	}
 
 	void FirstPersonWeapoRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
@@ -372,39 +381,24 @@ namespace LambdaEngine
 									EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
 								);
 
-								// Set Weapon Transformations
-								FrameBuffer fb = {
-									.Projection = glm::mat4(1.0f),
-									.View = glm::mat4(1.0f),
-									.PrevProjection = glm::mat4(1.0f),
-									.PrevView = glm::mat4(1.0f),
-									.ViewInv = glm::mat4(1.0f),
-									.ProjectionInv = glm::mat4(1.0f),
-									.CameraPosition = glm::vec4(0.f, 0.f, -2.0f, 1.0f),
-									.CameraRight = glm::vec4(1.0f, 0.0, 0.0, 1.0f),
-									.CameraUp = glm::vec4(0.f, 1.0f, 0.0, 1.0f),
-									.Jitter = glm::vec2(0, 0),
-									.FrameIndex = 0,
-									.RandomSeed = 0,
-								};
-
-								// Set Vertex and Instance buffer for rendering
-								Buffer* ppBuffer = fb;
-								uint64 pOffset = 0;
-								uint64 pSizesInBytes = sizeof(FrameBuffer);
-
+								// Set Frame Buffer
+								Buffer* ppBuffers = {m_FrameBuffer.Get()};
+								uint64 pOffsets = { 0 };
+								uint64 pSizesInBytes = { sizeof(FrameBuffer) };
+								uint64 setIndex = 0;
 								m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 								if (m_DescriptorSet0 != nullptr)
 								{
 									m_DescriptorSet0->WriteBufferDescriptors(
 										ppBuffers,
 										pOffsets,
-										pSizesInBytes,
-										0,
+										&pSizesInBytes,
+										setIndex,
 										1,
 										EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER
 									);
 								}
+
 							}
 							else
 							{
@@ -526,6 +520,27 @@ namespace LambdaEngine
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 		pCommandList->SetViewports(&viewport, 0, 1);
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
+		// Set Weapon Transformations
+		FrameBuffer fb = {
+			.Projection = glm::mat4(1.0f),
+			.View = glm::mat4(1.0f),
+			.PrevProjection = glm::mat4(1.0f),
+			.PrevView = glm::mat4(1.0f),
+			.ViewInv = glm::mat4(1.0f),
+			.ProjectionInv = glm::mat4(1.0f),
+			.CameraPosition = glm::vec4(0.f, 0.f, -2.0f, 1.0f),
+			.CameraRight = glm::vec4(1.0f, 0.0, 0.0, 1.0f),
+			.CameraUp = glm::vec4(0.f, 1.0f, 0.0, 1.0f),
+			.Jitter = glm::vec2(0, 0),
+			.FrameIndex = 0,
+			.RandomSeed = 0,
+		};
+
+		byte* pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffers[modFrameIndex]->Map());
+		memcpy(pMapping, &fb, sizeof(fb));
+		m_FrameCopyBuffers[modFrameIndex]->Unmap();
+		pCommandList->CopyBuffer(m_FrameCopyBuffers[modFrameIndex].Get(), 0, m_FrameBuffer.Get(), 0, sizeof(FrameBuffer));
 
 		if (m_DrawCount > 0)
 		{

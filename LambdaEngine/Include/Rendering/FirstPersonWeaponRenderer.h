@@ -87,7 +87,8 @@ namespace LambdaEngine {
 
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
 
-		TArray<TSharedRef<Buffer>>				m_FrameBuffers;
+		TArray<TSharedRef<Buffer>>				m_FrameCopyBuffers;
+		TSharedRef<Buffer>						m_FrameBuffer;
 
 		// Needed for transparent rendering
 		uint64									m_PipelineStateIDFrontCull = 0;
