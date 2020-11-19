@@ -6,7 +6,7 @@ enum class EGameMode : uint8
 {
 	CTF_COMMON_FLAG	= 0,
 	CTF_TEAM_FLAG	= 1,
-	NONE			= 2
+	NONE			= 2,
 };
 
 constexpr FORCEINLINE uint8 ConvertGameMode(EGameMode gameMode)

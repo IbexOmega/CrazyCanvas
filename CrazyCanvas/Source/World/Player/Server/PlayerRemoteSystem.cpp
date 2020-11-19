@@ -73,45 +73,53 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		CharacterColliderComponent& characterColliderComponent = pCharacterColliderComponents->GetData(entityPlayer);
 
 		const TArray<PacketPlayerAction>& gameStates = playerActionComponent.GetPacketsReceived();
-		for (const PacketPlayerAction& gameState : gameStates)
+
+		if (!gameStates.IsEmpty())
 		{
-			PacketPlayerAction& currentGameState = m_CurrentGameStates[entityPlayer];
-			ASSERT(gameState.SimulationTick - 1 == currentGameState.SimulationTick);
-			currentGameState = gameState;
-
-			if (constRotationComponent.Quaternion != gameState.Rotation)
+			for (const PacketPlayerAction& gameState : gameStates)
 			{
-				RotationComponent& rotationComponent = const_cast<RotationComponent&>(constRotationComponent);
-				rotationComponent.Quaternion	= gameState.Rotation;
-				rotationComponent.Dirty			= true;
-			}
+				PacketPlayerAction& currentGameState = m_CurrentGameStates[entityPlayer];
+				ASSERT(gameState.SimulationTick - 1 == currentGameState.SimulationTick);
+				currentGameState = gameState;
 
-			PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity);
+				if (constRotationComponent.Quaternion != gameState.Rotation)
+				{
+					RotationComponent& rotationComponent = const_cast<RotationComponent&>(constRotationComponent);
+					rotationComponent.Quaternion = gameState.Rotation;
+					rotationComponent.Dirty = true;
+				}
+
+				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity);
+				CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, netPosComponent, velocityComponent);
+
+				physx::PxControllerState playerControllerState;
+				characterColliderComponent.pController->getState(playerControllerState);
+
+				PacketPlayerActionResponse packet;
+				packet.SimulationTick = gameState.SimulationTick;
+
+				packet.Position = netPosComponent.Position;
+				packet.Velocity = velocityComponent.Velocity;
+				packet.Rotation = constRotationComponent.Quaternion;
+
+				packet.DeltaAction = gameState.DeltaAction;
+				packet.Walking = gameState.Walking;
+				packet.InAir = playerControllerState.touchedShape == nullptr;
+
+				packet.Angle = currentGameState.Angle;
+				playerActionResponseComponent.SendPacket(packet);
+
+				if (constPositionComponent.Position != netPosComponent.Position)
+				{
+					PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
+					positionComponent.Position = netPosComponent.Position;
+					positionComponent.Dirty = true;
+				}
+			}
+		}
+		else if(netPosComponent.Dirty)
+		{
 			CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, netPosComponent, velocityComponent);
-
-			physx::PxControllerState playerControllerState;
-			characterColliderComponent.pController->getState(playerControllerState);
-
-			PacketPlayerActionResponse packet;
-			packet.SimulationTick	= gameState.SimulationTick;
-
-			packet.Position			= netPosComponent.Position;
-			packet.Velocity			= velocityComponent.Velocity;
-			packet.Rotation			= constRotationComponent.Quaternion;
-
-			packet.DeltaAction		= gameState.DeltaAction;
-			packet.Walking			= gameState.Walking;
-			packet.InAir			= playerControllerState.touchedShape == nullptr;
-
-			packet.Angle			= currentGameState.Angle;
-			playerActionResponseComponent.SendPacket(packet);
-
-			if (constPositionComponent.Position != netPosComponent.Position)
-			{
-				PositionComponent& positionComponent = const_cast<PositionComponent&>(constPositionComponent);
-				positionComponent.Position	= netPosComponent.Position;
-				positionComponent.Dirty		= true;
-			}
 		}
 	}
 }
