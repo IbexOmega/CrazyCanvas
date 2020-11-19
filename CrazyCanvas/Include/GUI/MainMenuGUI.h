@@ -37,13 +37,15 @@ public:
 	// Settings
 	void OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
-	// Key bindings (hate my life)
+	// Controls
 	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
 private:
 	friend class HUDGUI;
@@ -58,6 +60,7 @@ private:
 	bool 	m_ListenToCallbacks			= false;
 	Noesis::Button* m_pSetKeyButton		= nullptr;
 	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
+	float32 m_LookSensitivityPercentageToSet = 0.0f;
 
 	// bool	m_RayTracingEnabled			= false;
 	bool	m_MeshShadersEnabled		= false;
@@ -66,7 +69,7 @@ private:
 	Noesis::Grid*	m_pStartGrid		= nullptr;
 	Noesis::Grid*	m_pPlayGrid			= nullptr;
 	Noesis::Grid*	m_pSettingsGrid 	= nullptr;
-	Noesis::Grid*	m_pKeyBindingsGrid 	= nullptr;
+	Noesis::Grid*	m_pControlsGrid		= nullptr;
 
 	GUID_Lambda m_MainMenuMusic;
 
