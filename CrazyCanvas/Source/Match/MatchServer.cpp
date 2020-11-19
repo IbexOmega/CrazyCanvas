@@ -56,7 +56,7 @@ MatchServer::~MatchServer()
 	
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
-	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
+	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
 }
 
 bool MatchServer::InitInternal()
@@ -65,7 +65,7 @@ bool MatchServer::InitInternal()
 
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
-	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
+	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
 
 	return true;
 }
@@ -444,24 +444,17 @@ void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
 	m_pLevel->DeleteObject(entity);
 
 	PacketDeleteLevelObject packet;
-	packet.NetworkUID = entity;
+	packet.NetworkUID = int32(entity);
 
 	ServerHelper::SendBroadcast(packet);
 }
 
-bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
+bool MatchServer::OnPlayerLeft(const PlayerLeftEvent& event)
 {
-	VALIDATE(event.pClient != nullptr);
+	using namespace LambdaEngine;
 
-	const Player* pPlayer = PlayerManagerBase::GetPlayer(event.pClient);
-	if (pPlayer)
-	{
-		MatchServer::KillPlayer(pPlayer->GetEntity(), UINT32_MAX);
-	}
-	
-
-	// TODO: Fix this
-	//DeleteGameLevelObject(playerEntity);
+	Entity playerEntity = event.pPlayer->GetEntity();
+	DeleteGameLevelObject(playerEntity);
 
 	return true;
 }

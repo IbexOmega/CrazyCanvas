@@ -43,6 +43,8 @@
 
 #include "GUI/GUIHelpers.h"
 
+#include "Resources/ResourceCatalog.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState* PlaySessionState::s_pInstance = nullptr;
@@ -77,6 +79,7 @@ void PlaySessionState::Init()
 	s_pInstance = this;
 
 	EnablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);

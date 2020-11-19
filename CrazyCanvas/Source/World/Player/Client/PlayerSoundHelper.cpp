@@ -30,8 +30,4 @@ void PlayerSoundHelper::HandleMovementSound(
 	{
 		pStepSound->Play();
 	}
-	else
-	{
-		pStepSound->Stop();
-	}
 }
