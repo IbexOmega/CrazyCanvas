@@ -5,7 +5,7 @@
 
 #include "Audio/API/ISoundEffect3D.h"
 
-#include "Rendering/PaintMaskRenderer.h"
+#include "RenderStages/PaintMaskRenderer.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 

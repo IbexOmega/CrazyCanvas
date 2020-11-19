@@ -14,7 +14,6 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
-#include "Rendering/PaintMaskRenderer.h"
 #include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
@@ -356,14 +355,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers				= { };
 
-			// Add paint mask renderer to the custom renderers inside the render graph.
-			{
-				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
-				m_pPaintMaskRenderer->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
-			}
-
 			// Light Renderer
 			bool isServer = MultiplayerUtils::IsServer();
 			if (!isServer)
@@ -477,7 +468,6 @@ namespace LambdaEngine
 		}
 
 		SAFEDELETE(m_pLineRenderer);
-		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
@@ -747,13 +737,7 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 		}
 
-		// Paint Mask Renderer
-		{
-			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
-			m_pPaintMaskRenderer->Init();
-
-			renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
-		}
+		// TODO: Add the game specific custom renderers!
 
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))

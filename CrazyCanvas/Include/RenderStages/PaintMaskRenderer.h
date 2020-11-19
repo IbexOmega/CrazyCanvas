@@ -49,7 +49,7 @@ namespace LambdaEngine
 	class PaintMaskRenderer : public CustomRenderer
 	{
 	public:
-		PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount);
+		PaintMaskRenderer();
 		~PaintMaskRenderer();
 
 		virtual bool Init() override final;
@@ -135,6 +135,7 @@ namespace LambdaEngine
 			Buffer*			pReadBackbuffer = nullptr;
 			uint32			DrawArgIndex	= 0;
 			uint32			InstanceIndex	= 0;
+			uint32			TeamIndex		= 0;
 		};
 
 		struct UnwrapData
@@ -152,6 +153,12 @@ namespace LambdaEngine
 			uint32	ShouldReset	= 0;
 			uint32	ShouldPaint	= 0;
 			uint32	PaintCount	= 0;
+		};
+
+		struct InstanceInfo
+		{
+			uint32	Index = 0;
+			uint32	TeamMode = 0;
 		};
 
 		struct DrawArgKey

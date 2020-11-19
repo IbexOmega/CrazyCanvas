@@ -4,6 +4,7 @@
 #include "Time/API/Timestamp.h"
 
 #include "Rendering/Core/API/GraphicsTypes.h"
+#include "Containers/String.h"
 
 namespace LambdaEngine
 {

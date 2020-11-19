@@ -1,4 +1,4 @@
-#include "Rendering/PaintMaskRenderer.h"
+#include "RenderStages/PaintMaskRenderer.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
@@ -22,6 +22,7 @@
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
+#include "ECS/Components/Team/TeamComponent.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Application/API/Window.h"
@@ -37,15 +38,15 @@ namespace LambdaEngine
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ServerCollisions;
 	TArray<PaintMaskRenderer::UnwrapData>	PaintMaskRenderer::s_ClientCollisions;
 
-	PaintMaskRenderer::PaintMaskRenderer(GraphicsDevice* pGraphicsDevice, uint32 backBufferCount)
+	PaintMaskRenderer::PaintMaskRenderer()
 	{
-		m_BackBuffers.Resize(backBufferCount);
-		m_BackBufferCount = backBufferCount;
+		m_BackBufferCount = BACK_BUFFER_COUNT;
+		m_BackBuffers.Resize(m_BackBufferCount);
 
-		m_VerticesInstanceDescriptorSets.Resize(backBufferCount);
-		m_pDeviceResourcesToDestroy.Resize(backBufferCount);
+		m_VerticesInstanceDescriptorSets.Resize(m_BackBufferCount);
+		m_pDeviceResourcesToDestroy.Resize(m_BackBufferCount);
 
-		m_pGraphicsDevice = pGraphicsDevice;
+		m_pGraphicsDevice = RenderAPI::GetDevice();
 	}
 
 	PaintMaskRenderer::~PaintMaskRenderer()
@@ -262,89 +263,106 @@ namespace LambdaEngine
 
 	void PaintMaskRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 	{
-		UNREFERENCED_VARIABLE(resourceName);
-
-		m_AliveDescriptorSetList.Clear();
-
-		m_pDrawArgs = pDrawArgs;
-		
-		uint32 backBufferCount = m_BackBuffers.GetSize();
-		for (uint32 b = 0; b < backBufferCount; b++)
+		if (resourceName == SCENE_DRAW_ARGS)
 		{
-			m_VerticesInstanceDescriptorSets[b].Clear();
-
-			for (uint32 drawArgIndex = 0; drawArgIndex < count; drawArgIndex++)
+			if (count > 0U && pDrawArgs != nullptr)
 			{
-				const DrawArg& drawArg = pDrawArgs[drawArgIndex];
 
-				// Create new descriptor set if it does not exist
-				DrawArgKey drawArgKey((uint64)drawArg.pVertexBuffer, (uint64)drawArg.pInstanceBuffer, b);
-				auto it = m_VerticesInstanceDescriptorSetMap.find(drawArgKey);
-				if (it == m_VerticesInstanceDescriptorSetMap.end())
+				m_AliveDescriptorSetList.Clear();
+
+				m_pDrawArgs = pDrawArgs;
+
+				uint32 backBufferCount = m_BackBuffers.GetSize();
+				for (uint32 b = 0; b < backBufferCount; b++)
 				{
-					TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Vertex Buffer Descriptor Set", m_PipelineLayout.Get(), 2, m_DescriptorHeap.Get());
-					uint64 size = drawArg.pVertexBuffer->GetDesc().SizeInBytes;
-					uint64 offset = 0;
-					descriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-					size = drawArg.pInstanceBuffer->GetDesc().SizeInBytes;
-					offset = 0;
-					descriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-					it = m_VerticesInstanceDescriptorSetMap.insert({ drawArgKey, descriptorSet }).first;
-				}
-				m_AliveDescriptorSetList.PushBack(drawArgKey);
-				m_VerticesInstanceDescriptorSets[b].PushBack(it->second.Get());
-			}
-		}
+					m_VerticesInstanceDescriptorSets[b].Clear();
 
-		// Remove unused descriptor sets
-		{
-			m_DeadDescriptorSetList.Clear();
-			for (auto [key, value] : m_VerticesInstanceDescriptorSetMap)
-			{
-				auto it = std::find(m_AliveDescriptorSetList.begin(), m_AliveDescriptorSetList.end(), key);
-				if (it == m_AliveDescriptorSetList.end())
-				{
-					m_pDeviceResourcesToDestroy[key.BackBufferIndex].PushBack(std::move(value));
-					m_DeadDescriptorSetList.PushBack(key);
-				}
-			}
-			
-			for (auto& key : m_DeadDescriptorSetList)
-			{
-				m_VerticesInstanceDescriptorSetMap.erase(key);
-			}
-		}
-
-		m_RenderTargets.Clear();
-		for (uint32 d = 0; d < count; d++)
-		{
-			const DrawArg& drawArg = pDrawArgs[d];
-			for (uint32 i = 0; i < drawArg.InstanceCount; i++)
-			{
-				DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
-				if (extensionGroup)
-				{
-					// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
-					uint32 numExtensions = extensionGroup->ExtensionCount;
-					for (uint32 e = 0; e < numExtensions; e++)
+					for (uint32 drawArgIndex = 0; drawArgIndex < count; drawArgIndex++)
 					{
-						uint32 flag = extensionGroup->pExtensionFlags[e];
-						bool inverted;
-						uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
-						uint32 invertedUInt = uint32(inverted);
+						const DrawArg& drawArg = pDrawArgs[drawArgIndex];
 
-						if ((flag & meshPaintFlag) != invertedUInt)
+						// Create new descriptor set if it does not exist
+						DrawArgKey drawArgKey((uint64)drawArg.pVertexBuffer, (uint64)drawArg.pInstanceBuffer, b);
+						auto it = m_VerticesInstanceDescriptorSetMap.find(drawArgKey);
+						if (it == m_VerticesInstanceDescriptorSetMap.end())
 						{
-							DrawArgExtensionData& extension	= extensionGroup->pExtensions[e];
-							TextureView*	pTextureView	= extension.ppTextureViews[0];
-							Buffer*			pReadBackBuffer	= extension.ppReadBackBuffers[0];
-							m_RenderTargets.PushBack(
-								{ 
-									.pTextureView		= pTextureView, 
-									.pReadBackbuffer	= pReadBackBuffer,
-									.DrawArgIndex		= d, 
-									.InstanceIndex		= i 
-								});
+							TSharedRef<DescriptorSet> descriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Paint Mask Renderer Custom Vertex Buffer Descriptor Set", m_PipelineLayout.Get(), 2, m_DescriptorHeap.Get());
+							uint64 size = drawArg.pVertexBuffer->GetDesc().SizeInBytes;
+							uint64 offset = 0;
+							descriptorSet->WriteBufferDescriptors(&drawArg.pVertexBuffer, &offset, &size, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+							size = drawArg.pInstanceBuffer->GetDesc().SizeInBytes;
+							offset = 0;
+							descriptorSet->WriteBufferDescriptors(&drawArg.pInstanceBuffer, &offset, &size, 1, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+							it = m_VerticesInstanceDescriptorSetMap.insert({ drawArgKey, descriptorSet }).first;
+						}
+						m_AliveDescriptorSetList.PushBack(drawArgKey);
+						m_VerticesInstanceDescriptorSets[b].PushBack(it->second.Get());
+					}
+				}
+
+				// Remove unused descriptor sets
+				{
+					m_DeadDescriptorSetList.Clear();
+					for (auto [key, value] : m_VerticesInstanceDescriptorSetMap)
+					{
+						auto it = std::find(m_AliveDescriptorSetList.begin(), m_AliveDescriptorSetList.end(), key);
+						if (it == m_AliveDescriptorSetList.end())
+						{
+							m_pDeviceResourcesToDestroy[key.BackBufferIndex].PushBack(std::move(value));
+							m_DeadDescriptorSetList.PushBack(key);
+						}
+					}
+
+					for (auto& key : m_DeadDescriptorSetList)
+					{
+						m_VerticesInstanceDescriptorSetMap.erase(key);
+					}
+				}
+
+				ECSCore* pECSCore = ECSCore::GetInstance();
+				const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+				m_RenderTargets.Clear();
+				for (uint32 d = 0; d < count; d++)
+				{
+					const DrawArg& drawArg = pDrawArgs[d];
+					for (uint32 i = 0; i < drawArg.InstanceCount; i++)
+					{
+						Entity entity = drawArg.EntityIDs[i];
+
+						uint32 teamId = (uint32)ETeam::NONE;
+						if (pTeamComponents->HasComponent(entity))
+						{
+							teamId = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex);
+							teamId = static_cast<uint32>((teamId == 0) ? ETeam::BLUE : ETeam::RED);
+						}
+						
+						DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
+						if (extensionGroup)
+						{
+							// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
+							uint32 numExtensions = extensionGroup->ExtensionCount;
+							for (uint32 e = 0; e < numExtensions; e++)
+							{
+								uint32 flag = extensionGroup->pExtensionFlags[e];
+								bool inverted;
+								uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
+								uint32 invertedUInt = uint32(inverted);
+
+								if ((flag & meshPaintFlag) != invertedUInt)
+								{
+									DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+									TextureView* pTextureView = extension.ppTextureViews[0];
+									Buffer* pReadBackBuffer = extension.ppReadBackBuffers[0];
+									m_RenderTargets.PushBack(
+										{
+											.pTextureView = pTextureView,
+											.pReadBackbuffer = pReadBackBuffer,
+											.DrawArgIndex = d,
+											.InstanceIndex = i,
+											.TeamIndex = teamId
+										});
+								}
+							}
 						}
 					}
 				}
@@ -523,6 +541,7 @@ namespace LambdaEngine
 			bool isServer = false;
 
 			FrameSettings frameSettings = {};
+			InstanceInfo instanceInfo = {};
 
 			// Transfer current collision data
 			if (!collisionArray->IsEmpty())
@@ -577,6 +596,9 @@ namespace LambdaEngine
 				const uint32	instanceIndex		= renderTargetDesc.InstanceIndex;
 				const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
 				TextureView*	pRenderTarget		= renderTargetDesc.pTextureView;
+
+				instanceInfo.Index = instanceIndex;
+				instanceInfo.TeamMode = renderTargetDesc.TeamIndex;
 
 				const TextureViewDesc& textureViewDesc = pRenderTarget->GetDesc();
 				const uint32 width	= textureViewDesc.pTexture->GetDesc().Width;
@@ -641,8 +663,8 @@ namespace LambdaEngine
 				pCommandList->SetConstantRange(
 					m_PipelineLayout.Get(), 
 					FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, 
-					&instanceIndex, 
-					sizeof(uint32), 
+					&instanceInfo,
+					sizeof(InstanceInfo), 
 					0);
 
 				pCommandList->SetConstantRange(
@@ -650,7 +672,7 @@ namespace LambdaEngine
 					FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, 
 					&frameSettings, 
 					sizeof(FrameSettings), 
-					sizeof(uint32));
+					sizeof(InstanceInfo));
 
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
 
@@ -803,13 +825,13 @@ namespace LambdaEngine
 	{
 		ConstantRangeDesc constantRangeVertexDesc		= { };
 		constantRangeVertexDesc.ShaderStageFlags		= FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-		constantRangeVertexDesc.SizeInBytes				= sizeof(uint32);
+		constantRangeVertexDesc.SizeInBytes				= sizeof(InstanceInfo);
 		constantRangeVertexDesc.OffsetInBytes			= 0;
 
 		ConstantRangeDesc constantRangePixelDesc		= { };
 		constantRangePixelDesc.ShaderStageFlags			= FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		constantRangePixelDesc.SizeInBytes				= sizeof(FrameSettings);
-		constantRangePixelDesc.OffsetInBytes			= sizeof(uint32);
+		constantRangePixelDesc.OffsetInBytes			= sizeof(InstanceInfo);
 
 		// PerFrameBuffer
 		DescriptorBindingDesc perFrameBufferDesc		= {};
