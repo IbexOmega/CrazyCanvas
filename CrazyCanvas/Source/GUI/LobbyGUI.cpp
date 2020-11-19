@@ -236,7 +236,7 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 	message->SetFocusable(false);
 	message->SetContent(chatMessage.Message.c_str());
 	message->SetVerticalAlignment(VerticalAlignment::VerticalAlignment_Center);
-	message->SetPadding(Thickness(3, -2, -2, -2));
+	message->SetPadding(Thickness(3, 0, 0, 0));
 	dockPanel->GetChildren()->Add(message);
 
 	m_pChatPanel->GetChildren()->Add(dockPanel);
@@ -305,11 +305,16 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		if (pSettingChangeTeamColor0)
 		{
 			glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor0);
+			Color teamColor = Color(color.r, color.g, color.b);
 
-			Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
-			pBrush->SetColor(Color(color.r, color.g, color.b));
-			pSettingChangeTeamColor0->SetBackground(pBrush);
+			// Update Settings Color
+			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor0->GetBackground());
+			pSolidColorBrush->SetColor(teamColor);
 			
+			// Update Team Label color
+			pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
+			pSolidColorBrush->SetColor(teamColor);
+
 			// Update old messages text color
 			m_pChatPanel->GetChildren()->Clear();
 			ChatManager::RenotifyAllChatMessages();
@@ -319,10 +324,15 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		if (pSettingChangeTeamColor1)
 		{
 			glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor1);
+			Color teamColor = Color(color.r, color.g, color.b);
 
-			Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
-			pBrush->SetColor(Color(color.r, color.g, color.b));
-			pSettingChangeTeamColor1->SetBackground(pBrush);
+			// Update Settings Color
+			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor1->GetBackground());
+			pSolidColorBrush->SetColor(teamColor);
+
+			// Update Team Label color
+			pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
+			pSolidColorBrush->SetColor(teamColor);
 
 			// Update old messages text color
 			m_pChatPanel->GetChildren()->Clear();
@@ -537,18 +547,27 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	{
 		// Update combobox display color
 		glm::vec3 color = TeamHelper::GetAvailableColor(indexSelected);
-		
+		Color teamColor = Color(color.r, color.g, color.b);
 		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
 		pBrush->SetColor(Color(color.r, color.g, color.b));
 
+		// Update Settings Color
 		pComboBox->SetBackground(pBrush);
 
 		if (setting == SETTING_CHANGE_TEAM_0_COLOR)
 		{
+			// Update Settings Color
+			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
+			pSolidColorBrush->SetColor(teamColor);
+
 			m_GameSettings.TeamColor0 = (uint8)indexSelected;
 		}
 		else
 		{
+			// Update Settings Color
+			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
+			pSolidColorBrush->SetColor(teamColor);
+
 			m_GameSettings.TeamColor1 = (uint8)indexSelected;
 		}
 
