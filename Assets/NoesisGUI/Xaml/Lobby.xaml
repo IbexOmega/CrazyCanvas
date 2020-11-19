@@ -91,6 +91,16 @@
         <Setter Property="Margin" Value="0 5 0 5" />
       </Style>
       
+         <Style TargetType="TextBox"
+               x:Key="SettingsClientTextStyle"
+               BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="FontSize" Value="32" />
+            <Setter Property="Grid.Column" Value="1" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="Height" Value="50" />
+        </Style>
+
         <Style TargetType="Label"
                x:Key="SettingsClientStyle"
                BasedOn="{StaticResource {x:Type Label}}">
@@ -184,7 +194,7 @@
                 <ColumnDefinition Width="1*" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel x:Name="BlueTeamStackPanel" Grid.Column="0" Grid.Row="0" Margin="20 0 20 0">
+            <StackPanel x:Name="Team1StackPanel" Grid.Column="0" Grid.Row="0" Margin="20 0 20 0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*" />
@@ -192,12 +202,12 @@
                         <ColumnDefinition Width="2*" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Content="Blue Team" Grid.Column="1" Foreground="#05DFD7" FontSize="40" HorizontalAlignment="Left" Margin="0 0 0 10" />
+                    <Label x:Name="Team1Label" Content="Team 1" Grid.Column="1" Foreground="#05DFD7" FontSize="40" HorizontalAlignment="Left" Margin="0 0 0 10" />
                     <Label Content="Ping" Grid.Column="2" Foreground="White" FontSize="32" HorizontalAlignment="Right" />
                 </Grid>
             </StackPanel>
 
-            <StackPanel x:Name="RedTeamStackPanel" Grid.Column="1" Grid.Row="0" Margin="20 0 20 0">
+            <StackPanel x:Name="Team2StackPanel" Grid.Column="1" Grid.Row="0" Margin="20 0 20 0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*" />
@@ -205,7 +215,7 @@
                         <ColumnDefinition Width="2*" />
                     </Grid.ColumnDefinitions>
 
-                    <Label Content="Red Team" Grid.Column="1" Foreground="#E52C2C" FontSize="40" HorizontalAlignment="Left" Margin="0 0 0 10" />
+                    <Label x:Name="Team2Label" Content="Team 2" Grid.Column="1" Foreground="#E52C2C" FontSize="40" HorizontalAlignment="Left" Margin="0 0 0 10" />
                     <Label Content="Ping" Grid.Column="2" Foreground="White" FontSize="32" HorizontalAlignment="Right" />
                 </Grid>
             </StackPanel>
@@ -220,7 +230,7 @@
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
-                <ScrollViewer x:Name="ChatScrollViewer" Grid.ColumnSpan="2" VerticalScrollBarVisibility="Visible" HorizontalContentAlignment="Stretch">
+                <ScrollViewer x:Name="ChatScrollViewer" Grid.ColumnSpan="2" VerticalScrollBarVisibility="Visible" HorizontalContentAlignment="Stretch" Background="#FF212121">
                     <StackPanel x:Name="ChatStackPanel">
                     </StackPanel>
                 </ScrollViewer>

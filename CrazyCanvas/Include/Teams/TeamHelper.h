@@ -3,8 +3,6 @@
 #include "ECS/Components/Team/TeamComponent.h"
 #include <array>
 
-constexpr const uint32 MAX_NUM_COLORS = 6;
-
 class TeamHelper
 {
 public:

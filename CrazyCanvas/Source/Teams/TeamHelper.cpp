@@ -102,7 +102,7 @@ void TeamHelper::SetTeamColor(uint8 teamIndex, const glm::vec3& color)
 
 glm::vec3 TeamHelper::GetAvailableColor(uint32 colorIndex)
 {
-	VALIDATE(colorIndex < MAX_NUM_COLORS);
+	VALIDATE(colorIndex < s_AvailableColors.GetSize());
 	return s_AvailableColors[colorIndex];
 }
 

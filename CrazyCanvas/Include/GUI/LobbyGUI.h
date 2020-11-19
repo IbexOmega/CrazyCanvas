@@ -78,8 +78,8 @@ private:
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
 
-	Noesis::StackPanel* m_pBlueTeamStackPanel		= nullptr;
-	Noesis::StackPanel* m_pRedTeamStackPanel		= nullptr;
+	Noesis::StackPanel* m_pTeam1StackPanel			= nullptr;
+	Noesis::StackPanel* m_pTeam2StackPanel			= nullptr;
 	Noesis::ScrollViewer* m_pChatScrollViewer		= nullptr;
 	Noesis::StackPanel* m_pChatPanel				= nullptr;
 	Noesis::StackPanel* m_pSettingsNamesStackPanel	= nullptr;
@@ -87,6 +87,8 @@ private:
 	Noesis::StackPanel* m_pSettingsClientStackPanel	= nullptr;
 	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
 	Noesis::Label*		m_pPlayersLabel				= nullptr;
+	Noesis::Label*		m_pTeam1Label				= nullptr;
+	Noesis::Label*		m_pTeam2Label				= nullptr;
 
 	PacketGameSettings m_GameSettings;
 	bool m_IsInitiated;

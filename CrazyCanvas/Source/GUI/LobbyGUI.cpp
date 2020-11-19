@@ -27,8 +27,10 @@ LobbyGUI::LobbyGUI() :
 	GUI::LoadComponent(this, "Lobby.xaml");
 
 	// Get commonly used elements
-	m_pBlueTeamStackPanel		= FrameworkElement::FindName<StackPanel>("BlueTeamStackPanel");
-	m_pRedTeamStackPanel		= FrameworkElement::FindName<StackPanel>("RedTeamStackPanel");
+	m_pTeam1StackPanel			= FrameworkElement::FindName<StackPanel>("Team1StackPanel");
+	m_pTeam2StackPanel			= FrameworkElement::FindName<StackPanel>("Team2StackPanel");
+	m_pTeam1Label				= FrameworkElement::FindName<Label>("Team1Label");
+	m_pTeam2Label				= FrameworkElement::FindName<Label>("Team2Label");
 	m_pChatScrollViewer			= FrameworkElement::FindName<ScrollViewer>("ChatScrollViewer");
 	m_pChatPanel				= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
 	m_pSettingsNamesStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsNamesStackPanel");
@@ -78,7 +80,7 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 
 void LobbyGUI::AddPlayer(const Player& player)
 {
-	StackPanel* pPanel = player.GetTeam() == 0 ? m_pBlueTeamStackPanel : m_pRedTeamStackPanel;
+	StackPanel* pPanel = player.GetTeam() == 0 ? m_pTeam1StackPanel : m_pTeam2StackPanel;
 
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
@@ -118,13 +120,13 @@ void LobbyGUI::RemovePlayer(const Player& player)
 
 	Grid* pGrid = FrameworkElement::FindName<Grid>(uidGrid.c_str());
 
-	if (m_pBlueTeamStackPanel->GetChildren()->Contains(pGrid))
+	if (m_pTeam1StackPanel->GetChildren()->Contains(pGrid))
 	{
-		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
+		m_pTeam1StackPanel->GetChildren()->Remove(pGrid);
 	}
 	else
 	{
-		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
+		m_pTeam2StackPanel->GetChildren()->Remove(pGrid);
 	}
 
 	UnregisterName(uidGrid);
@@ -222,10 +224,11 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 	}
 	else
 	{
-		Color colorBlue;
-		Color::TryParse("#05DFD7", colorBlue);
+		uint8 colorIndex = chatMessage.Team == 0 ? m_GameSettings.TeamColor0 : m_GameSettings.TeamColor1;
+		glm::vec3 teamColor = TeamHelper::GetAvailableColor(colorIndex);
+		Color chatMessageColor(teamColor.r, teamColor.g, teamColor.b);
 
-		pBrush->SetColor(chatMessage.Team == 0 ? colorBlue : Color::Red());
+		pBrush->SetColor(chatMessageColor);
 	}
 	pLabel->SetForeground(pBrush);
 
@@ -261,6 +264,9 @@ void LobbyGUI::SetHostMode(bool isHost)
 
 void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 {
+	// Update game settings
+	m_GameSettings = packet;
+
 	if (!PlayerManagerClient::GetPlayerLocal()->IsHost()) 
 	{
 		Label* pSettingServerName = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_SERVER_NAME) + "_client").c_str());
@@ -303,6 +309,10 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 			Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
 			pBrush->SetColor(Color(color.r, color.g, color.b));
 			pSettingChangeTeamColor0->SetBackground(pBrush);
+			
+			// Update old messages text color
+			m_pChatPanel->GetChildren()->Clear();
+			ChatManager::RenotifyAllChatMessages();
 		}
 
 		TextBlock* pSettingChangeTeamColor1 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_1_COLOR) + "_client").c_str());
@@ -313,6 +323,10 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 			Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
 			pBrush->SetColor(Color(color.r, color.g, color.b));
 			pSettingChangeTeamColor1->SetBackground(pBrush);
+
+			// Update old messages text color
+			m_pChatPanel->GetChildren()->Clear();
+			ChatManager::RenotifyAllChatMessages();
 		}
 	} 
 	else 
@@ -323,8 +337,6 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 
 		UpdatePlayersLabel();
 	}
-
-	m_GameSettings = packet;
 }
 
 void LobbyGUI::AddSettingComboBox(
@@ -365,7 +377,7 @@ void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const 
 
 	// Add setting client text (default value is set as content)
 	// Temporary until Rectangle can be adjusted to fit parent
-	AddTextBoxWithColor(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientStyle", "\t\t\t\t", TeamHelper::GetAvailableColor(defaultIndex));
+	AddTextBoxWithColor(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientTextStyle", "\t\t\t\t", TeamHelper::GetAvailableColor(defaultIndex));
 
 	// Add setting combobox for colors
 	Ptr<ComboBox> settingComboBox = *new ComboBox();
@@ -373,6 +385,7 @@ void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const 
 	settingComboBox->SetStyle(pStyle);
 	settingComboBox->SetName((settingKey + "_host").c_str());
 	settingComboBox->SelectionChanged() += MakeDelegate(this, &LobbyGUI::OnComboBoxSelectionChanged);
+	settingComboBox->SetFocusable(false);
 	RegisterName(settingComboBox->GetName(), settingComboBox);
 	m_pSettingsHostStackPanel->GetChildren()->Add(settingComboBox);
 
@@ -538,6 +551,10 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 		{
 			m_GameSettings.TeamColor1 = (uint8)indexSelected;
 		}
+
+		// Update old messages text color
+		m_pChatPanel->GetChildren()->Clear();
+		ChatManager::RenotifyAllChatMessages();
 	}
 
 	SendGameSettings();
@@ -638,12 +655,12 @@ Grid* LobbyGUI::GetPlayerGrid(const Player& player)
 {
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
-	Grid* pGrid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	Grid* pGrid = m_pTeam1StackPanel->FindName<Grid>((uid + "_grid").c_str());
 	if (pGrid)
 	{
 		return pGrid;
 	}
 
-	pGrid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	pGrid = m_pTeam2StackPanel->FindName<Grid>((uid + "_grid").c_str());
 	return pGrid;
 }

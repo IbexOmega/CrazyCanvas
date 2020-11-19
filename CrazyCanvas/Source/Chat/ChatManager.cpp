@@ -44,6 +44,16 @@ NetworkSegment* ChatManager::MakePacket(IClient* pClient, const ChatMessage& mes
 	return pPacket;
 }
 
+void ChatManager::RenotifyAllChatMessages()
+{
+	for (ChatMessage& message : m_ChatHistory)
+	{
+		message.IsRecap = true;
+		ChatEvent event(message);
+		EventQueue::SendEventImmediate(event);
+	}
+}
+
 void ChatManager::SendChatMessage(String message)
 {
 	if (MultiplayerUtils::IsServer())
