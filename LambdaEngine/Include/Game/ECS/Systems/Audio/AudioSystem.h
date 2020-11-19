@@ -29,8 +29,7 @@ namespace LambdaEngine
 	private:
 		IDVector	m_AudibleEntities;
 		IDVector	m_ListenerEntities;
-		IDVector	m_AudibleNoPositionEntities;
-		IDVector	m_CameraEntities;
+
 	private:
 		static AudioSystem s_Instance;
 	};
