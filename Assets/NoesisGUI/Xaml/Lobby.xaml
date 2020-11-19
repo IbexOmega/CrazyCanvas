@@ -91,9 +91,8 @@
         <Setter Property="Margin" Value="0 5 0 5" />
       </Style>
       
-         <Style TargetType="TextBox"
-               x:Key="SettingsClientTextStyle"
-               BasedOn="{StaticResource {x:Type TextBox}}">
+         <Style TargetType="{x:Type TextBlock}"
+               x:Key="SettingsClientTextStyle">
             <Setter Property="FontSize" Value="32" />
             <Setter Property="Grid.Column" Value="1" />
             <Setter Property="Foreground" Value="White" />
