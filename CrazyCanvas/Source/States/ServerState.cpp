@@ -236,6 +236,8 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	EServerState state = event.State;
 	if (state == SERVER_STATE_LOBBY)
 	{
+		Match::Release();
+
 		const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
 		for (auto& pair : players)
 		{
@@ -255,7 +257,8 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 
 bool ServerState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 {
-	if (PlayerManagerServer::GetPlayerCount() == 0)
+	UNREFERENCED_VARIABLE(event);
+	if (PlayerManagerServer::GetPlayerCount() == 1)
 	{
 		SetState(SERVER_STATE_LOBBY);
 	}
@@ -264,6 +267,7 @@ bool ServerState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 
 bool ServerState::OnGameOverEvent(const GameOverEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
 	SetState(SERVER_STATE_LOBBY);
 	return false;
 }

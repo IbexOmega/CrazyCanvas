@@ -15,8 +15,8 @@
 class LobbyState : public LambdaEngine::State
 {
 public:
-	LobbyState(const Player* pPlayer);
-	LobbyState(const LambdaEngine::String& name, bool isHost, bool isReplayLobby = false);
+	LobbyState(const PacketGameSettings& gameSettings, const Player* pPlayer);
+	LobbyState(const LambdaEngine::String& name, bool isHost);
 	~LobbyState();
 
 protected:
@@ -46,4 +46,5 @@ private:
 	LambdaEngine::String m_Name;
 	bool m_IsHost;
 	bool m_IsReplayLobby;
+	PacketGameSettings m_GameSettings;
 };

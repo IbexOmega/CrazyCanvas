@@ -45,6 +45,8 @@
 
 using namespace LambdaEngine;
 
+PlaySessionState* PlaySessionState::s_pInstance = nullptr;
+
 PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
 	m_Singleplayer(singlePlayer),
 	m_MultiplayerClient(), 
@@ -68,12 +70,17 @@ PlaySessionState::~PlaySessionState()
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
 
 	Match::Release();
-	PlayerManagerClient::Reset();
 }
 
 void PlaySessionState::Init()
 {
+	s_pInstance = this;
+
 	EnablePlaySessionsRenderstages();
+
+	CommonApplication::Get()->SetMouseVisibility(false);
+	PlayerActionSystem::SetMouseEnabled(true);
+	Input::PushInputMode(EInputLayer::GAME);
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
@@ -92,8 +99,6 @@ void PlaySessionState::Init()
 		};
 		Match::CreateMatch(&matchDescription);
 	}
-
-	CommonApplication::Get()->SetMouseVisibility(false);
 
 	if (m_Singleplayer)
 	{
@@ -125,8 +130,20 @@ bool PlaySessionState::OnClientDisconnected(const ClientDisconnectedEvent& event
 
 	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
 
+	PlayerManagerClient::Reset();
+
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;
+}
+
+const PacketGameSettings& PlaySessionState::GetGameSettings() const
+{
+	return m_GameSettings;
+}
+
+PlaySessionState* PlaySessionState::GetInstance()
+{
+	return s_pInstance;
 }

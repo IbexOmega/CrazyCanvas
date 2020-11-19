@@ -2,6 +2,7 @@
 
 #include "Game/StateManager.h"
 #include "States/LobbyState.h"
+#include "States/PlaySessionState.h"
 
 #include "Application/API/CommonApplication.h"
 
@@ -36,7 +37,8 @@ bool GameOverGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 
 void GameOverGUI::OnReturnToLobbyButtonClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
-	State* pLobbyState = DBG_NEW LobbyState(PlayerManagerClient::GetPlayerLocal());
+	const PacketGameSettings& gameSettings = PlaySessionState::GetInstance()->GetGameSettings();
+	State* pLobbyState = DBG_NEW LobbyState(gameSettings, PlayerManagerClient::GetPlayerLocal());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 }
 

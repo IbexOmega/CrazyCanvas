@@ -15,18 +15,22 @@
 
 using namespace LambdaEngine;
 
-LobbyState::LobbyState(const Player* pPlayer) : 
-	LobbyState(pPlayer->GetName(), pPlayer->IsHost(), true)
+LobbyState::LobbyState(const PacketGameSettings& gameSettings, const Player* pPlayer) : 
+	m_Name(pPlayer->GetName()),
+	m_IsHost(pPlayer->IsHost()),
+	m_IsReplayLobby(true),
+	m_GameSettings(gameSettings)
 {
 	
 }
 
-LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost, bool isReplayLobby) :
+LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
 	m_Name(name),
 	m_IsHost(isHost),
-	m_IsReplayLobby(isReplayLobby)
+	m_IsReplayLobby(false),
+	m_GameSettings()
 {
-
+	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
 }
 
 LobbyState::~LobbyState()
@@ -61,11 +65,11 @@ void LobbyState::Init()
 	
 	DisablePlaySessionsRenderstages();
 
-	m_LobbyGUI = *new LobbyGUI();
+	m_LobbyGUI = *new LobbyGUI(&m_GameSettings);
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
-	m_LobbyGUI->InitGUI(m_Name);
+	m_LobbyGUI->InitGUI();
 
 	if (!m_IsReplayLobby)
 	{
@@ -76,7 +80,12 @@ void LobbyState::Init()
 		const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 		for (auto& pair : players)
 		{
-			m_LobbyGUI->AddPlayer(pair.second);
+			const Player& player = pair.second;
+			m_LobbyGUI->AddPlayer(player);
+			if (player.IsHost())
+			{
+				m_LobbyGUI->UpdatePlayerHost(player);
+			}
 		}
 	}
 }
@@ -100,7 +109,7 @@ bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 	{
 		if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 		{
-			State* pStartingState = DBG_NEW PlaySessionState(m_LobbyGUI->GetSettings());
+			State* pStartingState = DBG_NEW PlaySessionState(m_GameSettings);
 			StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 		}
 	}

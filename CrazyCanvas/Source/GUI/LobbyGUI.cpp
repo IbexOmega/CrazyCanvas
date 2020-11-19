@@ -19,8 +19,9 @@
 using namespace Noesis;
 using namespace LambdaEngine;
 
-LobbyGUI::LobbyGUI() : 
-	m_IsInitiated(false)
+LobbyGUI::LobbyGUI(PacketGameSettings* pGameSettings) :
+	m_IsInitiated(false),
+	m_pGameSettings(pGameSettings)
 {
 	GUI::LoadComponent(this, "Lobby.xaml");
 
@@ -48,24 +49,25 @@ LobbyGUI::~LobbyGUI()
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
 }
 
-void LobbyGUI::InitGUI(LambdaEngine::String name)
+void LobbyGUI::InitGUI()
 {
-	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
-
-	LambdaEngine::TArray<LambdaEngine::String> gameModeNames;
-	LambdaEngine::TArray<EGameMode> gameModes;
+	TArray<LambdaEngine::String> gameModeNames;
+	TArray<EGameMode> gameModes;
 	GameModesQuery(gameModes);
+	gameModeNames.Reserve(gameModes.GetSize());
 	for (EGameMode gameMode : gameModes)
 		gameModeNames.PushBack(GameModeToString(gameMode));
 
-	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_GameSettings.ServerName);
+	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_pGameSettings->ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
-	AddSettingComboBox(SETTING_GAME_MODE,		"Game Mode",			gameModeNames, (uint8)m_GameSettings.GameMode);
+	AddSettingComboBox(SETTING_GAME_MODE,		"Game Mode",			gameModeNames, (uint8)m_pGameSettings->GameMode);
 	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
 	AddSettingComboBox(SETTING_MAX_PLAYERS,		"Max Players",			{ "4", "6", "8", "10" }, 3);
 	/*AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
+
+	UpdateSettings(*m_pGameSettings);
 
 	m_IsInitiated = true;
 }
@@ -255,50 +257,105 @@ void LobbyGUI::SetHostMode(bool isHost)
 
 void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 {
-	if (!PlayerManagerClient::GetPlayerLocal()->IsHost()) 
+	Label* pSettingServerName = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_SERVER_NAME) + "_client").c_str());
+	if(pSettingServerName)
+		pSettingServerName->SetContent(packet.ServerName);
+
+	Label* pSettingMap = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAP) + "_client").c_str());
+	if (pSettingMap)
+		pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
+
+	Label* pSettingGameMode = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_GAME_MODE) + "_client").c_str());
+	if (pSettingGameMode)
+		pSettingGameMode->SetContent(GameModeToString(packet.GameMode));
+
+	Label* pSettingMaxTime = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_TIME) + "_client").c_str());
+	if (pSettingMaxTime)
+		pSettingMaxTime->SetContent((std::to_string(packet.MaxTime / 60) + " min").c_str());
+
+	Label* pSettingFlagsToWin = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_client").c_str());
+	if (pSettingFlagsToWin)
+		pSettingFlagsToWin->SetContent(std::to_string(packet.FlagsToWin).c_str());
+
+	Label* pSettingMaxPlayers = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_PLAYERS) + "_client").c_str());
+	if (pSettingMaxPlayers)
+		pSettingMaxPlayers->SetContent(std::to_string(packet.Players).c_str());
+
+	Label* pSettingVisibility = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_VISIBILITY) + "_client").c_str());
+	if (pSettingVisibility)
+		pSettingVisibility->SetContent(packet.Visible ? "True" : "False");
+
+	Label* pSettingChangeTeam = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_client").c_str());
+	if (pSettingChangeTeam)
+		pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
+
+
+
+	TextBox* pServerNameTextBox = FrameworkElement::FindName<TextBox>((LambdaEngine::String(SETTING_SERVER_NAME) + "_host").c_str());
+	if (pServerNameTextBox)
+		pServerNameTextBox->SetText(packet.ServerName);
+
+	ComboBox* pSettingMapHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_MAP) + "_host").c_str());
+	if (pSettingMapHost)
+		pSettingMapHost->SetSelectedIndex(packet.MapID);
+
+	ComboBox* pSettingGameModeHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_GAME_MODE) + "_host").c_str());
+	if (pSettingGameModeHost)
+		pSettingGameModeHost->SetSelectedIndex((uint8)packet.GameMode);
+
+	ComboBox* pSettingMaxTimeHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_MAX_TIME) + "_host").c_str());
+	if (pSettingMaxTimeHost)
 	{
-		Label* pSettingServerName = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_SERVER_NAME) + "_client").c_str());
-		if(pSettingServerName)
-			pSettingServerName->SetContent(packet.ServerName);
+		int minutes = packet.MaxTime / 60;
+		if(minutes == 3)
+			pSettingMaxTimeHost->SetSelectedIndex(0);
+		else if (minutes == 5)
+			pSettingMaxTimeHost->SetSelectedIndex(1);
+		else if (minutes == 10)
+			pSettingMaxTimeHost->SetSelectedIndex(2);
+		else if (minutes == 15)
+			pSettingMaxTimeHost->SetSelectedIndex(3);
+	}
+		
 
-		Label* pSettingMap = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAP) + "_client").c_str());
-		if (pSettingMap)
-			pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
-
-		Label* pSettingGameMode = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_GAME_MODE) + "_client").c_str());
-		if (pSettingGameMode)
-			pSettingGameMode->SetContent(GameModeToString(packet.GameMode));
-
-		Label* pSettingMaxTime = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_TIME) + "_client").c_str());
-		if (pSettingMaxTime)
-			pSettingMaxTime->SetContent((std::to_string(packet.MaxTime / 60) + " min").c_str());
-
-		Label* pSettingFlagsToWin = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_client").c_str());
-		if (pSettingFlagsToWin)
-			pSettingFlagsToWin->SetContent(std::to_string(packet.FlagsToWin).c_str());
-
-		Label* pSettingMaxPlayers = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAX_PLAYERS) + "_client").c_str());
-		if (pSettingMaxPlayers)
-			pSettingMaxPlayers->SetContent(std::to_string(packet.Players).c_str());
-
-		Label* pSettingVisibility = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_VISIBILITY) + "_client").c_str());
-		if (pSettingVisibility)
-			pSettingVisibility->SetContent(packet.Visible ? "True" : "False");
-
-		Label* pSettingChangeTeam = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_client").c_str());
-		if (pSettingChangeTeam)
-			pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
-	} 
-	else 
+	ComboBox* pSettingFlagsToWinHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_host").c_str());
+	if (pSettingFlagsToWinHost)
 	{
-		TextBox* pServerNameTextBox = FrameworkElement::FindName<TextBox>((LambdaEngine::String(SETTING_SERVER_NAME) + "_host").c_str());
-		if (pServerNameTextBox)
-			pServerNameTextBox->SetText(packet.ServerName);
-
-		UpdatePlayersLabel();
+		int flags = packet.FlagsToWin;
+		if (flags == 3)
+			pSettingFlagsToWinHost->SetSelectedIndex(0);
+		else if (flags == 5)
+			pSettingFlagsToWinHost->SetSelectedIndex(1);
+		else if (flags == 10)
+			pSettingFlagsToWinHost->SetSelectedIndex(2);
+		else if (flags == 15)
+			pSettingFlagsToWinHost->SetSelectedIndex(3);
 	}
 
-	m_GameSettings = packet;
+	ComboBox* pSettingMaxPlayersHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_MAX_PLAYERS) + "_host").c_str());
+	if (pSettingMaxPlayersHost)
+	{
+		int players = packet.Players;
+		if (players == 4)
+			pSettingMaxPlayersHost->SetSelectedIndex(0);
+		else if (players == 6)
+			pSettingMaxPlayersHost->SetSelectedIndex(1);
+		else if (players == 8)
+			pSettingMaxPlayersHost->SetSelectedIndex(2);
+		else if (players == 10)
+			pSettingMaxPlayersHost->SetSelectedIndex(3);
+	}
+
+	ComboBox* pSettingVisibilityHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_VISIBILITY) + "_host").c_str());
+	if (pSettingVisibilityHost)
+		pSettingVisibilityHost->SetSelectedIndex(packet.Visible ? 0 : 1);
+
+	ComboBox* pSettingChangeTeamHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_CHANGE_TEAM) + "_host").c_str());
+	if (pSettingChangeTeamHost)
+		pSettingChangeTeamHost->SetSelectedIndex(packet.ChangeTeam ? 0 : 1);
+
+	UpdatePlayersLabel();
+	*m_pGameSettings = packet;
 }
 
 void LobbyGUI::AddSettingComboBox(
@@ -415,17 +472,20 @@ void LobbyGUI::TrySendChatMessage()
 void LobbyGUI::SendGameSettings() const
 {
 	if (m_IsInitiated)
-		ClientHelper::Send(m_GameSettings);
+		ClientHelper::Send(*m_pGameSettings);
 }
 
 void LobbyGUI::UpdatePlayersLabel()
 {
 	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
-	m_pPlayersLabel->SetContent((std::to_string(players.size()) + "/" + std::to_string(m_GameSettings.Players) + " Players").c_str());
+	m_pPlayersLabel->SetContent((std::to_string(players.size()) + "/" + std::to_string(m_pGameSettings->Players) + " Players").c_str());
 }
 
 void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const SelectionChangedEventArgs& args)
 {
+	if (!m_IsInitiated)
+		return;
+
 	ComboBox* pComboBox = static_cast<ComboBox*>(pSender);
 
 	LambdaEngine::String setting = pComboBox->GetName();
@@ -435,50 +495,45 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 
 	if (setting == SETTING_MAP)
 	{
-		m_GameSettings.MapID = (uint8)indexSelected;
+		m_pGameSettings->MapID = (uint8)indexSelected;
 	}
 	else if (setting == SETTING_GAME_MODE)
 	{
-		m_GameSettings.GameMode = GameModeParseString(textSelected.c_str());
+		m_pGameSettings->GameMode = GameModeParseString(textSelected.c_str());
 	}
 	else if (setting == SETTING_MAX_TIME)
 	{
 		textSelected = textSelected.substr(0, textSelected.find_last_of(" min"));
-		m_GameSettings.MaxTime = (uint16)std::stoi(textSelected) * 60;
+		m_pGameSettings->MaxTime = (uint16)std::stoi(textSelected) * 60;
 	}
 	else if (setting == SETTING_FLAGS_TO_WIN)
 	{
-		m_GameSettings.FlagsToWin = (uint8)std::stoi(textSelected);
+		m_pGameSettings->FlagsToWin = (uint8)std::stoi(textSelected);
 	}
 	else if (setting == SETTING_MAX_PLAYERS)
 	{
-		m_GameSettings.Players = (uint8)std::stoi(textSelected);
+		m_pGameSettings->Players = (uint8)std::stoi(textSelected);
 		UpdatePlayersLabel();
 	}
 	else if (setting == SETTING_VISIBILITY)
 	{
-		m_GameSettings.Visible = textSelected == "True";
+		m_pGameSettings->Visible = textSelected == "True";
 	}
 	else if (setting == SETTING_CHANGE_TEAM)
 	{
-		m_GameSettings.ChangeTeam = textSelected == "True";
+		m_pGameSettings->ChangeTeam = textSelected == "True";
 	}
 
 	SendGameSettings();
-}
-
-const PacketGameSettings& LobbyGUI::GetSettings() const
-{
-	return m_GameSettings;
 }
 
 void LobbyGUI::OnTextBoxChanged(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	TextBox* pTextBox = static_cast<TextBox*>(pSender);
 
-	if (strcmp(m_GameSettings.ServerName, pTextBox->GetText()) != 0) 
+	if (strcmp(m_pGameSettings->ServerName, pTextBox->GetText()) != 0) 
 	{
-		strcpy(m_GameSettings.ServerName, pTextBox->GetText());
+		strcpy(m_pGameSettings->ServerName, pTextBox->GetText());
 
 		SendGameSettings();
 	}

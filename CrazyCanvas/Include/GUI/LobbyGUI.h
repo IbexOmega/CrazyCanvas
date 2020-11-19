@@ -21,10 +21,10 @@
 class LobbyGUI : public Noesis::Grid
 {
 public:
-	LobbyGUI();
+	LobbyGUI(PacketGameSettings* pGameSettings);
 	~LobbyGUI();
 
-	void InitGUI(LambdaEngine::String name);
+	void InitGUI();
 
 	void AddPlayer(const Player& player);
 	void RemovePlayer(const Player& player);
@@ -51,8 +51,6 @@ public:
 	void OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
 	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-
-	const PacketGameSettings& GetSettings() const;
 
 private:
 	// Helpers
@@ -81,7 +79,7 @@ private:
 	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
 	Noesis::Label*		m_pPlayersLabel				= nullptr;
 
-	PacketGameSettings m_GameSettings;
+	PacketGameSettings* m_pGameSettings;
 	bool m_IsInitiated;
 
 private:

@@ -12,6 +12,8 @@ bool Match::Init()
 {
 	using namespace LambdaEngine;
 
+	std::scoped_lock<SpinLock> lock(m_Lock);
+
 	if (MultiplayerUtils::IsServer())
 	{
 		s_pMatchInstance = DBG_NEW MatchServer();
@@ -28,6 +30,7 @@ bool Match::Release()
 {
 	using namespace LambdaEngine;
 
+	std::scoped_lock<SpinLock> lock(m_Lock);
 	SAFEDELETE(s_pMatchInstance);
 
 	return true;
@@ -36,10 +39,13 @@ bool Match::Release()
 bool Match::CreateMatch(const MatchDescription* pDesc)
 {
 	using namespace LambdaEngine;
-
-	if (!s_pMatchInstance->Init(pDesc))
 	{
-		return false;
+		std::scoped_lock<SpinLock> lock(m_Lock);
+
+		if (s_pMatchInstance && !s_pMatchInstance->Init(pDesc))
+		{
+			return false;
+		}
 	}
 
 	EventQueue::SendEvent<MatchInitializedEvent>(MatchInitializedEvent(pDesc->GameMode));
@@ -49,26 +55,46 @@ bool Match::CreateMatch(const MatchDescription* pDesc)
 
 bool Match::ResetMatch()
 {
-	s_pMatchInstance->ResetMatch();
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_Lock);
+	if (s_pMatchInstance)
+		s_pMatchInstance->ResetMatch();
 	return false;
 }
 
 void Match::StartMatch()
 {
-	s_pMatchInstance->MatchStart();
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_Lock);
+	if (s_pMatchInstance)
+		s_pMatchInstance->MatchStart();
 }
 
 void Match::BeginLoading()
 {
-	s_pMatchInstance->BeginLoading();
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_Lock);
+	if (s_pMatchInstance)
+		s_pMatchInstance->BeginLoading();
 }
 
 void Match::Tick(LambdaEngine::Timestamp deltaTime)
 {
-	s_pMatchInstance->Tick(deltaTime);
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_Lock);
+	if (s_pMatchInstance)
+		s_pMatchInstance->Tick(deltaTime);
 }
 
 void Match::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
-	s_pMatchInstance->FixedTick(deltaTime);
+	using namespace LambdaEngine;
+
+	std::scoped_lock<SpinLock> lock(m_Lock);
+	if(s_pMatchInstance)
+		s_pMatchInstance->FixedTick(deltaTime);
 }

@@ -40,6 +40,11 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 
+	const PacketGameSettings& GetGameSettings() const;
+
+public:
+	static PlaySessionState* GetInstance();
+
 private:
 	bool m_Singleplayer;
 
@@ -52,4 +57,7 @@ private:
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
+
+private:
+	static PlaySessionState* s_pInstance;
 };
