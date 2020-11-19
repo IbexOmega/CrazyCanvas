@@ -27,6 +27,9 @@ layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferDepthS
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
 layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
 
+layout(binding = 7, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
+layout(binding = 8, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
+
 layout(location = 0) out vec4 out_Color;
 
 void main()
@@ -58,7 +61,7 @@ void main()
 		float metallic	= aoRoughMetalValid.b;
 		float depth 	= texture(u_GBufferDepthStencil, in_TexCoord).r;
 
-		SPositions positions    = CalculatePositionsFromDepth(in_TexCoord, depth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+		SPositions positions	= CalculatePositionsFromDepth(in_TexCoord, depth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
 		vec3 N 					= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
 		vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - positions.WorldPos;
 		float viewDistance		= length(viewVector);
@@ -73,23 +76,23 @@ void main()
 			vec3 L = normalize(lightBuffer.DirL_Direction);
 			vec3 H = normalize(V + L);
 
-			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(positions.WorldPos, 1.0);
+			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(positions.WorldPos, 1.0f);
 			float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
-			vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
+			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
+			vec3 incomingRadiance	= outgoingRadiance * (1.0f - inShadow);
 
-			float NDF   = Distribution(N, H, roughness);
-			float G     = Geometry(N, V, L, roughness);
-			vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
+			float NDF	= Distribution(N, H, roughness);
+			float G		= Geometry(N, V, L, roughness);
+			vec3 F		= Fresnel(F0, max(dot(V, H), 0.0f));
 
-			vec3 nominator      = NDF * G * F;
-			float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
-			vec3 specular       = nominator / max(denominator, 0.001f);
+			vec3 nominator		= NDF * G * F;
+			float denominator	= 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+			vec3 specular		= nominator / max(denominator, 0.001f);
 
 			vec3 kS = F;
 			vec3 kD = vec3(1.0f) - kS;
 
-			kD *= 1.0 - metallic;
+			kD *= 1.0f - metallic;
 
 			float NdotL = max(dot(N, L), 0.0f);
 
@@ -107,30 +110,44 @@ void main()
 			vec3 H = normalize(V + L);
 			
 			float inShadow 			= PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
-			float attenuation   	= 1.0f / (distance * distance);
-			vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
-			vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0 - inShadow);
+			float attenuation		= 1.0f / (distance * distance);
+			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
+			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - inShadow);
 		
-			float NDF   = Distribution(N, H, roughness);
-			float G     = Geometry(N, V, L, roughness);
-			vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
+			float NDF	= Distribution(N, H, roughness);
+			float G		= Geometry(N, V, L, roughness);
+			vec3 F		= Fresnel(F0, max(dot(V, H), 0.0f));
 
-			vec3 nominator      = NDF * G * F;
-			float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
-			vec3 specular       = nominator / max(denominator, 0.001f);
+			vec3 nominator		= NDF * G * F;
+			float denominator	= 4.0f * max(dot(N, V), 0.0f) * max(dot(N, L), 0.0f);
+			vec3 specular		= nominator / max(denominator, 0.001f);
 
 			vec3 kS = F;
 			vec3 kD = vec3(1.0f) - kS;
 
-			kD *= 1.0 - metallic;
+			kD *= 1.0f - metallic;
 
 			float NdotL = max(dot(N, L), 0.0f);
 
 			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
 		}
 		
-		vec3 ambient    = 0.03f * albedo * ao;
-		colorHDR      	= ambient + Lo;
+		vec3 F_IBL	= FresnelRoughness(F0, max(dot(N, V), 0.0f), roughness);
+		vec3 Ks_IBL	= F_IBL;
+		vec3 Kd_IBL	= 1.0f - Ks_IBL;
+		Kd_IBL		*= 1.0f - metallic;
+	
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
+		vec3 IBL_Diffuse	= irradiance * albedo * Kd_IBL;
+	
+//		const float MAX_MIPLEVEL = 6.0f;
+//		vec3 reflection			= reflect(-ViewDir, Norm);
+//		vec3 prefiltered		= SpecularIrradianceMap.SampleLevel(IrradianceSampler, reflection, Roughness * MAX_MIPLEVEL).rgb;
+//		vec3 integrationBRDF	= IntegrationLUT.Sample(LUTSampler, float2(DotNV, Roughness)).rg;
+//		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
+	
+		vec3 ambient	= (IBL_Diffuse) * ao;
+		colorHDR		= ambient + Lo;
 	}
 
 	float luminance = CalculateLuminance(colorHDR);

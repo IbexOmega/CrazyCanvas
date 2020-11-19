@@ -14,11 +14,11 @@ layout(push_constant) uniform PushConstants
 
 // Textures
 layout(binding = 0, set = 0) uniform samplerCube u_Source;
-layout(binding = 1, set = 0, rgba16f) restrict writeonly uniform imageCube	u_CubeMap;
+layout(binding = 1, set = 0, rgba16f) restrict writeonly uniform imageCube u_CubeMap;
 
 void main()
 {
-	vec2 texCoord	= vec2(gl_GlobalInvocationID.xy);
+	vec2 texCoord = vec2(gl_GlobalInvocationID.xy);
 	if (texCoord.x > u_PC.Size || texCoord.y > u_PC.Size)
 	{
 		return;
@@ -45,7 +45,7 @@ void main()
 			vec3 tangentSample	= vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
 			vec3 sampleVec		= tangentSample.x * right + tangentSample.y * up + tangentSample.z * normal;
 
-			irradiance	+= texture(u_Source, sampleVec, 0).rgb * cos(theta) * sin(theta);
+			irradiance	+= textureLod(u_Source, sampleVec, 0.0f).rgb * cos(theta) * sin(theta);
 			nrSamples	+= 1.0f;
 		}
 	}
