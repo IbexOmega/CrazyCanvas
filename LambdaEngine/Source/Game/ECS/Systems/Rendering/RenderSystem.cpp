@@ -984,6 +984,14 @@ namespace LambdaEngine
 		m_LightsBufferDirty = true;
 	}
 
+	void RenderSystem::OnGlobalLightProbeEntityAdded(Entity entity)
+	{
+	}
+
+	void RenderSystem::OnGlobalLightProbeEntityRemoved(Entity entity)
+	{
+	}
+
 	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
 	{
 		m_ParticleManager.OnEmitterEntityRemoved(entity);

@@ -299,6 +299,9 @@ namespace LambdaEngine
 		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
 
+		void OnGlobalLightProbeEntityAdded(Entity entity);
+		void OnGlobalLightProbeEntityRemoved(Entity entity);
+
 		void AddRenderableEntity(
 			Entity entity, 
 			GUID_Lambda meshGUID, 

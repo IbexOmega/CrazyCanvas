@@ -13,6 +13,7 @@
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/ECSCore.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -26,11 +27,12 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+#include "Game/ECS/Components/Rendering/GlobalLightProbeComponent.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
 #include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
-#include "ECS/Systems/Player/WeaponSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/GameConsole.h"
 
 #include "Input/API/Input.h"
@@ -42,8 +44,10 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphEditor.h"
 #include "Rendering/Animation/AnimationGraph.h"
+#include "Rendering/EntityMaskManager.h"
 
 #include "Math/Random.h"
+
 #include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
@@ -53,9 +57,6 @@
 
 #include "Match/Match.h"
 
-#include "Game/Multiplayer/Client/ClientSystem.h"
-
-#include "Rendering/EntityMaskManager.h"
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
@@ -108,6 +109,13 @@ void SandboxState::Init()
 		Match::CreateMatch(&matchDescription);
 	}
 
+	// Global Light Probe
+	{
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<GlobalLightProbeComponent>(entity, GlobalLightProbeComponent());
+	}
+
+	// Load character
 	{
 		GUID_Lambda characterMeshGUID;
 		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
@@ -301,7 +309,6 @@ void SandboxState::Init()
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
 	}
-
 
 	if constexpr (IMGUI_ENABLED)
 	{
