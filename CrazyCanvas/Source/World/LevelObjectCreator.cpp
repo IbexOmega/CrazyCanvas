@@ -1,5 +1,6 @@
 #include "World/LevelObjectCreator.h"
 #include "World/KillPlane.h"
+#include "World/ParticleShower.h"
 #include "World/Level.h"
 
 #include "Audio/AudioAPI.h"
@@ -469,8 +470,8 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 				.GeometryType		= EGeometryType::PLANE,
 				.CollisionGroup		= FCollisionGroup::COLLISION_GROUP_STATIC,
 				.CollisionMask		= ~FCollisionGroup::COLLISION_GROUP_STATIC,
-				.EntityID			= entity
-				//.CallbackFunction	= &KillPlaneCallback
+				.EntityID			= entity,
+				.CallbackFunction	= &KillPlaneCallback
 			}
 		}
 	};
@@ -524,8 +525,8 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 				/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
 				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
 				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* EntityID*/			entity
-				/* CallbackFunction*/
+				/* EntityID*/			entity,
+				/* CallbackFunction*/	&ParticleShowerCallback
 			},
 		},
 	};

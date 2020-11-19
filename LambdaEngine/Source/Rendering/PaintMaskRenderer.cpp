@@ -177,12 +177,12 @@ namespace LambdaEngine
 	}
 
 	void PaintMaskRenderer::UpdateTextureResource(
-		const String& resourceName, 
-		const TextureView* const * ppPerImageTextureViews, 
+		const String& resourceName,
+		const TextureView* const * ppPerImageTextureViews,
 		const TextureView* const* ppPerSubImageTextureViews,
 		const Sampler* const* ppPerImageSamplers,
-		uint32 imageCount, 
-		uint32 subImageCount, 
+		uint32 imageCount,
+		uint32 subImageCount,
 		bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
@@ -267,7 +267,7 @@ namespace LambdaEngine
 		m_AliveDescriptorSetList.Clear();
 
 		m_pDrawArgs = pDrawArgs;
-		
+
 		uint32 backBufferCount = m_BackBuffers.GetSize();
 		for (uint32 b = 0; b < backBufferCount; b++)
 		{
@@ -308,7 +308,7 @@ namespace LambdaEngine
 					m_DeadDescriptorSetList.PushBack(key);
 				}
 			}
-			
+
 			for (auto& key : m_DeadDescriptorSetList)
 			{
 				m_VerticesInstanceDescriptorSetMap.erase(key);
@@ -339,11 +339,11 @@ namespace LambdaEngine
 							TextureView*	pTextureView	= extension.ppTextureViews[0];
 							Buffer*			pReadBackBuffer	= extension.ppReadBackBuffers[0];
 							m_RenderTargets.PushBack(
-								{ 
-									.pTextureView		= pTextureView, 
+								{
+									.pTextureView		= pTextureView,
 									.pReadBackbuffer	= pReadBackBuffer,
-									.DrawArgIndex		= d, 
-									.InstanceIndex		= i 
+									.DrawArgIndex		= d,
+									.InstanceIndex		= i
 								});
 						}
 					}
@@ -380,7 +380,7 @@ namespace LambdaEngine
 		}
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
-		
+
 		// Delete old resources
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
@@ -403,7 +403,7 @@ namespace LambdaEngine
 					RenderTarget&	renderTargetDesc	= m_RenderTargets[t];
 					const uint32	drawArgIndex		= renderTargetDesc.DrawArgIndex;
 					const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
-				
+
 					// Check if this rendertarget should be cleared
 					bool shouldClear = false;
 					for (Entity drawArgEntity : drawArg.EntityIDs)
@@ -539,7 +539,7 @@ namespace LambdaEngine
 				// Current limit is 10 draw calls per frame - might change in future if needed
 				if (collisionArray->GetSize() > MAX_PAINT_PER_FRAME)
 				{
-					size = 10; 
+					size = 10;
 					memcpy(pUniformMapping, collisionArray->GetData(), sizeof(UnwrapData) * size);
 
 					// Handle the swaperino
@@ -630,7 +630,7 @@ namespace LambdaEngine
 				}
 
 				pCommandList->BindDescriptorSetGraphics(
-					m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex], 
+					m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex],
 					m_PipelineLayout.Get(), 2);
 
 				if (m_UnwrapDataDescriptorSet)
@@ -639,17 +639,17 @@ namespace LambdaEngine
 				}
 
 				pCommandList->SetConstantRange(
-					m_PipelineLayout.Get(), 
-					FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, 
-					&instanceIndex, 
-					sizeof(uint32), 
+					m_PipelineLayout.Get(),
+					FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER,
+					&instanceIndex,
+					sizeof(uint32),
 					0);
 
 				pCommandList->SetConstantRange(
-					m_PipelineLayout.Get(), 
-					FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, 
-					&frameSettings, 
-					sizeof(FrameSettings), 
+					m_PipelineLayout.Get(),
+					FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER,
+					&frameSettings,
+					sizeof(FrameSettings),
 					sizeof(uint32));
 
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, 1, 0, 0, 0);
@@ -668,7 +668,7 @@ namespace LambdaEngine
 
 					pCommandList->GenerateMiplevels(
 						pTexture,
-						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 						afterState,
 						false);
 
@@ -697,7 +697,7 @@ namespace LambdaEngine
 
 						pCommandList->TransitionBarrier(
 							pTexture,
-							FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+							FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
 							FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
 							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
 							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
