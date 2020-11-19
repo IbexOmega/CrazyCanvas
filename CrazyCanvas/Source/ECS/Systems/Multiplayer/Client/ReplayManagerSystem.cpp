@@ -53,7 +53,7 @@ void ReplayManagerSystem::FixedTickMainThread(Timestamp deltaTime)
 
 	for (ReplayBaseSystem* pSystem : m_ReplaySystems)
 	{
-		pSystem->PlaySimulationTick(deltaTime, dt, m_SimulationTick);
+		pSystem->PlaySimulationTick(dt, m_SimulationTick);
 	}
 
 	while (true)
@@ -96,7 +96,7 @@ void ReplayManagerSystem::ReplaySimulationTicksFrom(int32 simulationTick)
 	{
 		for (ReplayBaseSystem* pSystem : m_ReplaySystems)
 		{
-			pSystem->ReplaySimulationTick(deltaTime, dt, index, tick);
+			pSystem->ReplaySimulationTick(dt, index, tick);
 		}
 		index++;
 	}

@@ -257,21 +257,6 @@ void SandboxState::Init()
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
-
-		// Audio
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("halo_theme.wav");
-		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc =
-		{
-			.pName = "RobotSoundInstance",
-			.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
-			.Flags = FSoundModeFlags::SOUND_MODE_NONE,
-			.Position = position,
-			.Volume = 0.03f
-		};
-
-		pSoundInstance->Init(&desc);
-		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
 	// Emitter

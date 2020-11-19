@@ -29,6 +29,8 @@
 
 #include "Audio/AudioAPI.h"
 
+#include "Teams/TeamHelper.h"
+
 using namespace LambdaEngine;
 
 MatchClient::~MatchClient()

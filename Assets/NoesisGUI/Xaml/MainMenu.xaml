@@ -85,7 +85,7 @@
             </Grid>
 
             <!--Ray Tracing Toggle-->
-            <Grid>
+            <!-- <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="1*" />
@@ -93,6 +93,17 @@
 
                 <Label Content="Ray Tracing" Foreground="White" FontSize="29.333" />
                 <CheckBox x:Name="RayTracingCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+            </Grid> -->
+
+            <!--Ray Tracing Toggle-->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <Label Content="Fullscreen" Foreground="White" FontSize="29.333" />
+                <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" VerticalAlignment="Center" />
             </Grid>
 
             <!--Volume-->
@@ -130,7 +141,7 @@
         </StackPanel>
     </Grid>
     </Viewbox>
-  
+
     <!--Key bindings grid-->
   <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
     <Grid x:Name="KeyBindingsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Collapsed">
@@ -210,15 +221,15 @@
           <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_JUMP" Content="" Grid.Column="1" Margin="50 5 50 5" />
         </Grid>
 
-        <!--Sprint-->
+        <!--Walk-->
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
             <ColumnDefinition Width="1*" />
           </Grid.ColumnDefinitions>
 
-          <Label Content="Sprint" Foreground="White" FontSize="29.333" />
-          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_SPRINT" Content="" Grid.Column="1" Margin="50 5 50 5" />
+          <Label Content="Walk" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_WALK" Content="" Grid.Column="1" Margin="50 5 50 5" />
         </Grid>
 
         <!--Attack Title-->
