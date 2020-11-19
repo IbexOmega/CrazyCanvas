@@ -34,6 +34,8 @@
 
 #include "Lobby/PlayerManagerClient.h"
 
+#include "Game/ECS/Systems/CameraSystem.h"
+
 #include <string>
 
 using namespace LambdaEngine;
@@ -69,12 +71,14 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplySettingsClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelSettingsClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeKeyBindingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeControlsClick);
 	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnVolumeSliderChanged);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnFOVSliderChanged);
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyKeyBindingsClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelKeyBindingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyControlsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelControlsClick);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnLookSensitivityChanged);
 
 	return false;
 }
@@ -294,6 +298,9 @@ void HUDGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const No
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
+	//FOV
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
+
 	EngineConfig::WriteToFile();
 
 	OnButtonBackClick(pSender, args);
@@ -305,12 +312,15 @@ void HUDGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const N
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
 
+	//FOV
+	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
 	SetDefaultSettings();
 
 	OnButtonBackClick(pSender, args);
 }
 
-void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void HUDGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -321,8 +331,8 @@ void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
-	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
-	m_ContextStack.push(m_pKeyBindingsGrid);
+	m_pControlsGrid->SetVisibility(Noesis::Visibility_Visible);
+	m_ContextStack.push(m_pControlsGrid);
 }
 
 void HUDGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
@@ -335,6 +345,12 @@ void HUDGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis:
 	float maxVolume = pVolumeSlider->GetMaximum();
 	volume /= maxVolume;
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
+}
+
+void HUDGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
 }
 
 void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -354,7 +370,7 @@ void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::Routed
 	m_ListenToCallbacks = true;
 }
 
-void HUDGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void HUDGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Go through all keys to set - and set them
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
@@ -366,10 +382,12 @@ void HUDGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const
 	}
 	m_KeysToSet.clear();
 
+	InputActionSystem::SetLookSensitivity(m_LookSensitivityPercentageToSet);
+
 	OnButtonBackClick(pSender, args);
 }
 
-void HUDGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void HUDGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Reset
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
@@ -395,6 +413,13 @@ void HUDGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 	m_KeysToSet.clear();
 
 	OnButtonBackClick(pSender, args);
+}
+
+void HUDGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pLookSensitivitySlider = reinterpret_cast<Noesis::Slider*>(pSender);
+
+	m_LookSensitivityPercentageToSet = pLookSensitivitySlider->GetValue() / pLookSensitivitySlider->GetMaximum();
 }
 
 void HUDGUI::UpdateCountdown(uint8 countDownTime)
@@ -732,7 +757,7 @@ void HUDGUI::InitGUI()
 	// Main Grids
 	m_pEscapeGrid			= FrameworkElement::FindName<Grid>("EscapeGrid");
 	m_pSettingsGrid			= FrameworkElement::FindName<Grid>("SettingsGrid");
-	m_pKeyBindingsGrid		= FrameworkElement::FindName<Grid>("KeyBindingsGrid");
+	m_pControlsGrid			= FrameworkElement::FindName<Grid>("ControlsGrid");
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
@@ -749,7 +774,14 @@ void HUDGUI::SetDefaultSettings()
 	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
+	//Set initial FOV
+	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
+	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
 	SetDefaultKeyBindings();
+
+	Noesis::Slider* pLookSensitivitySlider = FrameworkElement::FindName<Slider>("LookSensitivitySlider");
+	pLookSensitivitySlider->SetValue(InputActionSystem::GetLookSensitivityPercentage() * pLookSensitivitySlider->GetMaximum());
 
 	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing Toggle
