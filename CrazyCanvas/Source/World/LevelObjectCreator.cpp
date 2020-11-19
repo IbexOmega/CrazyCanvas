@@ -1127,12 +1127,12 @@ bool LevelObjectCreator::CreateProjectile(
 				.Gravity = -4.f,
 				.LifeTime = 2.0f,
 				.RadiusRandomness = 0.5f,
-				.BeginRadius = 0.1f,
+				.BeginRadius = 0.5f,
 				.FrictionFactor = 0.f,
 				.Bounciness = 0.f,
-				.TileIndex = 14,
+				.TileIndex = 0,
 				.AnimationCount = 1,
-				.FirstAnimationIndex = 14,
+				.FirstAnimationIndex = 0,
 				.Color = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f),
 			}
 		);
