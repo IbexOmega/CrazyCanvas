@@ -452,12 +452,12 @@ namespace LambdaEngine
 		void UpdateRelativeResourceDimensions(InternalResourceUpdateDesc* pResourceUpdateDesc);
 
 		void ExecuteSynchronizationStage(
-			SynchronizationStage* pSynchronizationStage, 
-			CommandAllocator* pGraphicsCommandAllocator, 
-			CommandList* pGraphicsCommandList, 
-			CommandAllocator* pComputeCommandAllocator, 
-			CommandList* pComputeCommandList, 
-			CommandList** ppFirstExecutionStage, 
+			SynchronizationStage* pSynchronizationStage,
+			CommandAllocator* pGraphicsCommandAllocator,
+			CommandList* pGraphicsCommandList,
+			CommandAllocator* pComputeCommandAllocator,
+			CommandList* pComputeCommandList,
+			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondExecutionStage);
 		
 		void ExecuteGraphicsRenderStage(
