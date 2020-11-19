@@ -2,8 +2,9 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "CubemapHelper.glsl"
+#include "../Defines.glsl"
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 // Pushconstants
 layout(push_constant) uniform PushConstants
@@ -27,9 +28,28 @@ void main()
 
 	// Map the UV coords of the cubemap face to a direction
 	// [(0, 0), (1, 1)] => [(-0.5, -0.5), (0.5, 0.5)]
-	vec3 direction	= normalize(vec3((texCoord.xy / float(u_PC.Size)) - 0.5f, 0.5f));
-	direction		= normalize(ROTATE_UV[face] * direction);
+	vec3 normal	= normalize(vec3((texCoord.xy / float(u_PC.Size)) - 0.5f, 0.5f));
+	normal		= normalize(ROTATE_UV[face] * normal);
 	
-	vec4 color = texture(u_Source, direction);
-	imageStore(u_CubeMap, ivec3(texCoord, face), color);
+	vec3 up		= vec3(0.0f, 1.0f, 0.0f);
+	vec3 right	= cross(up, normal);
+	up			= cross(normal, right);
+
+	float	sampleDelta	= 0.025f;
+	float	nrSamples	= 0.0f;
+	vec3	irradiance	= vec3(0.0f, 0.0f, 0.0f);
+	for (float phi = 0.0f; phi < 2.0f * PI; phi += sampleDelta)
+	{
+		for (float theta = 0.0f; theta < 0.5f * PI; theta += sampleDelta)
+		{
+			vec3 tangentSample	= vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+			vec3 sampleVec		= tangentSample.x * right + tangentSample.y * up + tangentSample.z * normal;
+
+			irradiance	+= texture(u_Source, sampleVec, 0).rgb * cos(theta) * sin(theta);
+			nrSamples	+= 1.0f;
+		}
+	}
+	
+	irradiance = PI * irradiance * (1.0f / float(nrSamples));
+	imageStore(u_CubeMap, ivec3(texCoord, face), vec4(irradiance, 1.0f));
 }

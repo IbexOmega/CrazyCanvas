@@ -661,11 +661,20 @@ namespace LambdaEngine
 			for (Entity entity : m_GlobalLightProbeEntities)
 			{
 				const GlobalLightProbeComponent& lightProbeComp = pGlobalLightProbeComponent->GetConstData(entity);
-				UpdateLightProbe(m_GlobalLightProbe, lightProbeComp.Data);
+				if (m_GlobalLightProbe.DiffuseResolution != lightProbeComp.Data.DiffuseResolution)
+				{
+					m_GlobalLightProbe.DiffuseResolution = lightProbeComp.Data.DiffuseResolution;
+					m_GlobalLightProbeDirty = true;
+				}
+
+				if (m_GlobalLightProbe.SpecularResolution != lightProbeComp.Data.SpecularResolution)
+				{
+					m_GlobalLightProbe.SpecularResolution = lightProbeComp.Data.SpecularResolution;
+					m_GlobalLightProbeDirty = true;
+				}
 			}
 
-			m_GlobalLightProbeDirty			= true;
-			m_GlobalLightProbeNeedsUpdate	= false;
+			m_GlobalLightProbeNeedsUpdate = false;
 		}
 
 		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
@@ -1696,108 +1705,129 @@ namespace LambdaEngine
 		m_LightsBufferDirty = true;
 	}
 
-	void RenderSystem::UpdateLightProbe(LightProbe& lightProbe, const LightProbeData& data)
+	void RenderSystem::UpdateLightProbeResources(CommandList* pCommandList)
 	{
-		const uint32 modFrameIndex = GetModFrameIndex();
-		if (lightProbe.DiffuseResolution != data.DiffuseResolution)
+		const uint64 modFrameIndex = GetModFrameIndex();
+		if (m_GlobalLightProbeDirty)
 		{
-			lightProbe.DiffuseResolution = data.DiffuseResolution;
-
-			if (lightProbe.Diffuse)
+			// Update diffuse
+			if (m_GlobalLightProbe.Diffuse)
 			{
-				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.Diffuse.GetAndAddRef());
-				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.DiffuseView.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(m_GlobalLightProbe.Diffuse.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(m_GlobalLightProbe.DiffuseView.GetAndAddRef());
 			}
 
-			TextureDesc textureDesc;
-			textureDesc.DebugName	= "LightProbe Diffuse";
-			textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
-			textureDesc.ArrayCount	= 6;
-			textureDesc.Depth		= 1;
-			textureDesc.Flags = 
-				FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS | 
-				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
-			textureDesc.Width		= data.DiffuseResolution;
-			textureDesc.Height		= data.DiffuseResolution;
-			textureDesc.Format		= EFormat::FORMAT_R16G16B16A16_SFLOAT;
-			textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			textureDesc.Miplevels	= 1;
-			textureDesc.SampleCount = 1;
-			
-			lightProbe.Diffuse = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
-			if (!lightProbe.Diffuse)
 			{
-				LOG_WARNING("[RenderSystem] Failed to create diffuse lightprobe");
+				TextureDesc textureDesc;
+				textureDesc.DebugName	= "LightProbe Diffuse";
+				textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+				textureDesc.ArrayCount	= 6;
+				textureDesc.Depth		= 1;
+				textureDesc.Flags		=
+					FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE	|
+					FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS	|
+					FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+				textureDesc.Width		= m_GlobalLightProbe.DiffuseResolution;
+				textureDesc.Height		= m_GlobalLightProbe.DiffuseResolution;
+				textureDesc.Format		= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+				textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+				textureDesc.Miplevels	= 1;
+				textureDesc.SampleCount	= 1;
+
+				m_GlobalLightProbe.Diffuse = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+				if (!m_GlobalLightProbe.Diffuse)
+				{
+					LOG_WARNING("[RenderSystem] Failed to create diffuse lightprobe");
+				}
+
+				pCommandList->TransitionBarrier(
+					m_GlobalLightProbe.Diffuse.Get(),
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+					0, 
+					FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+					ETextureState::TEXTURE_STATE_UNKNOWN,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+				TextureViewDesc textureViewDesc;
+				textureViewDesc.DebugName	= "LightProbe Diffuse View";
+				textureViewDesc.ArrayCount	= 6;
+				textureViewDesc.Format		= textureDesc.Format;
+				textureViewDesc.ArrayIndex	= 0;
+				textureViewDesc.Flags		=
+					FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
+					FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+				textureViewDesc.Miplevel		= 0;
+				textureViewDesc.MiplevelCount	= 1;
+				textureViewDesc.pTexture		= m_GlobalLightProbe.Diffuse.Get();
+				textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+
+				m_GlobalLightProbe.DiffuseView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+				if (!m_GlobalLightProbe.DiffuseView)
+				{
+					LOG_WARNING("[RenderSystem] Failed to create Diffuse lightprobe View");
+				}
 			}
 
-			TextureViewDesc textureViewDesc;
-			textureViewDesc.DebugName		= "LightProbe Diffuse View";
-			textureViewDesc.ArrayCount		= 6;
-			textureViewDesc.Format			= textureDesc.Format;
-			textureViewDesc.ArrayIndex		= 0;
-			textureViewDesc.Flags			= 
-				FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
-				FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
-			textureViewDesc.Miplevel		= 0;
-			textureViewDesc.MiplevelCount	= 1;
-			textureViewDesc.pTexture		= lightProbe.Diffuse.Get();
-			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
-
-			lightProbe.DiffuseView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-			if (!lightProbe.DiffuseView)
+			// Update specular
+			if (m_GlobalLightProbe.Specular)
 			{
-				LOG_WARNING("[RenderSystem] Failed to create Diffuse lightprobe View");
-			}
-		}
-
-		if (lightProbe.SpecularResolution != data.SpecularResolution)
-		{
-			lightProbe.SpecularResolution = data.SpecularResolution;
-
-			if (lightProbe.Specular)
-			{
-				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.Specular.GetAndAddRef());
-				m_ResourcesToRemove[modFrameIndex].EmplaceBack(lightProbe.SpecularView.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(m_GlobalLightProbe.Specular.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(m_GlobalLightProbe.SpecularView.GetAndAddRef());
 			}
 
-			TextureDesc textureDesc;
-			textureDesc.DebugName	= "LightProbe Specular";
-			textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
-			textureDesc.ArrayCount	= 6;
-			textureDesc.Depth		= 1;
-			textureDesc.Flags =
-				FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
-				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
-			textureDesc.Width		= data.SpecularResolution;
-			textureDesc.Height		= data.SpecularResolution;
-			textureDesc.Format		= EFormat::FORMAT_R16G16B16A16_SFLOAT;
-			textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			textureDesc.Miplevels	= 1;
-			textureDesc.SampleCount = 1;
-
-			lightProbe.Specular = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
-			if (!lightProbe.Specular)
 			{
-				LOG_WARNING("[RenderSystem] Failed to create Specular lightprobe");
-			}
+				TextureDesc textureDesc;
+				textureDesc.DebugName	= "LightProbe Specular";
+				textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+				textureDesc.ArrayCount	= 6;
+				textureDesc.Depth		= 1;
+				textureDesc.Flags		=
+					FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE	|
+					FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS	|
+					FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+				textureDesc.Width			= m_GlobalLightProbe.SpecularResolution;
+				textureDesc.Height			= m_GlobalLightProbe.SpecularResolution;
+				textureDesc.Format			= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+				textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+				textureDesc.Miplevels		= 1;
+				textureDesc.SampleCount		= 1;
 
-			TextureViewDesc textureViewDesc;
-			textureViewDesc.DebugName		= "LightProbe Specular View";
-			textureViewDesc.ArrayCount		= 6;
-			textureViewDesc.ArrayIndex		= 0;
-			textureViewDesc.Flags =
-				FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
-				FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
-			textureViewDesc.Miplevel		= 0;
-			textureViewDesc.MiplevelCount	= 1;
-			textureViewDesc.Format			= textureDesc.Format;
-			textureViewDesc.pTexture		= lightProbe.Specular.Get();
-			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+				m_GlobalLightProbe.Specular = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+				if (!m_GlobalLightProbe.Specular)
+				{
+					LOG_WARNING("[RenderSystem] Failed to create Specular lightprobe");
+				}
 
-			lightProbe.SpecularView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
-			if (!lightProbe.SpecularView)
-			{
-				LOG_WARNING("[RenderSystem] Failed to create specular lightprobe view");
+				pCommandList->TransitionBarrier(
+					m_GlobalLightProbe.Specular.Get(),
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+					0,
+					FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+					ETextureState::TEXTURE_STATE_UNKNOWN,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+				TextureViewDesc textureViewDesc;
+				textureViewDesc.DebugName	= "LightProbe Specular View";
+				textureViewDesc.ArrayCount	= 6;
+				textureViewDesc.ArrayIndex	= 0;
+				textureViewDesc.Flags		=
+					FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
+					FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+				textureViewDesc.Miplevel		= 0;
+				textureViewDesc.MiplevelCount	= 1;
+				textureViewDesc.Format			= textureDesc.Format;
+				textureViewDesc.pTexture		= m_GlobalLightProbe.Specular.Get();
+				textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+
+				m_GlobalLightProbe.SpecularView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+				if (!m_GlobalLightProbe.SpecularView)
+				{
+					LOG_WARNING("[RenderSystem] Failed to create specular lightprobe view");
+				}
+
+				pCommandList->FlushDeferredBarriers();
 			}
 		}
 	}
@@ -1856,8 +1886,8 @@ namespace LambdaEngine
 			}
 
 			LightUpdateData lightTextureUpdate = {};
-			lightTextureUpdate.PointLightIndex = index;
-			lightTextureUpdate.TextureIndex = m_PointLights[index].TextureIndex;
+			lightTextureUpdate.PointLightIndex	= index;
+			lightTextureUpdate.TextureIndex		= m_PointLights[index].TextureIndex;
 			m_PointLightTextureUpdateQueue.PushBack(lightTextureUpdate);
 
 			m_PointLightsDirty = true;
@@ -2097,6 +2127,11 @@ namespace LambdaEngine
 		{
 			UpdateLightsBuffer(pGraphicsCommandList);
 			UpdatePointLightTextureResource(pGraphicsCommandList);
+		}
+
+		// Update Global LightProbe resources
+		{
+			UpdateLightProbeResources(pComputeCommandList);
 		}
 
 		// Update Paint Mask Color Data

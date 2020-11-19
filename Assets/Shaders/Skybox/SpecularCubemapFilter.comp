@@ -3,12 +3,13 @@
 
 #include "CubemapHelper.glsl"
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 // Pushconstants
 layout(push_constant) uniform PushConstants
 {
-	uint Size;
+	uint SourceSize;
+	uint DestSize;
 } u_PC;
 
 // Textures
@@ -18,7 +19,7 @@ layout(binding = 1, set = 0, rgba16f) restrict writeonly uniform imageCube	u_Cub
 void main()
 {
 	vec2 texCoord	= vec2(gl_GlobalInvocationID.xy);
-	if (texCoord.x > u_PC.Size || texCoord.y > u_PC.Size)
+	if (texCoord.x > u_PC.DestSize || texCoord.y > u_PC.DestSize)
 	{
 		return;
 	}
@@ -27,7 +28,7 @@ void main()
 
 	// Map the UV coords of the cubemap face to a direction
 	// [(0, 0), (1, 1)] => [(-0.5, -0.5), (0.5, 0.5)]
-	vec3 direction	= normalize(vec3((texCoord.xy / float(u_PC.Size)) - 0.5f, 0.5f));
+	vec3 direction	= normalize(vec3((texCoord.xy / float(u_PC.DestSize)) - 0.5f, 0.5f));
 	direction		= normalize(ROTATE_UV[face] * direction);
 	
 	vec4 color = texture(u_Source, direction);

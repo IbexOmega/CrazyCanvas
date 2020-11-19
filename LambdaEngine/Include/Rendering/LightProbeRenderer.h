@@ -3,6 +3,9 @@
 
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/CommandAllocator.h"
+#include "Rendering/Core/API/DescriptorHeap.h"
+#include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/PipelineLayout.h"
 
 namespace LambdaEngine
 {
@@ -51,9 +54,14 @@ namespace LambdaEngine
 		}
 
 	private:
-		RenderGraph* m_pRenderGraph = nullptr;
-		uint32 m_ModFrameIndex		= 0;
-		uint32 m_BackBufferCount	= 0;
+		const Texture*		m_pEnvironmentMap		= nullptr;
+		const TextureView*	m_pEnvironmentMapView	= nullptr;
+		const Texture*		m_pGlobalSpecular		= nullptr;
+		const TextureView*	m_pGlobalSpecularView	= nullptr;
+		const Texture*		m_pGlobalDiffuse		= nullptr;
+		const TextureView*	m_pGlobalDiffuseView	= nullptr;
+		
+		bool m_NeedsUpdate = true;
 
 		TArray<TSharedRef<CommandList>>			m_ComputeCommandLists;
 		TArray<TSharedRef<CommandAllocator>>	m_ComputeCommandAllocators;
@@ -62,5 +70,11 @@ namespace LambdaEngine
 		TSharedRef<PipelineLayout>	m_SpecularFilterLayout;
 		uint64 m_DiffuseFilterState;
 		TSharedRef<PipelineLayout>	m_DiffuseFilterLayout;
+
+		TSharedRef<DescriptorHeap> m_FilterDescriptorHeap;
+		TArray<TSharedRef<DescriptorSet>> m_SpecularFilterDescriptorSets;
+		TArray<TSharedRef<DescriptorSet>> m_DiffuseFilterDescriptorSets;
+
+		TArray<TSharedRef<DeviceChild>> m_ResourcesToDestroy;
 	};
 }

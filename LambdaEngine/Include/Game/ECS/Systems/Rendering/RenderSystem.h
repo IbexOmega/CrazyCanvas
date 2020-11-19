@@ -264,8 +264,8 @@ namespace LambdaEngine
 			TSharedRef<TextureView>	SpecularView;
 			TSharedRef<Texture>		Diffuse;
 			TSharedRef<TextureView>	DiffuseView;
-			uint32 SpecularResolution	= 0;
-			uint32 DiffuseResolution	= 0;
+			uint32 SpecularResolution	= 128;
+			uint32 DiffuseResolution	= 64;
 		};
 
 	public:
@@ -360,7 +360,7 @@ namespace LambdaEngine
 			float zNear, 
 			float zFar);
 
-		void UpdateLightProbe(LightProbe& lightProbe, const LightProbeData& data);
+		void UpdateLightProbeResources(CommandList* pCommandList);
 		
 		void UpdatePointLight(
 			Entity entity, 
@@ -452,8 +452,8 @@ namespace LambdaEngine
 
 		// Global lightprobe, there can only be one global
 		LightProbe m_GlobalLightProbe;
-		bool m_GlobalLightProbeDirty		= false;
-		bool m_GlobalLightProbeNeedsUpdate	= false;
+		bool m_GlobalLightProbeDirty		= true;
+		bool m_GlobalLightProbeNeedsUpdate	= true;
 
 		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
