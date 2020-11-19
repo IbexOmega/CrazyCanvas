@@ -16,7 +16,6 @@ public:
 
 	static void AddNetworkDiscoveryTarget(LambdaEngine::IPAddress* pAddress);
 	static void RemoveNetworkDiscoveryTarget(LambdaEngine::IPAddress* pAddress);
-
 	static void Disconnect(const LambdaEngine::String& reason);
 };
 

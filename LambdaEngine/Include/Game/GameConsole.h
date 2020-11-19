@@ -48,7 +48,7 @@ namespace LambdaEngine
 		};
 
 		bool InitCommands();
-		
+
 		int ExecCommand(const std::string& data);
 
 		static void FillArg(Arg& arg, std::string token);
@@ -63,20 +63,20 @@ namespace LambdaEngine
 		TArray<std::string> m_Candidates;
 		TArray<Item> m_Items;
 		TArray<std::string> m_History;
-		
+
 		int32 m_HistoryIndex { -1 };
 
 		char m_Buf[256];
 
 		bool m_ScrollToBottom = false;
 		bool m_IsActive = false;
-		
+
 		int32 m_ActivePopupIndex = -1;
 		bool m_PopupSelectionChanged = false;
 		bool m_UpdatePositionCursor = false;
-		
+
 		std::string m_PopupSelectedText = "";
-		
+
 		std::unordered_map<std::string, std::pair<ConsoleCommand, std::function<void(CallbackInput&)>>> m_CommandMap;
 	};
 }

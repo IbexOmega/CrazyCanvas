@@ -13,9 +13,9 @@ protected:
 	void RegisterSystem(const LambdaEngine::String& systemName, LambdaEngine::SystemRegistration& systemRegistration) override;
 
 private:
-	virtual void PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, int32 simulationTick) = 0;
+	virtual void PlaySimulationTick(float32 dt, int32 simulationTick) = 0;
 	virtual void SurrenderGameState(int32 simulationTick) = 0;
-	virtual void ReplaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, uint32 i, int32 simulationTick) = 0;
+	virtual void ReplaySimulationTick(float32 dt, uint32 i, int32 simulationTick) = 0;
 	virtual bool CompareNextGamesStates(int32 simulationTick) = 0;
 	virtual void DeleteGameState(int32 simulationTick) = 0;
 	virtual int32 GetNextAvailableSimulationTick() = 0;
@@ -31,15 +31,15 @@ public:
 
 protected:
 	void RegisterServerGameStates(const LambdaEngine::TArray<S>& gameStates);
-	virtual void PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, C& clientState) = 0;
-	virtual void ReplayGameState(LambdaEngine::Timestamp deltaTime, float32 dt, C& clientState) = 0;
+	virtual void PlaySimulationTick(float32 dt, C& clientState) = 0;
+	virtual void ReplayGameState(float32 dt, C& clientState) = 0;
 	virtual void SurrenderGameState(const S& serverState) = 0;
 	virtual bool CompareGamesStates(const C& clientState, const S& serverState) = 0;
 
 private:
-	void PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, int32 simulationTick) override;
+	void PlaySimulationTick(float32 dt, int32 simulationTick) override;
 	void SurrenderGameState(int32 simulationTick) override;
-	void ReplaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, uint32 i, int32 simulationTick) override;
+	void ReplaySimulationTick(float32 dt, uint32 i, int32 simulationTick) override;
 	bool CompareNextGamesStates(int32 simulationTick) override;
 	void DeleteGameState(int32 simulationTick) override;
 	int32 GetNextAvailableSimulationTick() override;
@@ -59,11 +59,11 @@ void ReplaySystem<C, S>::RegisterServerGameStates(const LambdaEngine::TArray<S>&
 }
 
 template<class C, class S>
-void ReplaySystem<C, S>::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, int32 simulationTick)
+void ReplaySystem<C, S>::PlaySimulationTick(float32 dt, int32 simulationTick)
 {
 	C clientState;
 	clientState.SimulationTick = simulationTick;
-	PlaySimulationTick(deltaTime, dt, clientState);
+	PlaySimulationTick(dt, clientState);
 	m_FramesToReconcile.PushBack(clientState);
 }
 
@@ -79,13 +79,13 @@ void ReplaySystem<C, S>::SurrenderGameState(int32 simulationTick)
 }
 
 template<class C, class S>
-void ReplaySystem<C, S>::ReplaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, uint32 i, int32 simulationTick)
+void ReplaySystem<C, S>::ReplaySimulationTick(float32 dt, uint32 i, int32 simulationTick)
 {
 	C& clientState = m_FramesToReconcile[i];
 
 	ASSERT(clientState.SimulationTick == simulationTick);
 
-	ReplayGameState(deltaTime, dt, clientState);
+	ReplayGameState(dt, clientState);
 }
 
 template<class C, class S>

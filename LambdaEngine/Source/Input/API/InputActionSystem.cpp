@@ -20,7 +20,8 @@ namespace LambdaEngine
 		{EAction::ACTION_MOVE_BACKWARD, "S"},
 		{EAction::ACTION_MOVE_LEFT, "A"},
 		{EAction::ACTION_MOVE_RIGHT, "D"},
-		{EAction::ACTION_MOVE_SPRINT, "LEFT_SHIFT"},
+		{EAction::ACTION_MOVE_WALK, "LEFT_SHIFT"},
+		{EAction::ACTION_MOVE_SPRINT, "LEFT_ALT"},
 		{EAction::ACTION_MOVE_CROUCH, "LEFT_CONTROL"},
 		{EAction::ACTION_MOVE_JUMP, "SPACE"},
 

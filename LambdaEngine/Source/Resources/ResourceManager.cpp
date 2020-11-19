@@ -286,6 +286,7 @@ namespace LambdaEngine
 		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
 			meshGUID = loadedMeshGUID->second;
+			return;
 		}
 
 		int32 assimpFlags =
@@ -326,6 +327,8 @@ namespace LambdaEngine
 			{
 				animations = loadedAnimations->second;
 			}
+
+			return;
 		}
 
 		int32 assimpFlags =
@@ -475,7 +478,11 @@ namespace LambdaEngine
 		}
 	}
 
-	void ResourceManager::LoadMeshAndMaterialFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID, TArray<GUID_Lambda>& animations)
+	void ResourceManager::LoadMeshAndMaterialFromFile(
+		const String& filename, 
+		GUID_Lambda& meshGUID, 
+		GUID_Lambda& materialGUID, 
+		TArray<GUID_Lambda>& animations)
 	{
 		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
@@ -488,6 +495,8 @@ namespace LambdaEngine
 
 			auto loadedMaterialGUID = s_MaterialNamesToGUIDs.find(filename);
 			materialGUID = loadedMaterialGUID != s_MaterialNamesToGUIDs.end() ? loadedMaterialGUID->second : GUID_MATERIAL_DEFAULT;
+
+			return;
 		}
 
 		int32 assimpFlags =
@@ -616,7 +625,12 @@ namespace LambdaEngine
 		return animations;
 	}
 
-	GUID_Lambda ResourceManager::LoadMeshFromMemory(const String& name, const Vertex* pVertices, uint32 numVertices, const uint32* pIndices, uint32 numIndices)
+	GUID_Lambda ResourceManager::LoadMeshFromMemory(
+		const String& name, 
+		const Vertex* pVertices, 
+		uint32 numVertices, 
+		const uint32* pIndices, 
+		uint32 numIndices)
 	{
 		auto loadedMeshGUID = s_MeshNamesToGUIDs.find(name);
 		if (loadedMeshGUID != s_MeshNamesToGUIDs.end())
@@ -718,7 +732,13 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips)
+	GUID_Lambda ResourceManager::LoadTextureArrayFromFile(
+		const String& name, 
+		const String* pFilenames, 
+		uint32 count, 
+		EFormat format, 
+		bool generateMips, 
+		bool linearFilteringMips)
 	{
 		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(name);
 		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
@@ -760,7 +780,13 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadCubeTexturesArrayFromFile(const String& name, const String* pFilenames, uint32 count, EFormat format, bool generateMips, bool linearFilteringMips)
+	GUID_Lambda ResourceManager::LoadCubeTexturesArrayFromFile(
+		const String& name, 
+		const String* pFilenames, 
+		uint32 count, 
+		EFormat format, 
+		bool generateMips, 
+		bool linearFilteringMips)
 	{
 		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(name);
 		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
@@ -768,7 +794,7 @@ namespace LambdaEngine
 			return loadedTextureGUID->second;
 		}
 
-		uint32 textureCount = count * 6U;
+		const uint32 textureCount = count * 6U;
 
 		GUID_Lambda		guid				= GUID_NONE;
 		Texture**		ppMappedTexture		= nullptr;
@@ -783,11 +809,18 @@ namespace LambdaEngine
 			s_TextureNamesToGUIDs[name]	= guid;
 		}
 
-		Texture* pTexture = ResourceLoader::LoadCubeTexturesArrayFromFile(name, TEXTURE_DIR, pFilenames, textureCount, format, generateMips, linearFilteringMips);
+		Texture* pTexture = ResourceLoader::LoadCubeTexturesArrayFromFile(
+			name, 
+			TEXTURE_DIR, 
+			pFilenames, 
+			textureCount, 
+			format, 
+			generateMips, 
+			linearFilteringMips);
 
 		(*ppMappedTexture) = pTexture;
 
-		TextureDesc textureDesc = pTexture->GetDesc();
+		const TextureDesc& textureDesc = pTexture->GetDesc();
 
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.DebugName		= name + " Texture View";
@@ -804,12 +837,71 @@ namespace LambdaEngine
 		return guid;
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureFromFile(const String& filename, EFormat format, bool generateMips, bool linearFiltering)
+	GUID_Lambda ResourceManager::LoadTextureFromFile(
+		const String& filename,
+		EFormat format,
+		bool generateMips,
+		bool linearFiltering)
 	{
 		return LoadTextureArrayFromFile(filename, &filename, 1, format, generateMips, linearFiltering);
 	}
 
-	GUID_Lambda ResourceManager::LoadTextureFromMemory(const String& name, const void* pData, uint32_t width, uint32_t height, EFormat format, uint32_t usageFlags, bool generateMips, bool linearFilteringMips)
+	GUID_Lambda ResourceManager::LoadTextureCubeFromPanormaFile(
+		const String& filename, 
+		EFormat format, 
+		uint32 size, 
+		bool generateMips)
+	{
+		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(filename);
+		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
+		{
+			return loadedTextureGUID->second;
+		}
+
+		GUID_Lambda guid = GUID_NONE;
+		Texture**		ppMappedTexture		= nullptr;
+		TextureView**	ppMappedTextureView	= nullptr;
+
+		//Spinlock
+		{
+			guid = s_NextFreeGUID++;
+			ppMappedTexture			= &s_Textures[guid]; //Creates new entry if not existing
+			ppMappedTextureView		= &s_TextureViews[guid]; //Creates new entry if not existing
+			s_TextureGUIDsToNames[guid]		= filename;
+			s_TextureNamesToGUIDs[filename]	= guid;
+		}
+
+		// Load texture
+		Texture* pTexture	= ResourceLoader::LoadTextureCubeFromPanoramaFile(filename, TEXTURE_DIR, filename, size, format, generateMips);
+		(*ppMappedTexture)	= pTexture;
+
+		const TextureDesc& textureDesc = pTexture->GetDesc();
+
+		// Create texture view
+		TextureViewDesc textureViewDesc = {};
+		textureViewDesc.DebugName		= filename + " Texture View";
+		textureViewDesc.pTexture		= pTexture;
+		textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+		textureViewDesc.Format			= format;
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+		textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
+		textureViewDesc.ArrayCount		= 6;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.ArrayIndex		= 0;
+
+		(*ppMappedTextureView) = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+		return guid;
+	}
+
+	GUID_Lambda ResourceManager::LoadTextureFromMemory(
+		const String& name, 
+		const void* pData, 
+		uint32_t width, 
+		uint32_t height, 
+		EFormat format, 
+		uint32_t usageFlags, 
+		bool generateMips, 
+		bool linearFilteringMips)
 	{
 		auto loadedTextureGUID = s_TextureNamesToGUIDs.find(name);
 		if (loadedTextureGUID != s_TextureNamesToGUIDs.end())
@@ -1015,7 +1107,11 @@ namespace LambdaEngine
 			textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
 			textureDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
 			textureDesc.Type			= ETextureType::TEXTURE_TYPE_2D;
-			textureDesc.Flags			= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS | FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST;
+			textureDesc.Flags			= 
+				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | 
+				FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS | 
+				FTextureFlag::TEXTURE_FLAG_COPY_SRC | 
+				FTextureFlag::TEXTURE_FLAG_COPY_DST;
 			textureDesc.Width			= largestWidth;
 			textureDesc.Height			= largestHeight;
 			textureDesc.Depth			= 1;
@@ -1127,7 +1223,10 @@ namespace LambdaEngine
 			s_pMaterialComputeCommandAllocator->Reset();
 			s_pMaterialComputeCommandList->Begin(nullptr);
 
-			s_pMaterialComputeCommandList->PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &transitionToCopyDstBarrier, 1);
+			s_pMaterialComputeCommandList->PipelineTextureBarriers(
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+				&transitionToCopyDstBarrier, 1);
 
 			s_pMaterialComputeCommandList->BindDescriptorSetCompute(s_pMaterialDescriptorSet, s_pMaterialPipelineLayout, 0);
 
@@ -1160,7 +1259,11 @@ namespace LambdaEngine
 			s_pMaterialComputeCommandList->End();
 
 			signalValue++;
-			RenderAPI::GetComputeQueue()->ExecuteCommandLists(&s_pMaterialComputeCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, s_pMaterialFence, signalValue);
+			RenderAPI::GetComputeQueue()->ExecuteCommandLists(
+				&s_pMaterialComputeCommandList, 1, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, 
+				nullptr, 0, 
+				s_pMaterialFence, signalValue);
 		}
 
 		//Execute Mipmap Pass
@@ -1180,7 +1283,11 @@ namespace LambdaEngine
 				ETextureState::TEXTURE_STATE_GENERAL,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
-			s_pMaterialGraphicsCommandList->GenerateMiplevels(pCombinedMaterialTexture, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, true);
+			s_pMaterialGraphicsCommandList->GenerateMips(
+				pCombinedMaterialTexture, 
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+				true);
 		}
 		else
 		{
@@ -1199,7 +1306,11 @@ namespace LambdaEngine
 		s_pMaterialGraphicsCommandList->End();
 
 		signalValue++;
-		RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&s_pMaterialGraphicsCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, s_pMaterialFence, signalValue - 1, s_pMaterialFence, signalValue);
+		RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
+			&s_pMaterialGraphicsCommandList, 1, 
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
+			s_pMaterialFence, signalValue - 1, 
+			s_pMaterialFence, signalValue);
 
 		s_pMaterialFence->Wait(signalValue, UINT64_MAX);
 

@@ -47,21 +47,8 @@ namespace LambdaEngine
 		CharacterColliderComponent characterColliderComponent = PhysicsSystem::GetInstance()->CreateCharacterCapsule(colliderInfo, std::max(0.0f, capsuleHeight - 2.0f * capsuleRadius), capsuleRadius);
 		pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 
-		// Audio Footsteps
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("walking-short.wav");
-		ISoundInstance3D* pSoundInstance = new SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc = {
-				.pName = "WalkingSoundInstance",
-				.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
-				.Flags = FSoundModeFlags::SOUND_MODE_NONE,
-				.Position = cameraDesc.Position,
-				.Volume = 0.055f
-		};
-		pSoundInstance->Init(&desc);
-		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
-
 		// Listener
-		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->CreateAudioListener() });
+		pECS->AddComponent<ListenerComponent>(entity, { AudioAPI::GetDevice()->GetAudioListener(false) });
 
 		return entity;
 	}

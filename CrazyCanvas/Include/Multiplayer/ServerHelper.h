@@ -62,5 +62,5 @@ bool ServerHelper::SendToAllPlayers(const T& packet, LambdaEngine::IPacketListen
 {
 	VALIDATE_PACKET_TYPE(T)
 	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
-	return pServer->SendReliableStructBroadcast<T>(packet, T::Type(), pListener, pServer->GetClient(pPlayer->GetUID()));
+	return pServer->SendReliableStructBroadcast<T>(packet, T::Type(), pListener, pServer->GetClient(pExcludePlayer->GetUID()));
 }

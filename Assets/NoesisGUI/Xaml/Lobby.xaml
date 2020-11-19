@@ -42,7 +42,6 @@
                x:Key="ChatNameLabelStyle"
                BasedOn="{StaticResource {x:Type Label}}">
             <Setter Property="Grid.Column" Value="0" />
-            <Setter Property="Foreground" Value="#05DFD7" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="Margin" Value="5 5 0 5" />
         </Style>
@@ -126,10 +125,16 @@
         <RowDefinition Height="8*" />
     </Grid.RowDefinitions>
     
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="1*" />
+        <ColumnDefinition Width="2*" />
+    </Grid.ColumnDefinitions>
 
     <Label Content="LOBBY" FontSize="96" Foreground="White" Margin="50 10 0 0"/>
 
-    <Grid Grid.Row="1" Margin="50 50 50 50">
+    <Label x:Name="PlayersLabel" Grid.Column="1" HorizontalAlignment="Center" Content="Players" FontSize="54" Foreground="White" Margin="0 50 0 0"/>
+
+    <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="50 50 50 50">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
             <ColumnDefinition Width="2*" />
@@ -215,7 +220,7 @@
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
-                <ScrollViewer Grid.ColumnSpan="2" VerticalScrollBarVisibility="Visible" HorizontalContentAlignment="Stretch">
+                <ScrollViewer x:Name="ChatScrollViewer" Grid.ColumnSpan="2" VerticalScrollBarVisibility="Visible" HorizontalContentAlignment="Stretch">
                     <StackPanel x:Name="ChatStackPanel">
                     </StackPanel>
                 </ScrollViewer>

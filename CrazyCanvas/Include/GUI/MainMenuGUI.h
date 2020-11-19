@@ -38,6 +38,7 @@ public:
 	void OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
 	// Key bindings (hate my life)
 	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -45,8 +46,9 @@ public:
 	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
 private:
+	friend class HUDGUI;
+
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void SetRenderStagesSleeping();
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
@@ -57,8 +59,9 @@ private:
 	Noesis::Button* m_pSetKeyButton		= nullptr;
 	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
 
-	bool	m_RayTracingEnabled			= false;
+	// bool	m_RayTracingEnabled			= false;
 	bool	m_MeshShadersEnabled		= false;
+	bool	m_FullscreenEnabled			= false;
 
 	Noesis::Grid*	m_pStartGrid		= nullptr;
 	Noesis::Grid*	m_pPlayGrid			= nullptr;

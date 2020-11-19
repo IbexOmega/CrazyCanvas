@@ -13,7 +13,7 @@ namespace LambdaEngine
 	GLSLShaderSource::GLSLShaderSource(const GLSLShaderSourceDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
-		
+
 		m_Desc = *pDesc;
 	}
 
@@ -42,15 +42,15 @@ namespace LambdaEngine
 		shader.setEnvInput(glslang::EShSourceGlsl, shaderType, glslang::EShClientVulkan, clientInputSemanticsVersion);
 		shader.setEnvClient(glslang::EShClientVulkan, vulkanClientVersion);
 		shader.setEnvTarget(glslang::EShTargetSpv, targetVersion);
-		
+
 		DirStackFileIncluder includer;
 		includer.pushExternalLocalDirectory(m_Desc.Directory);
 
-		String preprocessedGLSL; 
+		String preprocessedGLSL;
 		if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
 		{
 			LOG_ERROR("[GLSLShaderSource]: GLSL Preprocessing failed for: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
+			return nullptr;
 		}
 
 		const char* pPreprocessedGLSL = preprocessedGLSL.c_str();
@@ -59,7 +59,7 @@ namespace LambdaEngine
 		if (!shader.parse(pResources, defaultVersion, false, messages))
 		{
 			LOG_ERROR("[GLSLShaderSource]: GLSL Parsing failed: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
+			return nullptr;
 		}
 
 		glslang::TProgram program;
@@ -68,7 +68,7 @@ namespace LambdaEngine
 		if (!program.link(messages))
 		{
 			LOG_ERROR("[GLSLShaderSource]: GLSL Linking failed: \"%s\"\nDefines:\n%s\n%s\n%s", m_Desc.Name.c_str(), defines.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
-			return false;
+			return nullptr;
 		}
 
 		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);

@@ -60,22 +60,12 @@ void FlagSystemBase::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
 
-	if (m_Flags.Size() > 1)
-	{
-		LOG_WARNING("[FlagSystemBase]: More than one flag entity exists");
-	}
-
 	FixedTickMainThreadInternal(deltaTime);
 }
 
 void FlagSystemBase::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
-
-	if (m_Flags.Size() > 1)
-	{
-		LOG_WARNING("[FlagSystemBase]: More than one flag entity exists");
-	}
 
 	TickInternal(deltaTime);
 }

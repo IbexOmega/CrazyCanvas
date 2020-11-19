@@ -147,6 +147,7 @@ namespace LambdaEngine
 		bool CreateSampler();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 
+
 	private:
 		TSharedRef<const TextureView>	m_pBackBuffers[BACK_BUFFER_COUNT];
 		TSharedRef<const TextureView>	m_DepthStencilTextureView;
@@ -182,9 +183,6 @@ namespace LambdaEngine
 
 		RenderPass* m_pMainRenderPass = nullptr;
 		ClearColorDesc m_pMainRenderPassClearColors[2];
-
-		TArray<Noesis::Ptr<Noesis::Texture>> m_GUITextures;
-		TArray<Noesis::Ptr<Noesis::RenderTarget>> m_GUIRenderTargets;
 
 		Noesis::Ptr<Noesis::IView> m_View;
 

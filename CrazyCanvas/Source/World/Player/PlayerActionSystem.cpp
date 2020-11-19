@@ -1,4 +1,5 @@
 #include "World/Player/PlayerActionSystem.h"
+#include "World/Player/PlayerSettings.h"
 
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
@@ -33,7 +34,7 @@ PlayerActionSystem::~PlayerActionSystem()
 
 void PlayerActionSystem::Init()
 {
-		
+
 }
 
 void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer)
@@ -45,7 +46,7 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 	float addedPitch = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
 	float addedYaw = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
-	if (m_MouseEnabled)
+	if (m_MouseEnabled && Input::GetCurrentInputmode() == EInputLayer::GAME)
 	{
 		const MouseState& mouseState = Input::GetMouseState(EInputLayer::GAME);
 
@@ -57,8 +58,6 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 
 		if (glm::length(mouseDelta) > glm::epsilon<float>())
 		{
-			//Todo: Move this into some settings file
-			constexpr const float MOUSE_SPEED_FACTOR = 0.35f;
 			addedYaw -= MOUSE_SPEED_FACTOR * (float)mouseDelta.x * dt;
 			addedPitch -= MOUSE_SPEED_FACTOR * (float)mouseDelta.y * dt;
 		}
@@ -94,24 +93,40 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 	return false;
 }
 
-void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, int8 deltaForward, int8 deltaLeft, glm::vec3& result)
+void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity)
 {
-	if (!Match::HasBegun() || (deltaForward == 0 && deltaLeft == 0))
+	bool horizontalMovement = deltaAction.x != 0 || deltaAction.z != 0;
+	bool verticalMovement = deltaAction.y != 0;
+
+	if (!Match::HasBegun())
 	{
-		result.x = 0.0f;
-		result.z = 0.0f;
+		velocity.x = 0.0f;
+		velocity.z = 0.0f;
 		return;
 	}
 
-	float32 movespeed = 4.0f;
-	glm::vec3 currentVelocity;
-	currentVelocity		= rotation * glm::vec3(deltaForward, 0.0f, deltaLeft);
-	currentVelocity.y	= 0.0f;
-	currentVelocity		= glm::normalize(currentVelocity);
-	currentVelocity		*= movespeed;
+	if (horizontalMovement)
+	{
+		glm::vec3 currentVelocity;
+		currentVelocity		= rotation * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
+		currentVelocity.y	= 0.0f;
+		currentVelocity		= glm::normalize(currentVelocity);
+		currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking));
 
-	result.x = currentVelocity.x;
-	result.z = currentVelocity.z;
+		velocity.x = currentVelocity.x;
+		velocity.z = currentVelocity.z;
+	}
+	else
+	{
+		float32 relativeVelocity = 1.0f / (1.0f + PLAYER_DRAG * dt);
+		velocity.x *= relativeVelocity;
+		velocity.z *= relativeVelocity;
+	}
+
+	if (verticalMovement)
+	{
+		velocity.y = velocity.y * float32(1 - deltaAction.y) + PLAYER_JUMP_SPEED * float32(deltaAction.y);
+	}
 }
 
 void PlayerActionSystem::SetMouseEnabled(bool isEnabled)
