@@ -162,9 +162,10 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegment
 	IComponentArray* pComponents = pECS->GetComponentArray(pComponentType);
 	void* pComponent = pComponents->GetRawData(entity);
 	IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
-	void* packetData = pPacketComponent->AddPacketReceived();
+	void* packetData = pPacketComponent->AddPacketReceivedBegin();
 	pSegment->ResetReadHead();
 	pSegment->Read(packetData, packetSize);
+	pPacketComponent->AddPacketReceivedEnd();
 
 	return true;
 }
