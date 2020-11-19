@@ -97,8 +97,9 @@ void PlaySessionState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[m_GameSettings.MapID],
-			.GameMode = ConvertGameMode(m_GameSettings.GameMode),
+			.LevelHash	= levelHashes[m_GameSettings.MapID],
+			.GameMode	= m_GameSettings.GameMode,
+			.MaxScore	= m_GameSettings.FlagsToWin,
 		};
 		Match::CreateMatch(&matchDescription);
 	}

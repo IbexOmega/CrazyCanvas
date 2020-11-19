@@ -440,6 +440,20 @@ void PlayerManagerServer::SetPlayerStats(const Player* pPlayer, uint8 team, uint
 	}
 }
 
+void PlayerManagerServer::KickPlayers(uint8 count)
+{
+	for (auto& pair : s_Players)
+	{
+		const Player* pPlayer = &pair.second;
+		if (!pPlayer->IsHost())
+		{
+			ServerHelper::DisconnectPlayer(pPlayer, "Kicked");
+			if (--count == 0)
+				return;
+		}
+	}
+}
+
 void PlayerManagerServer::FillPacketPlayerScore(PacketPlayerScore* pPacket, const Player* pPlayer)
 {
 	pPacket->UID			= pPlayer->m_UID;
