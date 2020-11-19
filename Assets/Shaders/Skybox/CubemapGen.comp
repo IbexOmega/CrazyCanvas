@@ -1,7 +1,7 @@
 #version 460
 #extension GL_GOOGLE_include_directive : enable
 
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 // Pushconstants
 layout(push_constant) uniform PushConstants
@@ -46,21 +46,15 @@ const mat3 ROTATE_UV[6] =
 		   0,  0, -1)
 };
 
-const vec3 COLOR[6] = 
-{
-	vec3(1.0f, 0.0f, 0.0f),
-	vec3(0.0f, 1.0f, 0.0f),
-	vec3(0.0f, 0.0f, 1.0f),
-
-	vec3(1.0f, 1.0f, 1.0f),
-	vec3(1.0f, 1.0f, 1.0f),
-	vec3(1.0f, 1.0f, 1.0f),
-};
-
 void main()
 {
 	vec2 texCoord	= vec2(gl_GlobalInvocationID.xy);
-	int face		= int(gl_GlobalInvocationID.z);
+	if (texCoord.x > u_PC.Size || texCoord.y > u_PC.Size)
+	{
+		return;
+	}
+
+	int face = int(gl_GlobalInvocationID.z);
 
 	// Map the UV coords of the cubemap face to a direction
 	// [(0, 0), (1, 1)] => [(-0.5, -0.5), (0.5, 0.5)]

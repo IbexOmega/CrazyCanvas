@@ -877,6 +877,8 @@ namespace LambdaEngine
 		s_pComputeCommandList->BindComputePipeline(s_pCubeMapGenPipelineState);
 		s_pComputeCommandList->BindDescriptorSetCompute(s_pCubeMapGenDescriptorSet, s_pCubeMapGenPipelineLayout, 0);
 
+		constexpr uint32 THREADGROUP_SIZE = 8;
+		const uint32 dispatchSize = AlignUp(size, THREADGROUP_SIZE) / THREADGROUP_SIZE;
 		s_pComputeCommandList->Dispatch(size, size, 6);
 
 		s_pComputeCommandList->TransitionBarrier(
