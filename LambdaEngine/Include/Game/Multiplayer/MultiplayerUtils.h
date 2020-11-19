@@ -28,14 +28,15 @@ namespace LambdaEngine
 
 	private:
 		static void Init(bool server);
-		static void Release();
+		static void Reset();
 
 		static void RegisterEntity(Entity entity, int32 networkUID);
 		static void UnregisterEntity(Entity entity);
 
 	private:
-		static MultiplayerUtilBase* s_pMultiplayerUtility;
 		static bool s_IsServer;
 		static bool s_IsSinglePlayer;
+		static std::unordered_map<int32, Entity> s_NetworkUIDToEntityMapper;
+		static std::unordered_map<int32, Entity> s_EntityToNetworkUIDMapper;
 	};
 }

@@ -1,17 +1,15 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
-#include "Game/Multiplayer/MultiplayerUtilBase.h"
-#include "Game/Multiplayer/Server/ServerUtilsImpl.h"
-#include "Game/Multiplayer/Client/ClientUtilsImpl.h"
-
 #include "Networking/API/IClient.h"
 #include "Networking/API/NetworkStatistics.h"
 
 namespace LambdaEngine
 {
-	MultiplayerUtilBase* MultiplayerUtils::s_pMultiplayerUtility = nullptr;
 	bool MultiplayerUtils::s_IsServer = false;
 	bool MultiplayerUtils::s_IsSinglePlayer = false;
+
+	std::unordered_map<int32, Entity> MultiplayerUtils::s_NetworkUIDToEntityMapper;
+	std::unordered_map<int32, Entity> MultiplayerUtils::s_EntityToNetworkUIDMapper;
 
 	bool MultiplayerUtils::IsServer()
 	{
@@ -20,22 +18,27 @@ namespace LambdaEngine
 
 	Entity MultiplayerUtils::GetEntity(int32 networkUID)
 	{
-		return s_pMultiplayerUtility->GetEntity(networkUID);
+		auto pair = s_NetworkUIDToEntityMapper.find(networkUID);
+		return pair == s_NetworkUIDToEntityMapper.end() ? UINT32_MAX : pair->second;
 	}
 
 	int32 MultiplayerUtils::GetNetworkUID(Entity entity)
 	{
-		return s_pMultiplayerUtility->GetNetworkUID(entity);
+		auto pair = s_EntityToNetworkUIDMapper.find(entity);
+		return pair == s_EntityToNetworkUIDMapper.end() ? UINT32_MAX : pair->second;
 	}
 
 	void MultiplayerUtils::RegisterEntity(Entity entity, int32 networkUID)
 	{
-		s_pMultiplayerUtility->RegisterEntity(entity, networkUID);
+		ASSERT(m_NetworkUIDToEntityMapper.find(networkUID) == s_NetworkUIDToEntityMapper.end());
+		s_NetworkUIDToEntityMapper.insert({ networkUID, entity });
+		s_EntityToNetworkUIDMapper.insert({ entity, networkUID });
 	}
 
 	void MultiplayerUtils::UnregisterEntity(Entity entity)
 	{
-		s_pMultiplayerUtility->UnregisterEntity(entity);
+		s_NetworkUIDToEntityMapper.erase(GetNetworkUID(entity));
+		s_EntityToNetworkUIDMapper.erase(entity);
 	}
 
 	bool MultiplayerUtils::IsSingleplayer()
@@ -58,17 +61,12 @@ namespace LambdaEngine
 
 	void MultiplayerUtils::Init(bool server)
 	{
-		Release();
 		s_IsServer = server;
-
-		if (server)
-			s_pMultiplayerUtility = DBG_NEW ServerUtilsImpl();
-		else
-			s_pMultiplayerUtility = DBG_NEW ClientUtilsImpl();
 	}
 
-	void MultiplayerUtils::Release()
+	void MultiplayerUtils::Reset()
 	{
-		SAFEDELETE(s_pMultiplayerUtility);
+		s_NetworkUIDToEntityMapper.clear();
+		s_EntityToNetworkUIDMapper.clear();
 	}
 }
