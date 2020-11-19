@@ -83,7 +83,7 @@ struct CreateProjectileDesc
 	glm::vec3	FirePosition;
 	glm::vec3	InitalVelocity;
 	int32		PlayerFiredNetworkUID = -1;
-	uint32		TeamIndex;
+	uint8		TeamIndex;
 	LambdaEngine::Entity			WeaponOwner;
 	LambdaEngine::CollisionCallback	Callback;
 	LambdaEngine::MeshComponent		MeshComponent;
@@ -199,8 +199,7 @@ private:
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
-	inline static GUID_Lambda s_PlayerTextureGUID = GUID_NONE;
-	inline static GUID_Lambda s_PlayerMaterialGUID = GUID_NONE;
+	inline static GUID_Lambda s_PlayerStepSoundGUID = GUID_NONE;
 
 	inline static GUID_Lambda s_WeaponMeshGUID = GUID_NONE;
 	inline static GUID_Lambda s_WeaponMaterialGUID = GUID_NONE;

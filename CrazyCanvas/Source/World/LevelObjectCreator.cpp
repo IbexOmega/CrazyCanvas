@@ -7,6 +7,7 @@
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
 #include "Game/ECS/Components/Audio/ListenerComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
@@ -55,6 +56,7 @@
 #include "Physics/CollisionGroups.h"
 
 #include "Lobby/PlayerManagerBase.h"
+#include "Lobby/PlayerManagerClient.h"
 
 bool LevelObjectCreator::Init()
 {
@@ -125,7 +127,7 @@ bool LevelObjectCreator::Init()
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]	= &LevelObjectCreator::CreateProjectile;
 	}
 
-	//Load Object Meshes & Materials
+	//Load Object Resources
 	{
 		//Flag
 		{
@@ -145,27 +147,11 @@ bool LevelObjectCreator::Init()
 			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
 #endif
 
-			// Load player textures
-			s_PlayerTextureGUID = ResourceManager::LoadTextureFromFile(
-				"Player/CharacterAlbedo.png",
-				EFormat::FORMAT_R8G8B8A8_UNORM,
-				true, true);
+			s_PlayerStepSoundGUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
+		}
 
-			MaterialProperties playerMaterialProperties = {};
-			playerMaterialProperties.Albedo = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-			playerMaterialProperties.AO = 1.0f;
-			playerMaterialProperties.Metallic = 0.0f;
-			playerMaterialProperties.Metallic = 0.0f;
-
-			s_PlayerMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-				"Player Material",
-				s_PlayerTextureGUID,
-				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				GUID_TEXTURE_DEFAULT_COLOR_MAP,
-				playerMaterialProperties);
-
+		//Weapon
+		{
 			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMeshGUID, s_WeaponMaterialGUID);
 		}
 	}
@@ -787,16 +773,8 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
-
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
-
-	pECS->AddComponent<MeshComponent>(playerEntity,
-		MeshComponent
-		{
-			.MeshGUID		= s_PlayerMeshGUID,
-			.MaterialGUID	= s_PlayerMaterialGUID
-		});
 
 	const bool readback = MultiplayerUtils::IsServer();
 	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
@@ -811,11 +789,15 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 
+	GUID_Lambda playerMaterialGUID;
+
 	// Server/Client 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
+		playerMaterialGUID = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam() ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamColorMaterialGUID(pPlayer->GetTeam());
+
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
 				.MeshGUID = s_WeaponMeshGUID,
@@ -962,6 +944,21 @@ bool LevelObjectCreator::CreatePlayer(
 				.HitMask = 0xFF
 			});
 
+		//Add Audio Instances
+		{
+			SoundInstance3DDesc soundInstanceDesc = {};
+			soundInstanceDesc.pName			= "Step";
+			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(s_PlayerStepSoundGUID);
+			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+			soundInstanceDesc.Position		= pPlayerDesc->Position;
+			soundInstanceDesc.Volume		= 1.0f;
+
+			AudibleComponent audibleComponent = {};
+			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+
+			pECS->AddComponent<AudibleComponent>(playerEntity, audibleComponent);
+		}
+
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
@@ -1023,9 +1020,17 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 	else
 	{
+		playerMaterialGUID = TeamHelper::GetMyTeamPlayerMaterialGUID();
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
 	}
+
+	pECS->AddComponent<MeshComponent>(playerEntity,
+		MeshComponent
+		{
+			.MeshGUID = s_PlayerMeshGUID,
+			.MaterialGUID = playerMaterialGUID
+		});
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<ChildComponent>(playerEntity, playerChildComp);

@@ -56,7 +56,7 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 					//Calculate Weapon Fire Properties (Position, Velocity and Team)
 					glm::vec3 firePosition;
 					glm::vec3 fireVelocity;
-					uint32 playerTeam;
+					uint8 playerTeam;
 					CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
 
 					// Update position and orientation of weapon component
