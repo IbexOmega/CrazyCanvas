@@ -792,7 +792,7 @@ namespace LambdaEngine
 		//Begin RenderPass
 		if (!m_TileBegun)
 		{
-			if (m_pCurrentRenderTarget)
+			if (m_pCurrentRenderTarget && m_pCurrentRenderTarget->GetRenderPass())
 			{
 				BeginRenderPassDesc beginRenderPass = {};
 				beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
@@ -863,7 +863,7 @@ namespace LambdaEngine
 	void GUIRenderer::ResumeRenderPass()
 	{
 #ifdef PRINT_FUNC
-		LOG_INFO("Trying to resumt renderpass: tileBegun: %d", m_TileBegun);
+		LOG_INFO("Trying to resume renderpass: tileBegun: %d", m_TileBegun);
 #endif
 
 		if (!m_IsInRenderPass)

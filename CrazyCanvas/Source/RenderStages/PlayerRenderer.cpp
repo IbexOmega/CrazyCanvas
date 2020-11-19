@@ -134,10 +134,6 @@ namespace LambdaEngine
 		// Fetching render targets
 		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE") 
 		{
-			if (imageCount != 0)
-			{
-				LOG_WARNING("RenderGraph has been altered. imageCount is %d but should be 0", imageCount);
-			}
 			m_IntermediateOutputImage = MakeSharedRef(ppPerImageTextureViews[0]);
 		}
 		
