@@ -57,7 +57,7 @@ private:
 
 	LambdaEngine::SpinLock m_PlayersToRespawnLock;
 	//LambdaEngine::TQueue<PlayerTimers> m_PlayersToRespawn;
-	LambdaEngine::TArray<PlayerRespawnTimers> m_PlayersToRespawn;
+	LambdaEngine::TArray<PlayerRespawnTimer> m_PlayersToRespawn;
 
 	bool m_ShouldBeginMatch = false;
 };

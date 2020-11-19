@@ -324,9 +324,9 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 
 	{
 		std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
-		TArray<PlayerRespawnTimers> deferredPlayersToRespawn;
+		TArray<PlayerRespawnTimer> deferredPlayersToRespawn;
 
-		for (PlayerRespawnTimers& player : m_PlayersToRespawn)
+		for (PlayerRespawnTimer& player : m_PlayersToRespawn)
 		{
 			player.second -= float32(deltaTime.AsSeconds());
 
@@ -336,7 +336,7 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 			}
 		}
 
-		for (PlayerRespawnTimers& player : deferredPlayersToRespawn)
+		for (PlayerRespawnTimer& player : deferredPlayersToRespawn)
 		{
 			RespawnPlayer(player.first);
 			LOG_INFO("SERVER: Player=%u RESPAWNED", player.first);
