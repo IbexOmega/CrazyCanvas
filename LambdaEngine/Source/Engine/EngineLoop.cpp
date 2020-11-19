@@ -49,8 +49,8 @@
 #include "Game/ECS/Systems/Networking/NetworkSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
-#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
 
