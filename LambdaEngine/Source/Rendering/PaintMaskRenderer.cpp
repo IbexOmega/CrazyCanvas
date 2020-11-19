@@ -452,7 +452,7 @@ namespace LambdaEngine
 							ETextureState::TEXTURE_STATE_COPY_SRC :
 							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
-						pCommandList->GenerateMiplevels(
+						pCommandList->GenerateMips(
 							pTexture,
 							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 							afterState,
@@ -666,7 +666,7 @@ namespace LambdaEngine
 						ETextureState::TEXTURE_STATE_COPY_SRC :
 						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
 
-					pCommandList->GenerateMiplevels(
+					pCommandList->GenerateMips(
 						pTexture,
 						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
 						afterState,
