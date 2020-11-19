@@ -61,6 +61,8 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
+#include "Resources/ResourceCatalog.h"
+
 #include <imgui.h>
 
 using namespace LambdaEngine;
@@ -82,6 +84,8 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
+
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();

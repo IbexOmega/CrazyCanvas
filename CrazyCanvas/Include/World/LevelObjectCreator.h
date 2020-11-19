@@ -104,8 +104,6 @@ class LevelObjectCreator
 	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.8f;
 	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.2f;
 
-	inline static const glm::vec3 WATER_COLOR = glm::vec3( 87.0f / 255.0f, 217.0f / 255.0f, 1.0f );
-
 public:
 	DECL_STATIC_CLASS(LevelObjectCreator);
 
@@ -188,23 +186,4 @@ private:
 	inline static LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc> s_LevelObjectOnLoadDescriptions;
 	inline static LambdaEngine::THashTable<LambdaEngine::String, LevelObjectCreateByPrefixFunc> s_LevelObjectByPrefixCreateFunctions;
 	inline static LambdaEngine::THashTable<ELevelObjectType, LevelObjectCreateByTypeFunc> s_LevelObjectByTypeCreateFunctions;
-
-	inline static GUID_Lambda s_FlagMeshGUID		= GUID_NONE;
-	inline static GUID_Lambda s_FlagCommonMaterialGUID	= GUID_NONE;
-
-	inline static GUID_Lambda s_PlayerMeshGUID = GUID_NONE;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerIdleGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunMirroredGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
-	inline static GUID_Lambda s_PlayerStepSoundGUID = GUID_NONE;
-
-	inline static GUID_Lambda s_ProjectileMeshGUID = GUID_NONE;
-	inline static LambdaEngine::MeshComponent s_WaterProjectileMeshComponent;
-
-	inline static GUID_Lambda s_WeaponMeshGUID = GUID_NONE;
-	inline static GUID_Lambda s_WeaponMaterialGUID = GUID_NONE;
 };
