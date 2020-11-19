@@ -614,7 +614,7 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 
 	Label* nameLabel = static_cast<Label*>(pGrid->GetChildren()->Get(0));
 
-	LOG_ERROR("[HUDGUI]: Name: %s", nameLabel->GetContent());
+	LOG_ERROR("[HUDGUI]: Name: %s", nameLabel->GetContent()->ToString().Str());
 
 	SolidColorBrush* pBrush = static_cast<SolidColorBrush*>(nameLabel->GetForeground());
 	if (isAlive)
