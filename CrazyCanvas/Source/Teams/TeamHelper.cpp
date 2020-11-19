@@ -63,7 +63,7 @@ bool TeamHelper::Init()
 glm::vec3 TeamHelper::GetTeamColor(uint8 teamIndex)
 {
 	float32 baseAngle = 240.0f;
-	float32 deltaAngle = 360.0f / MAX_NUM_TEAMS;
+	float32 deltaAngle = 360.0f / LambdaEngine::MAX_NUM_TEAMS;
 
 	return glm::rgbColor(glm::vec3(baseAngle + deltaAngle * float32(teamIndex), 1.0f, 1.0f));
 }

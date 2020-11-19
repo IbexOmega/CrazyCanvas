@@ -89,6 +89,10 @@ struct SInstance
 	uint ExtensionGroupIndex;
 	uint TexturesPerExtensionGroup;
 	uint MeshletCount;
+	uint TeamIndex;
+	uint Padding0;
+	uint Padding1;
+	uint Padding2;
 };
 
 struct SIndirectArg

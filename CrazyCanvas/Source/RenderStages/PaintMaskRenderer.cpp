@@ -22,7 +22,7 @@
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Application/API/Window.h"

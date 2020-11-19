@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 class TeamHelper
 {
@@ -13,13 +13,13 @@ public:
 
 	FORCEINLINE static GUID_Lambda GetTeamColorMaterialGUID(uint8 teamIndex)
 	{
-		VALIDATE(teamIndex < MAX_NUM_TEAMS);
+		VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
 		return s_TeamColorMaterialGUIDs[teamIndex];
 	}
 
 	FORCEINLINE static GUID_Lambda GetTeamPlayerMaterialGUID(uint8 teamIndex)
 	{
-		VALIDATE(teamIndex < MAX_NUM_TEAMS);
+		VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
 		return s_TeamPlayerMaterialGUIDs[teamIndex];
 	}
 
@@ -27,8 +27,8 @@ public:
 
 private:
 	inline static GUID_Lambda s_PlayerTextureGUID = GUID_NONE;
-	inline static GUID_Lambda s_TeamColorMaterialGUIDs[MAX_NUM_TEAMS];
+	inline static GUID_Lambda s_TeamColorMaterialGUIDs[LambdaEngine::MAX_NUM_TEAMS];
 
-	inline static GUID_Lambda s_TeamPlayerMaterialGUIDs[MAX_NUM_TEAMS];
+	inline static GUID_Lambda s_TeamPlayerMaterialGUIDs[LambdaEngine::MAX_NUM_TEAMS];
 	inline static GUID_Lambda s_MyTeamPlayerMaterialGUID = GUID_NONE;
 };

@@ -28,6 +28,7 @@
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Rendering/ParticleRenderer.h"
@@ -186,7 +187,8 @@ namespace LambdaEngine
 
 			systemReg.SubscriberRegistration.AdditionalAccesses =
 			{
-				{ R, MeshPaintComponent::Type() }
+				{ R, MeshPaintComponent::Type() },
+				{ R, TeamComponent::Type() }
 			};
 
 			RegisterSystem(TYPE_NAME(RenderSystem), systemReg);
@@ -994,6 +996,15 @@ namespace LambdaEngine
 		bool hasExtensionData = false;
 		DrawArgExtensionGroup* pExtensionGroup = nullptr;
 
+		uint32 teamIndex = 0;
+		const ECSCore* pECSCore = ECSCore::GetInstance();
+		const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+		if (pTeamComponents->HasComponent(entity))
+		{
+			LOG_WARNING("[RenderSystem] TODO: Change TeamComponent to use 0 as \"No Team\"! For now just add 1 to the team index before sending it to shaders");
+			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex) + 1;
+		}
+
 		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())
 		{
 			pExtensionGroup		= EntityMaskManager::GetExtensionGroup(entity);
@@ -1414,6 +1425,7 @@ namespace LambdaEngine
 		instance.ExtensionGroupIndex		= extensionGroupIndex;
 		instance.TexturesPerExtensionGroup	= texturesPerExtensionGroup;
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
+		instance.TeamIndex					= teamIndex;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
