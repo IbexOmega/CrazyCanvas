@@ -24,9 +24,8 @@ struct SNode
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 SpherePositions[MAX_SPHERE_COUNT];
+	vec4 SpherePositions[SPHERES_PER_GRID];
 	uint GridWidth;	// The grid is cubic, i.e. the corner count is GridWidth^3
-	uint SphereCount;
 } u_PC;
 
 layout(binding = 0, set = 0) restrict readonly buffer Densities

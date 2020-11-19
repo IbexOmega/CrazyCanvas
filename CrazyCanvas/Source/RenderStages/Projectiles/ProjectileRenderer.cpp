@@ -1,5 +1,6 @@
 #include "RenderStages/Projectiles/ProjectileRenderer.h"
 
+#include "Math/Random.h"
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
@@ -87,6 +88,42 @@ bool ProjectileRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc
 	return true;
 }
 
+void ProjectileRenderer::Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
+{
+	UNREFERENCED_VARIABLE(modFrameIndex);
+	UNREFERENCED_VARIABLE(backBufferIndex);
+
+	const float32 dt = (float32)delta.AsSeconds();
+
+	for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
+	{
+		/*	A sphere's maximum distance to the grid's center. Derived from the equation: Density = 1.
+			(See density function in compute shader) */
+		// const float32 maxDistToCenter = 0.5f - METABALL_RADIUS - 2.0f / marchingCubesGrid.GPUData.GridWidth;
+		// const float32 maxDistToCenter = 0.5f - (1.0f + glm::epsilon<float32>()) / marchingCubesGrid.GPUData.GridWidth -
+		// 								std::sqrtf((float32)SPHERES_PER_GRID * SPHERE_RADIUS * SPHERE_RADIUS);
+		const float32 maxDistToCenter = GetSpheresMaxDistToCenter(marchingCubesGrid);
+
+		for (uint32 sphereIdx = 0; sphereIdx < SPHERES_PER_GRID; sphereIdx++)
+		{
+			glm::vec4& positionRadius = marchingCubesGrid.GPUData.SpherePositionsRadii[sphereIdx];
+			glm::vec3& velocity = marchingCubesGrid.SphereVelocities[sphereIdx];
+			positionRadius += glm::vec4(velocity, 0.0f) * dt;
+
+			// Bounce if the sphere has reached the bounds
+			// for (uint32 componentIdx = 0; componentIdx < 3; componentIdx++)
+			// {
+			// 	const int32 shouldBounce = std::abs(0.5f - position[componentIdx]) >= maxDistToCenter;
+			// 	position = glm::clamp(position, 0.5f - maxDistToCenter, 0.5f + maxDistToCenter);
+			// 	velocity[componentIdx] -= shouldBounce * 2 * velocity[componentIdx];
+			// }
+			const int32 shouldBounce = glm::distance(glm::vec3(0.5f), glm::vec3(positionRadius)) >= maxDistToCenter;
+			// position = glm::clamp(position, 0.5f - maxDistToCenter, 0.5f + maxDistToCenter);
+			velocity -= float32(shouldBounce * 2) * velocity;
+		}
+	}
+}
+
 void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
 {
 	UNREFERENCED_VARIABLE(resourceName);
@@ -127,25 +164,18 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 			.SizeInBytes	= sizeof(glm::vec4) * innerGridCorners
 		};
 
-		const MarchingCubesGrid marchingCubesGrid =
+		MarchingCubesGrid marchingCubesGrid =
 		{
 			.GPUData =
 			{
-				.SpherePositions =
-				{
-					{ 0.5f, 0.5f, 0.5f, 0.0f }
-				},
-				.GridWidth = GRID_WIDTH,
-				.SphereCount = 1
-			},
-			.SphereVelocities =
-			{
-				{ 0.0f, 0.0f, 0.0f }
+				.GridWidth = GRID_WIDTH
 			},
 			.DensityBuffer = m_pGraphicsDevice->CreateBuffer(&densityBufferDesc),
 			.GradientBuffer = m_pGraphicsDevice->CreateBuffer(&gradientBufferDesc),
 			.DescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Marching Cubes Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get())
 		};
+
+		ProjectileRenderer::RandomizeSpheres(marchingCubesGrid);
 
 		constexpr const uint32 maxTrianglesPerCell = 5;
 		constexpr const uint32 verticesPerTriangle = 3;
@@ -236,6 +266,47 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 	}
 }
 
+float32 ProjectileRenderer::GetSpheresMaxDistToCenter(const MarchingCubesGrid& marchingCubesGrid)
+{
+	/*	Derived from the equation: Density = 1 and Density = R^2 / D^2, where R = sphere radius and
+		D = distance to grid border. (See density function in compute shader) */
+	float32 radiiSquaredSum = 0.0f;
+	for (const glm::vec4& positionRadius : marchingCubesGrid.GPUData.SpherePositionsRadii)
+	{
+		radiiSquaredSum += positionRadius.w * positionRadius.w;
+	}
+
+	return 0.5f - std::sqrtf(radiiSquaredSum);
+}
+
+void ProjectileRenderer::RandomizeSpheres(MarchingCubesGrid& marchingCubesGrid)
+{
+	// Randomize radii
+	constexpr const float32 minRadius = 0.1f;
+	constexpr const float32 maxRadius = 0.2f;
+
+	for (glm::vec4& positionRadius : marchingCubesGrid.GPUData.SpherePositionsRadii)
+	{
+		positionRadius.w = Random::Float32(minRadius, maxRadius);
+	}
+
+	// Randomize positions and velocities
+	const float32 maxDistanceToCenter = GetSpheresMaxDistToCenter(marchingCubesGrid);
+	constexpr const float32 speed = 0.4f;
+
+	for (uint32 sphereIdx = 0; sphereIdx < SPHERES_PER_GRID; sphereIdx++)
+	{
+		glm::vec4& positionRadius = marchingCubesGrid.GPUData.SpherePositionsRadii[sphereIdx];
+
+		const glm::vec3 randPosition = { Random::Float32(), Random::Float32(), Random::Float32() };
+		const float32 randDistance = Random::Float32(0.0f, maxDistanceToCenter);
+		positionRadius = glm::vec4(glm::vec3(0.5f) + glm::normalize(randPosition) * randDistance, positionRadius.w);
+
+		marchingCubesGrid.SphereVelocities[sphereIdx] =
+			glm::normalize(glm::vec3(Random::Float32(), Random::Float32(), Random::Float32())) * speed;
+	}
+}
+
 void ProjectileRenderer::CreatePipelineLayout()
 {
 	const ConstantRangeDesc constantRangeDesc	=
@@ -289,7 +360,7 @@ bool ProjectileRenderer::CreateShaders()
 	m_DensityShaderGUID		= ResourceManager::LoadShaderFromFile("/Projectiles/MarchingCubesDensity.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 	m_GradientShaderGUID	= ResourceManager::LoadShaderFromFile("/Projectiles/MarchingCubesGradient.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
 	m_MeshGenShaderGUID		= ResourceManager::LoadShaderFromFile("/Projectiles/MarchingCubesMeshGen.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL);
-	return m_DensityShaderGUID != GUID_NONE && m_GradientShaderGUID && m_MeshGenShaderGUID != GUID_NONE;
+	return m_DensityShaderGUID != GUID_NONE && m_GradientShaderGUID != GUID_NONE && m_MeshGenShaderGUID != GUID_NONE;
 }
 
 bool ProjectileRenderer::CreateCommonMesh()

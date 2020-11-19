@@ -9,9 +9,8 @@ layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
 
 layout(push_constant) uniform PushConstants
 {
-	vec4 SpherePositions[MAX_SPHERE_COUNT];
+	vec4 SpherePositions[SPHERES_PER_GRID];
 	uint GridWidth; // The grid is cubic, i.e. the corner count is GridWidth^3
-	uint SphereCount;
 } u_PC;
 
 layout(binding = 0, set = 0) restrict writeonly buffer Densities
@@ -33,10 +32,11 @@ void main()
 	const vec3 position = cellID / vec3(float(u_PC.GridWidth - 1));
 
 	float density = 0.0;
-	for (uint sphereIdx = 0; sphereIdx < u_PC.SphereCount; sphereIdx++)
+	for (uint sphereIdx = 0; sphereIdx < SPHERES_PER_GRID; sphereIdx++)
 	{
-		const vec3 distanceVec = position - u_PC.SpherePositions[sphereIdx].xyz;
-		density += SPHERE_RADIUS_SQUARE / dot(distanceVec, distanceVec);
+		const vec4 positionRadius = u_PC.SpherePositions[sphereIdx];
+		const vec3 distanceVec = position - positionRadius.xyz;
+		density += (positionRadius.w * positionRadius.w) / dot(distanceVec, distanceVec);
 	}
 
 	b_Densities.Val[threadID] = density;
