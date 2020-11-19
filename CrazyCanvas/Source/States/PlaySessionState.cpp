@@ -103,8 +103,6 @@ void PlaySessionState::Init()
 		Match::CreateMatch(&matchDescription);
 	}
 
-	m_HUDSystem.Init();
-
 	CommonApplication::Get()->SetMouseVisibility(false);
 
 	if (m_Singleplayer)
@@ -116,6 +114,8 @@ void PlaySessionState::Init()
 		//Called to tell the server we are ready to start the match
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
+
+	m_HUDSystem.Init();
 }
 
 void PlaySessionState::Tick(Timestamp delta)

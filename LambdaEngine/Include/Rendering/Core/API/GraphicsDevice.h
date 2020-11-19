@@ -83,6 +83,7 @@ namespace LambdaEngine
 		uint32	MaxMeshWorkGroupInvocations;
 		uint32	MaxTaskWorkGroupInvocations;
 		bool	RayTracing;
+		bool	InlineRayTracing;
 		bool	MeshShaders;
 		bool	GeometryShaders;
 		float32	TimestampPeriod;

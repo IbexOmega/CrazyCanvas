@@ -205,8 +205,8 @@ namespace LambdaEngine
 		if (s_pView.GetPtr() == nullptr)
 			return true;
 
-		if (mouseScrolledEvent.DeltaY > 0)		s_pView->MouseWheel(mouseScrolledEvent.Position.x, mouseScrolledEvent.Position.y, mouseScrolledEvent.DeltaY);
-		else if (mouseScrolledEvent.DeltaX > 0)	s_pView->MouseHWheel(mouseScrolledEvent.Position.x, mouseScrolledEvent.Position.y, mouseScrolledEvent.DeltaX);
+		if (glm::abs(mouseScrolledEvent.DeltaY) > 0)		s_pView->MouseWheel(mouseScrolledEvent.Position.x, mouseScrolledEvent.Position.y, 120 * mouseScrolledEvent.DeltaY);
+		else if (glm::abs(mouseScrolledEvent.DeltaX) > 0)	s_pView->MouseHWheel(mouseScrolledEvent.Position.x, mouseScrolledEvent.Position.y, 120 * mouseScrolledEvent.DeltaX);
 
 		return true;
 	}

@@ -95,7 +95,7 @@ void WeaponSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration
 		});
 }
 
-void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam, uint32 angle)
+void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint8 playerTeam, uint32 angle)
 {
 	using namespace LambdaEngine;
 
@@ -210,7 +210,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	}
 }
 
-void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEntity, glm::vec3& position, glm::vec3& velocity, uint32& playerTeam)
+void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEntity, glm::vec3& position, glm::vec3& velocity, uint8& playerTeam)
 {
 	using namespace LambdaEngine;
 
@@ -233,7 +233,7 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	playerRotation.z = 0;
 	playerRotation = glm::normalize(playerRotation);
 
-	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.2f;
+	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.5f;
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
 	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;

@@ -103,7 +103,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Volume" Foreground="White" FontSize="29.333" />
-                <Slider x:Name="VolumeSlider" Grid.Column="1" VerticalAlignment="Center" />
+                <Slider x:Name="VolumeSlider" ValueChanged="OnVolumeSliderChanged" Grid.Column="1" VerticalAlignment="Center" />
             </Grid>
 
             <!--Key Bindings-->
@@ -210,15 +210,15 @@
           <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_JUMP" Content="" Grid.Column="1" Margin="50 5 50 5" />
         </Grid>
 
-        <!--Sprint-->
+        <!--Walk-->
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*" />
             <ColumnDefinition Width="1*" />
           </Grid.ColumnDefinitions>
 
-          <Label Content="Sprint" Foreground="White" FontSize="29.333" />
-          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_SPRINT" Content="" Grid.Column="1" Margin="50 5 50 5" />
+          <Label Content="Walk" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_WALK" Content="" Grid.Column="1" Margin="50 5 50 5" />
         </Grid>
 
         <!--Attack Title-->

@@ -50,6 +50,7 @@ namespace LambdaEngine
 	class PaintMaskRenderer;
 	class ParticleRenderer;
 	class ParticleUpdater;
+	class ParticleCollider;
 	class LightRenderer;
 
 	struct CameraComponent;
@@ -273,10 +274,11 @@ namespace LambdaEngine
 		*/
 		void SetPaintMaskColor(uint32 index, const glm::vec3& color);
 
-		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
-		uint64			GetFrameIndex() const	 	{ return m_FrameIndex;		}
-		uint64			GetModFrameIndex() const	{ return m_ModFrameIndex;	}
-		uint32			GetBufferIndex() const	 	{ return m_BackBufferIndex; }
+		RenderGraph*	GetRenderGraph()					{ return m_pRenderGraph;			}
+		uint64			GetFrameIndex() const	 			{ return m_FrameIndex;				}
+		uint64			GetModFrameIndex() const			{ return m_ModFrameIndex;			}
+		uint32			GetBufferIndex() const	 			{ return m_BackBufferIndex;			}
+		bool			IsInlineRayTracingEnabled() const	{ return m_InlineRayTracingEnabled; }
 
 	public:
 		static RenderSystem& GetInstance() { return s_Instance; }
@@ -383,15 +385,17 @@ namespace LambdaEngine
 		IDVector m_CameraEntities;
 		IDVector m_ParticleEmitters;
 
-		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
-		Texture**				m_ppBackBuffers		= nullptr;
-		TextureView**			m_ppBackBufferViews	= nullptr;
-		RenderGraph*			m_pRenderGraph		= nullptr;
-		uint64					m_FrameIndex		= 0;
-		uint64					m_ModFrameIndex		= 0;
-		uint32					m_BackBufferIndex	= 0;
-		bool					m_RayTracingEnabled	= false;
-		bool					m_MeshShadersEnabled = false;
+		TSharedRef<SwapChain>	m_SwapChain					= nullptr;
+		Texture**				m_ppBackBuffers				= nullptr;
+		TextureView**			m_ppBackBufferViews			= nullptr;
+		RenderGraph*			m_pRenderGraph				= nullptr;
+		uint64					m_FrameIndex				= 0;
+		uint64					m_ModFrameIndex				= 0;
+		uint32					m_BackBufferIndex			= 0;
+		bool					m_RayTracingEnabled			= false;
+		bool					m_MeshShadersEnabled		= false;
+		bool					m_InlineRayTracingEnabled	= false;
+
 		// Mesh/Instance/Entity
 		bool						m_LightsBufferDirty			= true;
 		bool						m_PointLightsDirty			= true;
@@ -471,6 +475,7 @@ namespace LambdaEngine
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
+		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 

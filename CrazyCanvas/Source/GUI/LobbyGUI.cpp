@@ -24,16 +24,20 @@ using namespace LambdaEngine;
 LobbyGUI::LobbyGUI() : 
 	m_IsInitiated(false)
 {
-	Noesis::GUI::LoadComponent(this, "Lobby.xaml");
+	GUI::LoadComponent(this, "Lobby.xaml");
 
 	// Get commonly used elements
 	m_pBlueTeamStackPanel		= FrameworkElement::FindName<StackPanel>("BlueTeamStackPanel");
 	m_pRedTeamStackPanel		= FrameworkElement::FindName<StackPanel>("RedTeamStackPanel");
+	m_pChatScrollViewer			= FrameworkElement::FindName<ScrollViewer>("ChatScrollViewer");
 	m_pChatPanel				= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
 	m_pSettingsNamesStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsNamesStackPanel");
 	m_pSettingsHostStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsClientStackPanel");
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
 	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
+
+	m_pChatInputTextBox->SetMaxLines(1);
+	m_pChatInputTextBox->SetMaxLength(128);
 
 	SetHostMode(false);
 
@@ -196,16 +200,32 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 
 	Ptr<DockPanel> dockPanel = *new DockPanel();
 
-	AddLabelWithStyle("", dockPanel, "ChatNameLabelStyle", name);
+	Label* pLabel = AddLabelWithStyle("", dockPanel, "ChatNameLabelStyle", name);
 	AddLabelWithStyle("", dockPanel, "ChatNameSeperatorStyle", "");
 
-	Ptr<TextBox> message = *new TextBox();
-	message->SetText(chatMessage.Message.c_str());
-	Style* style = FrameworkElement::FindResource<Style>("ChatMessageStyle");
-	message->SetStyle(style);
+	Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+	if (event.IsSystemMessage())
+	{
+		pBrush->SetColor(Color::Green());
+	}
+	else
+	{
+		Color colorBlue;
+		Color::TryParse("#05DFD7", colorBlue);
+
+		pBrush->SetColor(chatMessage.Team == 0 ? colorBlue : Color::Red());
+	}
+	pLabel->SetForeground(pBrush);
+
+	Ptr<Label> message = *new Label();
+	message->SetFocusable(false);
+	message->SetContent(chatMessage.Message.c_str());
+	message->SetVerticalAlignment(VerticalAlignment::VerticalAlignment_Center);
+	message->SetPadding(Thickness(3, -2, -2, -2));
 	dockPanel->GetChildren()->Add(message);
 
 	m_pChatPanel->GetChildren()->Add(dockPanel);
+	m_pChatScrollViewer->ScrollToEnd();
 }
 
 void LobbyGUI::SetHostMode(bool isHost)
@@ -376,7 +396,7 @@ void LobbyGUI::AddSettingTextBox(
 }
 
 
-bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
+bool LobbyGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
 	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
 
@@ -388,13 +408,13 @@ bool LobbyGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, 
 	return false;
 }
 
-void LobbyGUI::OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void LobbyGUI::OnButtonReadyClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	ToggleButton* pButton = static_cast<ToggleButton*>(pSender);
 	PlayerManagerClient::SetLocalPlayerReady(pButton->GetIsChecked().GetValue());
 }
 
-void LobbyGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void LobbyGUI::OnButtonLeaveClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	ClientHelper::Disconnect("Leaving lobby");
 
@@ -402,14 +422,14 @@ void LobbyGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-void LobbyGUI::OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void LobbyGUI::OnButtonSendMessageClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	TrySendChatMessage();
 }
 
 bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
 {
-	if (event.Key == LambdaEngine::EKey::KEY_ENTER)
+	if (event.Key == EKey::KEY_ENTER)
 	{
 		if (m_pChatInputTextBox->GetIsFocused())
 		{
@@ -436,7 +456,7 @@ void LobbyGUI::SendGameSettings() const
 		ClientHelper::Send(m_GameSettings);
 }
 
-void LobbyGUI::OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args)
+void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const SelectionChangedEventArgs& args)
 {
 	ComboBox* pComboBox = static_cast<ComboBox*>(pSender);
 
@@ -498,9 +518,9 @@ const PacketGameSettings& LobbyGUI::GetSettings() const
 	return m_GameSettings;
 }
 
-void LobbyGUI::OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void LobbyGUI::OnTextBoxChanged(BaseComponent* pSender, const RoutedEventArgs& args)
 {
-	Noesis::TextBox* pTextBox = static_cast<TextBox*>(pSender);
+	TextBox* pTextBox = static_cast<TextBox*>(pSender);
 
 	if (strcmp(m_GameSettings.ServerName, pTextBox->GetText()) != 0) 
 	{
@@ -518,7 +538,7 @@ void LobbyGUI::AddColumnDefinitionStar(ColumnDefinitionCollection* columnCollect
 	columnCollection->Add(col);
 }
 
-void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content)
+Label* LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content)
 {
 	Ptr<Label> label = *new Label();
 
@@ -534,6 +554,8 @@ void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel
 	Style* pStyle = FrameworkElement::FindResource<Style>(styleKey.c_str());
 	label->SetStyle(pStyle);
 	pParent->GetChildren()->Add(label);
+
+	return label;
 }
 
 void LobbyGUI::AddTextBoxWithColor(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& text, const glm::vec3& color)
@@ -557,7 +579,7 @@ void LobbyGUI::AddTextBoxWithColor(const LambdaEngine::String& name, Noesis::Pan
 	pParent->GetChildren()->Add(textBlock);
 }
 
-void LobbyGUI::RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* comp)
+void LobbyGUI::RegisterName(const LambdaEngine::String& name, BaseComponent* comp)
 {
 	FrameworkElement::GetView()->GetContent()->RegisterName(name.c_str(), comp);
 }
@@ -567,7 +589,7 @@ void LobbyGUI::UnregisterName(const LambdaEngine::String& name)
 	FrameworkElement::GetView()->GetContent()->UnregisterName(name.c_str());
 }
 
-void LobbyGUI::CreateHostIcon(Noesis::Panel* parent)
+void LobbyGUI::CreateHostIcon(Panel* parent)
 {
 	Ptr<Viewbox> viewBox	= *new Viewbox();
 	Ptr<Path> path			= *new Path();
@@ -582,7 +604,7 @@ void LobbyGUI::CreateHostIcon(Noesis::Panel* parent)
 	RegisterName("host_icon", viewBox);
 }
 
-Noesis::Grid* LobbyGUI::GetPlayerGrid(const Player& player)
+Grid* LobbyGUI::GetPlayerGrid(const Player& player)
 {
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
