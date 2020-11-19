@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ECS/Components/Team/TeamComponent.h"
-#include <array>
 
 class TeamHelper
 {
