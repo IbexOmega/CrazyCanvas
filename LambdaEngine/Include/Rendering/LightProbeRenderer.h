@@ -36,7 +36,7 @@ namespace LambdaEngine
 
 		FORCEINLINE virtual const String& GetName() const override final
 		{
-			static String name = "AS_BUILDER";
+			static String name = "LIGHT_PROBE_RENDERER";
 			return name;
 		}
 
@@ -48,10 +48,9 @@ namespace LambdaEngine
 		TArray<TSharedRef<CommandList>>			m_ComputeCommandLists;
 		TArray<TSharedRef<CommandAllocator>>	m_ComputeCommandAllocators;
 
-		//Utility
-		TArray<DeviceChild*>* m_pResourcesToRemove = nullptr;
-
-		//Threading
-		mutable SpinLock m_Lock;
+		uint64 m_SpecularFilterState;
+		TSharedRef<PipelineLayout>	m_SpecularFilterLayout;
+		uint64 m_DiffuseFilterState;
+		TSharedRef<PipelineLayout>	m_DiffuseFilterLayout;
 	};
 }

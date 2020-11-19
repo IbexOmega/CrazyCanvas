@@ -33,6 +33,7 @@
 #include "Rendering/ParticleRenderer.h"
 #include "Rendering/ParticleUpdater.h"
 #include "Rendering/ParticleCollider.h"
+#include "Rendering/LightProbeRenderer.h"
 #include "Rendering/RT/ASBuilder.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -373,20 +374,8 @@ namespace LambdaEngine
 				m_pLightRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-			}
 
-			// AS Builder
-			if (m_RayTracingEnabled)
-			{
-				m_pASBuilder = DBG_NEW ASBuilder();
-				m_pASBuilder->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
-			}
-
-			// Particle Renderer & Manager
-			if (!isServer)
-			{
+				// Particle Renderer & Manager
 				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
 
@@ -401,6 +390,20 @@ namespace LambdaEngine
 				m_pParticleCollider = DBG_NEW ParticleCollider();
 				m_pParticleCollider->Init();
 				renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
+
+				// LightProbeRenderer
+				m_pLightProbeRenderer = DBG_NEW LightProbeRenderer();
+				m_pLightProbeRenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
+			}
+
+			// AS Builder
+			if (m_RayTracingEnabled)
+			{
+				m_pASBuilder = DBG_NEW ASBuilder();
+				m_pASBuilder->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
 			}
 
 			//GUI Renderer
@@ -734,24 +737,23 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 		}
 
-		// Light Renderer
-		if (m_RayTracingEnabled)
+		const bool isServer = MultiplayerUtils::IsServer();
+		if (!isServer)
 		{
+			// Light Renderer
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-		}
-
-		// Particles
-		if (m_RayTracingEnabled)
-		{
+			// Particles
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
-		}
+			// LightProbe Renderer
+			renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
 
-		// AS Builder
-		if (m_RayTracingEnabled)
-		{
-			renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+			// AS Builder
+			if (m_RayTracingEnabled)
+			{
+				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+			}
 		}
 
 		// GUI Renderer

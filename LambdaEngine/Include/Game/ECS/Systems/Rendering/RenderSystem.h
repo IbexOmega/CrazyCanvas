@@ -518,6 +518,7 @@ namespace LambdaEngine
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
 		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
+		class LightProbeRenderer*	m_pLightProbeRenderer	= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
 	private:
