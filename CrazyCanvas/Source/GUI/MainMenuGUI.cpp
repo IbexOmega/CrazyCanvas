@@ -173,8 +173,6 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
-	SetRenderStagesSleeping();
-
 	State* pStartingState = DBG_NEW BenchmarkState();
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -304,16 +302,6 @@ void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender,
 	m_KeysToSet.clear();
 
 	OnButtonBackClick(pSender, args);
-}
-
-/*
-*
-*	HELPER FUNCTIONS
-*
-*/
-void MainMenuGUI::SetRenderStagesSleeping()
-{
-	DisablePlaySessionsRenderstages();
 }
 
 void MainMenuGUI::SetDefaultSettings()

@@ -13,7 +13,12 @@ layout(location = 0) out vec4 out_Color;
 
 void main()
 {
-	vec3 color = texture(u_Skybox, normalize(in_WorldPos)).rgb;
-	float luminance = CalculateLuminance(color);
-	out_Color = vec4(color, luminance);
+	vec3 colorHDR = texture(u_Skybox, normalize(in_WorldPos)).rgb;
+	float luminance = CalculateLuminance(colorHDR);
+
+	//Reinhard Tone-Mapping
+	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
+	//Gamma Correction
+	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+	out_Color = vec4(finalColor, luminance);
 }

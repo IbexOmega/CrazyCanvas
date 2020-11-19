@@ -25,12 +25,13 @@ namespace LambdaEngine
 
 	struct PlayerData
 	{
-		uint32 DrawArgIndex;
-		uint32 EntityId;
-		uint32 TeamId;
-		WeaponData Weapon;
-		glm::vec3 Position;
-		float32 Distance2ToViewer;
+		uint32		DrawArgIndex;
+		uint32		EntityId;
+		uint32		TeamId;
+		bool		HasWeapon = false;
+		WeaponData	Weapon;
+		glm::vec3	Position;
+		float32		Distance2ToViewer;
 	};
 
 	using ReleaseFrame = uint32;
