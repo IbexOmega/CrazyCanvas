@@ -63,7 +63,7 @@ private:
 	// Helpers
 	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* pColumnCollection, float width);
 	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
-	void AddColorBoxWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const glm::vec3& color);
+	void AddTextBoxWithColor(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& text, const glm::vec3& color);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* pComp);
 	void UnregisterName(const LambdaEngine::String& name);
 	void CreateHostIcon(Noesis::Panel* pParent);

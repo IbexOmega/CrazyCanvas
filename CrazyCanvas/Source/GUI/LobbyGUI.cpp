@@ -61,7 +61,6 @@ void LobbyGUI::InitGUI(LambdaEngine::String name)
 	AddSettingColorBox(SETTING_CHANGE_TEAM_0_COLOR, "Team Color 0", colors, 0);
 	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team Color 1", colors, 1);
 
-
 	m_IsInitiated = true;
 }
 
@@ -326,7 +325,8 @@ void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const 
 	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
 
 	// Add setting client text (default value is set as content)
-	AddColorBoxWithStyle(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientStyle", TeamHelper::GetAvailableColor(defaultIndex));
+	// Temporary until Rectangle can be adjusted to fit parent
+	AddTextBoxWithColor(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientStyle", "\t\t\t\t", TeamHelper::GetAvailableColor(defaultIndex));
 
 	// Add setting combobox for colors
 	Ptr<ComboBox> settingComboBox = *new ComboBox();
@@ -536,7 +536,7 @@ void LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel
 	pParent->GetChildren()->Add(label);
 }
 
-void LobbyGUI::AddColorBoxWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey,const glm::vec3& color)
+void LobbyGUI::AddTextBoxWithColor(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& text, const glm::vec3& color)
 {
 	Ptr<TextBlock> textBlock = *new TextBlock();
 
@@ -546,8 +546,7 @@ void LobbyGUI::AddColorBoxWithStyle(const LambdaEngine::String& name, Noesis::Pa
 		RegisterName(name, textBlock);
 	}
 
-	// Temporary until textblock can be adjusted to fit
-	textBlock->SetText("---------------");
+	textBlock->SetText(text.c_str());
 
 	Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
 	pBrush->SetColor(Color(color.r, color.g, color.b));
