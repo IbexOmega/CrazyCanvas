@@ -151,8 +151,8 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	PacketGameSettings settings;
-	settings.MapID = 5;
-	settings.GameMode = ConvertGameMode(EGameMode::CTF_TEAM_FLAG);
+	settings.MapID		= 5;
+	settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
 	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -173,8 +173,6 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
-	SetRenderStagesSleeping();
-
 	State* pStartingState = DBG_NEW BenchmarkState();
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -186,15 +184,25 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 */
 void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing
-	Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
-	m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
-	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+	// Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
+	// EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
 
 	// Mesh Shader
 	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	m_MeshShadersEnabled = pMeshShaderCheckBox->GetIsChecked().GetValue();
 	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, m_MeshShadersEnabled);
+
+	// Fullscreen toggle
+	Noesis::CheckBox* pFullscreenCheckBox = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	bool previousState = m_FullscreenEnabled;
+	m_FullscreenEnabled = pFullscreenCheckBox->GetIsChecked().GetValue();
+	if (previousState != m_FullscreenEnabled)
+		CommonApplication::Get()->GetMainWindow()->ToggleFullscreen();
+
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN, m_FullscreenEnabled);
 
 	// Volume
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
@@ -296,16 +304,6 @@ void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender,
 	OnButtonBackClick(pSender, args);
 }
 
-/*
-*
-*	HELPER FUNCTIONS
-*
-*/
-void MainMenuGUI::SetRenderStagesSleeping()
-{
-	DisablePlaySessionsRenderstages();
-}
-
 void MainMenuGUI::SetDefaultSettings()
 {
 	// Set inital volume
@@ -317,17 +315,24 @@ void MainMenuGUI::SetDefaultSettings()
 
 	SetDefaultKeyBindings();
 
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing Toggle
-	m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
-	CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
-	NS_ASSERT(pToggleRayTracing);
-	pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
+	// m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+	// CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// NS_ASSERT(pToggleRayTracing);
+	// pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
 
 	// Mesh Shader Toggle
 	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
-	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	CheckBox* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	NS_ASSERT(pToggleMeshShader);
 	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
+
+	// Fullscreen Toggle
+	m_FullscreenEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN);
+	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	NS_ASSERT(pToggleFullscreen);
+	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
 }
 
 void MainMenuGUI::SetDefaultKeyBindings()

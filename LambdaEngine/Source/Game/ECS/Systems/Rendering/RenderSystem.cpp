@@ -47,6 +47,10 @@ namespace LambdaEngine
 
 	bool RenderSystem::Init()
 	{
+		// Fullscreen
+		if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN))
+			CommonApplication::Get()->GetMainWindow()->ToggleFullscreen();
+
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 		m_RayTracingEnabled			= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);

@@ -11,6 +11,8 @@
 
 #include "Lobby/Player.h"
 
+typedef std::pair<LambdaEngine::Entity, float32> PlayerRespawnTimer;
+
 class MatchServer : public MatchBase
 {
 public:
@@ -38,6 +40,7 @@ private:
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
 	bool OnFlagRespawn(const FlagRespawnEvent& event);
 
+	void RespawnPlayer(LambdaEngine::Entity entity);
 	void DoKillPlayer(LambdaEngine::Entity playerEntity);
 
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
@@ -51,5 +54,10 @@ public:
 private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
+
+	LambdaEngine::SpinLock m_PlayersToRespawnLock;
+	//LambdaEngine::TQueue<PlayerTimers> m_PlayersToRespawn;
+	LambdaEngine::TArray<PlayerRespawnTimer> m_PlayersToRespawn;
+
 	bool m_ShouldBeginMatch = false;
 };

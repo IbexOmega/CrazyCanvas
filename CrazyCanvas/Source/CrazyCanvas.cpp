@@ -3,9 +3,15 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+
 #include "Resources/ResourceManager.h"
+
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
+#include "Rendering/EntityMaskManager.h"
+
 #include "RenderStages/PlayerRenderer.h"
 #include "RenderStages/PaintMaskRenderer.h"
 #include "States/BenchmarkState.h"
@@ -20,28 +26,25 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "Game/Multiplayer/Client/ClientSystem.h"
-#include "Game/Multiplayer/Server/ServerSystem.h"
-
 #include "Engine/EngineConfig.h"
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "ECS/Components/Player/WeaponComponent.h"
+
 #include "Multiplayer/Packet/PacketType.h"
+
 #include "Lobby/PlayerManagerClient.h"
 #include "Lobby/PlayerManagerServer.h"
+
 #include "Chat/ChatManager.h"
+
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/GameOverGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
-
 #include "GUI/Core/GUIApplication.h"
-
-#include "Rendering/EntityMaskManager.h"
-
-#include "ECS/Components/Player/WeaponComponent.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -179,28 +182,23 @@ bool CrazyCanvas::LoadRendererResources()
 
 	// For Skybox RenderGraph
 	{
-		String skybox[]
-		{
-			"Skybox/px.png",
-			"Skybox/nx.png",
-			"Skybox/py.png",
-			"Skybox/ny.png",
-			"Skybox/pz.png",
-			"Skybox/nz.png"
-		};
+		// Test Skybox
+		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
+			"Skybox/daytime.hdr",
+			EFormat::FORMAT_R16G16B16A16_SFLOAT,
+			768,
+			false);
 
-		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
-
-		Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
-		TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
-		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
+		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
+		TextureView*	pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+		Sampler*		pLinearSampler		= Sampler::GetLinearSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};
 		cubeTextureUpdateDesc.ResourceName										= "SKYBOX";
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures					= &pCubeTexture;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews				= &pCubeTextureView;
 		cubeTextureUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews	= &pCubeTextureView;
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers					= &pNearestSampler;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers					= &pLinearSampler;
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}

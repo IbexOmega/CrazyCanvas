@@ -268,15 +268,23 @@ void HUDGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const No
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
 
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing
-	Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
-	m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
-	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+	// Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
+	// EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
 
 	// Mesh Shader
 	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	m_MeshShadersEnabled = pMeshShaderCheckBox->GetIsChecked().GetValue();
 	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, m_MeshShadersEnabled);
+
+	// Fullscreen toggle
+	Noesis::CheckBox* pFullscreenCheckBox = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	bool previousState = m_FullscreenEnabled;
+	m_FullscreenEnabled = pFullscreenCheckBox->GetIsChecked().GetValue();
+	if (previousState != m_FullscreenEnabled)
+		CommonApplication::Get()->GetMainWindow()->ToggleFullscreen();
 
 	// Volume
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
@@ -614,7 +622,7 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 
 	Label* nameLabel = static_cast<Label*>(pGrid->GetChildren()->Get(0));
 
-	LOG_ERROR("[HUDGUI]: Name: %s", nameLabel->GetContent());
+	LOG_ERROR("[HUDGUI]: Name: %s", nameLabel->GetContent()->ToString().Str());
 
 	SolidColorBrush* pBrush = static_cast<SolidColorBrush*>(nameLabel->GetForeground());
 	if (isAlive)
@@ -743,17 +751,24 @@ void HUDGUI::SetDefaultSettings()
 
 	SetDefaultKeyBindings();
 
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing Toggle
-	m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
-	CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
-	NS_ASSERT(pToggleRayTracing);
-	pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
+	// m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+	// CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// NS_ASSERT(pToggleRayTracing);
+	// pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
 
 	// Mesh Shader Toggle
 	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	NS_ASSERT(pToggleMeshShader);
 	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
+
+	// Fullscreen
+	m_FullscreenEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN);
+	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	NS_ASSERT(pToggleFullscreen);
+	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
 }
 
 void HUDGUI::SetDefaultKeyBindings()
