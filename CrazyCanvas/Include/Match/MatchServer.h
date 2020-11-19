@@ -43,6 +43,8 @@ private:
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	void InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
 
+	void InternalSetScore(uint8 team, uint32 score);
+
 public:
 	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
 

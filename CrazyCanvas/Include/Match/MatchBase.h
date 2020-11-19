@@ -22,7 +22,7 @@ struct MatchDescription
 {
 	LambdaEngine::SHA256Hash LevelHash;
 	EGameMode GameMode	= EGameMode::CTF_TEAM_FLAG;
-	uint32 NumTeams		= 2;
+	uint8 NumTeams		= 2;
 	uint32 MaxScore		= 3;
 };
 
@@ -39,8 +39,6 @@ public:
 	void Tick(LambdaEngine::Timestamp deltaTime);
 	void FixedTick(LambdaEngine::Timestamp deltaTime);
 
-	void SetScore(uint32 teamIndex, uint32 score);
-
 	void ResetMatch();
 
 	virtual void BeginLoading()
@@ -56,6 +54,8 @@ public:
 	FORCEINLINE EGameMode GetGameMode() const { return m_MatchDesc.GameMode; }
 
 protected:
+	bool SetScore(uint8 teamIndex, uint32 score);
+
 	virtual bool InitInternal() = 0;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
 

@@ -15,9 +15,16 @@
 
 using namespace LambdaEngine;
 
-LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
+LobbyState::LobbyState(const Player* pPlayer) : 
+	LobbyState(pPlayer->GetName(), pPlayer->IsHost(), true)
+{
+	
+}
+
+LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost, bool isReplayLobby) :
 	m_Name(name),
-	m_IsHost(isHost)
+	m_IsHost(isHost),
+	m_IsReplayLobby(isReplayLobby)
 {
 
 }
@@ -60,17 +67,18 @@ void LobbyState::Init()
 
 	m_LobbyGUI->InitGUI(m_Name);
 
-	PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
-}
-
-void LobbyState::Tick(LambdaEngine::Timestamp delta)
-{
-
-}
-
-void LobbyState::FixedTick(LambdaEngine::Timestamp delta)
-{
-
+	if (!m_IsReplayLobby)
+	{
+		PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
+	}
+	else
+	{
+		const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
+		for (auto& pair : players)
+		{
+			m_LobbyGUI->AddPlayer(pair.second);
+		}
+	}
 }
 
 bool LobbyState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)

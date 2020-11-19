@@ -42,6 +42,10 @@
 
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Application/API/Events/EventQueue.h"
+
+#include "States/ServerState.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -93,8 +97,34 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 				const ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
 				const ComponentArray<PositionComponent>* pPositionComponent = pECS->GetComponentArray<PositionComponent>();
 
+				// Server
+				ImGui::Text((String("Clients: " + std::to_string(PlayerManagerServer::GetPlayerCount()))).c_str());
+				ImGui::Text((String("Game State: ") + ServerStateToString(ServerState::GetState())).c_str());
+
+				// Scores
+				ImGui::Text("Score Status:");
+				for (uint32 s = 0; s < m_Scores.GetSize(); s++)
+				{
+					int32 score = (int32)m_Scores[s];
+
+					std::string name = "Team " + std::to_string(s) + ": [Score=" + std::to_string(score) + "]";
+					if (ImGui::TreeNode(name.c_str()))
+					{
+						if (ImGui::Button("+"))
+							InternalSetScore((uint8)s, score + 1);
+
+						ImGui::SameLine();
+
+						if (ImGui::Button("-"))
+							InternalSetScore((uint8)s, glm::max<int32>(score - 1, 0));
+
+						ImGui::TreePop();
+					}
+				}
+
 				// Flags
 				TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
+				ImGui::Text("Flag Status:");
 				for (uint32 f = 0; f < flagEntities.GetSize(); f++)
 				{
 					Entity flagEntity = flagEntities[f];
@@ -434,22 +464,7 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		FlagSystemBase::GetInstance()->OnFlagDropped(event.Entity, flagPosition);
 
 		uint32 newScore = GetScore(event.ScoringTeamIndex) + 1;
-		SetScore(event.ScoringTeamIndex, newScore);
-
-		PacketTeamScored packet;
-		packet.TeamIndex	= event.ScoringTeamIndex;
-		packet.Score		= newScore;
-		ServerHelper::SendBroadcast(packet);
-
-		if (newScore == m_MatchDesc.MaxScore) // game over
-		{
-			PacketGameOver gameOverPacket;
-			gameOverPacket.WinningTeamIndex = event.ScoringTeamIndex;
-
-			ServerHelper::SendBroadcast(gameOverPacket);
-
-			ResetMatch();
-		}
+		InternalSetScore(event.ScoringTeamIndex, newScore);
 	}
 	else
 	{
@@ -569,6 +584,31 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 
 	std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
 	m_PlayersToKill.EmplaceBack(entityToKill);
+}
+
+void MatchServer::InternalSetScore(uint8 team, uint32 score)
+{
+	using namespace LambdaEngine;
+
+	if (SetScore(team, score))
+	{
+		PacketTeamScored packet;
+		packet.TeamIndex = team;
+		packet.Score = score;
+		ServerHelper::SendBroadcast(packet);
+
+		if (score == m_MatchDesc.MaxScore)
+		{
+			PacketGameOver gameOverPacket;
+			gameOverPacket.WinningTeamIndex = team;
+
+			ServerHelper::SendBroadcast(gameOverPacket);
+
+			ResetMatch();
+
+			EventQueue::SendEvent<GameOverEvent>(team);
+		}
+	}
 }
 
 void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)

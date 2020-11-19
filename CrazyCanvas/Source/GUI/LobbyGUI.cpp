@@ -227,7 +227,7 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 	message->SetFocusable(false);
 	message->SetContent(chatMessage.Message.c_str());
 	message->SetVerticalAlignment(VerticalAlignment::VerticalAlignment_Center);
-	message->SetPadding(Thickness(3, -2, -2, -2));
+	message->SetPadding(Thickness(3, 0, 0, 0));
 	dockPanel->GetChildren()->Add(message);
 
 	m_pChatPanel->GetChildren()->Add(dockPanel);

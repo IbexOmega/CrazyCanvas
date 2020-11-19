@@ -235,6 +235,23 @@ bool PlayerManagerServer::HasPlayerAuthority(const IClient* pClient)
 	return pPlayer != nullptr && pPlayer->IsHost();
 }
 
+void PlayerManagerServer::SetPlayerState(const Player* pPlayer, EGameState state)
+{
+	if (pPlayer->m_State != state)
+	{
+		Player* pPl = const_cast<Player*>(pPlayer);
+		pPl->m_State = state;
+
+		PacketPlayerState packet;
+		packet.UID		= pPl->m_UID;
+		packet.State	= pPl->m_State;
+		ServerHelper::SendBroadcast(packet);
+
+		PlayerStateUpdatedEvent event(pPlayer);
+		EventQueue::SendEventImmediate(event);
+	}
+}
+
 void PlayerManagerServer::SetPlayerAlive(const Player* pPlayer, bool alive, const Player* pPlayerKiller)
 {
 	if (pPlayer->m_IsDead == alive)
