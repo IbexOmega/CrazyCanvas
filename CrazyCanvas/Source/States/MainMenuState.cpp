@@ -9,8 +9,12 @@
 
 #include "GUI/GUIHelpers.h"
 
+#include "Resources/ResourceCatalog.h"
+
 MainMenuState::~MainMenuState()
 {
+	using namespace LambdaEngine;
+
 	m_MainMenuGUI.Reset();
 	m_View.Reset();
 }
@@ -20,6 +24,7 @@ void MainMenuState::Init()
 	using namespace LambdaEngine;
 
 	DisablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
 
 	RenderGraphStructureDesc renderGraphStructure = {};
 

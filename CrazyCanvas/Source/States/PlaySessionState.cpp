@@ -43,6 +43,8 @@
 
 #include "GUI/GUIHelpers.h"
 
+#include "Resources/ResourceCatalog.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
@@ -74,6 +76,7 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	EnablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();

@@ -34,9 +34,10 @@ namespace LambdaEngine
 
 	GUIRenderer::~GUIRenderer()
 	{
-		m_View.Reset();
-
-		if (m_pCurrentRenderTarget) m_pCurrentRenderTarget->Release();
+		if (m_View != nullptr)
+		{
+			m_View.Reset();
+		}
 
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pVertexBuffer);
