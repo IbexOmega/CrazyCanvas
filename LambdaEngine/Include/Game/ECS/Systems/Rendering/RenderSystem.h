@@ -47,7 +47,6 @@ namespace LambdaEngine
 	class CommandAllocator;
 	// Custom Renderers
 	class LineRenderer;
-	class PaintMaskRenderer;
 	class ParticleRenderer;
 	class ParticleUpdater;
 	class ParticleCollider;
@@ -60,7 +59,6 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderSystem : public System
 	{
-		friend class PaintMaskRenderer;
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
 
@@ -471,7 +469,6 @@ namespace LambdaEngine
 		// Custom Renderers
 		LineRenderer*				m_pLineRenderer			= nullptr;
 		LightRenderer*				m_pLightRenderer		= nullptr;
-		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
 		ParticleCollider*			m_pParticleCollider		= nullptr;

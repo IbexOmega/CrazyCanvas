@@ -6,7 +6,7 @@
 #include "ECS/Systems/Player/BenchmarkSystem.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "EventHandlers/AudioEffectHandler.h"
-#include "EventHandlers/MeshPaintHandler.h"
+#include "MeshPaint/MeshPaintHandler.h"
 #include "World/Level.h"
 
 #include "Multiplayer/Packet/PacketCreateLevelObject.h"

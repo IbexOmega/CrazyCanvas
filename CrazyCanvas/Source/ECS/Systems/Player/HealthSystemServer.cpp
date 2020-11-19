@@ -13,9 +13,11 @@
 
 #include "Match/MatchServer.h"
 
-#include "EventHandlers/MeshPaintHandler.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 #include "Lobby/PlayerManagerServer.h"
+
+#include "Rendering/Core/API/Buffer.h"
 
 #include <mutex>
 
@@ -151,7 +153,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		for (Entity entity : m_ResetsToProcess)
 		{
 			// Reset texture
-			PaintMaskRenderer::ResetServer(entity);
+			MeshPaintHandler::ResetServer(entity);
 
 			// Reset health and send to client
 			HealthComponent& healthComponent	= pHealthComponents->GetData(entity);

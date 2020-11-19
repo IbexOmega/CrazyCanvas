@@ -393,6 +393,8 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 
 	m_MultiplayerClient.TickMainThreadInternal(delta);
 
+	m_MeshPaintHandler.Tick(delta);
+
 	if constexpr (IMGUI_ENABLED)
 	{
 		RenderImgui();

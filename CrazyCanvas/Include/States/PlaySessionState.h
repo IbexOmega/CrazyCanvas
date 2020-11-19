@@ -10,7 +10,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "EventHandlers/AudioEffectHandler.h"
-#include "EventHandlers/MeshPaintHandler.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 #include "Multiplayer/MultiplayerClient.h"
 
