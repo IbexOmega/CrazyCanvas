@@ -370,7 +370,7 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 			mostFlags = std::make_pair(flags, pPlayer);
 	}
 
-	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostFlags, mostDeaths);
+	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostDeaths, mostFlags);
 
 	return false;
 }

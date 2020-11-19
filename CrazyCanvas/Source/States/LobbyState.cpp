@@ -9,6 +9,7 @@
 #include "Application/API/Events/EventQueue.h"
 
 #include "States/PlaySessionState.h"
+#include "States/MainMenuState.h"
 
 #include "GUI/GUIHelpers.h"
 
@@ -32,6 +33,7 @@ LobbyState::~LobbyState()
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &LobbyState::OnPlayerScoreUpdatedEvent);
 	EventQueue::UnregisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
+	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &LobbyState::OnClientDisconnected);
 
 	m_LobbyGUI.Reset();
 	m_View.Reset();
@@ -48,6 +50,7 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &LobbyState::OnPlayerScoreUpdatedEvent);
 	EventQueue::RegisterEventHandler<ChatEvent>(this, &LobbyState::OnChatEvent);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
+	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &LobbyState::OnClientDisconnected);
 	
 	DisablePlaySessionsRenderstages();
 
@@ -129,5 +132,19 @@ bool LobbyState::OnChatEvent(const ChatEvent& event)
 bool LobbyState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& packet)
 {
 	m_LobbyGUI->UpdateSettings(packet.Packet);
+	return false;
+}
+
+bool LobbyState::OnClientDisconnected(const ClientDisconnectedEvent& event)
+{
+	const String& reason = event.Reason;
+
+	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
+
+	PlayerManagerClient::Reset();
+
+	State* pMainMenuState = DBG_NEW MainMenuState();
+	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
+
 	return false;
 }

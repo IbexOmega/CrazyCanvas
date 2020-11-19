@@ -227,12 +227,10 @@ namespace LambdaEngine
 		if (!IsAcceptingConnections())
 		{
 			pClient->SendServerNotAccepting();
-			pClient->Release();
 		}
 		else if (GetClientCount() >= GetDescription().MaxClients)
 		{
 			pClient->SendServerFull();
-			pClient->Release();
 		}
 		else
 		{
