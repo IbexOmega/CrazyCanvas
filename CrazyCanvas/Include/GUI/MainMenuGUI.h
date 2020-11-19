@@ -49,7 +49,6 @@ private:
 	friend class HUDGUI;
 
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void SetRenderStagesSleeping();
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);

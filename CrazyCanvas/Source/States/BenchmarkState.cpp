@@ -44,6 +44,8 @@
 
 #include "Lobby/PlayerManagerClient.h"
 
+#include "GUI/GUIHelpers.h"
+
 BenchmarkState::BenchmarkState()
 {
 	using namespace LambdaEngine;
@@ -64,6 +66,9 @@ BenchmarkState::~BenchmarkState()
 void BenchmarkState::Init()
 {
 	using namespace LambdaEngine;
+
+	EnablePlaySessionsRenderstages();
+
 	Input::Disable();
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
@@ -316,8 +321,6 @@ bool BenchmarkState::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent
 		robotAnimationComp.Pose.pSkeleton = ResourceManager::GetMesh(robotMeshGUID)->pSkeleton;
 
 		constexpr const uint32 playerCount = 9;
-
-		PlayerManagerClient::RegisterLocalPlayer("Benchmark", true);
 
 		CreatePlayerDesc createPlayerDesc =
 		{

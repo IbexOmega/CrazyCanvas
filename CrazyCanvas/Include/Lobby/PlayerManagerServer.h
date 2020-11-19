@@ -23,6 +23,7 @@ public:
 	static void SetPlayerFlagsCaptured(const Player* pPlayer, uint8 flagsCaptured);
 	static void SetPlayerFlagsDefended(const Player* pPlayer, uint8 flagsDefended);
 	static void SetPlayerStats(const Player* pPlayer, uint8 team, uint8 kills, uint8 deaths, uint8 flagsCaptured, uint8 flagsDefended);
+	static void KickPlayers(uint8 count);
 
 protected:
 	static void Init();
