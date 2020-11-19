@@ -396,7 +396,6 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
 	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
-	createProjectileDesc.MeshComponent	= event.MeshComponent;
 	createProjectileDesc.Angle			= event.Angle;
 
 	TArray<Entity> createdFlagEntities;

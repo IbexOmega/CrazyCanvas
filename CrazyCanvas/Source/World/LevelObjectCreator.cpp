@@ -1083,10 +1083,18 @@ bool LevelObjectCreator::CreateProjectile(
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
-		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
-				.HitMask = 0x02
-			});
+		glm::vec4 particleColor(1.0f);
+		if (desc.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
+		{
+			GUID_Lambda projectileMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(desc.TeamIndex);
+			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = projectileMaterialGUID });
+			particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
+		}
+		else
+		{
+			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
+			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
+		}
 
 		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{
 				.Active = true,
@@ -1107,9 +1115,13 @@ bool LevelObjectCreator::CreateProjectile(
 				.TileIndex = 14,
 				.AnimationCount = 1,
 				.FirstAnimationIndex = 14,
-				.Color = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f),
+				.Color = particleColor,
 			}
 		);
+
+		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
+				.HitMask = 0x02
+			});
 	}
 
 	return true;

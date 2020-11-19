@@ -33,6 +33,8 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "Input/API/Input.h"
 
 #include "Math/Random.h"
@@ -110,6 +112,12 @@ void SandboxState::Init()
 		};
 
 		Match::CreateMatch(&matchDescription);
+	}
+
+	// Set Team Colors
+	{
+		TeamHelper::SetTeamColor(0, glm::vec3(1.0f, 1.0f, 0.0f));
+		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
 	}
 
 	{
