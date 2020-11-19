@@ -16,7 +16,8 @@
 #include "ECS/Systems/Player/HealthSystem.h"
 
 #include "EventHandlers/AudioEffectHandler.h"
-#include "EventHandlers/MeshPaintHandler.h"
+
+#include "MeshPaint/MeshPaintHandler.h"
 
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>

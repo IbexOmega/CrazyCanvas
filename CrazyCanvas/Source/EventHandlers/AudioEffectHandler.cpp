@@ -5,9 +5,9 @@
 
 #include "Audio/API/ISoundEffect3D.h"
 
-#include "RenderStages/PaintMaskRenderer.h"
-
 #include "Game/Multiplayer/MultiplayerUtils.h"
+
+#include "Resources/ResourceManager.h"
 
 #include "ECS/ECSCore.h"
 

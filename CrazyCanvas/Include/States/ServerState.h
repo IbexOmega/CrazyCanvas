@@ -14,7 +14,7 @@
 #include "Multiplayer/MultiplayerServer.h"
 #include "Multiplayer/Packet/PacketGameSettings.h"
 
-#include "EventHandlers/MeshPaintHandler.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 class Level;
 

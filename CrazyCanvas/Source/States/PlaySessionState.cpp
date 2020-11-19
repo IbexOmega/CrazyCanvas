@@ -111,6 +111,7 @@ void PlaySessionState::Init()
 void PlaySessionState::Tick(Timestamp delta)
 {
 	m_MultiplayerClient.TickMainThreadInternal(delta);
+	m_MeshPaintHandler.Tick(delta);
 }
 
 void PlaySessionState::FixedTick(Timestamp delta)
