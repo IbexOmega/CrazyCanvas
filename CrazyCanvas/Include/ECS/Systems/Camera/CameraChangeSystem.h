@@ -35,9 +35,6 @@ protected:
 private:
 	uint8 m_LocalTeamIndex;
 
-	uint8 m_SpectatorIndex = 0;
-
-	LambdaEngine::TArray<LambdaEngine::Entity> m_SpectatorStack;
-	LambdaEngine::TArray<const Player*> m_TeamPlayers;
+	int8 m_SpectatorIndex = 0;
 
 };

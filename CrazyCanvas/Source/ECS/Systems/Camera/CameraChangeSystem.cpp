@@ -69,34 +69,52 @@ bool CameraChangeSystem::OnMouseButtonClicked(const MouseButtonClickedEvent& eve
 {
 	if (PlayerManagerClient::GetPlayerLocal()->IsDead())
 	{
-		PlayerManagerClient::GetPlayersOfTeam(m_TeamPlayers, m_LocalTeamIndex);
+		LambdaEngine::TArray<const Player*> teamPlayers;
+		PlayerManagerClient::GetPlayersOfTeam(teamPlayers, m_LocalTeamIndex);
 
-		if (!m_TeamPlayers.IsEmpty())
+
+
+		if (!teamPlayers.IsEmpty())
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 			ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+			
+			Entity localPlayer = PlayerManagerClient::GetPlayerLocal()->GetEntity();
+
+			for (uint32 i = 0; i < teamPlayers.GetSize(); i++)
+			{
+				if (teamPlayers[i]->GetEntity() == localPlayer)
+				{
+					teamPlayers.Erase(teamPlayers.begin() + i);
+					break;
+				}
+
+			}
+
+			//ToDO: Block Incoming player actions 
+			//		Get correct offset & Rotation from player
+			//		
 
 			for (Entity cameraEntity : m_CameraEntities)
 			{
 				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 				
-				Entity nextPlayer = m_TeamPlayers[m_SpectatorIndex]->GetEntity();
+				Entity nextPlayer = teamPlayers[m_SpectatorIndex]->GetEntity();
+
+				parentComponent.Parent = nextPlayer;
+				LOG_INFO("Jumping to player entity %d", nextPlayer);
+				LOG_INFO("Current m_SpectatorIndex %d", m_SpectatorIndex);
 
 				if (event.Button == EMouseButton::MOUSE_BUTTON_RIGHT)
 				{
 					m_SpectatorIndex++;
-					nextPlayer = nextPlayer != PlayerManagerClient::GetPlayerLocal()->GetEntity() ? nextPlayer : m_TeamPlayers[m_SpectatorIndex + 1]->GetEntity();
-					parentComponent.Parent = nextPlayer;
-					m_SpectatorIndex %= m_TeamPlayers.GetSize();
-
 				}
 				else if (event.Button == EMouseButton::MOUSE_BUTTON_LEFT)
 				{
 					m_SpectatorIndex--;
-					nextPlayer = nextPlayer != PlayerManagerClient::GetPlayerLocal()->GetEntity() ? nextPlayer : m_TeamPlayers[m_SpectatorIndex + 1]->GetEntity();
-					parentComponent.Parent = nextPlayer;
-					m_SpectatorIndex %= m_TeamPlayers.GetSize();
 				}
+
+				m_SpectatorIndex = m_SpectatorIndex % teamPlayers.GetSize();
 			}
 		}
 	}
