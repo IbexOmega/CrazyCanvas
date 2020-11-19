@@ -11,7 +11,7 @@
 
 #include "Lobby/Player.h"
 
-typedef std::pair<LambdaEngine::Entity, float32> PlayerRespawnTimers;
+typedef std::pair<LambdaEngine::Entity, float32> PlayerRespawnTimer;
 
 class MatchServer : public MatchBase
 {
