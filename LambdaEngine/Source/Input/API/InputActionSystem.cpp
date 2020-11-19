@@ -188,7 +188,7 @@ namespace LambdaEngine
 
 	void InputActionSystem::SetLookSensitivity(float32 sensitivity)
 	{
-		s_CurrentLookSensitivityPercentage = float64(glm::max(0.01f, sensitivity));
+		s_CurrentLookSensitivityPercentage = glm::max(0.01f, sensitivity);
 
 		if (s_ConfigDocument.HasMember(s_LookSensitivityName.c_str()))
 		{
