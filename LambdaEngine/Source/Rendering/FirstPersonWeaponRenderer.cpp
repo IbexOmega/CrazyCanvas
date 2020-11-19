@@ -51,6 +51,12 @@ namespace LambdaEngine
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 		m_UsingMeshShader = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 
+		if (!CreateBuffers())
+		{
+			LOG_ERROR("[LineRenderer]: Failed to create buffers");
+			return false;
+		}
+
 		if (!CreatePipelineLayout())
 		{
 			LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to create PipelineLayout");
@@ -145,6 +151,30 @@ namespace LambdaEngine
 		return m_DepthStencilTexture.Get() != nullptr && m_DepthStencil.Get() != nullptr;
 	}
 
+	bool FirstPersonWeapoRenderer::CreateBuffers()
+	{
+		BufferDesc desc = {};
+		desc.DebugName = "FirstPersonWeapon Renderer Uniform Copy Buffer";
+		desc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		desc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+		desc.SizeInBytes = sizeof(FrameBuffer);
+
+		m_FrameBuffers.Resize(m_BackBufferCount);
+		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		{
+			TSharedRef<Buffer> buffer = RenderAPI::GetDevice()->CreateBuffer(&desc);
+			if (buffer != nullptr)
+			{
+				m_FrameBuffers[b] = buffer;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
 	void FirstPersonWeapoRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
@@ -163,10 +193,6 @@ namespace LambdaEngine
 		// Fetching render targets
 		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE")
 		{
-			if (imageCount != 0)
-			{
-				LOG_WARNING("RenderGraph has been altered. imageCount is %d but should be 0", imageCount);
-			}
 			m_IntermediateOutputImage = MakeSharedRef(ppPerImageTextureViews[0]);
 		}
 
@@ -363,8 +389,8 @@ namespace LambdaEngine
 								};
 
 								// Set Vertex and Instance buffer for rendering
-								Buffer* ppBuffers = fb;
-								uint64 pOffsets = 0;
+								Buffer* ppBuffer = fb;
+								uint64 pOffset = 0;
 								uint64 pSizesInBytes = sizeof(FrameBuffer);
 
 								m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());

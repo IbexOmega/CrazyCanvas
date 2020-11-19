@@ -67,6 +67,7 @@ namespace LambdaEngine {
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc);
 		bool CreatePipelineState();
 		bool TextureInit();
+		bool CreateBuffers();
 		void RenderCull(CommandList* pCommandList, uint64& pipelineId);
 
 	private:
@@ -85,6 +86,8 @@ namespace LambdaEngine {
 		CommandList**							m_ppGraphicCommandLists = nullptr;
 
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
+
+		TArray<TSharedRef<Buffer>>				m_FrameBuffers;
 
 		// Needed for transparent rendering
 		uint64									m_PipelineStateIDFrontCull = 0;
