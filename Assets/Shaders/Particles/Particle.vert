@@ -62,7 +62,7 @@ void main()
 	vec3 camForwardWorldSpace 	= vec3(frameBuffer.View[0][2], frameBuffer.View[1][2], frameBuffer.View[2][2]);
 
 	vec3 vPosition = camUpWorldSpace * vertex.Position.y + camRightWorldSpace * vertex.Position.x;
-	vPosition *= mix(particle.EndRadius, particle.BeginRadius, particle.CurrentLife / emitter.LifeTime);
+	vPosition *= mix(particle.EndRadius, particle.BeginRadius, max(particle.CurrentLife / emitter.LifeTime, 0.0));
 
 	out_TBN = mat3(camRightWorldSpace, camUpWorldSpace, camForwardWorldSpace);
 	out_WorldPos = (particle.Transform * vec4(vPosition, 1.0)).xyz;

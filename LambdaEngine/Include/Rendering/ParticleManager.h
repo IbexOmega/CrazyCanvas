@@ -8,7 +8,7 @@
 
 #include "Rendering/RT/ASBuilder.h"
 
-#define DEBUG_PARTICLE false
+#define DEBUG_PARTICLE true
 
 namespace LambdaEngine 
 {
