@@ -137,7 +137,7 @@ namespace LambdaEngine
 		if (pPipelineState)
 		{
 			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
-			s_GraphicsPipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			s_GraphicsPipelineStateDescriptions[pipelineIndex]	= *pDesc;
 			s_PipelineStates[pipelineIndex] 					= pPipelineState;
 			return pipelineIndex;
 		}
@@ -155,7 +155,7 @@ namespace LambdaEngine
 		if (pPipelineState)
 		{
 			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
-			s_ComputePipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			s_ComputePipelineStateDescriptions[pipelineIndex]	= *pDesc;
 			s_PipelineStates[pipelineIndex] 					= pPipelineState;
 			return pipelineIndex;
 		}
@@ -173,7 +173,7 @@ namespace LambdaEngine
 		if (pPipelineState)
 		{
 			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
-			s_RayTracingPipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			s_RayTracingPipelineStateDescriptions[pipelineIndex]	= *pDesc;
 			s_PipelineStates[pipelineIndex] 						= pPipelineState;
 			return pipelineIndex;
 		}
@@ -193,9 +193,9 @@ namespace LambdaEngine
 			
 			switch (it->second->GetType())
 			{
-			case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:			s_GraphicsPipelineStateDescriptions.erase(id);		break;
-			case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:			s_ComputePipelineStateDescriptions.erase(id);		break;
-			case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:		s_RayTracingPipelineStateDescriptions.erase(id);	break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		s_GraphicsPipelineStateDescriptions.erase(id);		break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		s_ComputePipelineStateDescriptions.erase(id);		break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	s_RayTracingPipelineStateDescriptions.erase(id);	break;
 			}
 
 			s_PipelineStates.erase(id);
@@ -224,7 +224,6 @@ namespace LambdaEngine
 		for (auto it = s_PipelineStates.begin(); it != s_PipelineStates.end(); it++)
 		{
 			PipelineState* pNewPipelineState = nullptr;
-			
 			VALIDATE(it->second != nullptr);
 			
 			switch (it->second->GetType())
@@ -250,7 +249,7 @@ namespace LambdaEngine
 					const ManagedRayTracingPipelineStateDesc* pPipelineDesc = &s_RayTracingPipelineStateDescriptions[it->first];
 					RayTracingPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
 
-					pNewPipelineState			= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
+					pNewPipelineState = RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 					break;
 				}
 			}
