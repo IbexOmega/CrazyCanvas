@@ -586,8 +586,8 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 				/* Shape Type */		EShapeType::TRIGGER,
 				/* GeometryType */		EGeometryType::BOX,
 				/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
-				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC,
+				/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
 				/* EntityID*/			entity,
 				/* CallbackFunction*/	&ParticleShowerCallback
 			},
@@ -840,7 +840,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	GUID_Lambda playerMaterialGUID;
 
-	// Server/Client 
+	// Server/Client
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
