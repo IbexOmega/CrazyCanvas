@@ -66,7 +66,7 @@ void main()
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex, 0.f);
 	shadingNormal = mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;

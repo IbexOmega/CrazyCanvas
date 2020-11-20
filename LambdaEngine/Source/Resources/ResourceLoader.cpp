@@ -1539,7 +1539,7 @@ namespace LambdaEngine
 			vertex.PositionXYZPaintBitsW.x = pMeshAI->mVertices[vertexIdx].x;
 			vertex.PositionXYZPaintBitsW.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.PositionXYZPaintBitsW.z = pMeshAI->mVertices[vertexIdx].z;
-			vertex.PositionXYZPaintBitsW.w = 0.0f;
+			vertex.PositionXYZPaintBitsW.w = glm::uintBitsToFloat(0);
 
 			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.PositionXYZPaintBitsW.x));
 			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.PositionXYZPaintBitsW.y));
@@ -1554,9 +1554,10 @@ namespace LambdaEngine
 
 			if (pMeshAI->HasNormals())
 			{
-				vertex.Normal.x = pMeshAI->mNormals[vertexIdx].x;
-				vertex.Normal.y = pMeshAI->mNormals[vertexIdx].y;
-				vertex.Normal.z = pMeshAI->mNormals[vertexIdx].z;
+				vertex.NormalXYZPaintDistW.x = pMeshAI->mNormals[vertexIdx].x;
+				vertex.NormalXYZPaintDistW.y = pMeshAI->mNormals[vertexIdx].y;
+				vertex.NormalXYZPaintDistW.z = pMeshAI->mNormals[vertexIdx].z;
+				vertex.NormalXYZPaintDistW.w = 0.0f;
 			}
 
 			if (pMeshAI->HasTangentsAndBitangents())

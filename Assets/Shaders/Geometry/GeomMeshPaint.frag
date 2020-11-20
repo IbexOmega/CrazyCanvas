@@ -19,7 +19,8 @@ layout(location = 4) in vec3		in_Bitangent;
 layout(location = 5) in vec2		in_TexCoord;
 layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
-layout(location = 8) in flat uint	in_ExtensionIndex;
+layout(location = 8) in flat uint	in_PaintInfo;
+layout(location = 9) in float 		in_PaintDist;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
 
@@ -47,7 +48,7 @@ void main()
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_PaintInfo, in_PaintDist);
 
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));

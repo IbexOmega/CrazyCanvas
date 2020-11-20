@@ -14,6 +14,8 @@ layout(binding = 2, set = DRAW_SET_INDEX) restrict readonly buffer Meshlets			{ 
 layout(binding = 3, set = DRAW_SET_INDEX) restrict readonly buffer UniqueIndices	{ uint Val[]; } 			b_UniqueIndices;
 layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndices	{ uint Val[]; } 			b_PrimitiveIndices;
 
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
+
 layout(location = 0) out flat uint out_MaterialSlot;
 layout(location = 1) out vec3 out_WorldPosition;
 layout(location = 2) out vec3 out_Normal;
@@ -22,7 +24,8 @@ layout(location = 4) out vec3 out_Bitangent;
 layout(location = 5) out vec2 out_TexCoord;
 layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
-layout(location = 8) out flat uint out_ExtensionIndex;
+layout(location = 8) out flat uint out_PaintInfo;
+layout(location = 9) out float out_PaintDist;
 
 vec2 rotate(in vec2 v, float a)
 {
@@ -48,6 +51,7 @@ void main()
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
 	uint instanceTeam = instance.TeamIndex;
+	float paintDist = 1.f; // Distance from target. 0 is at the target, 1 is at the edge.
 
 	uint paintCount = uint(u_HitPointsBuffer.val[0].TargetPosition.w);
 	for (uint hitPointIndex = 0; hitPointIndex < paintCount; hitPointIndex++)
@@ -55,7 +59,7 @@ void main()
 		SUnwrapData unwrapData = u_HitPointsBuffer.val[hitPointIndex];
 
 		const vec3 GLOBAL_UP	= vec3(0.0f, 1.0f, 0.0f);
-		const float BRUSH_SIZE	= 0.5f;
+		const float BRUSH_SIZE	= 3.0f;
 		const float PAINT_DEPTH = BRUSH_SIZE * 2.0f;
 
 		vec3 normal 			= normalize(normal);
@@ -90,7 +94,10 @@ void main()
 		float isSameTeam = 1.f - step(0.5f, abs(float(instanceTeam) - float(teamMode)));
 		valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
 
-		if(maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
+		// Apply brush mask
+		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
+
+		if(brushMask.a > EPSILON && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
 		{
 			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in MeshPaintTypes.h for enum)
 			uint teamSC = floatBitsToUint(vertex.Position.w);
@@ -110,6 +117,8 @@ void main()
 
 			teamSC = (client << 4) | server;
 			vertex.Position.w = uintBitsToFloat(teamSC);
+
+			paintDist = length(targetPosToWorldPos) / BRUSH_SIZE;
 		}
 	}
 
@@ -124,7 +133,9 @@ void main()
 	out_TexCoord			= vertex.TexCoord.xy;
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
-    out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
+   	//out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
+	out_PaintInfo 			= floatBitsToUint(vertex.Position.w);
+	out_PaintDist 			= paintDist;
 
 	gl_Position = out_ClipPosition;
 }

@@ -31,16 +31,16 @@ SPaintSample SamplePaint(in ivec2 p, in uint paintInfo)
 
 	uint clientTeam				= client & 0x0F;
 	uint serverTeam				= server & 0x0F;
-	uint clientPainting			= client & 0x1;
+	uint clientPainting			= uint(step(1, int(client)));
 
 	SPaintSample paintSample;
-	paintSample.PaintAmount		= float((server & 0x1) | (client & 0x1));
+	paintSample.PaintAmount		= float(uint(step(1, int(client))) | uint(step(1, int(server))));
 	paintSample.Team 			= clientPainting * clientTeam + (1 - clientPainting) * serverTeam;
 	return paintSample;
 }
 
 
-SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangent, in vec3 bitangent, in vec2 texCoord, in uint paintInfo)
+SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangent, in vec3 bitangent, in vec2 texCoord, in uint paintInfo, in float strength)
 {
 	ivec2 paintMaskSize 		= ivec2(64);//textureSize(u_PaintMaskTextures[paintMaskIndex], 0);
 	vec2 texelPos				= (texCoord * vec2(paintMaskSize));
