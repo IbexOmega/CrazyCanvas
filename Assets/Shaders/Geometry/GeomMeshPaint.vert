@@ -98,6 +98,10 @@ void main()
 
 		// Apply brush mask
 		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
+
+		//float st = targetPosToWorldPos;
+		//float a = tan(st.y, st.x);
+
 		if(brushMask.a > EPSILON && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
 		{
 			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in MeshPaintTypes.h for enum)
