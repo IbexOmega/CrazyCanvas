@@ -392,7 +392,6 @@ namespace LambdaEngine
 										EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER
 									);
 								}
-
 							}
 							else
 							{
