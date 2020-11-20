@@ -289,7 +289,7 @@ namespace LambdaEngine
 
 		emitterInstance.AtlasGUID = emitterComp.AtlasGUID;
 		emitterInstance.AnimationCount = emitterComp.AnimationCount;
-		emitterInstance.TileIndex = emitterComp.TileIndex;
+		emitterInstance.RandomStartIndex = emitterComp.RandomStartIndex;
 		emitterInstance.FirstAnimationIndex = emitterComp.FirstAnimationIndex;
 
 		emitterInstance.Color = emitterComp.Color;
@@ -379,7 +379,7 @@ namespace LambdaEngine
 			particle.EndRadius = emitterInstance.EndRadius;
 			particle.Acceleration = direction * (emitterInstance.Acceleration * (1.0f - emitterInstance.AccelerationRandomness) + emitterInstance.Acceleration * Random::Float32(0.f, emitterInstance.AccelerationRandomness));
 			particle.StartAcceleration = particle.Acceleration;
-			particle.TileIndex = emitterInstance.TileIndex;
+			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
 			particle.WasCreated = true;
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
 			particle.Bounciness = emitterInstance.Bounciness;
@@ -459,7 +459,7 @@ namespace LambdaEngine
 			particle.EndRadius = emitterInstance.EndRadius;
 			particle.Acceleration = glm::vec3(0.f);
 			particle.StartAcceleration = particle.Acceleration;
-			particle.TileIndex = emitterInstance.TileIndex;
+			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
 			particle.WasCreated = true;
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
 			particle.Bounciness = emitterInstance.Bounciness;

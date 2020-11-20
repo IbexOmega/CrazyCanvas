@@ -1130,8 +1130,8 @@ bool LevelObjectCreator::CreateProjectile(
 				.BeginRadius = 0.5f,
 				.FrictionFactor = 0.f,
 				.Bounciness = 0.f,
-				.TileIndex = 0,
-				.AnimationCount = 1,
+				.RandomStartIndex = true,
+				.AnimationCount = 4,
 				.FirstAnimationIndex = 0,
 				.Color = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f),
 			}
