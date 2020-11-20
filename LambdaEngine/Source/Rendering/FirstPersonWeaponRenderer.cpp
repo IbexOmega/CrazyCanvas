@@ -564,24 +564,24 @@ namespace LambdaEngine
 
 	bool FirstPersonWeaponRenderer::CreatePipelineLayout()
 	{
-		/* VERTEX SHADER */
+		/* ALL */
 		DescriptorBindingDesc frameBufferDesc = {};
 		frameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		frameBufferDesc.DescriptorCount = 1;
 		frameBufferDesc.Binding = 0;
-		frameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		frameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		verticesBindingDesc.DescriptorCount = 1;
 		verticesBindingDesc.Binding = 0;
-		verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 		DescriptorBindingDesc instanceBindingDesc = {};
 		instanceBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		instanceBindingDesc.DescriptorCount = 1;
 		instanceBindingDesc.Binding = 1;
-		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 		
 		DescriptorBindingDesc meshletBindingDesc = {};
 		meshletBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -593,13 +593,13 @@ namespace LambdaEngine
 		uniqueIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		uniqueIndicesDesc.DescriptorCount = 1;
 		uniqueIndicesDesc.Binding = 3;
-		uniqueIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		uniqueIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 		DescriptorBindingDesc primitiveIndicesDesc = {};
 		primitiveIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		primitiveIndicesDesc.DescriptorCount = 1;
 		primitiveIndicesDesc.Binding = 4;
-		primitiveIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		primitiveIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 
 		/* PIXEL SHADER */
