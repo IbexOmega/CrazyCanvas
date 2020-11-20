@@ -4,6 +4,7 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "../Defines.glsl"
+#include "../Noise.glsl"
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer					{ SPerFrameBuffer val; }	u_PerFrameBuffer;
 layout(binding = 3, set = BUFFER_SET_INDEX) uniform HitPointsBuffer					{ SUnwrapData val[10]; }	u_HitPointsBuffer;
@@ -99,10 +100,14 @@ void main()
 		// Apply brush mask
 		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
 
-		//float st = targetPosToWorldPos;
-		//float a = tan(st.y, st.x);
+		vec2 st = maskUV-0.5f/* + vec2(-dot(targetPosition, right), -dot(targetPosition, up))*/;
+		float a = atan(st.y, st.x);
+		float r = length(st);
+		float n = snoise(vec3(sin(a*1.548f)))*8.864f;
+		float b = 0.108f;
+		float dist = r-b;
 
-		if(brushMask.a > EPSILON && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
+		if(/*brushMask.a > EPSILON &&*/ maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
 		{
 			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in MeshPaintTypes.h for enum)
 			uint teamSC = floatBitsToUint(vertex.Position.w);
@@ -126,8 +131,8 @@ void main()
 			lineToPaint = vec3(0.f);
 		}
 
-		float t = clamp(length(lineToPaint) / BRUSH_SIZE, 0.f, 1.0f);
-		vertex.Normal.w = min(vertex.Normal.w, smoothstep(0.f, 1.f, t));
+		//float t = clamp(length(lineToPaint) / BRUSH_SIZE, 0.f, 1.0f);
+		vertex.Normal.w = min(vertex.Normal.w, dist/*smoothstep(0.f, 1.f, t)*/);
 		paintDist = min(paintDist, vertex.Normal.w);
 	}
 
