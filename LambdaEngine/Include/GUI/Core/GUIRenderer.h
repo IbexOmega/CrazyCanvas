@@ -160,9 +160,6 @@ namespace LambdaEngine
 		CommandAllocator*	m_ppRenderCommandAllocators[BACK_BUFFER_COUNT];
 		CommandList*		m_ppRenderCommandLists[BACK_BUFFER_COUNT];
 
-		uint32_t m_CurrentSurfaceWidth	= 0;
-		uint32_t m_CurrentSurfaceHeight	= 0;
-
 		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
 		Sampler* m_pGUISampler = nullptr;
 

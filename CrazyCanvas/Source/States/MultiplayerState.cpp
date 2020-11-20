@@ -3,6 +3,8 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "GUI/GUIHelpers.h"
 
+#include "Resources/ResourceCatalog.h"
+
 using namespace LambdaEngine;
 
 MultiplayerState::~MultiplayerState()
@@ -16,6 +18,7 @@ void MultiplayerState::Init()
 	using namespace LambdaEngine;
 
 	DisablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
 
 	m_MultiplayerGUI = *new MultiplayerGUI("Multiplayer.xaml");
 	m_View = Noesis::GUI::CreateView(m_MultiplayerGUI);

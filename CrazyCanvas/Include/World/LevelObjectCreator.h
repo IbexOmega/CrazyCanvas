@@ -86,7 +86,6 @@ struct CreateProjectileDesc
 	uint8		TeamIndex;
 	LambdaEngine::Entity			WeaponOwner;
 	LambdaEngine::CollisionCallback	Callback;
-	LambdaEngine::MeshComponent		MeshComponent;
 	uint32 Angle = 0;
 };
 
@@ -187,20 +186,4 @@ private:
 	inline static LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc> s_LevelObjectOnLoadDescriptions;
 	inline static LambdaEngine::THashTable<LambdaEngine::String, LevelObjectCreateByPrefixFunc> s_LevelObjectByPrefixCreateFunctions;
 	inline static LambdaEngine::THashTable<ELevelObjectType, LevelObjectCreateByTypeFunc> s_LevelObjectByTypeCreateFunctions;
-
-	inline static GUID_Lambda s_FlagMeshGUID		= GUID_NONE;
-	inline static GUID_Lambda s_FlagCommonMaterialGUID	= GUID_NONE;
-
-	inline static GUID_Lambda s_PlayerMeshGUID = GUID_NONE;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerIdleGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunMirroredGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
-	inline static GUID_Lambda s_PlayerStepSoundGUID = GUID_NONE;
-
-	inline static GUID_Lambda s_WeaponMeshGUID = GUID_NONE;
-	inline static GUID_Lambda s_WeaponMaterialGUID = GUID_NONE;
 };

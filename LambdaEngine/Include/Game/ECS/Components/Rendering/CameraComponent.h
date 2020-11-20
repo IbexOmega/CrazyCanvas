@@ -28,7 +28,7 @@ namespace LambdaEngine
 		glm::mat4 ViewInv 		= glm::mat4(1.f);
 		float NearPlane 		= 0.0001f;
 		float FarPlane			= 50.0f;
-		float FOV				= 45.0f;
+		float FOV				= 90.0f;
 		bool IsActive 			= true;
 	};
 
@@ -43,7 +43,7 @@ namespace LambdaEngine
 	{
 		glm::vec3 Position 	= 2.0f * g_DefaultUp;
 		glm::vec3 Direction = g_DefaultForward;
-		float FOVDegrees 	= 45.0f;
+		float FOVDegrees 	= 90.0f;
 		float Width 		= 1280.0f;
 		float Height 		= 720.0f;
 		float NearPlane 	= 0.0001f;

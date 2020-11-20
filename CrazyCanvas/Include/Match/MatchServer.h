@@ -36,7 +36,7 @@ protected:
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
 
 private:
-	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
+	bool OnPlayerLeft(const PlayerLeftEvent& event);
 	bool OnFlagDelivered(const FlagDeliveredEvent& event);
 	bool OnFlagRespawn(const FlagRespawnEvent& event);
 

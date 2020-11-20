@@ -35,7 +35,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (FMOD_System_PlaySound(m_pAudioDevice->pSystem, m_pHandle, nullptr, false, &m_pChannel) != FMOD_OK)
+		if (FMOD_System_PlaySound(m_pAudioDevice->pSystem, m_pHandle, nullptr, true, &m_pChannel) != FMOD_OK)
 		{
 			LOG_WARNING("[MusicFMOD]: Music \"%s\" could not be played", pDesc->Filepath.c_str());
 			return false;

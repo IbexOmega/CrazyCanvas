@@ -122,7 +122,6 @@ public:
 	const uint8 TeamIndex;
 	const uint32 Angle;
 	LambdaEngine::CollisionCallback Callback;
-	LambdaEngine::MeshComponent		MeshComponent;
 };
 
 /*
