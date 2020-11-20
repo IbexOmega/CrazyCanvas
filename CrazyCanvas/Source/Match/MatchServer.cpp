@@ -49,7 +49,7 @@
 MatchServer::~MatchServer()
 {
 	using namespace LambdaEngine;
-	
+
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
 }
@@ -177,7 +177,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 							{
 								MatchServer::KillPlayer(playerEntity, UINT32_MAX);
 							}
-							
+
 							ImGui::SameLine();
 
 							if (ImGui::Button("Disconnect"))
@@ -437,7 +437,7 @@ bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEve
 	{
 		MatchServer::KillPlayer(pPlayer->GetEntity(), UINT32_MAX);
 	}
-	
+
 
 	// TODO: Fix this
 	//DeleteGameLevelObject(playerEntity);
@@ -535,8 +535,8 @@ void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity)
 		positionComp.Position = newPosition;
 
 		const Player* pPlayer = PlayerManagerServer::GetPlayer(playerEntity);
-		LOG_INFO("SERVER: Moving player[%s] to [%.4f, %.4f, %.4f]", 
-			pPlayer->GetName().c_str(), 
+		LOG_INFO("SERVER: Moving player[%s] to [%.4f, %.4f, %.4f]",
+			pPlayer->GetName().c_str(),
 			newPosition.x,
 			newPosition.y,
 			newPosition.z);

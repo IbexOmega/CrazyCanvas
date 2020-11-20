@@ -30,6 +30,7 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/Components/Match/FlagComponent.h"
+#include "ECS/Components/Match/ShowerComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
@@ -497,6 +498,10 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 
 	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
 
+	const Timestamp						showerCooldown = Timestamp::Seconds(5.0f);
+	const ParticleShowerComponent		particleShowerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
+
+	pECS->AddComponent<ParticleShowerComponent>(entity, particleShowerComponent);
 	pECS->AddComponent<ParticleEmitterComponent>(entity,
 		ParticleEmitterComponent{
 			.ParticleCount			= 20,
