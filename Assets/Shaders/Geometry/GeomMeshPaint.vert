@@ -51,7 +51,7 @@ void main()
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
 	uint instanceTeam = instance.TeamIndex;
-	float paintDist = 1.f; // Distance from target. 0 is at the target, 1 is at the edge.
+	float paintDist = vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
 
 	uint paintCount = uint(u_HitPointsBuffer.val[0].TargetPosition.w);
 	for (uint hitPointIndex = 0; hitPointIndex < paintCount; hitPointIndex++)
@@ -94,9 +94,10 @@ void main()
 		float isSameTeam = 1.f - step(0.5f, abs(float(instanceTeam) - float(teamMode)));
 		valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
 
+		vec3 lineToPaint = targetPosToWorldPos;
+
 		// Apply brush mask
 		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
-
 		if(brushMask.a > EPSILON && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
 		{
 			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in MeshPaintTypes.h for enum)
@@ -118,8 +119,12 @@ void main()
 			teamSC = (client << 4) | server;
 			vertex.Position.w = uintBitsToFloat(teamSC);
 
-			paintDist = length(targetPosToWorldPos) / BRUSH_SIZE;
+			lineToPaint = vec3(0.f);
 		}
+
+		float t = clamp(length(lineToPaint) / BRUSH_SIZE, 0.f, 1.0f);
+		vertex.Normal.w = min(vertex.Normal.w, smoothstep(0.f, 1.f, t));
+		paintDist = min(paintDist, vertex.Normal.w);
 	}
 
 	// Update vertex

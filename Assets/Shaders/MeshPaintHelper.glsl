@@ -22,7 +22,7 @@ struct SPaintSample
 	uint Team;
 };
 
-SPaintSample SamplePaint(in ivec2 p, in uint paintInfo)
+SPaintSample SamplePaint(in ivec2 p, in uint paintInfo, in float strength)
 {
 	uint client = (paintInfo >> 4) & 0x0F;
 	uint server = paintInfo & 0x0F;
@@ -34,7 +34,7 @@ SPaintSample SamplePaint(in ivec2 p, in uint paintInfo)
 	uint clientPainting			= uint(step(1, int(client)));
 
 	SPaintSample paintSample;
-	paintSample.PaintAmount		= float(uint(step(1, int(client))) | uint(step(1, int(server))));
+	paintSample.PaintAmount		= float(uint(step(1, int(client))) | uint(step(1, int(server)))) * (1.f - strength);
 	paintSample.Team 			= clientPainting * clientTeam + (1 - clientPainting) * serverTeam;
 	return paintSample;
 }
@@ -48,10 +48,10 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	vec2 subTexel				= modf(texelPos, texelCenter);
 	ivec2 iTexelCenter			= ivec2(texelCenter);
 
-	SPaintSample paintSample00		= SamplePaint(iTexelCenter + ivec2(0, 0), 	paintInfo);
-	SPaintSample paintSample10		= SamplePaint(iTexelCenter + ivec2(1, 0), 	paintInfo);
-	SPaintSample paintSample01		= SamplePaint(iTexelCenter + ivec2(0, 1), 	paintInfo);
-	SPaintSample paintSample11		= SamplePaint(iTexelCenter + ivec2(1, 1), 	paintInfo);
+	SPaintSample paintSample00		= SamplePaint(iTexelCenter + ivec2(0, 0), 	paintInfo, strength);
+	SPaintSample paintSample10		= SamplePaint(iTexelCenter + ivec2(1, 0), 	paintInfo, strength);
+	SPaintSample paintSample01		= SamplePaint(iTexelCenter + ivec2(0, 1), 	paintInfo, strength);
+	SPaintSample paintSample11		= SamplePaint(iTexelCenter + ivec2(1, 1), 	paintInfo, strength);
 
 	vec3 paintColor00		= b_PaintMaskColor.val[paintSample00.Team].rgb;
 	vec3 paintColor10 		= b_PaintMaskColor.val[paintSample10.Team].rgb;
@@ -86,9 +86,9 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	SPaintDescription paintDescription;
 
 	paintDescription.Normal			= combinedNormal;
-	paintDescription.Albedo 		= paintColorFinal;
+	paintDescription.Albedo 		= vec3(strength);//paintColorFinal;
 	paintDescription.Roughness 		= PAINT_ROUGHNESS;
-	paintDescription.Interpolation	= paintAmountFinal;
+	paintDescription.Interpolation	= 1.f;//paintAmountFinal;
 
 	return paintDescription;
 }

@@ -1557,7 +1557,7 @@ namespace LambdaEngine
 				vertex.NormalXYZPaintDistW.x = pMeshAI->mNormals[vertexIdx].x;
 				vertex.NormalXYZPaintDistW.y = pMeshAI->mNormals[vertexIdx].y;
 				vertex.NormalXYZPaintDistW.z = pMeshAI->mNormals[vertexIdx].z;
-				vertex.NormalXYZPaintDistW.w = 0.0f;
+				vertex.NormalXYZPaintDistW.w = 1.0f;
 			}
 
 			if (pMeshAI->HasTangentsAndBitangents())
