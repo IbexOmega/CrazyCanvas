@@ -326,6 +326,7 @@ namespace LambdaEngine
 	bool RenderSystem::InitRenderGraphs() 
 	{
 		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
+		const bool isServer = MultiplayerUtils::IsServer();
 
 		//Create RenderGraph
 		{
@@ -334,8 +335,8 @@ namespace LambdaEngine
 			String renderGraphName = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RENDER_GRAPH_NAME);
 			if (renderGraphName != "")
 			{
-				String prefix	= m_RayTracingEnabled	&& !MultiplayerUtils::IsServer() ? "RT_" : "";
-				String postfix	= m_MeshShadersEnabled	&& !MultiplayerUtils::IsServer() ? "_MESH" : "";
+				String prefix	= m_RayTracingEnabled	&& !isServer ? "RT_" : "";
+				String postfix	= m_MeshShadersEnabled	&& !isServer ? "_MESH" : "";
 				size_t pos = renderGraphName.find_first_of(".lrg");
 				if (pos != String::npos)
 				{
@@ -376,7 +377,6 @@ namespace LambdaEngine
 			}
 
 			// Light Renderer
-			bool isServer = MultiplayerUtils::IsServer();
 			if (!isServer)
 			{
 				m_pLightRenderer = DBG_NEW LightRenderer();
@@ -447,6 +447,26 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			if (!isServer)
+			{
+				// Load Integration LUT
+				GUID_Lambda LUTGuid = ResourceManager::LoadTextureFromFile(
+					"skybox/ibl_brdf_lut.png",
+					EFormat::FORMAT_R8G8B8A8_UNORM,
+					false, false);
+
+				m_IntegrationLUT		= MakeSharedRef<Texture>(ResourceManager::GetTexture(LUTGuid));
+				m_IntegrationLUTView	= MakeSharedRef<TextureView>(ResourceManager::GetTextureView(LUTGuid));
+
+				resourceUpdateDesc.ResourceName							= "INTEGRATION_LUT";
+				resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_IntegrationLUT.GetAddressOf();
+				resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_IntegrationLUTView.GetAddressOf();
+				resourceUpdateDesc.ExternalTextureUpdate.TextureCount	= 1;
+				resourceUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetNearestSamplerToBind();
+				resourceUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
+				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+			}
 		} 
 
 		UpdateBuffers();
@@ -508,6 +528,10 @@ namespace LambdaEngine
 
 		// Remove lightprobes
 		m_GlobalLightProbe.Release();
+
+		// Integration LUT
+		m_IntegrationLUT.Reset();
+		m_IntegrationLUTView.Reset();
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
@@ -1777,6 +1801,8 @@ namespace LambdaEngine
 			}
 
 			{
+				const uint32 mipLevels = std::max<uint32>(std::log2(m_GlobalLightProbe.SpecularResolution), 1u);
+
 				TextureDesc textureDesc;
 				textureDesc.DebugName	= "LightProbe Specular";
 				textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
@@ -1790,7 +1816,7 @@ namespace LambdaEngine
 				textureDesc.Height			= m_GlobalLightProbe.SpecularResolution;
 				textureDesc.Format			= EFormat::FORMAT_R16G16B16A16_SFLOAT;
 				textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-				textureDesc.Miplevels		= 1;
+				textureDesc.Miplevels		= mipLevels;
 				textureDesc.SampleCount		= 1;
 
 				m_GlobalLightProbe.Specular = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
@@ -1812,11 +1838,10 @@ namespace LambdaEngine
 				textureViewDesc.DebugName	= "LightProbe Specular View";
 				textureViewDesc.ArrayCount	= 6;
 				textureViewDesc.ArrayIndex	= 0;
-				textureViewDesc.Flags		=
-					FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
-					FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+				textureViewDesc.Flags =
+					FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 				textureViewDesc.Miplevel		= 0;
-				textureViewDesc.MiplevelCount	= 1;
+				textureViewDesc.MiplevelCount	= mipLevels;
 				textureViewDesc.Format			= textureDesc.Format;
 				textureViewDesc.pTexture		= m_GlobalLightProbe.Specular.Get();
 				textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
@@ -1825,6 +1850,26 @@ namespace LambdaEngine
 				if (!m_GlobalLightProbe.SpecularView)
 				{
 					LOG_WARNING("[RenderSystem] Failed to create specular lightprobe view");
+				}
+
+				for (uint32 i = 0; i < mipLevels; i++)
+				{
+					textureViewDesc.DebugName = "LightProbe Specular View Write[" + std::to_string(i) + "]";
+					textureViewDesc.Flags =
+						FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+					textureViewDesc.Miplevel		= i;
+					textureViewDesc.MiplevelCount	= 1;
+
+					TSharedRef<TextureView> view = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+					if (!view)
+					{
+						LOG_WARNING("[RenderSystem] Failed to create '%s'", textureViewDesc.DebugName.c_str());
+					}
+					else
+					{
+						m_GlobalLightProbe.SpecularWriteViews.EmplaceBack(view);
+						m_GlobalLightProbe.RawSpecularWriteViews.EmplaceBack(view.Get());
+					}
 				}
 
 				pCommandList->FlushDeferredBarriers();
@@ -2692,6 +2737,8 @@ namespace LambdaEngine
 			globalSpecularProbeUpdateDesc.ResourceName							= "GLOBAL_SPECULAR_PROBE";
 			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppTextures		= m_GlobalLightProbe.Specular.GetAddressOf();
 			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_GlobalLightProbe.SpecularView.GetAddressOf();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_GlobalLightProbe.RawSpecularWriteViews.GetData();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= m_GlobalLightProbe.RawSpecularWriteViews.GetSize();
 			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.TextureCount	= 1;
 			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetLinearSamplerToBind();
 			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;

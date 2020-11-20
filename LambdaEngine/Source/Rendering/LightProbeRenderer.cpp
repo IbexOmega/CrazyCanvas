@@ -8,6 +8,10 @@
 
 namespace LambdaEngine
 {
+	constexpr uint32 MAX_SPECULAR_MIPS		= 10;
+	constexpr uint32 DIFFUSE_RESOURCE_COUNT	= 1;
+	constexpr uint32 NUM_FRAMES				= 3;
+
 	LightProbeRenderer::LightProbeRenderer()
 		: CustomRenderer()
 		, m_ComputeCommandLists()
@@ -19,35 +23,31 @@ namespace LambdaEngine
 	{
 	}
 
-	LightProbeRenderer::~LightProbeRenderer()
-	{
-	}
-
 	bool LightProbeRenderer::Init()
 	{
 		{
-			DescriptorBindingDesc sourceBinding = { };
-			sourceBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-			sourceBinding.DescriptorCount	= 1;
-			sourceBinding.Binding			= 0;
-			sourceBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			DescriptorBindingDesc environmentMapBinding = { };
+			environmentMapBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			environmentMapBinding.DescriptorCount	= 1;
+			environmentMapBinding.Binding			= 0;
+			environmentMapBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
-			DescriptorBindingDesc resultBinding = { };
-			resultBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
-			resultBinding.DescriptorCount	= 1;
-			resultBinding.Binding			= 1;
-			resultBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			DescriptorBindingDesc cubeMapBinding = { };
+			cubeMapBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			cubeMapBinding.DescriptorCount	= 1;
+			cubeMapBinding.Binding			= 1;
+			cubeMapBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
 			DescriptorSetLayoutDesc descriptorSetLayoutDesc = { };
 			descriptorSetLayoutDesc.DescriptorBindings =
 			{
-				sourceBinding,
-				resultBinding,
+				environmentMapBinding,
+				cubeMapBinding,
 			};
 
 			ConstantRangeDesc pushConstantRange;
 			pushConstantRange.OffsetInBytes		= 0;
-			pushConstantRange.SizeInBytes		= 8;
+			pushConstantRange.SizeInBytes		= 12;
 			pushConstantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
 			PipelineLayoutDesc specularLayoutDesc;
@@ -96,25 +96,23 @@ namespace LambdaEngine
 		}
 
 		{
-			TSharedRef<Sampler> sampler = MakeSharedRef(Sampler::GetLinearSampler());
+			DescriptorBindingDesc environmentMapBinding = { };
+			environmentMapBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+			environmentMapBinding.DescriptorCount	= 1;
+			environmentMapBinding.Binding			= 0;
+			environmentMapBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
-			DescriptorBindingDesc sourceBinding = { };
-			sourceBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-			sourceBinding.DescriptorCount	= 1;
-			sourceBinding.Binding			= 0;
-			sourceBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-
-			DescriptorBindingDesc resultBinding = { };
-			resultBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
-			resultBinding.DescriptorCount	= 1;
-			resultBinding.Binding			= 1;
-			resultBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			DescriptorBindingDesc cubeMapBinding = { };
+			cubeMapBinding.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE;
+			cubeMapBinding.DescriptorCount	= 1;
+			cubeMapBinding.Binding			= 1;
+			cubeMapBinding.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
 
 			DescriptorSetLayoutDesc descriptorSetLayoutDesc = { };
 			descriptorSetLayoutDesc.DescriptorBindings =
 			{
-				sourceBinding,
-				resultBinding,
+				environmentMapBinding,
+				cubeMapBinding,
 			};
 
 			ConstantRangeDesc pushConstantRange;
@@ -168,15 +166,16 @@ namespace LambdaEngine
 		}
 
 		// Create Descriptor Heap and allocate descriptorsets
-		constexpr uint32 NUM_FRAMES = 3;
 		{
+			constexpr uint32 NEEDED_RESOURCE_COUNT = (MAX_SPECULAR_MIPS + DIFFUSE_RESOURCE_COUNT) * NUM_FRAMES;
+
 			DescriptorHeapInfo descriptorCountDesc = { };
 			descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 16;
-			descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 16;
+			descriptorCountDesc.UnorderedAccessTextureDescriptorCount = NEEDED_RESOURCE_COUNT;
 
 			DescriptorHeapDesc descriptorHeapDesc = { };
 			descriptorHeapDesc.DebugName			= "LightProbe Filter DescriptorHeap";
-			descriptorHeapDesc.DescriptorSetCount	= 16;
+			descriptorHeapDesc.DescriptorSetCount	= NEEDED_RESOURCE_COUNT;
 			descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 			m_FilterDescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
@@ -188,24 +187,27 @@ namespace LambdaEngine
 
 			for (uint32 i = 0; i < NUM_FRAMES; i++)
 			{
-				String name = "Specular DescriptorSet[" + std::to_string(i) + "]";
-				TSharedRef<DescriptorSet> specularSet = RenderAPI::GetDevice()->CreateDescriptorSet(
-					name,
-					m_SpecularFilterLayout.Get(),
-					0,
-					m_FilterDescriptorHeap.Get());
-				if (!specularSet)
+				for (uint32 mip = 0; mip < MAX_SPECULAR_MIPS; mip++)
 				{
-					LOG_ERROR("Failed to create '%s'", name.c_str());
-					DEBUGBREAK();
-					return false;
-				}
-				else
-				{
-					m_SpecularFilterDescriptorSets.EmplaceBack(specularSet);
+					String name = "Specular DescriptorSet[" + std::to_string(i) + ", " + std::to_string(mip) + "]";
+					TSharedRef<DescriptorSet> specularSet = RenderAPI::GetDevice()->CreateDescriptorSet(
+						name,
+						m_SpecularFilterLayout.Get(),
+						0,
+						m_FilterDescriptorHeap.Get());
+					if (!specularSet)
+					{
+						LOG_ERROR("Failed to create '%s'", name.c_str());
+						DEBUGBREAK();
+						return false;
+					}
+					else
+					{
+						m_SpecularFilterDescriptorSets.EmplaceBack(specularSet);
+					}
 				}
 
-				name = "Diffuse DescriptorSet[" + std::to_string(i) + "]";
+				String name = "Diffuse DescriptorSet[" + std::to_string(i) + "]";
 				TSharedRef<DescriptorSet> diffuseSet = RenderAPI::GetDevice()->CreateDescriptorSet(
 					name,
 					m_DiffuseFilterLayout.Get(),
@@ -268,27 +270,6 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool LightProbeRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
-	{
-		UNREFERENCED_VARIABLE(pPreInitDesc);
-		return true;
-	}
-
-	bool LightProbeRenderer::RenderGraphPostInit()
-	{
-		return true;
-	}
-
-	void LightProbeRenderer::Update(
-		Timestamp delta, 
-		uint32 modFrameIndex, 
-		uint32 backBufferIndex)
-	{
-		UNREFERENCED_VARIABLE(delta);
-		UNREFERENCED_VARIABLE(modFrameIndex);
-		UNREFERENCED_VARIABLE(backBufferIndex);
-	}
-
 	void LightProbeRenderer::UpdateTextureResource(
 		const String& resourceName, 
 		const TextureView* const* ppPerImageTextureViews, 
@@ -319,6 +300,14 @@ namespace LambdaEngine
 			
 			m_pGlobalSpecularView	= ppPerImageTextureViews[0];
 			m_pGlobalSpecular		= m_pGlobalSpecularView->GetDesc().pTexture;
+			VALIDATE(m_pGlobalSpecular->GetDesc().Miplevels < MAX_SPECULAR_MIPS);
+
+			m_GlobalSpecularWriteViews.Reserve(subImageCount);
+			for (uint32 i = 0; i < subImageCount; i++)
+			{
+				m_GlobalSpecularWriteViews.EmplaceBack(ppPerSubImageTextureViews[i]);
+			}
+
 			m_NeedsUpdate = true;
 		}
 		else if (resourceName == "GLOBAL_DIFFUSE_PROBE")
@@ -352,21 +341,28 @@ namespace LambdaEngine
 		}
 
 		// Update descriptorset
-		TSharedRef<DescriptorSet>& specularSet = m_SpecularFilterDescriptorSets[modFrameIndex];
-		specularSet->WriteTextureDescriptors(
-			&m_pEnvironmentMapView,
-			Sampler::GetLinearSamplerToBind(), 
-			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-			0, 1,
-			EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-			false);
-		specularSet->WriteTextureDescriptors(
-			&m_pGlobalSpecularView,
-			Sampler::GetLinearSamplerToBind(),
-			ETextureState::TEXTURE_STATE_GENERAL,
-			1, 1,
-			EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE,
-			false);
+		const uint32 descriptorSetOffset	= modFrameIndex * MAX_SPECULAR_MIPS;
+		const uint32 numSpecularMips		= m_pGlobalSpecular->GetDesc().Miplevels;
+		for (uint32 mip = 0; mip < numSpecularMips; mip++)
+		{
+			TSharedRef<DescriptorSet>& specularSet = m_SpecularFilterDescriptorSets[descriptorSetOffset + mip];
+			specularSet->WriteTextureDescriptors(
+				&m_pEnvironmentMapView,
+				Sampler::GetLinearSamplerToBind(), 
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				0, 1,
+				EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+				false);
+
+			const TextureView* pWriteView = m_GlobalSpecularWriteViews[mip];
+			specularSet->WriteTextureDescriptors(
+				&pWriteView,
+				Sampler::GetLinearSamplerToBind(),
+				ETextureState::TEXTURE_STATE_GENERAL,
+				1, 1,
+				EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE,
+				false);
+		}
 		
 		TSharedRef<DescriptorSet>& diffuseSet = m_DiffuseFilterDescriptorSets[modFrameIndex];
 		diffuseSet->WriteTextureDescriptors(
@@ -394,12 +390,13 @@ namespace LambdaEngine
 
 		struct FilterSettings
 		{
-			uint32 SourceSize;
-			uint32 DestSize;
+			uint32	EnvironmenMapSize;
+			uint32	CubeMapSize;
+			float32	Roughness;
 		} settings;
 
 		const TextureDesc& environmentDesc = m_pEnvironmentMap->GetDesc();
-		settings.SourceSize = environmentDesc.Width;
+		settings.EnvironmenMapSize = environmentDesc.Width;
 
 		// Specular
 		{
@@ -408,20 +405,28 @@ namespace LambdaEngine
 		}
 
 		const TextureDesc& globalSpecularDesc = m_pGlobalSpecular->GetDesc();
-		settings.DestSize = globalSpecularDesc.Width;
+		settings.CubeMapSize	= globalSpecularDesc.Width;
+		settings.Roughness		= 0.0f;
 
-		commandList->SetConstantRange(
-			m_SpecularFilterLayout.Get(), 
-			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
-			&settings,
-			sizeof(FilterSettings), 0);
+		const float32 roughnessDelta = 1.0f / float32(numSpecularMips);
+		for (uint32 mip = 0; mip < numSpecularMips; mip++)
+		{
+			commandList->SetConstantRange(
+				m_SpecularFilterLayout.Get(), 
+				FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+				&settings,
+				sizeof(FilterSettings), 0);
 
-		commandList->BindDescriptorSetCompute(
-			specularSet.Get(),
-			m_SpecularFilterLayout.Get(),
-			0);
+			TSharedRef<DescriptorSet>& specularSet = m_SpecularFilterDescriptorSets[descriptorSetOffset + mip];
+			commandList->BindDescriptorSetCompute(
+				specularSet.Get(),
+				m_SpecularFilterLayout.Get(),
+				0);
 
-		commandList->Dispatch(globalSpecularDesc.Width, globalSpecularDesc.Height, 6);
+			commandList->Dispatch(settings.CubeMapSize, settings.CubeMapSize, 6);
+			settings.CubeMapSize = std::max<uint32>(settings.CubeMapSize / 2, 1u);
+			settings.Roughness += roughnessDelta;
+		}
 
 		// Diffuse
 		{
@@ -436,7 +441,7 @@ namespace LambdaEngine
 			m_DiffuseFilterLayout.Get(),
 			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
 			&diffuseSize,
-			sizeof(FilterSettings), 0);
+			sizeof(uint32), 0);
 
 		commandList->BindDescriptorSetCompute(
 			diffuseSet.Get(),

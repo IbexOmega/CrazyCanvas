@@ -193,7 +193,7 @@ bool CrazyCanvas::InitRendererResources()
 			"Skybox/daytime.hdr",
 			EFormat::FORMAT_R16G16B16A16_SFLOAT,
 			512,
-			false);
+			true);
 
 		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
 		TextureView*	pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);

@@ -253,6 +253,13 @@ namespace LambdaEngine
 			{
 				Specular.Reset();
 				SpecularView.Reset();
+
+				for (TSharedRef<TextureView>& view : SpecularWriteViews)
+				{
+					view.Reset();
+				}
+				RawSpecularWriteViews.Clear();
+
 				Diffuse.Reset();
 				DiffuseView.Reset();
 
@@ -260,8 +267,10 @@ namespace LambdaEngine
 				DiffuseResolution	= 0;
 			}
 
-			TSharedRef<Texture>		Specular;
-			TSharedRef<TextureView>	SpecularView;
+			TSharedRef<Texture>				Specular;
+			TSharedRef<TextureView>			SpecularView;
+			TArray<TextureView*>			RawSpecularWriteViews;
+			TArray<TSharedRef<TextureView>>	SpecularWriteViews;
 			TSharedRef<Texture>		Diffuse;
 			TSharedRef<TextureView>	DiffuseView;
 			uint32 SpecularResolution	= 128;
@@ -454,6 +463,10 @@ namespace LambdaEngine
 		LightProbe m_GlobalLightProbe;
 		bool m_GlobalLightProbeDirty		= true;
 		bool m_GlobalLightProbeNeedsUpdate	= true;
+
+		// Integration Look-Up-Texture
+		TSharedRef<Texture>		m_IntegrationLUT;
+		TSharedRef<TextureView>	m_IntegrationLUTView;
 
 		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;

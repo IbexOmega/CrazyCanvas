@@ -18,17 +18,18 @@ layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 	SPointLight pointLights[];  
 } b_LightsBuffer;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAlbedo;
-layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferAORoughMetalValid;
-layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferCompactNormal;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferVelocity;
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_GBufferDepthStencil;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAlbedo;
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAORoughMetalValid;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferCompactNormal;
+layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferVelocity;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferDepthStencil;
 
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D		u_DirLShadowMap;
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube	u_PointLShadowMap[];
 
 layout(binding = 7, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
 layout(binding = 8, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
+layout(binding = 9, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -132,7 +133,8 @@ void main()
 			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
 		}
 		
-		vec3 F_IBL	= FresnelRoughness(F0, max(dot(N, V), 0.0f), roughness);
+		float dotNV = max(dot(N, V), 0.0f);
+		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
 		vec3 Ks_IBL	= F_IBL;
 		vec3 Kd_IBL	= 1.0f - Ks_IBL;
 		Kd_IBL		*= 1.0f - metallic;
@@ -140,13 +142,13 @@ void main()
 		vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
 		vec3 IBL_Diffuse	= irradiance * albedo * Kd_IBL;
 	
-//		const float MAX_MIPLEVEL = 6.0f;
-//		vec3 reflection			= reflect(-ViewDir, Norm);
-//		vec3 prefiltered		= SpecularIrradianceMap.SampleLevel(IrradianceSampler, reflection, Roughness * MAX_MIPLEVEL).rgb;
-//		vec3 integrationBRDF	= IntegrationLUT.Sample(LUTSampler, float2(DotNV, Roughness)).rg;
-//		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
+		const int numberOfMips = textureQueryLevels(u_GlobalSpecularProbe);
+		vec3 reflection			= reflect(-V, N);
+		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, reflection, roughness * float(numberOfMips)).rgb;
+		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
+		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
 	
-		vec3 ambient	= (IBL_Diffuse) * ao;
+		vec3 ambient	= (IBL_Diffuse + IBL_Specular) * ao;
 		colorHDR		= ambient + Lo;
 	}
 

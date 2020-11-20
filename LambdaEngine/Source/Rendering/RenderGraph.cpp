@@ -324,7 +324,8 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateResource(const ResourceUpdateDesc* pDesc)
 	{
-		auto it = m_ResourceMap.find(pDesc->ResourceName);
+		String resourceName = String(pDesc->ResourceName);
+		auto it = m_ResourceMap.find(resourceName);
 
 		if (it != m_ResourceMap.end())
 		{
@@ -3466,8 +3467,13 @@ namespace LambdaEngine
 
 				if (pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews != nullptr)
 				{
-					uint32 subImageBaseIndex = sr * pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount;
+					// Make sure there are enough room
+					if (pResource->Texture.PerSubImageTextureViews.GetSize() < pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount)
+					{
+						pResource->Texture.PerSubImageTextureViews.Resize(pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount);
+					}
 
+					uint32 subImageBaseIndex = sr * pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount;
 					for (uint32 si = 0; si < pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount; si++)
 					{
 						pResource->Texture.PerSubImageTextureViews[subImageBaseIndex + si] = pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews[subImageBaseIndex + si];

@@ -13,13 +13,9 @@ namespace LambdaEngine
 	{
 	public:
 		LightProbeRenderer();
-		~LightProbeRenderer();
+		~LightProbeRenderer() = default;
 
 		virtual bool Init() override final;
-		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
-		virtual bool RenderGraphPostInit() override final;
-
-		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 
 		virtual void UpdateTextureResource(
 			const String& resourceName,
@@ -56,10 +52,11 @@ namespace LambdaEngine
 	private:
 		const Texture*		m_pEnvironmentMap		= nullptr;
 		const TextureView*	m_pEnvironmentMapView	= nullptr;
-		const Texture*		m_pGlobalSpecular		= nullptr;
-		const TextureView*	m_pGlobalSpecularView	= nullptr;
 		const Texture*		m_pGlobalDiffuse		= nullptr;
 		const TextureView*	m_pGlobalDiffuseView	= nullptr;
+		const Texture*		m_pGlobalSpecular		= nullptr;
+		const TextureView*	m_pGlobalSpecularView	= nullptr;
+		TArray<const TextureView*> m_GlobalSpecularWriteViews;
 		
 		bool m_NeedsUpdate = true;
 
@@ -74,7 +71,5 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap> m_FilterDescriptorHeap;
 		TArray<TSharedRef<DescriptorSet>> m_SpecularFilterDescriptorSets;
 		TArray<TSharedRef<DescriptorSet>> m_DiffuseFilterDescriptorSets;
-
-		TArray<TSharedRef<DeviceChild>> m_ResourcesToDestroy;
 	};
 }
