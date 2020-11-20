@@ -37,6 +37,8 @@
 #include "Game/ECS/Components/Rendering/GlobalLightProbeComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
+#define RENDER_SYSTEM_DEBUG 1
+
 namespace LambdaEngine
 {
 	class Window;
@@ -421,6 +423,11 @@ namespace LambdaEngine
 
 		void UpdateRenderGraph();
 
+#ifdef RENDER_SYSTEM_DEBUG
+		// Debug
+		void CheckWhereEntityAlreadyRegistered(Entity entity);
+#endif
+
 	private:
 		IDVector m_StaticMeshEntities;
 		IDVector m_AnimatedEntities;
@@ -535,6 +542,11 @@ namespace LambdaEngine
 		ASBuilder*					m_pASBuilder			= nullptr;
 		class LightProbeRenderer*	m_pLightProbeRenderer	= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
+
+#ifdef RENDER_SYSTEM_DEBUG
+		// Debug
+		TSet<Entity> m_RenderableEntities;
+#endif
 
 	private:
 		static RenderSystem		s_Instance;
