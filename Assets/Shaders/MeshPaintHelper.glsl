@@ -22,33 +22,36 @@ struct SPaintSample
 	uint Team;
 };
 
-SPaintSample SamplePaint(in ivec2 p, in uint paintMaskIndex)
+SPaintSample SamplePaint(in ivec2 p, in uint paintInfo)
 {
-	uvec2 paintData = floatBitsToUint(texelFetch(u_PaintMaskTextures[paintMaskIndex], p, 0).rg);
+	uint client = (paintInfo >> 4) & 0x0F;
+	uint server = paintInfo & 0x0F;
 
-	uint clientTeam				= (paintData.g >> 1) & 0x7F;
-	uint serverTeam				= (paintData.r >> 1) & 0x7F;
-	uint clientPainting			= paintData.g & 0x1;
+	//uvec2 paintData = floatBitsToUint(texelFetch(u_PaintMaskTextures[paintMaskIndex], p, 0).rg);
+
+	uint clientTeam				= client & 0x0F;
+	uint serverTeam				= server & 0x0F;
+	uint clientPainting			= client & 0x1;
 
 	SPaintSample paintSample;
-	paintSample.PaintAmount		= float((paintData.r & 0x1) | (paintData.g & 0x1));
+	paintSample.PaintAmount		= float((server & 0x1) | (client & 0x1));
 	paintSample.Team 			= clientPainting * clientTeam + (1 - clientPainting) * serverTeam;
 	return paintSample;
 }
 
 
-SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangent, in vec3 bitangent, in vec2 texCoord, in uint paintMaskIndex)
+SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangent, in vec3 bitangent, in vec2 texCoord, in uint paintInfo)
 {
-	ivec2 paintMaskSize 		= textureSize(u_PaintMaskTextures[paintMaskIndex], 0);
+	ivec2 paintMaskSize 		= ivec2(64);//textureSize(u_PaintMaskTextures[paintMaskIndex], 0);
 	vec2 texelPos				= (texCoord * vec2(paintMaskSize));
 	vec2 texelCenter;
 	vec2 subTexel				= modf(texelPos, texelCenter);
 	ivec2 iTexelCenter			= ivec2(texelCenter);
 
-	SPaintSample paintSample00		= SamplePaint(iTexelCenter + ivec2(0, 0), 	paintMaskIndex);
-	SPaintSample paintSample10		= SamplePaint(iTexelCenter + ivec2(1, 0), 	paintMaskIndex);
-	SPaintSample paintSample01		= SamplePaint(iTexelCenter + ivec2(0, 1), 	paintMaskIndex);
-	SPaintSample paintSample11		= SamplePaint(iTexelCenter + ivec2(1, 1), 	paintMaskIndex);
+	SPaintSample paintSample00		= SamplePaint(iTexelCenter + ivec2(0, 0), 	paintInfo);
+	SPaintSample paintSample10		= SamplePaint(iTexelCenter + ivec2(1, 0), 	paintInfo);
+	SPaintSample paintSample01		= SamplePaint(iTexelCenter + ivec2(0, 1), 	paintInfo);
+	SPaintSample paintSample11		= SamplePaint(iTexelCenter + ivec2(1, 1), 	paintInfo);
 
 	vec3 paintColor00		= b_PaintMaskColor.val[paintSample00.Team].rgb;
 	vec3 paintColor10 		= b_PaintMaskColor.val[paintSample10.Team].rgb;

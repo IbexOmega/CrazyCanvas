@@ -39,6 +39,26 @@ void MeshPaintHandler::Init()
 	bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 	bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 	m_pPointsBuffer			= RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+
+	{
+		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
+		UnwrapData dummyData = {};
+		dummyData.TargetPosition.w = 0.f;
+		size_t size = sizeof(UnwrapData);
+		for (uint32 i = 0; i < 10; i++)
+		{
+			uint32 step = i * (uint32)size;
+			memcpy(pBufferMapping + step, &dummyData + i, size);
+		}
+		m_pPointsBuffer->Unmap();
+
+		Buffer* buf = m_pPointsBuffer.Get();
+		ResourceUpdateDesc resourceUpdateDesc = {};
+		resourceUpdateDesc.ResourceName = "HIT_POINTS_BUFFER";
+		resourceUpdateDesc.ExternalBufferUpdate.ppBuffer = &buf;
+		resourceUpdateDesc.ExternalBufferUpdate.Count = 1;
+		m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+	}
 }
 
 void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
@@ -54,7 +74,14 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	if ((m_ResetPointBuffer && s_Collisions.IsEmpty()) || (m_PreviousPointsSize > s_Collisions.GetSize()))
 	{
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
-		memset(pBufferMapping, 0, sizeof(UnwrapData) * 10);
+		UnwrapData dummyData = {};
+		dummyData.TargetPosition.w = 0.f;
+		size_t size = sizeof(UnwrapData);
+		for (uint32 i = 0; i < 10; i++)
+		{
+			uint32 step = i * size;
+			memcpy(pBufferMapping + step, &dummyData + i, size);
+		}
 		m_pPointsBuffer->Unmap();
 
 		m_PreviousPointsSize = 0;
