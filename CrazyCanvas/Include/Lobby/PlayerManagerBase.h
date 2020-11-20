@@ -24,6 +24,7 @@ class PlayerManagerBase
 public:
 	DECL_SINGLETON_CLASS(PlayerManagerBase);
 
+	static uint8 GetPlayerCount();
 	static const Player* GetPlayer(uint64 uid);
 	static const Player* GetPlayer(const LambdaEngine::IClient* pClient);
 	static const Player* GetPlayer(LambdaEngine::Entity entity);

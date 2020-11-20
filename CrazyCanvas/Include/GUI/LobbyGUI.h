@@ -9,6 +9,7 @@
 #include "NsGui/Panel.h"
 #include "NsGui/TextBox.h"
 #include "NsGui/Selector.h"
+#include "NsGui/Label.h"
 
 #include "Lobby/Player.h"
 #include "Events/ChatEvents.h"
@@ -41,6 +42,12 @@ public:
 		LambdaEngine::TArray<LambdaEngine::String> settingValues,
 		uint8 defaultIndex);
 
+	void AddSettingColorBox(
+		const LambdaEngine::String& settingKey,
+		const LambdaEngine::String& settingText,
+		const LambdaEngine::TArray<glm::vec3>& settingColors,
+		uint8 defaultIndex);
+
 	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::String& settingValue);
 
 	// Noesis events
@@ -56,7 +63,8 @@ public:
 private:
 	// Helpers
 	void AddColumnDefinitionStar(Noesis::ColumnDefinitionCollection* pColumnCollection, float width);
-	void AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
+	Noesis::Label* AddLabelWithStyle(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content);
+	void AddTextBoxWithColor(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& text, const glm::vec3& color);
 	void RegisterName(const LambdaEngine::String& name, Noesis::BaseComponent* pComp);
 	void UnregisterName(const LambdaEngine::String& name);
 	void CreateHostIcon(Noesis::Panel* pParent);
@@ -65,27 +73,35 @@ private:
 	bool OnKeyPressedEvent(const LambdaEngine::KeyPressedEvent& event);
 	void TrySendChatMessage();
 	void SendGameSettings() const;
+	void UpdatePlayersLabel();
 
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
 
-	Noesis::StackPanel* m_pBlueTeamStackPanel		= nullptr;
-	Noesis::StackPanel* m_pRedTeamStackPanel		= nullptr;
+	Noesis::StackPanel* m_pTeam1StackPanel			= nullptr;
+	Noesis::StackPanel* m_pTeam2StackPanel			= nullptr;
+	Noesis::ScrollViewer* m_pChatScrollViewer		= nullptr;
 	Noesis::StackPanel* m_pChatPanel				= nullptr;
 	Noesis::StackPanel* m_pSettingsNamesStackPanel	= nullptr;
 	Noesis::StackPanel* m_pSettingsHostStackPanel	= nullptr;
 	Noesis::StackPanel* m_pSettingsClientStackPanel	= nullptr;
 	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
+	Noesis::Label*		m_pPlayersLabel				= nullptr;
+	Noesis::Label*		m_pTeam1Label				= nullptr;
+	Noesis::Label*		m_pTeam2Label				= nullptr;
 
 	PacketGameSettings m_GameSettings;
 	bool m_IsInitiated;
 
 private:
-	static constexpr const char* SETTING_SERVER_NAME	= "SERVER_NAME";
-	static constexpr const char* SETTING_MAP			= "MAP";
-	static constexpr const char* SETTING_MAX_TIME		= "MAX_TIME";
-	static constexpr const char* SETTING_FLAGS_TO_WIN	= "FLAGS_TO_WIN";
-	static constexpr const char* SETTING_MAX_PLAYERS	= "MAX_PLAYERS";
-	static constexpr const char* SETTING_VISIBILITY		= "VISIBILITY";
-	static constexpr const char* SETTING_CHANGE_TEAM	= "CHANGE_TEAM";
+	static constexpr const char* SETTING_SERVER_NAME			= "SERVER_NAME";
+	static constexpr const char* SETTING_MAP					= "MAP";
+	static constexpr const char* SETTING_GAME_MODE				= "GAME_MODE";
+	static constexpr const char* SETTING_MAX_TIME				= "MAX_TIME";
+	static constexpr const char* SETTING_FLAGS_TO_WIN			= "FLAGS_TO_WIN";
+	static constexpr const char* SETTING_MAX_PLAYERS			= "MAX_PLAYERS";
+	static constexpr const char* SETTING_VISIBILITY				= "VISIBILITY";
+	static constexpr const char* SETTING_CHANGE_TEAM			= "CHANGE_TEAM";
+	static constexpr const char* SETTING_CHANGE_TEAM_0_COLOR	= "CHANGE_TEAM_0_COLOR";
+	static constexpr const char* SETTING_CHANGE_TEAM_1_COLOR	= "CHANGE_TEAM_1_COLOR";
 };

@@ -44,6 +44,10 @@
 
 #include "Lobby/PlayerManagerClient.h"
 
+#include "GUI/GUIHelpers.h"
+
+#include "Resources/ResourceCatalog.h"
+
 BenchmarkState::BenchmarkState()
 {
 	using namespace LambdaEngine;
@@ -64,6 +68,10 @@ BenchmarkState::~BenchmarkState()
 void BenchmarkState::Init()
 {
 	using namespace LambdaEngine;
+
+	EnablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
+
 	Input::Disable();
 
 	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
@@ -317,8 +325,6 @@ bool BenchmarkState::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent
 
 		constexpr const uint32 playerCount = 9;
 
-		PlayerManagerClient::RegisterLocalPlayer("Benchmark", true);
-
 		CreatePlayerDesc createPlayerDesc =
 		{
 			.pPlayer			= PlayerManagerClient::GetPlayerLocal(),
@@ -363,7 +369,6 @@ bool BenchmarkState::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.InitalVelocity = event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
-	createProjectileDesc.MeshComponent	= event.MeshComponent;
 
 	TArray<Entity> createdFlagEntities;
 	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))

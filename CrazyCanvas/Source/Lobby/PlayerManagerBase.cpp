@@ -25,6 +25,11 @@ void PlayerManagerBase::Reset()
 	s_PlayerEntityToUID.clear();
 }
 
+uint8 PlayerManagerBase::GetPlayerCount()
+{
+	return (uint8)s_Players.size();
+}
+
 const Player* PlayerManagerBase::GetPlayer(uint64 uid)
 {
 	auto pair = s_Players.find(uid);
@@ -76,7 +81,6 @@ Player* PlayerManagerBase::GetPlayerNoConst(Entity entity)
 
 void PlayerManagerBase::SetPlayerEntity(const Player* pPlayer, Entity entity)
 {
-	ASSERT(pPlayer->GetEntity() == UINT32_MAX);
 	Player* pPl = const_cast<Player*>(pPlayer);
 	pPl->m_Entity = entity;
 	s_PlayerEntityToUID.insert({ entity, pPlayer->GetUID() });

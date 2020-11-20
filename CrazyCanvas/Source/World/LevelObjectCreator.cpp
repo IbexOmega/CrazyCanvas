@@ -8,6 +8,7 @@
 #include "Audio/FMOD/SoundInstance3DFMOD.h"
 
 #include "Game/ECS/Components/Audio/ListenerComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
@@ -58,6 +59,9 @@
 #include "Physics/CollisionGroups.h"
 
 #include "Lobby/PlayerManagerBase.h"
+#include "Lobby/PlayerManagerClient.h"
+
+#include "Resources/ResourceCatalog.h"
 
 bool LevelObjectCreator::Init()
 {
@@ -74,6 +78,17 @@ bool LevelObjectCreator::Init()
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerSpawn;
+		}
+
+		//Jailpoint
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_PLAYER_JAIL_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerJail;
 		}
 
 		//Flag Spawn
@@ -126,30 +141,6 @@ bool LevelObjectCreator::Init()
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]		= &LevelObjectCreator::CreateFlag;
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]		= &LevelObjectCreator::CreatePlayer;
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]	= &LevelObjectCreator::CreateProjectile;
-	}
-
-	//Load Object Meshes & Materials
-	{
-		//Flag
-		{
-			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagMaterialGUID);
-		}
-
-		//Player
-		{
-			ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
-
-#ifdef USE_ALL_ANIMATIONS
-			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
-			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.glb");
-			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.glb");
-			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.glb");
-			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
-			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
-#endif
-
-			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMesh, s_WeaponMaterial);
-		}
 	}
 
 	return true;
@@ -317,11 +308,15 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
 	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
 
-	uint8 teamIndex = 0;
-	size_t teamIndexPos = levelObject.Name.find("TEAM");
-	if (teamIndexPos != String::npos) teamIndex = (uint8)std::stoi(levelObject.Name.substr(teamIndexPos + 4));
+	TeamComponent teamComponent = {};
 
-	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
+	{
+		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Player Spawn, defaulting to 0...");
+		teamComponent.TeamIndex = 0;
+	}
+
+	pECS->AddComponent<TeamComponent>(entity, teamComponent);
 
 	if (!levelObject.MeshComponents.IsEmpty())
 	{
@@ -361,8 +356,61 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamIndex);
+	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
+}
+
+ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	if (levelObject.BoundingBoxes.GetSize() > 1)
+	{
+		LOG_WARNING("[LevelObjectCreator]: Player Jail can currently not be created with more than one mesh, using the first mesh...");
+	}
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	Entity entity = pECS->CreateEntity();
+
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+
+	if (!levelObject.MeshComponents.IsEmpty())
+	{
+		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
+
+		pECS->AddComponent<MeshComponent>(entity, meshComponent);
+
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+
+		const CollisionCreateInfo collisionCreateInfo =
+		{
+			.Entity = entity,
+			.Position = positionComponent,
+			.Scale = scaleComponent,
+			.Rotation = rotationComponent,
+			.Shapes =
+			{
+				{
+					/* ShapeType */			EShapeType::SIMULATION,
+					/* GeometryType */		EGeometryType::MESH,
+					/* Geometry */			{.pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
+					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+					/* EntityID*/			entity
+				},
+			},
+		};
+
+		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+	}
+
+	createdEntities.PushBack(entity);
+
+	D_LOG_INFO("Created Player Jail with EntityID %u", entity);
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_JAIL;
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
@@ -376,8 +424,14 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	Entity entity = pECS->CreateEntity();
 
-	pECS->AddComponent<FlagSpawnComponent>(entity, { 1.0f });
+	pECS->AddComponent<FlagSpawnComponent>(entity, FlagSpawnComponent());
 	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+
+	uint8 teamIndex = 0;
+	if (FindTeamIndex(levelObject.Name, teamIndex))
+	{
+		pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+	}
 
 	createdEntities.PushBack(entity);
 
@@ -409,11 +463,15 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	pECS->AddComponent<FlagDeliveryPointComponent>(entity, {});
 
-	uint8 teamIndex = 0;
-	size_t teamIndexPos = levelObject.Name.find("TEAM");
-	if (teamIndexPos != String::npos) teamIndex = (uint8)std::stoi(levelObject.Name.substr(teamIndexPos + 4));
+	TeamComponent teamComponent = {};
 
-	pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
+	{
+		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Flag Delivery Point, defaulting to 0...");
+		teamComponent.TeamIndex = 0;
+	}
+
+	pECS->AddComponent<TeamComponent>(entity, teamComponent);
 	const PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
 	const ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
 	const RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
@@ -443,7 +501,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Base with EntityID %u and Team Index %u", entity, teamIndex);
+	D_LOG_INFO("Created Base with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
@@ -564,12 +622,21 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity flagEntity = pECS->CreateEntity();
 
-	const Timestamp				pickupCooldown = Timestamp::Seconds(1.0f);
-	const FlagComponent			flagComponent{ EngineLoop::GetTimeSinceStart() + pickupCooldown, pickupCooldown };
-	const PositionComponent		positionComponent{ true, pFlagDesc->Position };
-	const ScaleComponent		scaleComponent{ true, pFlagDesc->Scale };
-	const RotationComponent		rotationComponent{ true, pFlagDesc->Rotation };
-	const MeshComponent			meshComponent{ s_FlagMeshGUID, s_FlagMaterialGUID };
+	GUID_Lambda flagMaterialGUID = ResourceCatalog::FLAG_COMMON_MATERIAL_GUID;
+
+	if (pFlagDesc->TeamIndex != UINT8_MAX)
+	{
+		pECS->AddComponent<TeamComponent>(flagEntity, { .TeamIndex = pFlagDesc->TeamIndex });
+		flagMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pFlagDesc->TeamIndex);
+	}
+
+	const Timestamp			pickupCooldown = Timestamp::Seconds(1.0f);
+	const Timestamp			respawnCooldown = Timestamp::Seconds(5.0f);
+	const FlagComponent		flagComponent{ EngineLoop::GetTimeSinceStart(), pickupCooldown, respawnCooldown, false };
+	const PositionComponent	positionComponent{ true, pFlagDesc->Position };
+	const ScaleComponent	scaleComponent{ true, pFlagDesc->Scale };
+	const RotationComponent	rotationComponent{ true, pFlagDesc->Rotation };
+	const MeshComponent		meshComponent{ ResourceCatalog::FLAG_MESH_GUID, flagMaterialGUID };
 	const ProjectedGUIComponent	projectedGUIComponent{ IndicatorTypeGUI::FLAG_INDICATOR };
 
 	pECS->AddComponent<FlagComponent>(flagEntity,			flagComponent);
@@ -604,10 +671,7 @@ bool LevelObjectCreator::CreateFlag(
 	pECS->AddComponent<ParentComponent>(flagEntity,	parentComponent);
 	pECS->AddComponent<OffsetComponent>(flagEntity,	offsetComponent);
 
-	//Network Stuff
-	{
-		pECS->AddComponent<PacketComponent<PacketFlagEdited>>(flagEntity, {});
-	}
+	pECS->AddComponent<PacketComponent<PacketFlagEdited>>(flagEntity, {});
 
 	int32 networkUID;
 	if (!MultiplayerUtils::IsServer())
@@ -745,6 +809,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 
 	Entity weaponEntity = pECS->CreateEntity();
+	childEntities.PushBack(weaponEntity);
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
@@ -757,39 +822,35 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
-
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
-
-	pECS->AddComponent<MeshComponent>(playerEntity,
-		MeshComponent
-		{
-			.MeshGUID		= s_PlayerMeshGUID,
-			.MaterialGUID	= TeamHelper::GetTeamColorMaterialGUID(pPlayer->GetTeam())
-		});
 
 	const bool readback = MultiplayerUtils::IsServer();
 	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
 
 	AnimationComponent animationComponent = {};
-	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
+	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::PLAYER_MESH_GUID)->pSkeleton;
 
 	AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
-	pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
+	pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::PLAYER_IDLE_GUIDs[0]));
 	pAnimationGraph->TransitionToState("Idle");
 	animationComponent.pGraph = pAnimationGraph;
 
 	pECS->AddComponent<AnimationComponent>(playerEntity, animationComponent);
 
-	// Server/Client
+	GUID_Lambda playerMaterialGUID;
+
+	// Server/Client 
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
+		playerMaterialGUID = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam() ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamColorMaterialGUID(pPlayer->GetTeam());
+
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
-				.MeshGUID = s_WeaponMesh,
-				.MaterialGUID = s_WeaponMaterial,
+				.MeshGUID = ResourceCatalog::WEAPON_MESH_GUID,
+				.MaterialGUID = ResourceCatalog::WEAPON_MATERIAL_GUID,
 			});
 
 		pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
@@ -806,15 +867,15 @@ bool LevelObjectCreator::CreatePlayer(
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
 #ifdef USE_ALL_ANIMATIONS
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", s_PlayerStrafeRightGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Left", s_PlayerStrafeLeftGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", ResourceCatalog::PLAYER_RUN_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", ResourceCatalog::PLAYER_RUN_BACKWARD_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Left", ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]));
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Left");
-			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			ClipNode* pRunning = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_MIRRORED_GUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -822,8 +883,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Right");
-			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
-			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			ClipNode* pRunning = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_GUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -831,8 +892,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Left");
-			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_BACKWARD_MIRRORED_GUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -840,8 +901,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Right");
-			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
-			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_BACKWARD_GUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -932,6 +993,21 @@ bool LevelObjectCreator::CreatePlayer(
 				.HitMask = 0xFF
 			});
 
+		//Add Audio Instances
+		{
+			SoundInstance3DDesc soundInstanceDesc = {};
+			soundInstanceDesc.pName			= "Step";
+			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
+			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+			soundInstanceDesc.Position		= pPlayerDesc->Position;
+			soundInstanceDesc.Volume		= 1.0f;
+
+			AudibleComponent audibleComponent = {};
+			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+
+			pECS->AddComponent<AudibleComponent>(playerEntity, audibleComponent);
+		}
+
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
@@ -957,7 +1033,7 @@ bool LevelObjectCreator::CreatePlayer(
 			playerChildComp.AddChild(cameraEntity, "camera");
 
 			//Todo: Better implementation for this somehow maybe?
-			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
+			const Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::PLAYER_MESH_GUID);
 			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
@@ -993,9 +1069,17 @@ bool LevelObjectCreator::CreatePlayer(
 	}
 	else
 	{
+		playerMaterialGUID = TeamHelper::GetMyTeamPlayerMaterialGUID();
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
 	}
+
+	pECS->AddComponent<MeshComponent>(playerEntity,
+		MeshComponent
+		{
+			.MeshGUID = ResourceCatalog::PLAYER_MESH_GUID,
+			.MaterialGUID = playerMaterialGUID
+		});
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<ChildComponent>(playerEntity, playerChildComp);
@@ -1074,10 +1158,18 @@ bool LevelObjectCreator::CreateProjectile(
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
-		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
-				.HitMask = 0xFF
-			});
+		glm::vec4 particleColor(1.0f);
+		if (desc.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
+		{
+			GUID_Lambda projectileMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(desc.TeamIndex);
+			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = projectileMaterialGUID });
+			particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
+		}
+		else
+		{
+			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
+			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
+		}
 
 		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{
 				.Active = true,
@@ -1098,10 +1190,28 @@ bool LevelObjectCreator::CreateProjectile(
 				.TileIndex = 14,
 				.AnimationCount = 1,
 				.FirstAnimationIndex = 14,
-				.Color = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f),
+				.Color = particleColor,
 			}
 		);
+
+		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
+				.HitMask = 0x02
+			});
 	}
 
 	return true;
+}
+
+bool LevelObjectCreator::FindTeamIndex(const LambdaEngine::String& objectName, uint8& teamIndex)
+{
+	using namespace LambdaEngine;
+
+	size_t teamIndexPos = objectName.find("TEAM");
+	if (teamIndexPos != String::npos)
+	{
+		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4));
+		return true;
+	}
+
+	return false;
 }

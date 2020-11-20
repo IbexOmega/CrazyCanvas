@@ -134,10 +134,6 @@ namespace LambdaEngine
 		// Fetching render targets
 		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE") 
 		{
-			if (imageCount != 0)
-			{
-				LOG_WARNING("RenderGraph has been altered. imageCount is %d but should be 0", imageCount);
-			}
 			m_IntermediateOutputImage = MakeSharedRef(ppPerImageTextureViews[0]);
 		}
 		
@@ -452,6 +448,7 @@ namespace LambdaEngine
 					if (it != m_PlayerData.end())
 					{
 						it->Weapon = weapon;
+						it->HasWeapon = true;
 					}
 					else
 					{
@@ -646,12 +643,15 @@ namespace LambdaEngine
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 
 				// Draw player weapon
-				const DrawArg& drawArgWeapon = m_pDrawArgs[player.Weapon.DrawArgIndex];
-				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
-				pCommandList->BindIndexBuffer(drawArgWeapon.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
-				pCommandList->DrawIndexInstanced(drawArgWeapon.IndexCount, 1, 0, 0, player.Weapon.InstanceIndex);
+				if (player.HasWeapon)
+				{
+					const DrawArg& drawArgWeapon = m_pDrawArgs[player.Weapon.DrawArgIndex];
+					pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
+					pCommandList->BindIndexBuffer(drawArgWeapon.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
+					pCommandList->DrawIndexInstanced(drawArgWeapon.IndexCount, 1, 0, 0, player.Weapon.InstanceIndex);
+				}
 			}
 
 		}

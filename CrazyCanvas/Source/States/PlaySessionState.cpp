@@ -41,7 +41,11 @@
 #include "Game/StateManager.h"
 #include "States/MainMenuState.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "GUI/GUIHelpers.h"
+
+#include "Resources/ResourceCatalog.h"
 
 using namespace LambdaEngine;
 
@@ -54,6 +58,15 @@ PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool 
 	{
 		SingleplayerInitializer::Init();
 	}
+
+	// Update Team colors and materials
+	TeamHelper::SetTeamColor(0, TeamHelper::GetAvailableColor(gameSettings.TeamColor0));
+	TeamHelper::SetTeamColor(1, TeamHelper::GetAvailableColor(gameSettings.TeamColor1));
+
+	// Set Team Paint colors
+	auto& renderSystem = RenderSystem::GetInstance();
+	renderSystem.SetPaintMaskColor(2, TeamHelper::GetTeamColor(0));
+	renderSystem.SetPaintMaskColor(1, TeamHelper::GetTeamColor(1));
 
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
 }
@@ -74,6 +87,7 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	EnablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
@@ -86,12 +100,12 @@ void PlaySessionState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[m_GameSettings.MapID]
+			.LevelHash	= levelHashes[m_GameSettings.MapID],
+			.GameMode	= m_GameSettings.GameMode,
+			.MaxScore	= m_GameSettings.FlagsToWin,
 		};
 		Match::CreateMatch(&matchDescription);
 	}
-
-	m_HUDSystem.Init();
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 
@@ -104,6 +118,8 @@ void PlaySessionState::Init()
 		//Called to tell the server we are ready to start the match
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
+
+	m_HUDSystem.Init();
 }
 
 void PlaySessionState::Tick(Timestamp delta)

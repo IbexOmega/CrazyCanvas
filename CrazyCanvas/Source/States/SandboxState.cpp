@@ -33,6 +33,8 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "Input/API/Input.h"
 
 #include "Math/Random.h"
@@ -59,6 +61,8 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
+#include "Resources/ResourceCatalog.h"
+
 #include <imgui.h>
 
 using namespace LambdaEngine;
@@ -80,6 +84,8 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
+
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
@@ -106,6 +112,12 @@ void SandboxState::Init()
 		};
 
 		Match::CreateMatch(&matchDescription);
+	}
+
+	// Set Team Colors
+	{
+		TeamHelper::SetTeamColor(0, glm::vec3(1.0f, 1.0f, 0.0f));
+		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
 	}
 
 	{
@@ -257,21 +269,6 @@ void SandboxState::Init()
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
-
-		// Audio
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("halo_theme.wav");
-		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc =
-		{
-			.pName = "RobotSoundInstance",
-			.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
-			.Flags = FSoundModeFlags::SOUND_MODE_NONE,
-			.Position = position,
-			.Volume = 0.03f
-		};
-
-		pSoundInstance->Init(&desc);
-		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
 	}
 
 	// Emitter

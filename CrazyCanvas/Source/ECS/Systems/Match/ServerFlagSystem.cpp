@@ -41,7 +41,8 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 	Job job;
 	job.Components =
 	{
-		{ ComponentPermissions::R,	FlagComponent::Type() },
+		{ ComponentPermissions::RW,	FlagComponent::Type() },
+		{ ComponentPermissions::R,	TeamComponent::Type() },
 		{ ComponentPermissions::R,	CharacterColliderComponent::Type() },
 		{ ComponentPermissions::RW,	DynamicCollisionComponent::Type() },
 		{ ComponentPermissions::RW,	ParentComponent::Type() },
@@ -53,49 +54,71 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		const FlagComponent& flagComponent = pECS->GetConstComponent<FlagComponent>(flagEntity);
+		FlagComponent& flagComponent = pECS->GetComponent<FlagComponent>(flagEntity);
 
-		if (EngineLoop::GetTimeSinceStart() > flagComponent.PickupAvailableTimestamp)
+		if (EngineLoop::GetTimeSinceStart() > flagComponent.DroppedTimestamp + flagComponent.PickupCooldown)
 		{
-			const CharacterColliderComponent& playerCollisionComponent	= pECS->GetConstComponent<CharacterColliderComponent>(playerEntity);
+			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 
-			DynamicCollisionComponent& flagCollisionComponent		= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
-			ParentComponent& flagParentComponent					= pECS->GetComponent<ParentComponent>(flagEntity);
-			OffsetComponent& flagOffsetComponent					= pECS->GetComponent<OffsetComponent>(flagEntity);
-			PacketComponent<PacketFlagEdited>& flagPacketComponent	= pECS->GetComponent<PacketComponent<PacketFlagEdited>>(flagEntity);
+			TeamComponent flagTeamComponent = {};
 
-			//Disable the player-flag trigger shape
-			TArray<PxShape*> flagShapes(flagCollisionComponent.pActor->getNbShapes());
-			flagCollisionComponent.pActor->getShapes(flagShapes.GetData(), flagShapes.GetSize());
-			for (PxShape* pFlagShape : flagShapes)
+			bool validFlagPickup = false;
+			if (pTeamComponents->GetConstIf(flagEntity, flagTeamComponent))
 			{
-				ShapeUserData* pShapeUserData = reinterpret_cast<ShapeUserData*>(pFlagShape->userData);
-				EFlagColliderType flagColliderType = reinterpret_cast<EFlagColliderType*>(pShapeUserData->pUserData)[0];
-
-				if (flagColliderType == EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER)
-				{
-					pFlagShape->acquireReference();
-					flagCollisionComponent.pActor->detachShape(*pFlagShape);
-					pFlagShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
-					pFlagShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
-					flagCollisionComponent.pActor->attachShape(*pFlagShape);
-					pFlagShape->release();
-				}
+				const TeamComponent& playerTeamComponent = pECS->GetConstComponent<TeamComponent>(playerEntity);
+				validFlagPickup = (flagTeamComponent.TeamIndex != playerTeamComponent.TeamIndex);
+			}
+			else
+			{
+				//If the flag doesn't have a team component we don't care about what team collides with it
+				validFlagPickup = true;
 			}
 
-			//Set Flag Carrier (Parent)
-			flagParentComponent.Attached	= true;
-			flagParentComponent.Parent		= playerEntity;
+			if (validFlagPickup)
+			{
+				const CharacterColliderComponent& playerCollisionComponent	= pECS->GetConstComponent<CharacterColliderComponent>(playerEntity);
 
-			//Set Flag Offset
-			const physx::PxBounds3& playerBoundingBox = playerCollisionComponent.pController->getActor()->getWorldBounds();
-			flagOffsetComponent.Offset = glm::vec3(0.0f, playerBoundingBox.getDimensions().y / 2.0f, 0.0f);
+				DynamicCollisionComponent& flagCollisionComponent		= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
+				ParentComponent& flagParentComponent					= pECS->GetComponent<ParentComponent>(flagEntity);
+				OffsetComponent& flagOffsetComponent					= pECS->GetComponent<OffsetComponent>(flagEntity);
+				PacketComponent<PacketFlagEdited>& flagPacketComponent	= pECS->GetComponent<PacketComponent<PacketFlagEdited>>(flagEntity);
 
-			//Send Packet
-			PacketFlagEdited packet	= {};
-			packet.FlagPacketType		= EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP;
-			packet.PickedUpNetworkUID	= MultiplayerUtils::GetNetworkUID(playerEntity);
-			flagPacketComponent.SendPacket(packet);
+				//Set HasBeenPickedUp to true
+				flagComponent.HasBeenPickedUp = true;
+
+				//Disable the player-flag trigger shape
+				TArray<PxShape*> flagShapes(flagCollisionComponent.pActor->getNbShapes());
+				flagCollisionComponent.pActor->getShapes(flagShapes.GetData(), flagShapes.GetSize());
+				for (PxShape* pFlagShape : flagShapes)
+				{
+					ShapeUserData* pShapeUserData = reinterpret_cast<ShapeUserData*>(pFlagShape->userData);
+					EFlagColliderType flagColliderType = reinterpret_cast<EFlagColliderType*>(pShapeUserData->pUserData)[0];
+
+					if (flagColliderType == EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER)
+					{
+						pFlagShape->acquireReference();
+						flagCollisionComponent.pActor->detachShape(*pFlagShape);
+						pFlagShape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, false);
+						pFlagShape->setFlag(PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+						flagCollisionComponent.pActor->attachShape(*pFlagShape);
+						pFlagShape->release();
+					}
+				}
+
+				//Set Flag Carrier (Parent)
+				flagParentComponent.Attached	= true;
+				flagParentComponent.Parent		= playerEntity;
+
+				//Set Flag Offset
+				const physx::PxBounds3& playerBoundingBox = playerCollisionComponent.pController->getActor()->getWorldBounds();
+				flagOffsetComponent.Offset = glm::vec3(0.0f, playerBoundingBox.getDimensions().y / 2.0f, 0.0f);
+
+				//Send Packet
+				PacketFlagEdited packet	= {};
+				packet.FlagPacketType		= EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP;
+				packet.PickedUpNetworkUID	= MultiplayerUtils::GetNetworkUID(playerEntity);
+				flagPacketComponent.SendPacket(packet);
+			}
 		}
 	};
 
@@ -129,7 +152,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		PacketComponent<PacketFlagEdited>& flagPacketComponent	= pECS->GetComponent<PacketComponent<PacketFlagEdited>>(flagEntity);
 
 		//Set Flag Spawn Timestamp
-		flagComponent.PickupAvailableTimestamp = EngineLoop::GetTimeSinceStart() + flagComponent.PickupCooldown;
+		flagComponent.DroppedTimestamp = EngineLoop::GetTimeSinceStart();
 
 		//Enable the player-flag trigger shape
 		TArray<PxShape*> flagShapes(flagCollisionComponent.pActor->getNbShapes());
@@ -200,25 +223,49 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 
 	job.Function = [entity0, entity1]()
 	{
+		Entity flagEntity = entity0;
+		Entity deliveryPointEntity = entity1;
+
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(entity0);
+		const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
 
 		if (flagParentComponent.Attached)
 		{
-			const TeamComponent& playerTeamComponent = pECS->GetConstComponent<TeamComponent>(flagParentComponent.Parent);
-			const TeamComponent& deliveryPointTeamComponent = pECS->GetConstComponent<TeamComponent>(entity1);
+			Entity entityPlayer = flagParentComponent.Parent;
 
-			if (playerTeamComponent.TeamIndex == deliveryPointTeamComponent.TeamIndex)
+			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+			const TeamComponent& playerTeamComponent = pTeamComponents->GetConstData(entityPlayer);
+
+			TeamComponent flagTeamComponent = {};
+			
+			bool validFlagDelivery = false;
+			if (pTeamComponents->GetConstIf(flagEntity, flagTeamComponent))
 			{
-				EventQueue::SendEvent<FlagDeliveredEvent>(FlagDeliveredEvent(playerTeamComponent.TeamIndex));
+				validFlagDelivery = (flagTeamComponent.TeamIndex != playerTeamComponent.TeamIndex);
+			}
+			else
+			{
+				validFlagDelivery = true;
+			}
+
+			if (validFlagDelivery)
+			{
+				const TeamComponent& deliveryPointTeamComponent = pTeamComponents->GetConstData(deliveryPointEntity);
+
+				if (playerTeamComponent.TeamIndex == deliveryPointTeamComponent.TeamIndex)
+				{
+					//Flag will be respawned, set HasBeenPickedUp to false
+					FlagComponent flagComponent = pECS->GetComponent<FlagComponent>(flagEntity);
+					flagComponent.HasBeenPickedUp = false;
+
+					EventQueue::SendEvent<FlagDeliveredEvent>(FlagDeliveredEvent(flagEntity, entityPlayer, flagTeamComponent.TeamIndex, playerTeamComponent.TeamIndex));
+				}
 			}
 		}
 	};
 
 	pECS->ScheduleJobASAP(job);
-
-	
 }
 
 void ServerFlagSystem::InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
@@ -237,6 +284,45 @@ void ServerFlagSystem::InternalAddAdditionalAccesses(LambdaEngine::TArray<Lambda
 void ServerFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
+
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	//Check for flag respawn (only in CTF_TEAM_FLAG)
+	if (Match::GetGameMode() == EGameMode::CTF_TEAM_FLAG)
+	{
+		const ComponentArray<ParentComponent>*	pParentComponents = pECS->GetComponentArray<ParentComponent>();
+		const ComponentArray<TeamComponent>*	pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		ComponentArray<FlagComponent>*	pFlagComponents = pECS->GetComponentArray<FlagComponent>();
+
+		for (Entity flagEntity : m_Flags)
+		{
+			const ParentComponent& parentComponent = pParentComponents->GetConstData(flagEntity);
+
+			if (!parentComponent.Attached)
+			{
+				FlagComponent& flagComponent = pFlagComponents->GetData(flagEntity);
+
+				if (flagComponent.HasBeenPickedUp && EngineLoop::GetTimeSinceStart() > flagComponent.DroppedTimestamp + flagComponent.RespawnCooldown)
+				{
+					//Flag will be respawned, set HasBeenPickedUp to false
+					flagComponent.HasBeenPickedUp = false;
+
+					TeamComponent flagTeamComponent = {};
+
+					if (pTeamComponents->GetConstIf(flagEntity, flagTeamComponent))
+					{
+						EventQueue::SendEvent<FlagRespawnEvent>(FlagRespawnEvent(flagEntity, flagTeamComponent.TeamIndex));
+					}
+					else
+					{
+						EventQueue::SendEvent<FlagRespawnEvent>(FlagRespawnEvent(flagEntity, UINT8_MAX));
+					}
+				}
+			}
+		}
+	}
 }
 
 void ServerFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
@@ -245,21 +331,25 @@ void ServerFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp delta
 
 	using namespace LambdaEngine;
 
-	if (!m_Flags.Empty())
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	const ComponentArray<ParentComponent>*			pParentComponents = pECS->GetComponentArray<ParentComponent>();
+	const ComponentArray<NetworkPositionComponent>*	pNetworkPositionComponents = pECS->GetComponentArray<NetworkPositionComponent>();
+	const ComponentArray<RotationComponent>*		pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+	const ComponentArray<OffsetComponent>*			pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
+	ComponentArray<DynamicCollisionComponent>*		pDynamicCollisionComponents = pECS->GetComponentArray<DynamicCollisionComponent>();
+
+	for (Entity flagEntity : m_Flags)
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-
-		Entity flagEntity = m_Flags[0];
-
-		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+		const ParentComponent& parentComponent = pParentComponents->GetConstData(flagEntity);
 
 		if (parentComponent.Attached)
 		{
-			const NetworkPositionComponent& parentPositionComponent = pECS->GetConstComponent<NetworkPositionComponent>(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent		= pECS->GetConstComponent<RotationComponent>(parentComponent.Parent);
+			const NetworkPositionComponent& parentPositionComponent = pNetworkPositionComponents->GetConstData(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent		= pRotationComponents->GetConstData(parentComponent.Parent);
 
-			DynamicCollisionComponent& flagCollisionComponent	= pECS->GetComponent<DynamicCollisionComponent>(flagEntity);
-			const OffsetComponent& flagOffsetComponent			= pECS->GetConstComponent<OffsetComponent>(flagEntity);
+			DynamicCollisionComponent& flagCollisionComponent	= pDynamicCollisionComponents->GetData(flagEntity);
+			const OffsetComponent& flagOffsetComponent			= pOffsetComponents->GetConstData(flagEntity);
 
 			glm::vec3 flagPosition;
 			glm::quat flagRotation;

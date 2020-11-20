@@ -19,6 +19,8 @@
 #include "Application/API/Events/EventQueue.h"
 #include "GUI/GUIHelpers.h"
 
+#include "Game/ECS/Systems/CameraSystem.h"
+
 using namespace Noesis;
 using namespace LambdaEngine;
 
@@ -30,16 +32,11 @@ MainMenuGUI::MainMenuGUI()
 	m_pStartGrid		= FrameworkElement::FindName<Grid>("StartGrid");
 	m_pPlayGrid			= FrameworkElement::FindName<Grid>("PlayGrid");
 	m_pSettingsGrid		= FrameworkElement::FindName<Grid>("SettingsGrid");
-	m_pKeyBindingsGrid	= FrameworkElement::FindName<Grid>("KeyBindingsGrid");
+	m_pControlsGrid		= FrameworkElement::FindName<Grid>("ControlsGrid");
 	m_ContextStack.push(m_pStartGrid);
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &MainMenuGUI::KeyboardCallback);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseButtonCallback);
-
-
-	m_MainMenuMusic = LambdaEngine::ResourceManager::LoadMusicFromFile("MainMenuCC.mp3");
-
-	LambdaEngine::ResourceManager::GetMusic(m_MainMenuMusic)->Play();
 
 	SetDefaultSettings();
 }
@@ -68,7 +65,9 @@ bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 	NS_CONNECT_EVENT(Button, Click, OnButtonBenchmarkClick);
 
 	// SettingsGrid
-	NS_CONNECT_EVENT(Button, Click, OnButtonChangeKeyBindingsClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonChangeControlsClick);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnVolumeSliderChanged);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnFOVSliderChanged);
 
 	// Settings
 	NS_CONNECT_EVENT(Button, Click, OnButtonApplySettingsClick);
@@ -76,8 +75,9 @@ bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 
 	// Key Bindings
 	NS_CONNECT_EVENT(Button, Click, OnButtonSetKey);
-	NS_CONNECT_EVENT(Button, Click, OnButtonApplyKeyBindingsClick);
-	NS_CONNECT_EVENT(Button, Click, OnButtonCancelKeyBindingsClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonApplyControlsClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonCancelControlsClick);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnLookSensitivityChanged);
 
 	return false;
 }
@@ -150,7 +150,8 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	PacketGameSettings settings;
-	settings.MapID = 0;
+	settings.MapID		= 5;
+	settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
 	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -171,8 +172,6 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
-	SetRenderStagesSleeping();
-
 	State* pStartingState = DBG_NEW BenchmarkState();
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -184,15 +183,25 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 */
 void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing
-	Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
-	m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
-	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+	// Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
+	// EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
 
 	// Mesh Shader
 	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	m_MeshShadersEnabled = pMeshShaderCheckBox->GetIsChecked().GetValue();
 	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, m_MeshShadersEnabled);
+
+	// Fullscreen toggle
+	Noesis::CheckBox* pFullscreenCheckBox = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	bool previousState = m_FullscreenEnabled;
+	m_FullscreenEnabled = pFullscreenCheckBox->GetIsChecked().GetValue();
+	if (previousState != m_FullscreenEnabled)
+		CommonApplication::Get()->GetMainWindow()->ToggleFullscreen();
+
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN, m_FullscreenEnabled);
 
 	// Volume
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
@@ -201,6 +210,9 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	volume /= maxVolume;
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	//FOV
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
 	EngineConfig::WriteToFile();
 
@@ -211,10 +223,13 @@ void MainMenuGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, co
 {
 	SetDefaultSettings();
 
+	//FOV
+	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
 	OnButtonBackClick(pSender, args);
 }
 
-void MainMenuGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MainMenuGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -222,8 +237,26 @@ void MainMenuGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender,
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
-	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
-	m_ContextStack.push(m_pKeyBindingsGrid);
+	m_pControlsGrid->SetVisibility(Noesis::Visibility_Visible);
+	m_ContextStack.push(m_pControlsGrid);
+}
+
+void MainMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	// Update volume for easier changing of it. Do not save it however as that should
+	// only be done when the user presses "Apply"
+
+	Noesis::Slider* pVolumeSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+}
+
+void MainMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
 }
 
 /*
@@ -245,7 +278,7 @@ void MainMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::R
 	m_ListenToCallbacks = true;
 }
 
-void MainMenuGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MainMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Go through all keys to set - and set them
 	for (auto& stringPair : m_KeysToSet)
@@ -254,10 +287,12 @@ void MainMenuGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, 
 	}
 	m_KeysToSet.clear();
 
+	InputActionSystem::SetLookSensitivity(m_LookSensitivityPercentageToSet);
+
 	OnButtonBackClick(pSender, args);
 }
 
-void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void MainMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Reset
 	for (auto& stringPair : m_KeysToSet)
@@ -282,14 +317,11 @@ void MainMenuGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender,
 	OnButtonBackClick(pSender, args);
 }
 
-/*
-*
-*	HELPER FUNCTIONS
-*
-*/
-void MainMenuGUI::SetRenderStagesSleeping()
+void MainMenuGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
-	DisablePlaySessionsRenderstages();
+	Noesis::Slider* pLookSensitivitySlider = reinterpret_cast<Noesis::Slider*>(pSender);
+
+	m_LookSensitivityPercentageToSet = pLookSensitivitySlider->GetValue() / pLookSensitivitySlider->GetMaximum();
 }
 
 void MainMenuGUI::SetDefaultSettings()
@@ -298,22 +330,36 @@ void MainMenuGUI::SetDefaultSettings()
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
-	pVolumeSlider->SetValue(volume);
+	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	//Set initial FOV
+	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
+	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
 
 	SetDefaultKeyBindings();
 
+	Noesis::Slider* pLookSensitivitySlider = FrameworkElement::FindName<Slider>("LookSensitivitySlider");
+	pLookSensitivitySlider->SetValue(InputActionSystem::GetLookSensitivityPercentage() * pLookSensitivitySlider->GetMaximum());
+
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing Toggle
-	m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
-	CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
-	NS_ASSERT(pToggleRayTracing);
-	pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
+	// m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+	// CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// NS_ASSERT(pToggleRayTracing);
+	// pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
 
 	// Mesh Shader Toggle
 	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
-	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	CheckBox* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	NS_ASSERT(pToggleMeshShader);
 	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
+
+	// Fullscreen Toggle
+	m_FullscreenEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN);
+	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	NS_ASSERT(pToggleFullscreen);
+	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
 }
 
 void MainMenuGUI::SetDefaultKeyBindings()
@@ -325,7 +371,7 @@ void MainMenuGUI::SetDefaultKeyBindings()
 		EAction::ACTION_MOVE_LEFT,
 		EAction::ACTION_MOVE_RIGHT,
 		EAction::ACTION_MOVE_JUMP,
-		EAction::ACTION_MOVE_SPRINT,
+		EAction::ACTION_MOVE_WALK,
 
 		// Attack
 		EAction::ACTION_ATTACK_PRIMARY,

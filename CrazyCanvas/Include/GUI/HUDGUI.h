@@ -85,12 +85,16 @@ public:
 	// Settings
 	void OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
-	// Key bindings
+	// Controls
 	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+
 	void UpdateCountdown(uint8 countDownTime);
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
@@ -104,20 +108,23 @@ public:
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
 
-	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type);
+	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
+	void CreateProjectedGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
+	void RemoveProjectedGUIElement(LambdaEngine::Entity entity);
 
 	void SetWindowSize(uint32 width, uint32 height);
 
 private:
 	void InitGUI();
 
+	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
+	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
 	void SetRenderStagesInactive();
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
-	void TranslateIndicator(Noesis::Transform* pTranslation, IndicatorTypeGUI type);
-	void SetIndicatorOpacity(float32 value, IndicatorTypeGUI type);
+
 	// Helpers
 	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
 
@@ -134,6 +141,9 @@ private:
 	Noesis::TextBlock* m_pWaterAmmoText			= nullptr;
 	Noesis::TextBlock* m_pPaintAmmoText			= nullptr;
 
+
+	Noesis::Grid* m_pHUDGrid					= nullptr;
+
 	Noesis::Grid* m_pHitIndicatorGrid			= nullptr;
 	Noesis::Grid* m_pScoreboardGrid				= nullptr;
 
@@ -143,27 +153,29 @@ private:
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
 
-	Noesis::Rectangle* m_pFlagIndicator = nullptr;
-
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
 
 	bool m_ScoreboardVisible = false;
+
+	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
 	// EscapeGUI
 	bool 			m_ListenToCallbacks		= false;
 	Noesis::Button* m_pSetKeyButton			= nullptr;
 	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
+	float32 m_LookSensitivityPercentageToSet = 0.0f;
 
-	bool			m_RayTracingEnabled		= false;
+	// bool			m_RayTracingEnabled		= false;
 	bool			m_MeshShadersEnabled	= false;
+	bool			m_FullscreenEnabled		= false;
 	bool			m_EscapeMenuEnabled		= false;
 
 	bool			m_MouseEnabled			= false;
 
 	Noesis::Grid*	m_pEscapeGrid			= nullptr;
 	Noesis::Grid*	m_pSettingsGrid			= nullptr;
-	Noesis::Grid*	m_pKeyBindingsGrid		= nullptr;
+	Noesis::Grid*	m_pControlsGrid			= nullptr;
 
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
 };

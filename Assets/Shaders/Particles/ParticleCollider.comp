@@ -1,0 +1,104 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+#extension GL_EXT_ray_tracing : enable
+#extension GL_EXT_ray_query : enable
+
+#include "../Defines.glsl"
+#include "../Helpers.glsl"
+
+#define WORK_GROUP_INVOCATIONS 32
+layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1) in;
+
+// Pushconstants
+layout(push_constant) uniform PushConstants
+{
+	float   DeltaTime;
+    uint    ParticleCount; 
+} u_PC;
+
+// Buffers
+layout (binding = 0, set = 0) uniform PerFrameBuffer
+{
+	SPerFrameBuffer PerFrameBuffer;
+} u_PerFrameBuffer;
+
+layout(binding = 1, set = 0) restrict buffer ParticleInstances
+{ 
+	SParticle Val[]; 
+} b_ParticleInstances;
+
+layout(binding = 2, set = 0) readonly restrict buffer EmitterInstances
+{ 
+	SEmitter Val[]; 
+} b_EmitterInstances;
+
+layout(binding = 3, set = 0) readonly restrict buffer EmitterTransforms
+{ 
+	mat4 Val[]; 
+} b_EmitterTransforms;
+
+layout (binding = 4, set = 0) readonly restrict buffer ParticleIndirectIndices
+{
+	SParticleIndexData Val[];
+} b_ParticleIndirectIndices;
+
+layout (binding = 5, set = 0) readonly restrict buffer AliveIndices
+{
+	uint Val[];
+} b_AliveIndices;
+
+layout(binding = 6, set = 0) uniform accelerationStructureEXT u_TLAS;
+
+// Main
+void main()
+{
+	// Return in case this thread is outside of our ParticleCount
+	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	uint indexOffset = gl_GlobalInvocationID.x;
+	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.PerFrameBuffer;
+	const float dt = u_PC.DeltaTime;
+	const vec3 GLOBAL_DOWN = vec3(0.f, 1.f, 0.f);
+
+	while (indexOffset < u_PC.ParticleCount)
+	{
+		// Update particle data
+		uint particleIndex = b_AliveIndices.Val[indexOffset];
+		SParticle particle = b_ParticleInstances.Val[particleIndex];
+		
+		// Retreive emitter data
+		uint emmiterIndex = b_ParticleIndirectIndices.Val[particleIndex].EmitterIndex;
+		SEmitter emitter = b_EmitterInstances.Val[emmiterIndex];
+		mat4 emitterTransform = b_EmitterTransforms.Val[emmiterIndex];
+        
+		// Ray Query
+        vec3  vel = particle.Velocity + (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
+		vec3  origin    = particle.Transform[3].xyz;
+		vec3  direction = normalize(vel);
+		float tMin      = 0.01f;
+		float tMax      = length(vel*dt*2.f);
+
+		// Initializes a ray query object but does not start traversal
+		rayQueryEXT rayQuery;
+		rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFC, origin, tMin,
+							direction, tMax);
+		
+		// Start traversal: return false if traversal is complete
+		while(rayQueryProceedEXT(rayQuery)) { }
+
+		// Returns type of committed (true) intersection
+		if(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT)
+		{
+			// Set position to be at the intersection point.
+			float tHit = rayQueryGetIntersectionTEXT(rayQuery, true);
+			particle.Transform[3].xyz = origin + max(tHit-tMin*2.f, 0.f)*direction;
+			particle.Bounciness = 2.f; // This is used for telling the ParticleUpdate.comp that this particle should stop.
+			particle.Velocity = vec3(0.f);
+		}
+
+		b_ParticleInstances.Val[particleIndex] = particle;
+		indexOffset += totalInvocations;
+	}
+
+}

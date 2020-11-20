@@ -20,7 +20,8 @@ namespace LambdaEngine
 		{EAction::ACTION_MOVE_BACKWARD, "S"},
 		{EAction::ACTION_MOVE_LEFT, "A"},
 		{EAction::ACTION_MOVE_RIGHT, "D"},
-		{EAction::ACTION_MOVE_SPRINT, "LEFT_SHIFT"},
+		{EAction::ACTION_MOVE_WALK, "LEFT_SHIFT"},
+		{EAction::ACTION_MOVE_SPRINT, "LEFT_ALT"},
 		{EAction::ACTION_MOVE_CROUCH, "LEFT_CONTROL"},
 		{EAction::ACTION_MOVE_JUMP, "SPACE"},
 
@@ -43,6 +44,11 @@ namespace LambdaEngine
 		{EAction::ACTION_TOGGLE_MOUSE, "C"},
 	};
 
+	String InputActionSystem::s_LookSensitivityName		= "LOOK_SENSITIVITY";
+	float32 InputActionSystem::s_CurrentLookSensitivityPercentage	= 0.5;
+	float32 InputActionSystem::s_DefaultLookSensitivityPercentage	= 0.5;
+	float32 InputActionSystem::s_CurrentLookSensitivity				= s_CurrentLookSensitivityPercentage * LOOK_SENSITIVITY_BASE;
+
 	bool InputActionSystem::LoadFromFile()
 	{
 		const char* pKeyBindingsConfigPath = "key_bindings.json";
@@ -62,23 +68,29 @@ namespace LambdaEngine
 
 		for (auto& m : s_ConfigDocument.GetObject())
 		{
-
-			String strBinding 	= m.value.GetString();
 			String strAction	= m.name.GetString();
-			EAction action		= StringToAction(strAction);
 
-			EKey keybinding = StringToKey(strBinding);
-			EMouseButton mouseButtonBinding = StringToButton(strBinding);
-			if (keybinding == EKey::KEY_UNKNOWN && mouseButtonBinding == EMouseButton::MOUSE_BUTTON_UNKNOWN)
+			if (strAction == s_LookSensitivityName)
 			{
-				LOG_ERROR("Action %s is bounded to unknown. Make sure key is defined.", strAction.c_str());
+				s_CurrentLookSensitivityPercentage = s_ConfigDocument[s_LookSensitivityName.c_str()].GetFloat();
 			}
 			else
 			{
-				s_CurrentBindings.insert({ action, strBinding });
-				LOG_INFO("Action %s is bounded to %s\n", strAction.c_str(), strBinding.c_str());
-			}
+				String strBinding = m.value.GetString();
+				EAction action = StringToAction(strAction);
 
+				EKey keybinding = StringToKey(strBinding);
+				EMouseButton mouseButtonBinding = StringToButton(strBinding);
+				if (keybinding == EKey::KEY_UNKNOWN && mouseButtonBinding == EMouseButton::MOUSE_BUTTON_UNKNOWN)
+				{
+					LOG_ERROR("Action %s is bounded to unknown. Make sure key is defined.", strAction.c_str());
+				}
+				else
+				{
+					s_CurrentBindings.insert({ action, strBinding });
+					LOG_INFO("Action %s is bounded to %s\n", strAction.c_str(), strBinding.c_str());
+				}
+			}
 		}
 
 		fclose(pFile);
@@ -88,7 +100,6 @@ namespace LambdaEngine
 
 	bool InputActionSystem::WriteToFile()
 	{
-
 		const char* pKeyBindingsConfigPath = "key_bindings.json";
 
 		FILE* pFile = fopen(pKeyBindingsConfigPath, "w");
@@ -175,6 +186,24 @@ namespace LambdaEngine
 		return false;
 	}
 
+	void InputActionSystem::SetLookSensitivity(float32 sensitivity)
+	{
+		s_CurrentLookSensitivityPercentage = glm::max(0.01f, sensitivity);
+
+		if (s_ConfigDocument.HasMember(s_LookSensitivityName.c_str()))
+		{
+			s_ConfigDocument[s_LookSensitivityName.c_str()].SetFloat(s_CurrentLookSensitivityPercentage);
+		}
+		else
+		{
+			rapidjson::Value key(s_LookSensitivityName.c_str(), static_cast<rapidjson::SizeType>(s_LookSensitivityName.length()), s_ConfigDocument.GetAllocator());
+			rapidjson::Value value(s_CurrentLookSensitivityPercentage);
+			s_ConfigDocument.AddMember(key, value, s_ConfigDocument.GetAllocator());
+		}
+
+		s_CurrentLookSensitivity = s_CurrentLookSensitivityPercentage * LOOK_SENSITIVITY_BASE;
+		WriteToFile();
+	}
 
 	bool InputActionSystem::IsActive(EAction action)
 	{
@@ -257,6 +286,10 @@ namespace LambdaEngine
 			rapidjson::Value value(pair.second.c_str(), static_cast<rapidjson::SizeType>(pair.second.size()), s_ConfigDocument.GetAllocator());
 			s_ConfigDocument.AddMember(key, value, s_ConfigDocument.GetAllocator());
 		}
+
+		rapidjson::Value key(s_LookSensitivityName.c_str(), static_cast<rapidjson::SizeType>(s_LookSensitivityName.length()), s_ConfigDocument.GetAllocator());
+		rapidjson::Value value(s_DefaultLookSensitivityPercentage);
+		s_ConfigDocument.AddMember(key, value, s_ConfigDocument.GetAllocator());
 
 		WriteToFile();
 	}

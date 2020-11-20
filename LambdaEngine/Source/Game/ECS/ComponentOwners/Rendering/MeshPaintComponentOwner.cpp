@@ -2,6 +2,7 @@
 
 #include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/TextureView.h"
+#include "Rendering/Core/API/Buffer.h"
 
 namespace LambdaEngine
 {
@@ -44,9 +45,10 @@ namespace LambdaEngine
 
 	void MeshPaintComponentOwner::ReleaseMeshPaintComponent(MeshPaintComponent& meshPaintComponent)
 	{
-		auto& resourcesToRelease = m_ResourcesToRelease[m_ModFrameIndex];
+		TArray<DeviceChild*>& resourcesToRelease = m_ResourcesToRelease[m_ModFrameIndex];
 		resourcesToRelease.PushBack(meshPaintComponent.pTexture);
 		resourcesToRelease.PushBack(meshPaintComponent.pTextureView);
+		resourcesToRelease.PushBack(meshPaintComponent.pReadBackBuffer);
 	}
 
 	void MeshPaintComponentOwner::MeshPaintDestructor(MeshPaintComponent& meshPaintComponent, Entity entity)

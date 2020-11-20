@@ -29,6 +29,8 @@
 
 #include "Audio/AudioAPI.h"
 
+#include "Teams/TeamHelper.h"
+
 using namespace LambdaEngine;
 
 MatchClient::~MatchClient()
@@ -184,6 +186,7 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				.Position		= packet.Position,
 				.Scale			= glm::vec3(1.0f),
 				.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.TeamIndex		= packet.Flag.TeamIndex
 			};
 
 			TArray<Entity> createdFlagEntities;
@@ -272,7 +275,6 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.InitalVelocity = event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
-	createProjectileDesc.MeshComponent	= event.MeshComponent;
 	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
 	createProjectileDesc.Angle			= event.Angle;
 

@@ -14,7 +14,6 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
-#include "Rendering/PaintMaskRenderer.h"
 #include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
@@ -33,6 +32,7 @@
 
 #include "Rendering/ParticleRenderer.h"
 #include "Rendering/ParticleUpdater.h"
+#include "Rendering/ParticleCollider.h"
 #include "Rendering/RT/ASBuilder.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -47,10 +47,15 @@ namespace LambdaEngine
 
 	bool RenderSystem::Init()
 	{
+		// Fullscreen
+		if (EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN))
+			CommonApplication::Get()->GetMainWindow()->ToggleFullscreen();
+
 		GraphicsDeviceFeatureDesc deviceFeatures;
 		RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
-		m_RayTracingEnabled		= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
-		m_MeshShadersEnabled	= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+		m_RayTracingEnabled			= deviceFeatures.RayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+		m_MeshShadersEnabled		= deviceFeatures.MeshShaders && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+		m_InlineRayTracingEnabled	= deviceFeatures.InlineRayTracing && EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_INLINE_RAY_TRACING);
 
 		// Subscribe on Static Entities & Dynamic Entities
 		{
@@ -350,14 +355,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers				= { };
 
-			// Add paint mask renderer to the custom renderers inside the render graph.
-			{
-				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
-				m_pPaintMaskRenderer->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
-			}
-
 			// Light Renderer
 			bool isServer = MultiplayerUtils::IsServer();
 			if (!isServer)
@@ -390,6 +387,10 @@ namespace LambdaEngine
 				m_pParticleUpdater = DBG_NEW ParticleUpdater();
 				m_pParticleUpdater->Init();
 				renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
+
+				m_pParticleCollider = DBG_NEW ParticleCollider();
+				m_pParticleCollider->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
 			}
 
 			//GUI Renderer
@@ -467,10 +468,10 @@ namespace LambdaEngine
 		}
 
 		SAFEDELETE(m_pLineRenderer);
-		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
+		SAFEDELETE(m_pParticleCollider);
 		SAFEDELETE(m_pASBuilder);
 
 		// Delete Custom Renderers
@@ -665,6 +666,7 @@ namespace LambdaEngine
 			uint32 activeEmitterCount = m_ParticleManager.GetActiveEmitterCount();
 			m_pParticleRenderer->SetCurrentParticleCount(particleCount, activeEmitterCount);
 			m_pParticleUpdater->SetCurrentParticleCount(particleCount, activeEmitterCount);
+			m_pParticleCollider->SetCurrentParticleCount(particleCount, activeEmitterCount);
 		}
 	}
 
@@ -720,6 +722,7 @@ namespace LambdaEngine
 		{
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
+			renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
 		}
 
 		// AS Builder
@@ -734,13 +737,7 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 		}
 
-		// Paint Mask Renderer
-		{
-			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
-			m_pPaintMaskRenderer->Init();
-
-			renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
-		}
+		// TODO: Add the game specific custom renderers!
 
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
@@ -779,6 +776,19 @@ namespace LambdaEngine
 			LOG_WARNING("[RenderSystem]: SetRenderStageSleeping failed - Rendergraph not initilised");
 		}
 
+	}
+
+	void RenderSystem::SetPaintMaskColor(uint32 index, const glm::vec3& color)
+	{
+		if (index < m_PaintMaskColors.GetSize())
+		{
+			m_PaintMaskColors[index] = glm::vec4(color, 1.0f);
+			m_PaintMaskColorsResourceDirty = true;
+		}
+		else
+		{
+			LOG_WARNING("[RenderSystem]: SetPaintMaskColor index out of range, colors unchanged");
+		}
 	}
 
 	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)

@@ -4,6 +4,7 @@
 #include "Time/API/Timestamp.h"
 
 #include "Rendering/Core/API/GraphicsTypes.h"
+#include "Containers/String.h"
 
 namespace LambdaEngine
 {
@@ -120,7 +121,7 @@ namespace LambdaEngine
 		*/
 		virtual void UpdateAccelerationStructureResource(
 			const String& resourceName,
-			const AccelerationStructure* pAccelerationStructure)
+			const AccelerationStructure* const* pAccelerationStructure)
 		{
 			UNREFERENCED_VARIABLE(resourceName);
 			UNREFERENCED_VARIABLE(pAccelerationStructure);

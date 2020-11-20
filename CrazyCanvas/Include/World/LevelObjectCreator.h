@@ -40,7 +40,8 @@ enum class ELevelObjectType : uint8
 	LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT	= 8,
 	LEVEL_OBJECT_TYPE_PROJECTILE			= 9,
 	LEVEL_OBJECT_TYPE_KILL_PLANE			= 10,
-	LEVEL_OBJECT_TYPE_PARTICLE_SHOWER		= 11,
+	LEVEL_OBJECT_TYPE_PLAYER_JAIL			= 11,
+	LEVEL_OBJECT_TYPE_PARTICLE_SHOWER		= 12,
 };
 
 /*
@@ -54,6 +55,7 @@ struct CreateFlagDesc
 	glm::vec3				Position		= glm::vec3(0.0f);
 	glm::vec3				Scale			= glm::vec3(1.0f);
 	glm::quat				Rotation		= glm::quat();
+	uint8					TeamIndex		= UINT8_MAX;
 };
 
 /*
@@ -82,10 +84,9 @@ struct CreateProjectileDesc
 	glm::vec3	FirePosition;
 	glm::vec3	InitalVelocity;
 	int32		PlayerFiredNetworkUID = -1;
-	uint32		TeamIndex;
+	uint8		TeamIndex;
 	LambdaEngine::Entity			WeaponOwner;
 	LambdaEngine::CollisionCallback	Callback;
-	LambdaEngine::MeshComponent		MeshComponent;
 	uint32 Angle = 0;
 };
 
@@ -146,6 +147,11 @@ private:
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
 
+	static ELevelObjectType CreatePlayerJail(
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+		const glm::vec3& translation);
+
 	static ELevelObjectType CreateFlagSpawn(
 		const LambdaEngine::LevelObjectOnLoad& levelObject,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
@@ -179,23 +185,10 @@ private:
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
 
+	static bool FindTeamIndex(const LambdaEngine::String& objectName, uint8& teamIndex);
+
 private:
 	inline static LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc> s_LevelObjectOnLoadDescriptions;
 	inline static LambdaEngine::THashTable<LambdaEngine::String, LevelObjectCreateByPrefixFunc> s_LevelObjectByPrefixCreateFunctions;
 	inline static LambdaEngine::THashTable<ELevelObjectType, LevelObjectCreateByTypeFunc> s_LevelObjectByTypeCreateFunctions;
-
-	inline static GUID_Lambda s_FlagMeshGUID		= GUID_NONE;
-	inline static GUID_Lambda s_FlagMaterialGUID	= GUID_NONE;
-
-	inline static GUID_Lambda s_PlayerMeshGUID = GUID_NONE;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerIdleGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunMirroredGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerRunBackwardMirroredGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeLeftGUIDs;
-	inline static LambdaEngine::TArray<GUID_Lambda> s_PlayerStrafeRightGUIDs;
-
-	inline static GUID_Lambda s_WeaponMesh = GUID_NONE;
-	inline static GUID_Lambda s_WeaponMaterial = GUID_NONE;
 };

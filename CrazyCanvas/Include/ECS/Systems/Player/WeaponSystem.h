@@ -69,8 +69,8 @@ public:
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	virtual void Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint32 playerTeam, uint32 angle);
-	void CalculateWeaponFireProperties(LambdaEngine::Entity weaponEntity, glm::vec3& position, glm::vec3& velocity, uint32& playerTeam);
+	virtual void Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint8 playerTeam, uint32 angle);
+	void CalculateWeaponFireProperties(LambdaEngine::Entity weaponEntity, glm::vec3& position, glm::vec3& velocity, uint8& playerTeam);
 
 public:
 	static bool Init();
@@ -85,13 +85,6 @@ protected:
 	virtual bool InitInternal() = 0;
 
 	void CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg);
-
-	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam)
-	{
-		UNREFERENCED_VARIABLE(ammoType);
-		UNREFERENCED_VARIABLE(playerTeam);
-		return LambdaEngine::MeshComponent();
-	}
 
 	void UpdateWeapon(WeaponComponent& weaponComponent, float32 dt);
 

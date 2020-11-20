@@ -95,7 +95,7 @@ public:
 		const EAmmoType ammoType, 
 		const glm::vec3& position, 
 		const glm::vec3& initialVelocity,
-		const uint32 teamIndex,
+		const uint8 teamIndex,
 		const uint32 angle)
 		: Event()
 		, WeaponOwnerEntity(weaponOwnerEntity)
@@ -119,10 +119,9 @@ public:
 	const EAmmoType AmmoType;
 	const glm::vec3 Position;
 	const glm::vec3 InitialVelocity;
-	const uint32 TeamIndex;
+	const uint8 TeamIndex;
 	const uint32 Angle;
 	LambdaEngine::CollisionCallback Callback;
-	LambdaEngine::MeshComponent		MeshComponent;
 };
 
 /*

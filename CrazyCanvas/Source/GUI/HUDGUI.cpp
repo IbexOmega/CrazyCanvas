@@ -34,6 +34,8 @@
 
 #include "Lobby/PlayerManagerClient.h"
 
+#include "Game/ECS/Systems/CameraSystem.h"
+
 #include <string>
 
 using namespace LambdaEngine;
@@ -69,11 +71,14 @@ bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, co
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplySettingsClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelSettingsClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeKeyBindingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeControlsClick);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnVolumeSliderChanged);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnFOVSliderChanged);
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyKeyBindingsClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelKeyBindingsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyControlsClick);
+	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelControlsClick);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnLookSensitivityChanged);
 
 	return false;
 }
@@ -267,15 +272,23 @@ void HUDGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const No
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
 
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing
-	Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
-	m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
-	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+	// Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
+	// EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
 
 	// Mesh Shader
 	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	m_MeshShadersEnabled = pMeshShaderCheckBox->GetIsChecked().GetValue();
 	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, m_MeshShadersEnabled);
+
+	// Fullscreen toggle
+	Noesis::CheckBox* pFullscreenCheckBox = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	bool previousState = m_FullscreenEnabled;
+	m_FullscreenEnabled = pFullscreenCheckBox->GetIsChecked().GetValue();
+	if (previousState != m_FullscreenEnabled)
+		CommonApplication::Get()->GetMainWindow()->ToggleFullscreen();
 
 	// Volume
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
@@ -284,6 +297,9 @@ void HUDGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const No
 	volume /= maxVolume;
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	//FOV
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
 	EngineConfig::WriteToFile();
 
@@ -296,12 +312,15 @@ void HUDGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const N
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
 
+	//FOV
+	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
 	SetDefaultSettings();
 
 	OnButtonBackClick(pSender, args);
 }
 
-void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void HUDGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
@@ -312,8 +331,26 @@ void HUDGUI::OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
-	m_pKeyBindingsGrid->SetVisibility(Noesis::Visibility_Visible);
-	m_ContextStack.push(m_pKeyBindingsGrid);
+	m_pControlsGrid->SetVisibility(Noesis::Visibility_Visible);
+	m_ContextStack.push(m_pControlsGrid);
+}
+
+void HUDGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	// Update volume for easier changing of it. Do not save it however as that should
+	// only be done when the user presses "Apply"
+
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+}
+
+void HUDGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
 }
 
 void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -333,7 +370,7 @@ void HUDGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::Routed
 	m_ListenToCallbacks = true;
 }
 
-void HUDGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void HUDGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Go through all keys to set - and set them
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
@@ -345,10 +382,12 @@ void HUDGUI::OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const
 	}
 	m_KeysToSet.clear();
 
+	InputActionSystem::SetLookSensitivity(m_LookSensitivityPercentageToSet);
+
 	OnButtonBackClick(pSender, args);
 }
 
-void HUDGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+void HUDGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Reset
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
@@ -374,6 +413,13 @@ void HUDGUI::OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, cons
 	m_KeysToSet.clear();
 
 	OnButtonBackClick(pSender, args);
+}
+
+void HUDGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pLookSensitivitySlider = reinterpret_cast<Noesis::Slider*>(pSender);
+
+	m_LookSensitivityPercentageToSet = pLookSensitivitySlider->GetValue() / pLookSensitivitySlider->GetMaximum();
 }
 
 void HUDGUI::UpdateCountdown(uint8 countDownTime)
@@ -601,7 +647,7 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 
 	Label* nameLabel = static_cast<Label*>(pGrid->GetChildren()->Get(0));
 
-	LOG_ERROR("[HUDGUI]: Name: %s", nameLabel->GetContent());
+	LOG_ERROR("[HUDGUI]: Name: %s", nameLabel->GetContent()->ToString().Str());
 
 	SolidColorBrush* pBrush = static_cast<SolidColorBrush*>(nameLabel->GetForeground());
 	if (isAlive)
@@ -616,8 +662,9 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
-void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, IndicatorTypeGUI type)
+void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity)
 {
+
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
@@ -633,7 +680,7 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 	{
 		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
 		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
-		SetIndicatorOpacity(glm::max(0.1f, vecLength), type);
+		SetIndicatorOpacity(glm::max(0.1f, vecLength), entity);
 	}
 	else
 	{
@@ -644,8 +691,8 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 
 		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
 	}
-
-	TranslateIndicator(translation, type);
+	
+	TranslateIndicator(translation, entity);
 }
 
 void HUDGUI::SetWindowSize(uint32 width, uint32 height)
@@ -692,7 +739,7 @@ void HUDGUI::InitGUI()
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
 
-	m_pFlagIndicator = FrameworkElement::FindName<Noesis::Rectangle>("FLAG_INDICATOR");
+	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	std::string ammoString;
 
@@ -700,9 +747,6 @@ void HUDGUI::InitGUI()
 
 	m_pWaterAmmoText->SetText(ammoString.c_str());
 	m_pPaintAmmoText->SetText(ammoString.c_str());
-
-	/*FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1")->SetText("0");
-	FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2")->SetText("0");*/
 
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	CommonApplication::Get()->SetMouseVisibility(false);
@@ -713,7 +757,7 @@ void HUDGUI::InitGUI()
 	// Main Grids
 	m_pEscapeGrid			= FrameworkElement::FindName<Grid>("EscapeGrid");
 	m_pSettingsGrid			= FrameworkElement::FindName<Grid>("SettingsGrid");
-	m_pKeyBindingsGrid		= FrameworkElement::FindName<Grid>("KeyBindingsGrid");
+	m_pControlsGrid			= FrameworkElement::FindName<Grid>("ControlsGrid");
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &HUDGUI::KeyboardCallback);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &HUDGUI::MouseButtonCallback);
@@ -727,22 +771,36 @@ void HUDGUI::SetDefaultSettings()
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
-	pVolumeSlider->SetValue(volume);
+	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	//Set initial FOV
+	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
+	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
 
 	SetDefaultKeyBindings();
 
+	Noesis::Slider* pLookSensitivitySlider = FrameworkElement::FindName<Slider>("LookSensitivitySlider");
+	pLookSensitivitySlider->SetValue(InputActionSystem::GetLookSensitivityPercentage() * pLookSensitivitySlider->GetMaximum());
+
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing Toggle
-	m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
-	CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
-	NS_ASSERT(pToggleRayTracing);
-	pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
+	// m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+	// CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// NS_ASSERT(pToggleRayTracing);
+	// pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
 
 	// Mesh Shader Toggle
 	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
 	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
 	NS_ASSERT(pToggleMeshShader);
 	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
+
+	// Fullscreen
+	m_FullscreenEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN);
+	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	NS_ASSERT(pToggleFullscreen);
+	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
 }
 
 void HUDGUI::SetDefaultKeyBindings()
@@ -754,7 +812,7 @@ void HUDGUI::SetDefaultKeyBindings()
 		EAction::ACTION_MOVE_LEFT,
 		EAction::ACTION_MOVE_RIGHT,
 		EAction::ACTION_MOVE_JUMP,
-		EAction::ACTION_MOVE_SPRINT,
+		EAction::ACTION_MOVE_WALK,
 
 		// Attack
 		EAction::ACTION_ATTACK_PRIMARY,
@@ -829,36 +887,64 @@ bool HUDGUI::MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& ev
 	return false;
 }
 
-void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, IndicatorTypeGUI type)
+void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
-	switch (type)
-	{
-	case IndicatorTypeGUI::FLAG_INDICATOR:
-	{
-		m_pFlagIndicator->SetRenderTransform(pTranslation);
-		break;
-	}
-	default:
-		break;
-	}
-}
+	Noesis::Ptr<Noesis::Rectangle> indicator = *new Noesis::Rectangle();
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
-void HUDGUI::SetIndicatorOpacity(float32 value, IndicatorTypeGUI type)
-{
+	translation->SetY(100.0f);
+	translation->SetX(100.0f);
+
+	indicator->SetRenderTransform(translation);
+	indicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
 
-	brush->SetOpacity(value);
+	if (teamIndex != UINT8_MAX)
+	{
+		if (localTeamIndex == teamIndex)
+			brush->SetColor(Noesis::Color::Blue());
+		else
+			brush->SetColor(Noesis::Color::Red());
+	}
+	else
+		brush->SetColor(Noesis::Color::Green());
 
-	switch (type)
+	indicator->SetHeight(40);
+	indicator->SetWidth(40);
+
+	indicator->SetFill(brush);
+
+	m_ProjectedElements[entity] = indicator;
+
+	if (m_pHUDGrid->GetChildren()->Add(indicator) == -1)
 	{
-	case IndicatorTypeGUI::FLAG_INDICATOR:
-	{
-		brush->SetColor(Noesis::Color::Red());
-		m_pFlagIndicator->SetFill(brush);
-		break;
+		LOG_ERROR("Could not add Proj Element");
 	}
-	default:
-		break;
-	}
+}
+
+void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	m_pHUDGrid->GetChildren()->Remove(indicator->second);
+
+	m_ProjectedElements.erase(indicator->first);
+}
+
+void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	indicator->second->SetRenderTransform(pTranslation);
+}
+
+void HUDGUI::SetIndicatorOpacity(float32 value, Entity entity)
+{
+	auto indicator = m_ProjectedElements.find(entity);
+	VALIDATE(indicator != m_ProjectedElements.end())
+
+	indicator->second->GetFill()->SetOpacity(value);
 }

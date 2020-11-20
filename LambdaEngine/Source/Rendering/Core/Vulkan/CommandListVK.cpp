@@ -545,22 +545,7 @@ namespace LambdaEngine
 		DeferredImageBarrier deferredBarrier;
 		deferredBarrier.SrcStages	= ConvertPipelineStageMask(srcStage);
 		deferredBarrier.DestStages	= ConvertPipelineStageMask(dstStage);
-		if (!m_DeferredBarriers.IsEmpty())
-		{
-			for (DeferredImageBarrier& barrier : m_DeferredBarriers)
-			{
-				if (barrier.HasCompatableStages(deferredBarrier))
-				{
-					barrier.Barriers.EmplaceBack(imageBarrier);
-					break;
-				}
-			}
-		}
-		else
-		{
-			deferredBarrier.Barriers.EmplaceBack(imageBarrier);
-			m_DeferredBarriers.EmplaceBack(Move(deferredBarrier));
-		}
+		AddDeferredBarrier(deferredBarrier, imageBarrier);
 	}
 
 	void CommandListVK::QueueTransferBarrier(
@@ -606,22 +591,7 @@ namespace LambdaEngine
 		DeferredImageBarrier deferredBarrier;
 		deferredBarrier.SrcStages	= ConvertPipelineStageMask(srcStage);
 		deferredBarrier.DestStages	= ConvertPipelineStageMask(dstStage);
-		if (!m_DeferredBarriers.IsEmpty())
-		{
-			for (DeferredImageBarrier& barrier : m_DeferredBarriers)
-			{
-				if (barrier.HasCompatableStages(deferredBarrier))
-				{
-					barrier.Barriers.EmplaceBack(imageBarrier);
-					break;
-				}
-			}
-		}
-		else
-		{
-			deferredBarrier.Barriers.EmplaceBack(imageBarrier);
-			m_DeferredBarriers.EmplaceBack(Move(deferredBarrier));
-		}
+		AddDeferredBarrier(deferredBarrier, imageBarrier);
 	}
 
 	void CommandListVK::PipelineTextureBarriers(FPipelineStageFlags srcStage, FPipelineStageFlags dstStage, const PipelineTextureBarrierDesc* pTextureBarriers, uint32 textureBarrierCount)
@@ -716,7 +686,7 @@ namespace LambdaEngine
 		vkCmdPipelineBarrier(m_CmdBuffer, sourceStage, destinationStage, 0, bufferMemoryCount, m_MemoryBarriers, 0, nullptr, 0, nullptr);
 	}
 
-	void CommandListVK::GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter, bool linearFiltering)
+	void CommandListVK::GenerateMips(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter, bool linearFiltering)
 	{
 		VALIDATE(pTexture != nullptr);
 
@@ -729,14 +699,14 @@ namespace LambdaEngine
 
 		if (miplevelCount < 2)
 		{
-			LOG_WARNING("[CommandListVK::GenerateMiplevels]: pTexture only has 1 miplevel allocated, no other mips will be generated");
+			LOG_WARNING("[CommandListVK::GenerateMips]: pTexture only has 1 miplevel allocated, no other mips will be generated");
 			return;
 		}
 
 		constexpr uint32 REQUIRED_FLAGS = (TEXTURE_FLAG_COPY_SRC | TEXTURE_FLAG_COPY_DST);
 		if ((desc.Flags & REQUIRED_FLAGS) != REQUIRED_FLAGS)
 		{
-			LOG_ERROR("[CommandListVK::GenerateMiplevels]: pTexture were not created with TEXTURE_FLAG_COPY_SRC and TEXTURE_FLAG_COPY_DST flags");
+			LOG_ERROR("[CommandListVK::GenerateMips]: pTexture were not created with TEXTURE_FLAG_COPY_SRC and TEXTURE_FLAG_COPY_DST flags");
 			DEBUGBREAK();
 			return;
 		}

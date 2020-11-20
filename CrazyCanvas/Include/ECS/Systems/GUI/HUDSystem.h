@@ -41,6 +41,8 @@ public:
 
 private:
 	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);
+	bool OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity);
+	bool RemoveProjectedEntity(LambdaEngine::Entity projectedEntity);
 
 private:
 	LambdaEngine::IDVector m_PlayerEntities;
@@ -59,5 +61,5 @@ private:
 	LambdaEngine::TArray<bool> m_DeferredEnemyHitEvents;
 	LambdaEngine::TArray<bool> m_EnemyHitEventsToProcess;
 	
-	uint32 m_LocalTeamIndex = UINT32_MAX;
+	uint8 m_LocalTeamIndex = UINT8_MAX;
 };

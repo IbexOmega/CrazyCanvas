@@ -21,7 +21,8 @@ public:
 	virtual ~IPacketComponent() = default;
 
 private:
-	virtual void* AddPacketReceived() = 0;
+	virtual void* AddPacketReceivedBegin() = 0;
+	virtual void AddPacketReceivedEnd() = 0;
 	virtual void ClearPacketsReceived() = 0;
 	virtual void WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) = 0;
 	virtual uint16 GetPacketsToSendCount() = 0;
@@ -54,6 +55,14 @@ public:
 	}
 
 	/*
+	* Returns the last successfully received packet
+	*/
+	const T& GetLastReceivedPacket() const
+	{
+		return m_LastReceivedPacket;
+	}
+
+	/*
 	* Returns the packets to be sent.
 	*/
 	LambdaEngine::TQueue<T>& GetPacketsToSend()
@@ -70,9 +79,14 @@ public:
 	}
 
 private:
-	virtual void* AddPacketReceived() override final
+	virtual void* AddPacketReceivedBegin() override final
 	{
 		return &m_PacketsReceived.PushBack({});
+	}
+
+	virtual void AddPacketReceivedEnd() override final
+	{
+		m_LastReceivedPacket = m_PacketsReceived.GetBack();
 	}
 
 	virtual void ClearPacketsReceived() override final
@@ -101,5 +115,6 @@ private:
 private:
 	LambdaEngine::TArray<T> m_PacketsReceived;
 	LambdaEngine::TQueue<T> m_PacketsToSend;
+	T m_LastReceivedPacket;
 	inline static uint16 s_PacketType = 0;
 };
