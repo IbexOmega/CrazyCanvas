@@ -31,7 +31,7 @@ struct GridConstantRange
 struct MarchingCubesGrid
 {
 	GridConstantRange GPUData;
-	glm::vec3 SphereVelocities[SPHERES_PER_GRID];
+	glm::vec3 SphereRotationDirections[SPHERES_PER_GRID];
 	LambdaEngine::TSharedRef<LambdaEngine::Buffer> DensityBuffer;
 	LambdaEngine::TSharedRef<LambdaEngine::Buffer> GradientBuffer;
 	LambdaEngine::TSharedRef<LambdaEngine::DescriptorSet> DescriptorSet;
@@ -69,6 +69,7 @@ private:
 	static float32 GetSpheresMaxDistToCenter(const MarchingCubesGrid& marchingCubesGrid);
 	// RandomPositionRadius generates a random position and radius for a sphere
 	static void RandomizeSpheres(MarchingCubesGrid& marchingCubesGrid);
+	static glm::vec3 RandomizePerpendicularVector(const glm::vec3& referenceVec);
 
 private:
 	void CreatePipelineLayout();

@@ -94,32 +94,18 @@ void ProjectileRenderer::Update(LambdaEngine::Timestamp delta, uint32 modFrameIn
 	UNREFERENCED_VARIABLE(backBufferIndex);
 
 	const float32 dt = (float32)delta.AsSeconds();
+	const float32 angularVelocity = (glm::two_pi<float32>() / 4.2f) * dt;
 
 	for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 	{
-		/*	A sphere's maximum distance to the grid's center. Derived from the equation: Density = 1.
-			(See density function in compute shader) */
-		// const float32 maxDistToCenter = 0.5f - METABALL_RADIUS - 2.0f / marchingCubesGrid.GPUData.GridWidth;
-		// const float32 maxDistToCenter = 0.5f - (1.0f + glm::epsilon<float32>()) / marchingCubesGrid.GPUData.GridWidth -
-		// 								std::sqrtf((float32)SPHERES_PER_GRID * SPHERE_RADIUS * SPHERE_RADIUS);
-		const float32 maxDistToCenter = GetSpheresMaxDistToCenter(marchingCubesGrid);
-
 		for (uint32 sphereIdx = 0; sphereIdx < SPHERES_PER_GRID; sphereIdx++)
 		{
 			glm::vec4& positionRadius = marchingCubesGrid.GPUData.SpherePositionsRadii[sphereIdx];
-			glm::vec3& velocity = marchingCubesGrid.SphereVelocities[sphereIdx];
-			positionRadius += glm::vec4(velocity, 0.0f) * dt;
+			const glm::vec3 position = glm::vec3(positionRadius) - glm::vec3(0.5f);
+			const float32 distToCenter = glm::length(position);
 
-			// Bounce if the sphere has reached the bounds
-			// for (uint32 componentIdx = 0; componentIdx < 3; componentIdx++)
-			// {
-			// 	const int32 shouldBounce = std::abs(0.5f - position[componentIdx]) >= maxDistToCenter;
-			// 	position = glm::clamp(position, 0.5f - maxDistToCenter, 0.5f + maxDistToCenter);
-			// 	velocity[componentIdx] -= shouldBounce * 2 * velocity[componentIdx];
-			// }
-			const int32 shouldBounce = glm::distance(glm::vec3(0.5f), glm::vec3(positionRadius)) >= maxDistToCenter;
-			// position = glm::clamp(position, 0.5f - maxDistToCenter, 0.5f + maxDistToCenter);
-			velocity -= float32(shouldBounce * 2) * velocity;
+			const glm::quat rotation = glm::angleAxis(angularVelocity, marchingCubesGrid.SphereRotationDirections[sphereIdx]);
+			positionRadius = glm::vec4(glm::rotate(rotation, position) + glm::vec3(0.5f), positionRadius.w);
 		}
 	}
 }
@@ -290,21 +276,41 @@ void ProjectileRenderer::RandomizeSpheres(MarchingCubesGrid& marchingCubesGrid)
 		positionRadius.w = Random::Float32(minRadius, maxRadius);
 	}
 
-	// Randomize positions and velocities
+	// Randomize positions and rotations
 	const float32 maxDistanceToCenter = GetSpheresMaxDistToCenter(marchingCubesGrid);
 	constexpr const float32 speed = 0.4f;
 
 	for (uint32 sphereIdx = 0; sphereIdx < SPHERES_PER_GRID; sphereIdx++)
 	{
+		// Position
 		glm::vec4& positionRadius = marchingCubesGrid.GPUData.SpherePositionsRadii[sphereIdx];
 
 		const glm::vec3 randPosition = { Random::Float32(), Random::Float32(), Random::Float32() };
 		const float32 randDistance = Random::Float32(0.0f, maxDistanceToCenter);
 		positionRadius = glm::vec4(glm::vec3(0.5f) + glm::normalize(randPosition) * randDistance, positionRadius.w);
 
-		marchingCubesGrid.SphereVelocities[sphereIdx] =
-			glm::normalize(glm::vec3(Random::Float32(), Random::Float32(), Random::Float32())) * speed;
+		// Find a rotation vector that is perpendicular to the position vector
+		const glm::vec3 positionDir = glm::normalize(glm::vec3(positionRadius) - glm::vec3(0.5f));
+		marchingCubesGrid.SphereRotationDirections[sphereIdx] = RandomizePerpendicularVector(positionDir);
 	}
+}
+
+glm::vec3 ProjectileRenderer::RandomizePerpendicularVector(const glm::vec3& referenceVec)
+{
+	// Find a non-parallel vector with which to perform cross product with the reference vector
+	glm::vec3 nonParallelVector = g_DefaultRight;
+	if (glm::dot(nonParallelVector, referenceVec) > 0.98f)
+	{
+		nonParallelVector = g_DefaultUp;
+	}
+
+	const glm::vec3 perpVector = glm::normalize(glm::cross(nonParallelVector, referenceVec));
+
+	// A perpendicular vector has been found. Now rotate it about the reference vector using a random angle
+	const float32 randRotAngle = Random::Float32(0.0f, glm::two_pi<float32>());
+
+	const glm::quat rotQuat = glm::angleAxis(randRotAngle, referenceVec);
+	return glm::rotate(rotQuat, perpVector);
 }
 
 void ProjectileRenderer::CreatePipelineLayout()
