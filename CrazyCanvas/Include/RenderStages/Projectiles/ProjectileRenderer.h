@@ -6,7 +6,7 @@
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/RenderGraph.h"
 
-#define GRID_WIDTH 14
+#define GRID_WIDTH 10
 #define SPHERES_PER_GRID 3
 
 namespace LambdaEngine

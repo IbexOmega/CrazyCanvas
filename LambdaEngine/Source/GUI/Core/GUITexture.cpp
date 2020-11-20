@@ -1,4 +1,5 @@
 #include "GUI/Core/GUITexture.h"
+#include "GUI/Core/GUIRenderer.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/StagingBufferCache.h"
@@ -18,12 +19,17 @@ namespace LambdaEngine
 
 	GUITexture::~GUITexture()
 	{
-		SAFERELEASE(m_pTexture);
-		SAFERELEASE(m_pTextureView);
+		RenderAPI::EnqueueResourceRelease(m_pTexture);
+		RenderAPI::EnqueueResourceRelease(m_pTextureView);
+
+		m_pTexture = nullptr;
+		m_pTextureView = nullptr;
 	}
 
 	bool GUITexture::Init(CommandList* pCommandList, const GUITextureDesc* pDesc)
 	{
+		VALIDATE(pDesc != nullptr);
+
 		TextureDesc textureDesc = {};
 		textureDesc.DebugName	= pDesc->DebugName + " Texture";
 		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
@@ -158,9 +164,9 @@ namespace LambdaEngine
 		}
 
 		CopyTextureBufferDesc copyDesc = {};
-		copyDesc.SrcOffset		= 0;
-		copyDesc.SrcRowPitch	= 0;
-		copyDesc.SrcHeight		= 0;
+		copyDesc.BufferOffset	= 0;
+		copyDesc.BufferRowPitch	= 0;
+		copyDesc.BufferHeight	= 0;
 		copyDesc.OffsetX		= x;
 		copyDesc.OffsetY		= y;
 		copyDesc.Width			= width;

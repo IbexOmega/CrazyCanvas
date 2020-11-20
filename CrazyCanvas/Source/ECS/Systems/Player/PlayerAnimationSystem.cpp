@@ -8,6 +8,8 @@
 
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 PlayerAnimationSystem::PlayerAnimationSystem()
 {
 }
@@ -56,7 +58,7 @@ void PlayerAnimationSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 	ComponentArray<AnimationComponent>* pAnimationComponents = pECS->GetComponentArray<AnimationComponent>();
 	const ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-#ifndef LAMBDA_DEBUG
+#ifdef USE_ALL_ANIMATIONS
 	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 #endif
 
@@ -65,7 +67,7 @@ void PlayerAnimationSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		AnimationComponent& animationComponent = pAnimationComponents->GetData(playerEntity);
 		const VelocityComponent& velocityComponent = pVelocityComponents->GetConstData(playerEntity);
 
-#ifndef LAMBDA_DEBUG
+#ifdef USE_ALL_ANIMATIONS
 		const RotationComponent& rotationComponent = pRotationComponents->GetConstData(playerEntity);
 #endif
 
@@ -84,8 +86,8 @@ void PlayerAnimationSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				animationComponent.pGraph->TransitionToState("Idle");
 			}
 		}
-#ifndef LAMBDA_DEBUG
-		else 
+#ifdef USE_ALL_ANIMATIONS
+		else if (!MultiplayerUtils::IsServer())
 		{
 			glm::vec3 forwardDirection = GetForward(rotationComponent.Quaternion);
 			glm::vec3 rightDirection = GetRight(rotationComponent.Quaternion);

@@ -15,18 +15,12 @@
 
 using namespace LambdaEngine;
 
-PacketTranscoderSystem::PacketTranscoderSystem()
-{
-	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &PacketTranscoderSystem::OnPacketReceived);
-}
-
-PacketTranscoderSystem::~PacketTranscoderSystem()
-{
-	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &PacketTranscoderSystem::OnPacketReceived);
-}
+PacketTranscoderSystem PacketTranscoderSystem::s_Instance;
 
 void PacketTranscoderSystem::Init()
 {
+	EventQueue::RegisterEventHandler<NetworkSegmentReceivedEvent>(this, &PacketTranscoderSystem::OnPacketReceived);
+
 	SystemRegistration systemReg;
 
 	const PacketTypeMap& packetTypeMap = PacketType::GetPacketTypeMap();
@@ -52,6 +46,11 @@ void PacketTranscoderSystem::Init()
 	systemReg.Phase = 0;
 
 	RegisterSystem(TYPE_NAME(PacketTranscoderSystem), systemReg);
+}
+
+void PacketTranscoderSystem::Release()
+{
+	EventQueue::UnregisterEventHandler<NetworkSegmentReceivedEvent>(this, &PacketTranscoderSystem::OnPacketReceived);
 }
 
 void PacketTranscoderSystem::FixedTickMainThreadClient(LambdaEngine::Timestamp deltaTime)
@@ -163,9 +162,10 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegment
 	IComponentArray* pComponents = pECS->GetComponentArray(pComponentType);
 	void* pComponent = pComponents->GetRawData(entity);
 	IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
-	void* packetData = pPacketComponent->AddPacketReceived();
+	void* packetData = pPacketComponent->AddPacketReceivedBegin();
 	pSegment->ResetReadHead();
 	pSegment->Read(packetData, packetSize);
+	pPacketComponent->AddPacketReceivedEnd();
 
 	return true;
 }

@@ -29,8 +29,11 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
+#include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
+
+#include "Teams/TeamHelper.h"
 
 #include "Input/API/Input.h"
 
@@ -43,9 +46,6 @@
 #include "Rendering/Animation/AnimationGraph.h"
 
 #include "Math/Random.h"
-
-#include "GUI/GUITest.h"
-
 #include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
@@ -61,6 +61,8 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
+#include "Resources/ResourceCatalog.h"
+
 #include <imgui.h>
 
 using namespace LambdaEngine;
@@ -75,12 +77,6 @@ SandboxState::~SandboxState()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(EventHandler(this, &SandboxState::OnKeyPressed));
 
-	if (m_GUITest.GetPtr() != nullptr)
-	{
-		m_GUITest.Reset();
-		m_View.Reset();
-	}
-
 	SAFEDELETE(m_pRenderGraphEditor);
 
 	SingleplayerInitializer::Release();
@@ -88,6 +84,8 @@ SandboxState::~SandboxState()
 
 void SandboxState::Init()
 {
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
+
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
@@ -101,10 +99,6 @@ void SandboxState::Init()
 	m_RenderGraphWindow = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_RENDER_GRAPH);
 	m_ShowDemoWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_DEMO);
 	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
-
-	m_GUITest	= *new GUITest("Test.xaml");
-	m_View		= Noesis::GUI::CreateView(m_GUITest);
-	LambdaEngine::GUIApplication::SetView(m_View);
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -120,8 +114,15 @@ void SandboxState::Init()
 		Match::CreateMatch(&matchDescription);
 	}
 
+	// Set Team Colors
 	{
-		const uint32 characterGUID = ResourceManager::LoadMeshFromFile("Player/Character.fbx");
+		TeamHelper::SetTeamColor(0, glm::vec3(1.0f, 1.0f, 0.0f));
+		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
+	}
+
+	{
+		GUID_Lambda characterMeshGUID;
+		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -136,7 +137,7 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent meshComp = {};
-		meshComp.MeshGUID = characterGUID;
+		meshComp.MeshGUID = characterMeshGUID;
 		meshComp.MaterialGUID = materialGUID;
 
 		glm::vec3 position = glm::vec3(0.0f, 2.0f, 0.0f);
@@ -153,7 +154,8 @@ void SandboxState::Init()
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
-		const uint32 robotGUID			= ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", animations);
+		GUID_Lambda robotMeshGUID;
+		ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", robotMeshGUID, animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
@@ -177,12 +179,12 @@ void SandboxState::Init()
 			materialProperties);
 
 		MeshComponent robotMeshComp = {};
-		robotMeshComp.MeshGUID		= robotGUID;
+		robotMeshComp.MeshGUID		= robotMeshGUID;
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.pGraph			= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
-		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
+		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotMeshGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
 
 		glm::vec3 position = glm::vec3(0.0f, 0.75f, -2.5f);
 		glm::vec3 scale(1.0f);
@@ -194,10 +196,11 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
@@ -209,10 +212,11 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
@@ -224,10 +228,11 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
@@ -259,45 +264,31 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512, true));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
+		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
-		EntityMaskManager::AddExtensionToEntity(entity, PlayerBaseComponent::Type(), nullptr);
-
-		// Audio
-		GUID_Lambda soundGUID = ResourceManager::LoadSoundEffect3DFromFile("halo_theme.wav");
-		ISoundInstance3D* pSoundInstance = DBG_NEW SoundInstance3DFMOD(AudioAPI::GetDevice());
-		const SoundInstance3DDesc desc =
-		{
-			.pName = "RobotSoundInstance",
-			.pSoundEffect = ResourceManager::GetSoundEffect3D(soundGUID),
-			.Flags = FSoundModeFlags::SOUND_MODE_NONE,
-			.Position = position,
-			.Volume = 0.03f
-		};
-
-		pSoundInstance->Init(&desc);
-		pECS->AddComponent<AudibleComponent>(entity, { pSoundInstance });
+		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 	}
 
 	// Emitter
 	{
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		pECS->AddComponent<ParticleEmitterComponent>(entity,
-			ParticleEmitterComponent{
-				.ParticleCount = 5,
-				.EmitterShape = EEmitterShape::TUBE,
-				.Velocity = 1.0f,
-				.Acceleration = 0.0f,
-				.BeginRadius = 0.5f,
-				.TileIndex = 16,
-				.AnimationCount = 4,
-				.FirstAnimationIndex = 16,
-				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
-			}
-		);
+		//Entity entity = pECS->CreateEntity();
+		//pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
+		//pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		//pECS->AddComponent<ParticleEmitterComponent>(entity,
+		//	ParticleEmitterComponent{
+		//		.ParticleCount = 5,
+		//		.EmitterShape = EEmitterShape::TUBE,
+		//		.Velocity = 1.0f,
+		//		.Acceleration = 0.0f,
+		//		.BeginRadius = 0.5f,
+		//		.TileIndex = 16,
+		//		.AnimationCount = 4,
+		//		.FirstAnimationIndex = 16,
+		//		.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+		//	}
+		//);
 	}
 
 
@@ -318,8 +309,9 @@ void SandboxState::Init()
 
 	//Preload some resources
 	{
+		GUID_Lambda meshGUID;
 		TArray<GUID_Lambda> animations;
-		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", animations);
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
 	}
 
 
@@ -447,6 +439,8 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 					.Gravity = Random::Float32(-5.0f, 5.0f),
 					.LifeTime = Random::Float32(1.0f, 3.0f),
 					.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f),
+					.TileIndex = 14,
+					.FirstAnimationIndex = 14,
 					.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
 				});
 			}
@@ -617,12 +611,23 @@ bool SandboxState::OnKeyPressed(const LambdaEngine::KeyPressedEvent& event)
 		if (!m_Entities.IsEmpty())
 		{
 			const uint32 numEntities = m_Entities.GetSize();
-			const uint32 index = Random::UInt32(0, numEntities-1);
+
+			static uint32 removeCounter = 0;
+			static uint32 removeIndices[] = {
+				3,
+				2,
+				0,
+				1,
+				0
+			};
+			const uint32 index = removeIndices[removeCounter++];
+
+			//const uint32 index = Random::UInt32(0, numEntities-1);
 			Entity entity = m_Entities[index];
 			m_Entities.Erase(m_Entities.Begin() + index);
 			ECSCore::GetInstance()->RemoveEntity(entity);
 
-			std::string info = "Removed entity with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
+			std::string info = "Removed entity[" + std::to_string(entity) + "] with index [" + std::to_string(index) + "/" + std::to_string(numEntities) + "]!";
 			GameConsole::Get().PushInfo(info);
 			LOG_INFO(info.c_str());
 		}

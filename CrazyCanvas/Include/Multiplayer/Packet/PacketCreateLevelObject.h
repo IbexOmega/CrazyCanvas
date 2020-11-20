@@ -9,8 +9,7 @@ namespace Obj
 #pragma pack(push, 1)
 	struct Player
 	{
-		bool IsMySelf;
-		uint8 TeamIndex;
+		uint64 ClientUID;
 		int32 WeaponNetworkUID;
 	};
 #pragma pack(pop)
@@ -19,6 +18,7 @@ namespace Obj
 	struct Flag
 	{
 		int32 ParentNetworkUID;
+		uint8 TeamIndex;
 	};
 #pragma pack(pop)
 }

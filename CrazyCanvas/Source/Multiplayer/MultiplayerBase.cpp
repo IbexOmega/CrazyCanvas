@@ -1,14 +1,11 @@
 #include "Multiplayer/MultiplayerBase.h"
 
-#include "Multiplayer/Packet/PacketType.h"
-
 #include "Match/Match.h"
 
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Player/HealthSystem.h"
 
-MultiplayerBase::MultiplayerBase() : 
-	m_PacketDecoderSystem()
+MultiplayerBase::MultiplayerBase()
 {
 
 }
@@ -19,13 +16,12 @@ MultiplayerBase::~MultiplayerBase()
 	{
 		LOG_ERROR("Match Release Failed");
 	}
-	PacketType::Release();
+
+	HealthSystem::Release();
 }
 
 void MultiplayerBase::InitInternal()
 {
-	PacketType::Init();
-	m_PacketDecoderSystem.Init();
 	m_PlayerAnimationSystem.Init();
 
 	if (!Match::Init())

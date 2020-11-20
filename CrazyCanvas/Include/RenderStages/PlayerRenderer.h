@@ -16,12 +16,22 @@ namespace LambdaEngine
 		glm::vec3 Positon;
 	};
 
+	struct WeaponData
+	{
+		uint32 EntityId;
+		uint32 DrawArgIndex;
+		uint32 InstanceIndex;
+	};
+
 	struct PlayerData
 	{
-		uint32 DrawArgIndex;
-		uint32 TeamId;
-		glm::vec3 Position;
-		float32 Distance2ToViewer;
+		uint32		DrawArgIndex;
+		uint32		EntityId;
+		uint32		TeamId;
+		bool		HasWeapon = false;
+		WeaponData	Weapon;
+		glm::vec3	Position;
+		float32		Distance2ToViewer;
 	};
 
 	using ReleaseFrame = uint32;
@@ -41,7 +51,7 @@ namespace LambdaEngine
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 
 		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
-		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
+		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
 		virtual void UpdateBufferResource(const String& resourceName, const Buffer* const* ppBuffers, uint64* pOffsets, uint64* pSizesInBytes, uint32 count, bool backBufferBound) override final;
 		virtual void UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)  override final;
 

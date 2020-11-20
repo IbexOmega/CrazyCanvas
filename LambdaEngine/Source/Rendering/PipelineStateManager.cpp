@@ -95,11 +95,12 @@ namespace LambdaEngine
 		{
 			desc.MissShaders[i] = MissShaders[i];
 		}
-
-		desc.ClosestHitShaders.Resize(ClosestHitShaders.GetSize());
-		for (uint32 i = 0; i < ClosestHitShaders.GetSize(); i++)
+		desc.HitGroupShaders.Resize(HitGroupShaders.GetSize());
+		for (uint32 i = 0; i < HitGroupShaders.GetSize(); i++)
 		{
-			desc.ClosestHitShaders[i] = ClosestHitShaders[i];
+			desc.HitGroupShaders[i].ClosestHitShaders = HitGroupShaders[i].ClosestHitShader;
+			desc.HitGroupShaders[i].AnyHitShaders = HitGroupShaders[i].AnyHitShader;
+			desc.HitGroupShaders[i].IntersectionShaders = HitGroupShaders[i].IntersectionShader;
 		}
 
 		return desc;

@@ -3,6 +3,8 @@
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/Player/Player.h"
 
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
+
 #include "Application/API/Events/EventQueue.h"
 
 #include "Events/GameplayEvents.h"
@@ -15,29 +17,31 @@
 * HealthSystemClient
 */
 
+HealthSystemClient::~HealthSystemClient()
+{
+	using namespace LambdaEngine;
+
+	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HealthSystemClient::OnPlayerAliveUpdated);
+}
+
 void HealthSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(deltaTime);
 
 	ECSCore* pECS = ECSCore::GetInstance();
-	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
-	ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
+	ComponentArray<HealthComponent>*						pHealthComponents			= pECS->GetComponentArray<HealthComponent>();
+	ComponentArray<PacketComponent<PacketHealthChanged>>*	pHealthChangedComponents	= pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
 	for (Entity entity : m_HealthEntities)
 	{
-		HealthComponent& healthComponent = pHealthComponents->GetData(entity);
-		PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
+		HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
+		PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
 		for (const PacketHealthChanged& packet : packets.GetPacketsReceived())
 		{
 			if (healthComponent.CurrentHealth != packet.CurrentHealth)
 			{
 				healthComponent.CurrentHealth = packet.CurrentHealth;
-				if (packet.Killed)
-				{
-					Match::KillPlayer(entity);
-					LOG_INFO("PLAYER DIED");
-				}
 
 				// Is this the local player
 				bool isLocal = false;
@@ -68,30 +72,60 @@ bool HealthSystemClient::InitInternal()
 	// Register system
 	{
 		PlayerGroup playerGroup;
-		playerGroup.Position.Permissions = R;
-		playerGroup.Scale.Permissions = NDA;
-		playerGroup.Rotation.Permissions = NDA;
-		playerGroup.Velocity.Permissions = NDA;
+		playerGroup.Position.Permissions	= R;
+		playerGroup.Scale.Permissions		= NDA;
+		playerGroup.Rotation.Permissions	= NDA;
+		playerGroup.Velocity.Permissions	= NDA;
 
 		SystemRegistration systemReg = {};
-		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+		HealthSystem::CreateBaseSystemRegistration(systemReg);
+
+		systemReg.SubscriberRegistration.EntitySubscriptionRegistrations.PushBack(
 		{
+			.pSubscriber = &m_LocalPlayerEntities,
+			.ComponentAccesses =
 			{
-				.pSubscriber = &m_LocalPlayerEntities,
-					.ComponentAccesses =
-				{
-					{ NDA, PlayerLocalComponent::Type() },
-				},
-				.ComponentGroups = { &playerGroup }
+				{ NDA, PlayerLocalComponent::Type() },
 			},
-		};
+			.ComponentGroups = { &playerGroup }
+		});
 
-		// After weaponsystem
-		systemReg.Phase = 2;
-
-		RegisterSystem(TYPE_NAME(HealthSystem), systemReg);
+		RegisterSystem(TYPE_NAME(HealthSystemClient), systemReg);
 	}
 
-	return HealthSystem::InitInternal();
+	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HealthSystemClient::OnPlayerAliveUpdated);
+	return true;
 }
 
+bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	const Entity playerEntity = event.pPlayer->GetEntity();
+	LOG_INFO("PlayerAliveUpdatedEvent isDead=%s entity=%u",
+		event.pPlayer->IsDead() ? "true" : "false",
+		playerEntity);
+
+	if (event.pPlayer->IsDead())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		ComponentArray<ChildComponent>* pChildComponents = pECS->GetComponentArray<ChildComponent>();
+
+		// Reset child components
+		if (pChildComponents->HasComponent(playerEntity))
+		{
+			const ChildComponent& childComponent = pChildComponents->GetConstData(playerEntity);
+			const TArray<std::string>& tags = childComponent.GetTags();
+			for (const std::string& tag : tags)
+			{
+				Entity childEntity = childComponent.GetEntityWithTag(tag);
+				PaintMaskRenderer::ResetServer(childEntity);
+			}
+		}
+
+		// Reset player
+		PaintMaskRenderer::ResetServer(event.pPlayer->GetEntity());
+	}
+
+	return true;
+}

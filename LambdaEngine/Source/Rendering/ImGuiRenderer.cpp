@@ -198,11 +198,14 @@ namespace LambdaEngine
 	void ImGuiRenderer::UpdateTextureResource(
 		const String& resourceName, 
 		const TextureView* const* ppPerImageTextureViews, 
-		const TextureView* const* ppPerSubImageTextureViews, 
+		const TextureView* const* ppPerSubImageTextureViews,
+		const Sampler* const* ppPerImageSamplers,
 		uint32 imageCount, 
 		uint32 subImageCount,
 		bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
+
 		if (subImageCount == 1 || backBufferBound || subImageCount == imageCount)
 		{
 			if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
@@ -324,8 +327,14 @@ namespace LambdaEngine
 							DrawArgExtensionData& extensionData = extensionGroup->pExtensions[extensionIndex];
 							for (uint32 textureIndex = 0; textureIndex < extensionData.TextureCount; textureIndex++)
 							{
-								UpdateTextureResource(extensionData.ppTextures[textureIndex]->GetDesc().DebugName,
-									&extensionData.ppTextureViews[textureIndex], &extensionData.ppTextureViews[textureIndex], 1, 1, false);
+								UpdateTextureResource(
+									extensionData.ppTextures[textureIndex]->GetDesc().DebugName,
+									&extensionData.ppTextureViews[textureIndex],
+									&extensionData.ppTextureViews[textureIndex],
+									&extensionData.ppSamplers[textureIndex],
+									1,
+									1,
+									false);
 							}
 						}
 					}
@@ -378,6 +387,12 @@ namespace LambdaEngine
 		uint32 width	= backBuffer->GetDesc().pTexture->GetDesc().Width;
 		uint32 height	= backBuffer->GetDesc().pTexture->GetDesc().Height;
 
+		ClearColorDesc clearColorDesc = {};
+		clearColorDesc.Color[0] = 0.0f;
+		clearColorDesc.Color[1] = 0.0f;
+		clearColorDesc.Color[2] = 0.0f;
+		clearColorDesc.Color[3] = 0.0f;
+
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
 		beginRenderPassDesc.ppRenderTargets		= &backBuffer;
@@ -386,8 +401,8 @@ namespace LambdaEngine
 		beginRenderPassDesc.Width				= width;
 		beginRenderPassDesc.Height				= height;
 		beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPassDesc.pClearColors		= nullptr;
-		beginRenderPassDesc.ClearColorCount		= 0;
+		beginRenderPassDesc.pClearColors		= &clearColorDesc;
+		beginRenderPassDesc.ClearColorCount		= 1;
 		beginRenderPassDesc.Offset.x			= 0;
 		beginRenderPassDesc.Offset.y			= 0;
 
@@ -873,9 +888,9 @@ namespace LambdaEngine
 		}
 
 		CopyTextureBufferDesc copyDesc = {};
-		copyDesc.SrcOffset		= 0;
-		copyDesc.SrcRowPitch	= 0;
-		copyDesc.SrcHeight		= 0;
+		copyDesc.BufferOffset	= 0;
+		copyDesc.BufferRowPitch	= 0;
+		copyDesc.BufferHeight	= 0;
 		copyDesc.Width			= width;
 		copyDesc.Height			= height;
 		copyDesc.Depth			= 1;
@@ -1092,7 +1107,7 @@ namespace LambdaEngine
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
 		colorAttachmentDesc.Format			= EFormat::FORMAT_B8G8R8A8_UNORM;
 		colorAttachmentDesc.SampleCount		= 1;
-		colorAttachmentDesc.LoadOp			= (pBackBufferAttachmentDesc->InitialState != ETextureState::TEXTURE_STATE_UNKNOWN) ? ELoadOp::LOAD_OP_LOAD : ELoadOp::LOAD_OP_DONT_CARE;
+		colorAttachmentDesc.LoadOp			= (pBackBufferAttachmentDesc->InitialState != ETextureState::TEXTURE_STATE_UNKNOWN) ? ELoadOp::LOAD_OP_LOAD : ELoadOp::LOAD_OP_CLEAR;
 		colorAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
 		colorAttachmentDesc.StencilLoadOp	= ELoadOp::LOAD_OP_DONT_CARE;
 		colorAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;

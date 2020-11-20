@@ -1,9 +1,12 @@
 #include "Multiplayer/MultiplayerClient.h"
 
-MultiplayerClient::MultiplayerClient() : 
+#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+
+MultiplayerClient::MultiplayerClient() :
 	m_PlayerLocal(),
 	m_PlayerForeignSystem(),
-	m_NetworkPositionSystem()
+	m_NetworkPositionSystem(),
+	m_ReplaySystem()
 {
 }
 
@@ -41,5 +44,5 @@ void MultiplayerClient::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 void MultiplayerClient::PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	// Must run last
-	m_PacketDecoderSystem.FixedTickMainThreadClient(deltaTime);
+	PacketTranscoderSystem::GetInstance().FixedTickMainThreadClient(deltaTime);
 }

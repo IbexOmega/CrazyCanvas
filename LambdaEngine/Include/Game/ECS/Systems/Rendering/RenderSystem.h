@@ -50,6 +50,7 @@ namespace LambdaEngine
 	class PaintMaskRenderer;
 	class ParticleRenderer;
 	class ParticleUpdater;
+	class ParticleCollider;
 	class LightRenderer;
 
 	struct CameraComponent;
@@ -65,12 +66,12 @@ namespace LambdaEngine
 
 		struct Instance
 		{
-			glm::mat4	Transform		= glm::mat4(1.0f);
-			glm::mat4	PrevTransform	= glm::mat4(1.0f);
-			uint32		MaterialIndex	= 0;
-			uint32		ExtensionIndex	= 0;
-			uint32		MeshletCount	= 0;
-			uint32		Padding0;
+			glm::mat4	Transform					= glm::mat4(1.0f);
+			glm::mat4	PrevTransform				= glm::mat4(1.0f);
+			uint32		MaterialIndex				= 0;
+			uint32		ExtensionGroupIndex			= 0;
+			uint32		TexturesPerExtensionGroup	= 0;
+			uint32		MeshletCount				= 0;
 		};
 
 		struct MeshKey
@@ -78,7 +79,7 @@ namespace LambdaEngine
 		public:
 			MeshKey() = default;
 
-			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, bool forceUniqueResources, uint32 entityMask)
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask, bool forceUniqueResources)
 				: MeshGUID(meshGUID)
 				, IsAnimated(isAnimated)
 				, ForceUniqueResources(forceUniqueResources)
@@ -118,7 +119,12 @@ namespace LambdaEngine
 					}
 				}
 
-				return !ForceUniqueResources && !other.ForceUniqueResources;
+				if (ForceUniqueResources && EntityID != other.EntityID)
+				{
+					return false;
+				}
+
+				return true;
 			}
 
 		public:
@@ -162,8 +168,7 @@ namespace LambdaEngine
 			uint32	MeshletCount			= 0;
 
 			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
-			TArray<uint32>					InstanceIndexToExtensionGroup;
-			bool	HasExtensions			= false;
+			bool	HasExtensionData		= false;
 			uint32	DrawArgsMask			= 0x0;
 
 			Buffer* pRasterInstanceBuffer				= nullptr;
@@ -171,6 +176,9 @@ namespace LambdaEngine
 			TArray<Instance> RasterInstances;
 
 			TArray<Entity> EntityIDs;
+
+			DescriptorSet* pDrawArgDescriptorSet			= nullptr;
+			DescriptorSet* pDrawArgDescriptorExtensionsSet	= nullptr;
 		};
 
 		struct InstanceKey
@@ -250,7 +258,6 @@ namespace LambdaEngine
 		*/
 		void SetRenderGraph(const String& name, RenderGraphStructureDesc* pRenderGraphStructureDesc);
 
-
 		/*
 		* Adds new Game specific Custom Renderer
 		*/
@@ -263,27 +270,45 @@ namespace LambdaEngine
 		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
 		/**
-		 * @param forceNewMeshResources Forces new vertex and index buffers to be created even if the meshGUID has been registered before
+		 * @param forceUniqueResource Forces new vertex and index buffers to be created even if the meshGUID has been registered before
 		*/
-		void AddRenderableEntity(Entity entity, GUID_Lambda meshGUID, GUID_Lambda materialGUID, const glm::mat4& transform, bool animated, bool forceNewMeshResources);
+		void AddRenderableEntity(
+			Entity entity,
+			GUID_Lambda meshGUID,
+			GUID_Lambda materialGUID,
+			const glm::mat4& transform,
+			bool animated,
+			bool forceUniqueResource);
+
 		void RemoveRenderableEntity(Entity entity);
 
-		RenderGraph*	GetRenderGraph()			{ return m_pRenderGraph;	}
-		uint64			GetFrameIndex() const	 	{ return m_FrameIndex;		}
-		uint64			GetModFrameIndex() const	{ return m_ModFrameIndex;	}
-		uint32			GetBufferIndex() const	 	{ return m_BackBufferIndex; }
+		/*
+		* Set Paintmask colors (index 2 -> Team 1 & index 1 -> team 2)
+		*/
+		void SetPaintMaskColor(uint32 index, const glm::vec3& color);
+
+		RenderGraph*	GetRenderGraph()					{ return m_pRenderGraph;			}
+		uint64			GetFrameIndex() const	 			{ return m_FrameIndex;				}
+		uint64			GetModFrameIndex() const			{ return m_ModFrameIndex;			}
+		uint32			GetBufferIndex() const	 			{ return m_BackBufferIndex;			}
+		bool			IsInlineRayTracingEnabled() const	{ return m_InlineRayTracingEnabled; }
 
 	public:
 		static RenderSystem& GetInstance() { return s_Instance; }
 
 		static glm::mat4 CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes);
-		static glm::mat4 CreateEntityTransform(const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
+		static glm::mat4 CreateEntityTransform(
+			const PositionComponent& positionComp,
+			const RotationComponent& rotationComp,
+			const ScaleComponent& scaleComp,
+			const glm::bvec3& rotationalAxes);
 
 	private:
 		RenderSystem() = default;
 
 		void OnStaticMeshEntityAdded(Entity entity);
 		void OnAnimatedEntityAdded(Entity entity);
+		void OnAnimationAttachedEntityAdded(Entity entity);
 		void OnPlayerEntityAdded(Entity entity);
 
 		void OnDirectionalEntityAdded(Entity entity);
@@ -294,16 +319,51 @@ namespace LambdaEngine
 
 		void OnEmitterEntityRemoved(Entity entity);
 
-		void UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
-		void UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar);
+		void UpdateParticleEmitter(
+			Entity entity,
+			const PositionComponent& positionComp,
+			const RotationComponent& rotationComp,
+			const ParticleEmitterComponent& emitterComp);
+
+		void UpdateDirectionalLight(
+			const glm::vec4& colorIntensity,
+			const glm::vec3& position,
+			const glm::quat& direction,
+			float frustumWidth,
+			float frustumHeight,
+			float zNear,
+			float zFar);
+
 		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
 		void UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp);
-		void UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes);
-		void UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp);
+
+		void UpdateTransform(
+			Entity entity,
+			const PositionComponent& positionComp,
+			const RotationComponent& rotationComp,
+			const ScaleComponent& scaleComp,
+			const glm::bvec3& rotationalAxes);
+
+		void UpdateTransform(
+			Entity entity,
+			const glm::mat4& additionalTransform,
+			const PositionComponent& positionComp,
+			const RotationComponent& rotationComp,
+			const ScaleComponent& scaleComp,
+			const glm::bvec3& rotationalAxes);
+
+		void UpdateTransformData(Entity entity, const glm::mat4& transform);
+
+		void UpdateCamera(
+			const glm::vec3& position,
+			const glm::quat& rotation,
+			const CameraComponent& camComp,
+			const ViewProjectionMatricesComponent& viewProjComp);
 
 		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const;
+		void WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry);
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
@@ -321,6 +381,7 @@ namespace LambdaEngine
 	private:
 		IDVector m_StaticMeshEntities;
 		IDVector m_AnimatedEntities;
+		IDVector m_AnimationAttachedEntities;
 		IDVector m_LocalPlayerEntities;
 		IDVector m_DirectionalLightEntities;
 		IDVector m_PointLightEntities;
@@ -328,15 +389,17 @@ namespace LambdaEngine
 		IDVector m_ParticleEmitters;
 		IDVector m_Projectiles;
 
-		TSharedRef<SwapChain>	m_SwapChain			= nullptr;
-		Texture**				m_ppBackBuffers		= nullptr;
-		TextureView**			m_ppBackBufferViews	= nullptr;
-		RenderGraph*			m_pRenderGraph		= nullptr;
-		uint64					m_FrameIndex		= 0;
-		uint64					m_ModFrameIndex		= 0;
-		uint32					m_BackBufferIndex	= 0;
-		bool					m_RayTracingEnabled	= false;
-		bool					m_MeshShadersEnabled = false;
+		TSharedRef<SwapChain>	m_SwapChain					= nullptr;
+		Texture**				m_ppBackBuffers				= nullptr;
+		TextureView**			m_ppBackBufferViews			= nullptr;
+		RenderGraph*			m_pRenderGraph				= nullptr;
+		uint64					m_FrameIndex				= 0;
+		uint64					m_ModFrameIndex				= 0;
+		uint32					m_BackBufferIndex			= 0;
+		bool					m_RayTracingEnabled			= false;
+		bool					m_MeshShadersEnabled		= false;
+		bool					m_InlineRayTracingEnabled	= false;
+
 		// Mesh/Instance/Entity
 		bool						m_LightsBufferDirty			= true;
 		bool						m_PointLightsDirty			= true;
@@ -359,8 +422,9 @@ namespace LambdaEngine
 		THashTable<Entity, InstanceKey> m_EntityIDsToInstanceKey;
 
 		// PAINT_MASK_TEXTURES
-		TArray<Texture*>			m_PaintMaskTextures;
-		TArray<TextureView*>		m_PaintMaskTextureViews;
+		TArray<Texture*>					m_PaintMaskTextures;
+		TArray<TextureView*>				m_PaintMaskTextureViews;
+		THashTable<uint32, TArray<uint32>>	m_PaintMaskASInstanceIndices;
 
 		// Materials
 		TArray<Texture*>			m_AlbedoMaps;
@@ -388,18 +452,18 @@ namespace LambdaEngine
 		// Draw Args
 		TSet<DrawArgMaskDesc> m_RequiredDrawArgs;
 
-
 		// Animation
 		uint64						m_SkinningPipelineID;
 		TSharedRef<PipelineLayout>	m_SkinningPipelineLayout;
 		TSharedRef<DescriptorHeap>	m_AnimationDescriptorHeap;
 
 		// Pending/Dirty
-		bool						m_MaterialsPropertiesBufferDirty	= false;
-		bool						m_MaterialsResourceDirty			= false;
-		bool						m_LightsResourceDirty				= false;
-		bool						m_PerFrameResourceDirty				= true;
-		bool						m_PaintMaskColorsResourceDirty		= true;
+		bool						m_MaterialsPropertiesBufferDirty			= false;
+		bool						m_MaterialsResourceDirty					= false;
+		bool						m_LightsResourceDirty						= false;
+		bool						m_PerFrameResourceDirty						= true;
+		bool						m_PaintMaskColorsResourceDirty				= true;
+		bool						m_RayTracingPaintMaskTexturesResourceDirty	= false;
 		TSet<DrawArgMaskDesc>		m_DirtyDrawArgs;
 		TSet<MeshEntry*>			m_DirtyRasterInstanceBuffers;
 		TSet<MeshEntry*>			m_AnimationsToUpdate;
@@ -415,6 +479,7 @@ namespace LambdaEngine
 		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
+		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 

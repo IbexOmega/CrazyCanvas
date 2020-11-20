@@ -72,6 +72,9 @@ namespace LambdaEngine
 	VkFramebuffer FrameBufferCacheVK::GetFrameBuffer(const FrameBufferCacheKey& key, uint32 width, uint32 height)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
+
+		// VALIDATE(width > 0);
+		// VALIDATE(height > 0);
 		
 		// Check if this framebuffer extists and return it
 		FrameBufferMap::iterator entry = m_FrameBufferMap.find(key);

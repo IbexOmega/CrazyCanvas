@@ -7,6 +7,7 @@
 
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 
 #include "Math/Math.h"
 
@@ -36,16 +37,17 @@ inline LambdaEngine::TArray<LambdaEngine::ComponentAccess> GetFireProjectileComp
 	using namespace LambdaEngine;
 	return
 	{
-		{ RW, PositionComponent::Type()},
-		{ RW, ScaleComponent::Type()},
-		{ RW, RotationComponent::Type() },
-		{ RW, VelocityComponent::Type()},
-		{ RW, WeaponComponent::Type()},
-		{ RW, TeamComponent::Type() },
-		{ RW, ProjectileComponent::Type()},
-		{ RW, DynamicCollisionComponent::Type() },
-		{ RW, MeshComponent::Type() },
-		{ RW, ParticleEmitterComponent::Type() },
+		{ RW,	PositionComponent::Type() },
+		{ RW,	ScaleComponent::Type()},
+		{ RW,	RotationComponent::Type() },
+		{ RW,	VelocityComponent::Type()},
+		{ R,	OffsetComponent::Type()},
+		{ RW,	WeaponComponent::Type()},
+		{ RW,	AnimationAttachedComponent::Type()},
+		{ RW,	TeamComponent::Type() },
+		{ RW,	ProjectileComponent::Type()},
+		{ RW,	DynamicCollisionComponent::Type() },
+		{ RW,	MeshComponent::Type() },
 	};
 }
 
@@ -62,14 +64,13 @@ public:
 	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) = 0;
 
 	// Empty tick
-	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
+	virtual void Tick(LambdaEngine::Timestamp deltaTime) override
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
 	}
 
-	virtual void Fire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
-	// Returns true if we could fire
-	virtual bool TryFire(EAmmoType ammoType, LambdaEngine::Entity weaponEntity);
+	virtual void Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint8 playerTeam, uint32 angle);
+	void CalculateWeaponFireProperties(LambdaEngine::Entity weaponEntity, glm::vec3& position, glm::vec3& velocity, uint8& playerTeam);
 
 public:
 	static bool Init();
@@ -81,14 +82,9 @@ public:
 	}
 
 protected:
-	virtual bool InitInternal();
+	virtual bool InitInternal() = 0;
 
-	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam)
-	{
-		UNREFERENCED_VARIABLE(ammoType);
-		UNREFERENCED_VARIABLE(playerTeam);
-		return LambdaEngine::MeshComponent();
-	}
+	void CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg);
 
 	void UpdateWeapon(WeaponComponent& weaponComponent, float32 dt);
 
@@ -97,9 +93,19 @@ protected:
 
 	void OnProjectileHit(const LambdaEngine::EntityCollisionInfo& collisionInfo0, const LambdaEngine::EntityCollisionInfo& collisionInfo1);
 
+	glm::vec3 CalculateZeroingDirection(
+		const glm::vec3& weaponPos,
+		const glm::vec3& playerPos,
+		const glm::quat& playerDirection,
+		float32 zeroingDistance);
+
 protected:
 	LambdaEngine::IDVector m_WeaponEntities;
 
 private:
 	static LambdaEngine::TUniquePtr<WeaponSystem> s_Instance;
+
+private:
+	float	m_ZeroDist	= 5.0f;
+	float	m_YAngle	= 0.0f;
 };

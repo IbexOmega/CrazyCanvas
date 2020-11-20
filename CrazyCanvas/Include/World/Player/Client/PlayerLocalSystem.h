@@ -9,6 +9,11 @@
 
 #include "Multiplayer/Packet/PacketPlayerActionResponse.h"
 
+#include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Physics/Collision.h"
+#include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
+#include "Game/ECS/Components/Audio/AudibleComponent.h"
+
 class PlayerLocalSystem : public ReplaySystem<PlayerGameState, PacketPlayerActionResponse>
 {
 public:
@@ -21,12 +26,18 @@ public:
 
 	void TickMainThread(LambdaEngine::Timestamp deltaTime);
 
-	void TickLocalPlayerAction(LambdaEngine::Timestamp deltaTime, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
-	void DoAction(LambdaEngine::Timestamp deltaTime, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
+	void TickLocalPlayerAction(float32 dt, LambdaEngine::Entity entityPlayer, PlayerGameState* pGameState);
+	void DoAction(
+		float32 dt,
+		LambdaEngine::VelocityComponent& velocityComponent,
+		LambdaEngine::AudibleComponent& audibleComponent,
+		LambdaEngine::CharacterColliderComponent& characterColliderComponent,
+		const LambdaEngine::RotationComponent& rotationComponent,
+		PlayerGameState* pGameState);
 
 protected:
-	virtual void PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState) override;
-	virtual void ReplayGameState(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState) override;
+	virtual void PlaySimulationTick(float32 dt, PlayerGameState& clientState) override;
+	virtual void ReplayGameState(float32 dt, PlayerGameState& clientState) override;
 	virtual void SurrenderGameState(const PacketPlayerActionResponse& serverState) override;
 	virtual bool CompareGamesStates(const PlayerGameState& clientState, const PacketPlayerActionResponse& serverState) override;
 

@@ -1,4 +1,5 @@
 #include "World/Player/CharacterControllerHelper.h"
+#include "World/Player/PlayerSettings.h"
 
 #include "ECS/ECSCore.h"
 
@@ -9,35 +10,30 @@ using namespace LambdaEngine;
 
 void CharacterControllerHelper::TickForeignCharacterController(
 	float32 dt,
-	Entity entity,
-	ComponentArray<CharacterColliderComponent>* pCharacterColliders,
-	const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
-	ComponentArray<VelocityComponent>* pVelocityComponents)
+	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
+	const LambdaEngine::NetworkPositionComponent& networkPositionComponent,
+	LambdaEngine::VelocityComponent& velocityComponent)
 {
-	CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
-	const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
-	VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
-
-	PxController* pController = characterCollider.pController;
+	PxController* pController = characterColliderComponent.pController;
 
 	const PxExtendedVec3 oldPositionPX = pController->getFootPosition();
 	PxVec3 translationPX =
 	{
-		positionComp.Position.x - (float)oldPositionPX.x,
-		positionComp.Position.y - (float)oldPositionPX.y,
-		positionComp.Position.z - (float)oldPositionPX.z
+		networkPositionComponent.Position.x - (float)oldPositionPX.x,
+		networkPositionComponent.Position.y - (float)oldPositionPX.y,
+		networkPositionComponent.Position.z - (float)oldPositionPX.z
 	};
 
-	pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
+	pController->move(translationPX, 0.0f, dt, characterColliderComponent.Filters);
 
-	if (glm::length2(velocityComp.Velocity) > glm::epsilon<float>())
+	if (glm::length2(velocityComponent.Velocity) > glm::epsilon<float>())
 	{
 		// Disable vertical movement if the character is on the ground
 		PxControllerState controllerState;
 		pController->getState(controllerState);
 		if (controllerState.collisionFlags & PxControllerCollisionFlag::eCOLLISION_DOWN)
 		{
-			velocityComp.Velocity.y = 0.0f;
+			velocityComponent.Velocity.y = 0.0f;
 		}
 	}
 	// Maybe add something to change the rendered PositionComponent here in case we collide
@@ -51,33 +47,28 @@ void CharacterControllerHelper::TickForeignCharacterController(
 */
 void CharacterControllerHelper::TickCharacterController(
 	float32 dt,
-	Entity entity,
-	ComponentArray<CharacterColliderComponent>* pCharacterColliders,
-	const ComponentArray<NetworkPositionComponent>* pNetPosComponents,
-	ComponentArray<VelocityComponent>* pVelocityComponents)
+	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
+	const LambdaEngine::NetworkPositionComponent& networkPositionComponent,
+	LambdaEngine::VelocityComponent& velocityComponent)
 {
-	CharacterColliderComponent& characterCollider	= pCharacterColliders->GetData(entity);
-	const NetworkPositionComponent& positionComp	= pNetPosComponents->GetConstData(entity);
-	VelocityComponent& velocityComp					= pVelocityComponents->GetData(entity);
-
-	PxController* pController = characterCollider.pController;
+	PxController* pController = characterColliderComponent.pController;
 
 	// Update velocity
-	glm::vec3& velocity = velocityComp.Velocity;
-	velocity.y -= GRAVITATIONAL_ACCELERATION;
+	glm::vec3& velocity = velocityComponent.Velocity;
+	ApplyGravity(dt, velocity);
 
 	// Calculate Tick Translation
 	PxVec3 translationPX = { velocity.x, velocity.y, velocity.z };
 	translationPX *= dt;
 
 	// Distance between the capsule's feet to its center position. Includes contact offset.
-	const glm::vec3& position = positionComp.Position;
-	if (positionComp.Dirty)
+	const glm::vec3& position = networkPositionComponent.Position;
+	if (networkPositionComponent.Dirty)
 	{
 		pController->setFootPosition({ position.x,  position.y,  position.z });
 	}
 
-	pController->move(translationPX, 0.0f, dt, characterCollider.Filters);
+	pController->move(translationPX, 0.0f, dt, characterColliderComponent.Filters);
 
 	const PxExtendedVec3& newPositionPX = pController->getFootPosition();
 	velocity =
@@ -99,8 +90,14 @@ void CharacterControllerHelper::TickCharacterController(
 		}
 
 		// Update entity's position
-		NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(positionComp);
+		NetworkPositionComponent& positionCompMutable = const_cast<NetworkPositionComponent&>(networkPositionComponent);
 		positionCompMutable.Position	= { newPositionPX.x, newPositionPX.y, newPositionPX.z };
 		positionCompMutable.Dirty		= true;
 	}
+}
+
+void CharacterControllerHelper::ApplyGravity(float32 dt, glm::vec3& velocity)
+{
+	float32 gravityMultiplier = 1.0f + float32(velocity.y < 0.0f) * PLAYER_FALLING_MULTIPLIER;
+	velocity.y -= GRAVITATIONAL_ACCELERATION * gravityMultiplier * dt;
 }

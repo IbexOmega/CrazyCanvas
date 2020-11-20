@@ -42,7 +42,7 @@ namespace LambdaEngine
 		* If it corresponds to a valid BLAS it rebuilds that BLAS with pVertexBuffer and pIndexBuffer.
 		* You must make sure that vertexCount and indexCount are the same as they were when you first called BuildTriBLAS with this index and allowUpdate must have been true.
 		*/
-		void BuildTriBLAS(uint32& index, Buffer* pVertexBuffer, Buffer* pIndexBuffer, uint32 vertexCount, uint32 indexCount, bool allowUpdate);
+		void BuildTriBLAS(uint32& blasIndex, uint32 hitGroupIndex, Buffer* pVertexBuffer, Buffer* pIndexBuffer, uint32 vertexCount, uint32 vertexSize, uint32 indexCount, bool allowUpdate);
 
 		/*
 		* Releases the BLAS corresponding to index.
@@ -66,7 +66,7 @@ namespace LambdaEngine
 		/*
 		* Adds multiple instances, the returned ASInstance IDs are stored in asInstanceIDs and are guaranteed to be in the same order as asInstanceData.
 		*/
-		void AddInstances(const TArray<ASInstanceDesc>& asInstanceDescriptions, TArray<uint32> asInstanceIDs);
+		void AddInstances(const TArray<ASInstanceDesc>& asInstanceDescriptions, TArray<uint32>& asInstanceIDs);
 
 		/*
 		* Removes an Instance from the TLAS.
@@ -77,6 +77,11 @@ namespace LambdaEngine
 		* Updates the transform of the Instance which corresponds to instanceIndex.
 		*/
 		void UpdateInstanceTransform(uint32 instanceIndex, const glm::mat4& transform);
+
+		/*
+		* Finds the instance represented by instanceIndex and runs updateFunc for it.
+		*/
+		void UpdateInstance(uint32 instanceIndex, std::function<void(AccelerationStructureInstance&)> updateFunc);
 
 		/*
 		* Loops through each instance and runs updateFunc for it.
@@ -92,10 +97,11 @@ namespace LambdaEngine
 			CommandList** ppSecondaryExecutionStage,
 			bool sleeping) override final;
 
-		AccelerationStructureInstance& GetInstance(uint32 instanceIndex);
+		const AccelerationStructureInstance& GetInstance(uint32 instanceIndex) const;
 
 		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final	{ return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
 		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final	{ return FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER; }
+
 		FORCEINLINE virtual const String& GetName() const override final 
 		{
 			static String name = "AS_BUILDER";
@@ -125,6 +131,7 @@ namespace LambdaEngine
 		//SBT
 		TArray<uint32> m_FreeSBTIndices;	//Keeps track of holes in m_SBTRecords
 		TArray<SBTRecord> m_SBTRecords;		//Non-Dense Array of SBTRecords
+		TArray<uint32> m_HitGroupIndices;	//Hit Group Index
 		bool m_SBTRecordsDirty = false;
 
 		//TLAS
@@ -144,6 +151,6 @@ namespace LambdaEngine
 		TArray<DeviceChild*>* m_pResourcesToRemove = nullptr;
 
 		//Threading
-		SpinLock m_Lock;
+		mutable SpinLock m_Lock;
 	};
 }

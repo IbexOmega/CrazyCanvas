@@ -49,8 +49,8 @@
 #include "Game/ECS/Systems/Networking/NetworkSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
-#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
+#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -106,6 +106,16 @@ namespace LambdaEngine
 	bool EngineLoop::InitComponentOwners()
 	{
 		if (!MeshPaintComponentOwner::GetInstance()->Init())
+		{
+			return false;
+		}
+
+		return true;
+	}
+
+	bool EngineLoop::ReleaseComponentOwners()
+	{
+		if (!MeshPaintComponentOwner::GetInstance()->Release())
 		{
 			return false;
 		}
@@ -234,6 +244,7 @@ namespace LambdaEngine
 				ImGui::PopStyleColor();
 			});
 #endif
+
 		RenderSystem::GetInstance().Render(delta);
 
 		return true;
@@ -415,6 +426,11 @@ namespace LambdaEngine
 
 		EventQueue::UnregisterAll();
 		ECSCore::Release();
+
+		if (!ReleaseComponentOwners())
+		{
+			return false;
+		}
 
 		if (!ThreadPool::Release())
 		{

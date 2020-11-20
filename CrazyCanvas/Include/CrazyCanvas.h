@@ -23,5 +23,6 @@ public:
 
 private:
 	bool RegisterGUIComponents();
-	bool LoadRendererResources();
+	bool InitRendererResources();
+	bool BindComponentTypeMasks();
 };

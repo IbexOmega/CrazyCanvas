@@ -11,6 +11,8 @@
 
 #include "Events/GameplayEvents.h"
 
+#include "Match/MatchGameMode.h"
+
 class Level;
 
 struct CreateFlagDesc;
@@ -19,8 +21,9 @@ struct CreatePlayerDesc;
 struct MatchDescription
 {
 	LambdaEngine::SHA256Hash LevelHash;
-	uint32 NumTeams = 2;
-	uint32 MaxScore = 5;
+	EGameMode GameMode	= EGameMode::CTF_TEAM_FLAG;
+	uint32 NumTeams		= 2;
+	uint32 MaxScore		= 3;
 };
 
 static constexpr const float32 MATCH_BEGIN_COUNTDOWN_TIME = 5.0f;
@@ -40,13 +43,17 @@ public:
 
 	void ResetMatch();
 
-	virtual void KillPlayer(LambdaEngine::Entity playerEntity)
+	virtual void BeginLoading()
 	{
-		UNREFERENCED_VARIABLE(playerEntity);
+	}
+
+	virtual void MatchStart()
+	{
 	}
 
 	FORCEINLINE bool HasBegun() const { return m_HasBegun; }
 	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE(teamIndex < m_Scores.GetSize()); return m_Scores[teamIndex]; }
+	FORCEINLINE EGameMode GetGameMode() const { return m_MatchDesc.GameMode; }
 
 protected:
 	virtual bool InitInternal() = 0;
@@ -60,11 +67,17 @@ protected:
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) = 0;
 	
 protected:
+	//Level
 	Level* m_pLevel = nullptr;
+
+	//Score
 	LambdaEngine::TArray<uint32> m_Scores;
 
+	//Match Description
 	MatchDescription m_MatchDesc;
+	bool m_GameModeHasFlag = false;
 
+	//Match Running Variables
 	bool m_HasBegun = false;
 	float32 m_MatchBeginTimer = 0.0f;
 };

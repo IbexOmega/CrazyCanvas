@@ -3,10 +3,12 @@
 #extension GL_ARB_shader_draw_parameters : enable
 #extension GL_GOOGLE_include_directive : enable
 
+#define NO_TEXTURES
+
 #include "../Defines.glsl"
 
-layout(binding = 0, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Vertices     { SVertex val[]; }          b_Vertices;
-layout(binding = 1, set = NO_TEXTURES_DRAW_SET_INDEX) restrict readonly buffer Instances    { SInstance val[]; }        b_Instances;
+layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices         { SVertex val[]; }      b_Vertices;
+layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances        { SInstance val[]; }    b_Instances;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer
 {

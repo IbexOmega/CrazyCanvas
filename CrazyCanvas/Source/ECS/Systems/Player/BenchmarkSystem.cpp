@@ -85,10 +85,13 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		// Rotate player
 		constexpr const float32 rotationSpeed = 3.14f / 4.0f;
 		RotationComponent& rotationComp = pRotationComponents->GetData(playerEntity);
+		CharacterColliderComponent& characterColliderComp = pCharacterColliderComponents->GetData(playerEntity);
+		const NetworkPositionComponent& networkPositionComp = pNetworkPositionComponents->GetConstData(playerEntity);
+		VelocityComponent& velocityComp = pVelocityComponents->GetData(playerEntity);
 		rotationComp.Quaternion = glm::rotate(rotationComp.Quaternion, rotationSpeed * dt, g_DefaultUp);
 
 		// Move character controller to apply gravity and to stress the physics system
-		CharacterControllerHelper::TickCharacterController(dt, playerEntity, pCharacterColliderComponents, pNetworkPositionComponents, pVelocityComponents);
+		CharacterControllerHelper::TickCharacterController(dt, characterColliderComp, networkPositionComp, velocityComp);
 
 		/* Fire weapon if appropriate */
 		if (weaponComponent.CurrentCooldown > 0.0f)
@@ -97,7 +100,13 @@ void BenchmarkSystem::Tick(LambdaEngine::Timestamp deltaTime)
 			continue;
 		}
 
-		weaponSystem.Fire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
+		//Calculate Weapon Fire Properties (Position, Velocity and Team)
+		glm::vec3 firePosition;
+		glm::vec3 fireVelocity;
+		uint8 playerTeam;
+		weaponSystem.CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
+
+		weaponSystem.Fire(weaponEntity, weaponComponent, EAmmoType::AMMO_TYPE_PAINT, firePosition, fireVelocity, playerTeam, 0);
 		weaponComponent.CurrentCooldown = 1.0f / weaponComponent.FireRate;
 	}
 }

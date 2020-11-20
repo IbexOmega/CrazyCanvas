@@ -8,6 +8,7 @@
 #include "World/Level.h"
 
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Events/EventQueue.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Audio/AudibleComponent.h"
@@ -18,15 +19,17 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
-#include "Events/MatchEvents.h"
+#include "Lobby/PlayerManagerClient.h"
 
-#include "Application/API/Events/EventQueue.h"
+#include "Events/MatchEvents.h"
 
 #include "Engine/EngineConfig.h"
 
 #include "Resources/ResourceManager.h"
 
 #include "Audio/AudioAPI.h"
+
+#include "Teams/TeamHelper.h"
 
 using namespace LambdaEngine;
 
@@ -35,23 +38,25 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
 }
 
 bool MatchClient::InitInternal()
 {
 	if (MultiplayerUtils::IsSingleplayer())
 	{
-		m_HasBegun = false;
-		m_ClientSideBegun = false;
-		m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
+		m_HasBegun = true;
+		m_ClientSideBegun = true;
+		m_MatchBeginTimer = 0.0f;
 	}
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -98,7 +103,7 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[0])->PlayOnce(0.1f);
 			EventQueue::SendEvent<MatchCountdownEvent>(1);
 		}
-		else if (previousTimer >= 0.0f && m_MatchBeginTimer < 0.0f)
+		else if (m_MatchBeginTimer < 0.0f)
 		{
 			ResourceManager::GetSoundEffect2D(m_CountdownDoneSoundEffect)->PlayOnce(0.1f);
 			EventQueue::SendEvent<MatchCountdownEvent>(0);
@@ -136,22 +141,22 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			const CameraDesc cameraDesc =
 			{
-				.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
-				.Width = (float)window->GetWidth(),
-				.Height = (float)window->GetHeight(),
-				.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
-				.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
+				.FOVDegrees	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
+				.Width		= (float)window->GetWidth(),
+				.Height		= (float)window->GetHeight(),
+				.NearPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+				.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
 			};
 
 			CreatePlayerDesc createPlayerDesc =
 			{
-				.IsLocal			= packet.Player.IsMySelf,
+				.pPlayer			= PlayerManagerClient::GetPlayer(packet.Player.ClientUID),
+				.IsLocal			= packet.Player.ClientUID == event.pClient->GetUID(),
 				.PlayerNetworkUID	= packet.NetworkUID,
 				.WeaponNetworkUID	= packet.Player.WeaponNetworkUID,
 				.Position			= packet.Position,
 				.Forward			= packet.Forward,
 				.Scale				= glm::vec3(1.0f),
-				.TeamIndex			= packet.Player.TeamIndex,
 				.pCameraDesc		= &cameraDesc,
 			};
 
@@ -162,7 +167,7 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			}
 
 			// Notify systems that a new player connected (Not myself tho)
-			if (!packet.Player.IsMySelf)
+			if (!createPlayerDesc.IsLocal)
 			{
 				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
 				EventQueue::SendEvent(connectedEvent);
@@ -176,11 +181,12 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 
 			CreateFlagDesc createFlagDesc =
 			{
-				.NetworkUID = packet.NetworkUID,
-				.ParentEntity = parentEntity,
-				.Position = packet.Position,
-				.Scale = glm::vec3(1.0f),
-				.Rotation = glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.NetworkUID		= packet.NetworkUID,
+				.ParentEntity	= parentEntity,
+				.Position		= packet.Position,
+				.Scale			= glm::vec3(1.0f),
+				.Rotation		= glm::quatLookAt(packet.Forward, g_DefaultUp),
+				.TeamIndex		= packet.Flag.TeamIndex
 			};
 
 			TArray<Entity> createdFlagEntities;
@@ -226,6 +232,16 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 	return true;
 }
 
+bool MatchClient::OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	//Makes sure we have finished loading everything....
+
+	PlayerManagerClient::SetLocalPlayerStateLoaded();
+
+	return true;
+}
+
 bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event)
 {
 	UNREFERENCED_VARIABLE(event);
@@ -244,6 +260,8 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
 	ResetMatch();
 
+	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
+
 	return true;
 }
 
@@ -253,13 +271,12 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 
 	CreateProjectileDesc createProjectileDesc;
 	createProjectileDesc.AmmoType		= event.AmmoType;
-	createProjectileDesc.FireDirection	= event.Direction;
 	createProjectileDesc.FirePosition	= event.Position;
 	createProjectileDesc.InitalVelocity = event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
-	createProjectileDesc.MeshComponent	= event.MeshComponent;
 	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
+	createProjectileDesc.Angle			= event.Angle;
 
 	TArray<Entity> createdFlagEntities;
 	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))

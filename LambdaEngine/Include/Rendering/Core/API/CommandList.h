@@ -100,9 +100,9 @@ namespace LambdaEngine
 
 	struct CopyTextureBufferDesc
 	{
-		uint64 SrcOffset		= 0;
-		uint64 SrcRowPitch		= 0;
-		uint32 SrcHeight		= 0;
+		uint64 BufferOffset		= 0;
+		uint64 BufferRowPitch	= 0;
+		uint32 BufferHeight		= 0;
 		uint32 OffsetX			= 0;
 		uint32 OffsetY			= 0;
 		uint32 OffsetZ			= 0;
@@ -221,6 +221,11 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc)		= 0;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)	= 0;
 
+		virtual void ClearColorTexture(
+			Texture* pTexture,
+			ETextureState textureState,
+			const float32 color[4]) = 0;
+
 		virtual void CopyBuffer(
 			const Buffer* pSrc, 
 			uint64 srcOffset, 
@@ -294,7 +299,11 @@ namespace LambdaEngine
 			const PipelineMemoryBarrierDesc* pMemoryBarriers, 
 			uint32 bufferMemoryCount) = 0;
 
-		virtual void GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter, bool linearFiltering) = 0;
+		virtual void GenerateMips(
+			Texture* pTexture, 
+			ETextureState stateBefore, 
+			ETextureState stateAfter, 
+			bool linearFiltering) = 0;
 
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount)			= 0;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount)	= 0;
@@ -401,14 +410,14 @@ namespace LambdaEngine
 			return m_QueueType;
 		}
 
-		FORCEINLINE bool IsBegin() const 
+		FORCEINLINE bool IsRecording() const 
 		{ 
-			return m_IsBegin;
+			return m_IsRecording;
 		}
 
 	protected:
 		ECommandQueueType	m_QueueType = ECommandQueueType::COMMAND_QUEUE_TYPE_UNKNOWN;
 		CommandListDesc		m_Desc;
-		bool				m_IsBegin = false;
+		bool				m_IsRecording = false;
 	};
 }

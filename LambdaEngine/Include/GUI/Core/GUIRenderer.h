@@ -92,7 +92,14 @@ namespace LambdaEngine
 		//ICustomRenderer
 		virtual void Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 
-		virtual void UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound) override final;
+		virtual void UpdateTextureResource(
+			const String& resourceName,
+			const TextureView* const* ppPerImageTextureViews,
+			const TextureView* const* ppPerSubImageTextureViews,
+			const Sampler* const* ppPerImageSamplers,
+			uint32 imageCount,
+			uint32 subImageCount,
+			bool backBufferBound) override final;
 
 		virtual void Render(
 			uint32 modFrameIndex, 
@@ -113,8 +120,8 @@ namespace LambdaEngine
 			return deviceCaps;
 		}
 
-		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; };
-		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; };
+		FORCEINLINE virtual FPipelineStageFlag GetFirstPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_VERTEX_SHADER; }
+		FORCEINLINE virtual FPipelineStageFlag GetLastPipelineStage() const override final { return FPipelineStageFlag::PIPELINE_STAGE_FLAG_PIXEL_SHADER; }
 
 		FORCEINLINE virtual const String& GetName() const override final 
 		{ 
@@ -140,6 +147,7 @@ namespace LambdaEngine
 		bool CreateSampler();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 
+
 	private:
 		TSharedRef<const TextureView>	m_pBackBuffers[BACK_BUFFER_COUNT];
 		TSharedRef<const TextureView>	m_DepthStencilTextureView;
@@ -151,9 +159,6 @@ namespace LambdaEngine
 
 		CommandAllocator*	m_ppRenderCommandAllocators[BACK_BUFFER_COUNT];
 		CommandList*		m_ppRenderCommandLists[BACK_BUFFER_COUNT];
-
-		uint32_t m_CurrentSurfaceWidth	= 0;
-		uint32_t m_CurrentSurfaceHeight	= 0;
 
 		GUIRenderTarget* m_pCurrentRenderTarget = nullptr;
 		Sampler* m_pGUISampler = nullptr;
@@ -175,9 +180,6 @@ namespace LambdaEngine
 
 		RenderPass* m_pMainRenderPass = nullptr;
 		ClearColorDesc m_pMainRenderPassClearColors[2];
-
-		TArray<Noesis::Ptr<Noesis::Texture>> m_GUITextures;
-		TArray<Noesis::Ptr<Noesis::RenderTarget>> m_GUIRenderTargets;
 
 		Noesis::Ptr<Noesis::IView> m_View;
 

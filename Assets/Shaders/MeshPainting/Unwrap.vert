@@ -7,8 +7,9 @@
 
 layout(push_constant) uniform TransformBuffer
 {
-	uint index;
-} p_TransformIndex;
+	layout(offset = 0) uint Index;
+	layout(offset = 4) uint TeamMode;
+} p_InstanceInfo;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;
 
@@ -22,6 +23,7 @@ layout(location = 1) out vec3 out_Normal;
 
 layout(location = 2) out vec3 out_TargetPosition;
 layout(location = 3) out vec3 out_TargetDirection;
+layout(location = 4) out flat int out_InstanceTeam;
 
 /*
 	Three parameters are needed to make this work. These are:
@@ -33,7 +35,7 @@ layout(location = 3) out vec3 out_TargetDirection;
 void main()
 {
 	SVertex vertex					= b_Vertices.val[gl_VertexIndex];
-	mat4 transform					= b_Instances.val[p_TransformIndex.index].Transform;
+	mat4 transform					= b_Instances.val[p_InstanceInfo.Index].Transform;
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 
 	vec4 worldPosition				= transform * vec4(vertex.Position.xyz, 1.0f);
@@ -42,15 +44,16 @@ void main()
 	out_WorldPosition				= worldPosition.xyz;
 	out_Normal						= normal;
 
-	out_TargetDirection				= u_UnwrapData.val.TargetDirection.xyz;
+	out_TargetDirection				= u_UnwrapData.val.TargetDirectionXYZAngleW.xyz;
 	out_TargetPosition				= u_UnwrapData.val.TargetPosition.xyz;
+	out_InstanceTeam				= int(p_InstanceInfo.TeamMode);
 
 	// This is not removed because of debug purposes.
 	//out_TargetDirection             = -normalize(vec3(-perFrameBuffer.View[0][2], -perFrameBuffer.View[1][2], -perFrameBuffer.View[2][2]));
 	//out_TargetPosition              = perFrameBuffer.CameraPosition.xyz;  
 
 	vec2 texCoord = vec2(vertex.TexCoord.x, vertex.TexCoord.y);
-	texCoord.y = 1.f - texCoord.y;
-	texCoord = (texCoord*2.f - 1.f);
-	gl_Position = vec4(vec3(texCoord, 0.f), 1.f);
+	texCoord.y = 1.0f - texCoord.y;
+	texCoord = (texCoord * 2.0f - 1.0f);
+	gl_Position = vec4(vec3(texCoord, 0.0f), 1.0f);
 }

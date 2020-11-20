@@ -16,20 +16,28 @@ namespace LambdaEngine
 
 	GUIRenderTarget::~GUIRenderTarget()
 	{
-		SAFERELEASE(m_pRenderPass);
-		SAFERELEASE(m_pDepthStencilTexture);
-		SAFERELEASE(m_pDepthStencilTextureView);
+		RenderAPI::EnqueueResourceRelease(m_pRenderPass);
+		RenderAPI::EnqueueResourceRelease(m_pDepthStencilTexture);
+		RenderAPI::EnqueueResourceRelease(m_pDepthStencilTextureView);
+		RenderAPI::EnqueueResourceRelease(m_pColorTexture);
+		RenderAPI::EnqueueResourceRelease(m_pColorTextureView);
+		RenderAPI::EnqueueResourceRelease(m_pResolveTexture);
+		RenderAPI::EnqueueResourceRelease(m_pResolveTextureView);
 
-		SAFERELEASE(m_pColorTexture);
-		SAFERELEASE(m_pColorTextureView);
-		SAFERELEASE(m_pResolveTexture);
-		SAFERELEASE(m_pResolveTextureView);
+		m_pRenderPass				= nullptr;
+		m_pDepthStencilTexture		= nullptr;
+		m_pDepthStencilTextureView	= nullptr;
+		m_pColorTexture				= nullptr;
+		m_pColorTextureView			= nullptr;
+		m_pResolveTexture			= nullptr;
+		m_pResolveTextureView		= nullptr;
+
+		ZERO_MEMORY(m_ppRenderTargets, sizeof(m_ppRenderTargets));
 	}
 
 	bool GUIRenderTarget::Init(const GUIRenderTargetDesc* pDesc)
 	{
 		VALIDATE(pDesc != nullptr);
-
 		if (!CreateColorTextures(pDesc))
 		{
 			LOG_ERROR("[GUIRenderTarget]: Failed to create Color Textures");

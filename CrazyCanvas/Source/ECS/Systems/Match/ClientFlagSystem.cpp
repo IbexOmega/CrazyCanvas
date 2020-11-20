@@ -7,6 +7,7 @@
 
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
+#include "Game/ECS/Components/Rendering/AnimationComponent.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -42,11 +43,10 @@ void ClientFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		const CharacterColliderComponent& playerCollisionComponent = pECS->GetConstComponent<CharacterColliderComponent>(playerEntity);
+		OffsetComponent& flagOffsetComponent = pECS->GetComponent<OffsetComponent>(flagEntity);
+		ParentComponent& flagParentComponent = pECS->GetComponent<ParentComponent>(flagEntity);
 
-		ParentComponent& flagParentComponent				= pECS->GetComponent<ParentComponent>(flagEntity);
-		OffsetComponent& flagOffsetComponent				= pECS->GetComponent<OffsetComponent>(flagEntity);
-
-		//Set Flag Carrier (Parent)
+		// Attach Flag to player
 		flagParentComponent.Attached	= true;
 		flagParentComponent.Parent		= playerEntity;
 
@@ -77,6 +77,10 @@ void ClientFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 		ParentComponent& flagParentComponent		= pECS->GetComponent<ParentComponent>(flagEntity);
 		PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
+		AnimationAttachedComponent& flagAnimAttachedComponent = pECS->GetComponent<AnimationAttachedComponent>(flagEntity);
+
+		// Reset Flag orientation
+		flagAnimAttachedComponent.Transform = glm::mat4(1.0f);
 
 		//Set Flag Carrier (None)
 		flagParentComponent.Attached	= false;
@@ -123,20 +127,23 @@ void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	if (!m_Flags.Empty())
-	{
-		const Entity flagEntity = m_Flags[0];
+	const ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+	const ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
+	ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 
-		const ParentComponent& parentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
+	for (Entity flagEntity : m_Flags)
+	{
+		const ParentComponent& parentComponent = pParentComponents->GetConstData(flagEntity);
 
 		if (parentComponent.Attached)
 		{
-			const PositionComponent& parentPositionComponent = pECS->GetConstComponent<PositionComponent>(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent = pECS->GetConstComponent<RotationComponent>(parentComponent.Parent);
+			const PositionComponent& parentPositionComponent = pPositionComponents->GetConstData(parentComponent.Parent);
+			const RotationComponent& parentRotationComponent = pRotationComponents->GetConstData(parentComponent.Parent);
 
-			const OffsetComponent& flagOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(flagEntity);
-			PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
-			RotationComponent& flagRotationComponent	= pECS->GetComponent<RotationComponent>(flagEntity);
+			const OffsetComponent& flagOffsetComponent	= pOffsetComponents->GetConstData(flagEntity);
+			PositionComponent& flagPositionComponent	= pPositionComponents->GetData(flagEntity);
+			RotationComponent& flagRotationComponent	= pRotationComponents->GetData(flagEntity);
 
 			CalculateAttachedFlagPosition(
 				flagPositionComponent.Position,
@@ -156,10 +163,8 @@ void ClientFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp delta
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	if (!m_Flags.Empty())
+	for (Entity flagEntity : m_Flags)
 	{
-		Entity flagEntity = m_Flags[0];
-
 		PacketComponent<PacketFlagEdited>& flagPacketComponent = pECS->GetComponent<PacketComponent<PacketFlagEdited>>(flagEntity);
 		const TArray<PacketFlagEdited>& flagEditedPackets = flagPacketComponent.GetPacketsReceived();
 

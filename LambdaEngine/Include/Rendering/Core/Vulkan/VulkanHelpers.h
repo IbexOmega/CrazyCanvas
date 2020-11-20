@@ -218,6 +218,8 @@ namespace LambdaEngine
 
 	inline uint32 ConvertShaderStageMask(uint32 shaderTypeMask)
 	{
+		if (shaderTypeMask & SHADER_STAGE_FLAG_ALL) return VK_SHADER_STAGE_ALL;
+
 		uint32 vkShaderTypeMask = 0;
 
 		vkShaderTypeMask |= (shaderTypeMask & SHADER_STAGE_FLAG_MESH_SHADER)        ? VK_SHADER_STAGE_MESH_BIT_NV                   : 0;
@@ -366,6 +368,8 @@ namespace LambdaEngine
 			result |= VK_PIPELINE_STAGE_TASK_SHADER_BIT_NV;
 		if (pipelineStageMask & PIPELINE_STAGE_FLAG_MESH_SHADER)
 			result |= VK_PIPELINE_STAGE_MESH_SHADER_BIT_NV;
+		if (pipelineStageMask & PIPELINE_STAGE_FLAG_ALL_STAGES)
+			result |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 		
 		return result;
 	}

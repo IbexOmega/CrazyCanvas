@@ -3,10 +3,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:noesis="clr-namespace:NoesisGUIExtensions;assembly=Noesis.GUI.Extensions"
     mc:Ignorable="d"
     d:DesignHeight="1080" d:DesignWidth="1920"
     TextElement.FontFamily="gogono_cocoa_mochi.ttf#Gogono Cocoa Mochi">
-
     <!-- Grid Definitions -->
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="1*"/>
@@ -20,44 +20,49 @@
     </Grid.RowDefinitions>
 
     <!-- Title screen grid -->
+  <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
     <Grid x:Name="StartGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Visible">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="1*"/>
-        </Grid.RowDefinitions>
+      <Grid.RowDefinitions>
+        <RowDefinition Height="2*"/>
+        <RowDefinition Height="1*"/>
+      </Grid.RowDefinitions>
 
-        <!--Logo-->
-        <Image Grid.Column="1" Source="logo.png" Margin="0 0 0 0"/>
+      <!--Logo-->
+      <Image Grid.Column="1" Source="logo.png" Margin="0 0 0 0"/>
 
-        <!--Start Buttons-->
-        <StackPanel x:Name="StartButtons" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" >
-            <Button Click="OnButtonPlayClick" Content="Play" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" FontSize="48" />
-            <Button Click="OnButtonSettingsClick" Content="Settings" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" FontSize="48" />
-            <Button Click="OnButtonExitClick" Content="Exit" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" FontSize="48" />
-        </StackPanel>
+      <!--Start Buttons-->
+      <StackPanel x:Name="StartButtons" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" >
+        <Button Click="OnButtonPlayClick" Content="Play" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48" />
+        <Button Click="OnButtonSettingsClick" Content="Settings" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48" />
+        <Button Click="OnButtonExitClick" Content="Exit" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48" />
+      </StackPanel>
     </Grid>
+  </Viewbox>
 
-    <!-- Play option grid -->
-    <Grid x:Name="PlayGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Hidden">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="2*"/>
-            <RowDefinition Height="1*"/>
-        </Grid.RowDefinitions>
+  <!-- Play option grid -->
+  <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid x:Name="PlayGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Collapsed">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="2*"/>
+        <RowDefinition Height="1*"/>
+      </Grid.RowDefinitions>
 
-        <!--Logo-->
-        <Image Grid.Column="1" Source="logo.png" Margin="0 0 0 0"/>
+      <!--Logo-->
+      <Image Grid.Column="1" Source="logo.png" Margin="0 0 0 0"/>
 
-        <!--Play buttons-->
-        <StackPanel x:Name="PlayButtons" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" Margin="0 0 0 40">
-            <Button Click="OnButtonSandboxClick" Content="Sandbox" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" FontSize="48"/>
-            <Button Click="OnButtonMultiplayerClick" Content="Multiplayer" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" FontSize="48"/>
-            <Button Click="OnButtonBenchmarkClick" Content="Benchmark" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" FontSize="48"/>
-            <Button Click="OnButtonBackClick" Content="Back" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" FontSize="48"/>
-        </StackPanel>
+      <!--Play buttons-->
+      <StackPanel x:Name="PlayButtons" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" Margin="0 0 0 40">
+        <Button Click="OnButtonSandboxClick" Content="Sandbox" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
+        <Button Click="OnButtonMultiplayerClick" Content="Multiplayer" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
+        <Button Click="OnButtonBenchmarkClick" Content="Benchmark" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
+        <Button Click="OnButtonBackClick" Content="Back" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
+      </StackPanel>
     </Grid>
+  </Viewbox>
 
     <!--Settings grid-->
-    <Grid x:Name="SettingsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Hidden">
+  <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid x:Name="SettingsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Collapsed">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="6*"/>
@@ -80,7 +85,7 @@
             </Grid>
 
             <!--Ray Tracing Toggle-->
-            <Grid>
+            <!-- <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="1*" />
@@ -88,6 +93,17 @@
 
                 <Label Content="Ray Tracing" Foreground="White" FontSize="29.333" />
                 <CheckBox x:Name="RayTracingCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+            </Grid> -->
+
+            <!--Fullscreen Toggle-->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <Label Content="Fullscreen" Foreground="White" FontSize="29.333" />
+                <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" VerticalAlignment="Center" />
             </Grid>
 
             <!--Volume-->
@@ -98,18 +114,31 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Volume" Foreground="White" FontSize="29.333" />
-                <Slider x:Name="VolumeSlider" Grid.Column="1" VerticalAlignment="Center" />
+                <Slider x:Name="VolumeSlider" ValueChanged="OnVolumeSliderChanged" Grid.Column="1" VerticalAlignment="Center" />
             </Grid>
 
-            <!--Key Bindings-->
+            <!--FOV-->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.5*" />
+                    <ColumnDefinition Width="1.2*" />
+                    <ColumnDefinition Width=".3*" />
+                </Grid.ColumnDefinitions>
+
+                <Label Content="FOV" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                <Slider x:Name="FOVSlider" ValueChanged="OnFOVSliderChanged" Grid.Column="1" VerticalAlignment="Center" Minimum="70" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" />
+                <TextBox Text="{ Binding ElementName=FOVSlider, Path=Value, UpdateSourceTrigger=PropertyChanged }" Grid.Column="2" HorizontalAlignment="Right" TextAlignment="Center" Width="40" />
+            </Grid>
+
+            <!--Controls-->
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
-                <Label Content="Key Bindings" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonChangeKeyBindingsClick" Content="Change" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0" />
+                <Label Content="Controls" Foreground="White" FontSize="29.333" />
+                <Button Click="OnButtonChangeControlsClick" Content="Change" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0" />
             </Grid>
 
             <!--Finish Buttons-->
@@ -124,152 +153,166 @@
             </Grid>
         </StackPanel>
     </Grid>
+    </Viewbox>
 
-    <!--Key bindings grid-->
-    <Grid x:Name="KeyBindingsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Hidden">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="1*"/>
-            <RowDefinition Height="6*"/>
-        </Grid.RowDefinitions>
+  <!--Controls grid-->
+  <Viewbox Stretch="Uniform" Grid.Column="1" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Grid x:Name="ControlsGrid" Grid.Column="1" Grid.RowSpan="2" Visibility="Collapsed">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="1*"/>
+        <RowDefinition Height="6*"/>
+      </Grid.RowDefinitions>
 
-        <!--Title-->
-        <Label Content="Key Bindings" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+      <!--Title-->
+      <Label Content="Controls" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-        <!--Key Bindings-->
-        <StackPanel Grid.Row="1" Margin="200 0 200 0">
-            <!--Movement Title-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+      <!--Controls-->
+      <StackPanel Grid.Row="1" Margin="200 0 200 0">
+        <!--Movement Title-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Movement" Foreground="#FF05DFD7" FontSize="29.333" />
-            </Grid>
-            <Separator/>
+          <Label Content="Movement" Foreground="#FF05DFD7" FontSize="29.333" />
+        </Grid>
+        <Separator/>
 
-            <!--Forward-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Look Sensitivity-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Forward" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_FORWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Look Sensitivity" Foreground="White" FontSize="29.333" Margin="0 5 0 5" />
+          <Slider x:Name="LookSensitivitySlider" ValueChanged="OnLookSensitivityChanged" Grid.Column="1" VerticalAlignment="Center" Margin="0 5 0 10" />
+        </Grid>
 
-            <!--Backward-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Forward-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Backward" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_BACKWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Forward" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_FORWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
 
-            <!--Left-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Backward-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Left" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_LEFT" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Backward" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_BACKWARD" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
 
-            <!--Right-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Left-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Right" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_RIGHT" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Left" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_LEFT" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
 
-            <!--Jump-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Right-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Jump" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_JUMP" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Right" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_RIGHT" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
 
-            <!--Sprint-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Jump-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Sprint" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_SPRINT" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Jump" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_JUMP" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
 
-            <!--Attack Title-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Walk-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Attack" Foreground="#FF05DFD7" FontSize="29.333" />
-            </Grid>
-            <Separator/>
+          <Label Content="Walk" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_MOVE_WALK" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
 
-            <!--Primary-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Attack Title-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Primary" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_PRIMARY" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Attack" Foreground="#FF05DFD7" FontSize="29.333" />
+        </Grid>
+        <Separator/>
 
-            <!--Secondary-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Primary-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Secondary" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_SECONDARY" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Primary" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_PRIMARY" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
 
-            <!--Reload-->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Secondary-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Label Content="Reload" Foreground="White" FontSize="29.333" />
-                <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_RELOAD" Content="" Grid.Column="1" Margin="50 5 50 5" />
-            </Grid>
+          <Label Content="Secondary" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_SECONDARY" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
 
-            <!--Finish Buttons-->
-            <Grid Margin="0 50 0 0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
+        <!--Reload-->
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
 
-                <Button Click="OnButtonApplyKeyBindingsClick" Content="Apply" Grid.Column="0" FontSize="29.333" Margin="50 0 50 0" />
-                <Button Click="OnButtonCancelKeyBindingsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0"/>
-            </Grid>
-        </StackPanel>
+          <Label Content="Reload" Foreground="White" FontSize="29.333" />
+          <Button Click="OnButtonSetKey" x:Name="ACTION_ATTACK_RELOAD" Content="" Grid.Column="1" Margin="50 5 50 5" />
+        </Grid>
+
+        <!--Finish Buttons-->
+        <Grid Margin="0 50 0 0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" />
+            <ColumnDefinition Width="1*" />
+          </Grid.ColumnDefinitions>
+
+          <Button Click="OnButtonApplyControlsClick" Content="Apply" Grid.Column="0" FontSize="29.333" Margin="50 0 50 0" />
+          <Button Click="OnButtonCancelControlsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0"/>
+        </Grid>
+      </StackPanel>
     </Grid>
+  </Viewbox>
 
     <Image x:Name="splash_pink"     Grid.Column="0" Grid.Row="0" Source="./splashes/splash_pink.png" Margin="-264,-485.16,10,20.644" />
     <Image x:Name="splash_red"      Grid.Column="2" Grid.Row="0" Source="./splashes/splash_red.png" Margin="0,-532.181,-291,0" />

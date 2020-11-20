@@ -31,15 +31,15 @@ namespace LambdaEngine
 		EventQueue::SendEvent(event);
 	}
 
-	void ClientRemoteSystem::OnDisconnecting(IClient* pClient)
+	void ClientRemoteSystem::OnDisconnecting(IClient* pClient, const String& reason)
 	{
-		ClientDisconnectingEvent event(pClient);
+		ClientDisconnectingEvent event(pClient, reason);
 		EventQueue::SendEvent(event);
 	}
 
-	void ClientRemoteSystem::OnDisconnected(IClient* pClient)
+	void ClientRemoteSystem::OnDisconnected(IClient* pClient, const String& reason)
 	{
-		ClientDisconnectedEvent event(pClient);
+		ClientDisconnectedEvent event(pClient, reason);
 		EventQueue::SendEvent(event);
 	}
 

@@ -190,6 +190,11 @@ namespace LambdaEngine
                 if (m_pEntityRegistry->EntityHasAllowedTypes(entity, sysSub.ComponentTypes, sysSub.ExcludedComponentTypes))
                 {
                     sysSub.pSubscriber->PushBack(entity);
+
+                    if (sysSub.OnEntityAdded)
+                    {
+                        sysSub.OnEntityAdded(entity);
+                    }
                 }
             }
             else

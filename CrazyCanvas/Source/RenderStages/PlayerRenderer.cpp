@@ -12,7 +12,9 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Team/TeamComponent.h"
 #include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Player/WeaponComponent.h"
 
+#include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 
@@ -115,8 +117,16 @@ namespace LambdaEngine
 		m_CurrModFrameIndex = modFrameIndex;
 	}
 
-	void PlayerRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
+	void PlayerRenderer::UpdateTextureResource(
+		const String& resourceName,
+		const TextureView* const* ppPerImageTextureViews,
+		const TextureView* const* ppPerSubImageTextureViews,
+		const Sampler* const* ppPerImageSamplers,
+		uint32 imageCount,
+		uint32 subImageCount,
+		bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
 		UNREFERENCED_VARIABLE(subImageCount);
 		UNREFERENCED_VARIABLE(backBufferBound);
@@ -124,20 +134,7 @@ namespace LambdaEngine
 		// Fetching render targets
 		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE")
 		{
-			if (imageCount != 0)
-			{
-				LOG_WARNING("RenderGraph has been altered. imageCount is %d but should be 0", imageCount);
-			}
 			m_IntermediateOutputImage = MakeSharedRef(ppPerImageTextureViews[0]);
-		}
-
-		if (resourceName == "G_BUFFER_DEPTH_STENCIL")
-		{
-			for (uint32 i = 0; i < imageCount; i++)
-			{
-				// Not sure if this the correct textureView
-				m_DepthStencil = MakeSharedRef(ppPerImageTextureViews[0]);
-			}
 		}
 
 		// Writing textures to DescriptorSets
@@ -148,9 +145,9 @@ namespace LambdaEngine
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
-				Sampler* sampler = Sampler::GetLinearSampler();
+				Sampler* pSampler = Sampler::GetLinearSampler();
 				uint32 bindingIndex = 0;
-				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
 			}
 			else
 			{
@@ -164,9 +161,9 @@ namespace LambdaEngine
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
-				Sampler* sampler = Sampler::GetLinearSampler();
+				Sampler* pSampler = Sampler::GetLinearSampler();
 				uint32 bindingIndex = 1;
-				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
 			}
 			else
 			{
@@ -180,14 +177,73 @@ namespace LambdaEngine
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
-				Sampler* sampler = Sampler::GetLinearSampler();
+				Sampler* pSampler = Sampler::GetLinearSampler();
 				uint32 bindingIndex = 2;
-				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &sampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
 			}
 			else
 			{
 				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_COMBINED_MATERIAL_MAPS", setIndex);
 			}
+		}
+
+		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 3;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] G_BUFFER_DEPTH_STENCIL", setIndex);
+			}
+
+			for (uint32 i = 0; i < imageCount; i++)
+			{
+				// Not sure if this the correct textureView
+				m_DepthStencil = MakeSharedRef(ppPerImageTextureViews[0]); // used in beginRenderPass
+			}
+
+		}
+
+		else if (resourceName == "DIRL_SHADOWMAP")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 4;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] DIRL_SHADOWMAP", setIndex);
+			}
+
+		}
+		else if (resourceName == "SCENE_POINT_SHADOWMAPS")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 5;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_POINT_SHADOWMAPS", setIndex);
+			}
+
 		}
 	}
 
@@ -241,6 +297,27 @@ namespace LambdaEngine
 				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] PAINT_MASK_COLORS", setIndex);
 			}
 		}
+		else if (resourceName == SCENE_LIGHTS_BUFFER)
+		{
+			constexpr DescriptorSetIndex setIndex = 0U;
+
+			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet0 != nullptr)
+			{
+				m_DescriptorSet0->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					3,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[PlayerRenderer]: Failed to update DescriptorSet[%d] SCENE_LIGHTS_BUFFER", setIndex);
+			}
+		}
 
 		if (resourceName == PER_FRAME_BUFFER)
 		{
@@ -284,63 +361,98 @@ namespace LambdaEngine
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
 				const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+				const ComponentArray<PlayerRelatedComponent>* pPlayerRelatedComponents = pECSCore->GetComponentArray<PlayerRelatedComponent>();
 				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
+				const ComponentArray<WeaponComponent>* pWeaponComponents = pECSCore->GetComponentArray<WeaponComponent>();
+
+				LOG_MESSAGE("JA FIM: %u", m_DrawCount);
 
 				m_PlayerData.Clear();
+				TArray<WeaponData> weapons;
+
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					constexpr DescriptorSetIndex setIndex = 2U;
 
 					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList2[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 2 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+					m_DescriptorSetList2[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 2 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
 
 					if (m_DescriptorSetList2[d] != nullptr)
 					{
-						// Assume EntityIDs is always 1 in length. (Because animated meshes.)
-						Entity entity = m_pDrawArgs[d].EntityIDs[0];
-
-						// Used to sort by distance in render()
-						if (pTeamComponents->HasComponent(entity))
+						for (uint32 i = 0; i < m_pDrawArgs[d].EntityIDs.GetSize(); i++)
 						{
-							PlayerData playerData;
-							playerData.DrawArgIndex = d;
-							playerData.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
-							playerData.Position = pPositionComponents->GetConstData(entity).Position;
-							m_PlayerData.PushBack(playerData);
-
-							if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
+							Entity entity = m_pDrawArgs[d].EntityIDs[i];
+							if (pPlayerRelatedComponents->HasComponent(entity))
 							{
-								m_Viewer.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
-								m_Viewer.EntityId = entity;
-								m_Viewer.DrawArgIndex = d;
-								m_Viewer.Positon = pPositionComponents->GetConstData(entity).Position;
+								// Store weapons for later use. Easier to map to players
+								if (pWeaponComponents->HasComponent(entity))
+								{
+									weapons.PushBack({ .EntityId = entity, .DrawArgIndex = d, .InstanceIndex = i});
+								}
+								else
+								{
+									// Set player data for distance and weapon sorting
+									PlayerData playerData;
+									playerData.DrawArgIndex = d;
+									playerData.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
+									playerData.Position = pPositionComponents->GetConstData(entity).Position;
+									playerData.EntityId = entity;
+									m_PlayerData.PushBack(playerData);
+								}
+
+								// Set viewer data
+								if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
+								{
+									m_Viewer.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
+									m_Viewer.EntityId = entity;
+									m_Viewer.DrawArgIndex = d;
+									m_Viewer.Positon = pPositionComponents->GetConstData(entity).Position;
+								}
+								else
+								{
+									// Set Vertex and Instance buffer for rendering
+									Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
+									uint64 pOffsets[2] = { 0, 0 };
+									uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
+
+									m_DescriptorSetList2[d]->WriteBufferDescriptors(
+										ppBuffers,
+										pOffsets,
+										pSizes,
+										0,
+										2,
+										EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+									);
+								}
 							}
 							else
 							{
-								// Set Vertex and Instance buffer for rendering
-								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
-								uint64 pOffsets[2] = { 0, 0 };
-								uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
-
-								m_DescriptorSetList2[d]->WriteBufferDescriptors(
-									ppBuffers,
-									pOffsets,
-									pSizes,
-									0,
-									2,
-									EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
-								);
+								LOG_ERROR("[PlayerRenderer]: A entity must have a TeamComponent for it to be processed by PlayerRenderer!");
 							}
-						}
-						else
-						{
-							LOG_ERROR("[PlayerRenderer]: A entity must have a TeamComponent for it to be processed by PlayerRenderer!");
 						}
 					}
 					else
 					{
 						LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs vertices and instance buffers");
+					}
+				}
+
+				// Decide weapon for all players
+				for (auto const& weapon : weapons)
+				{
+					auto weaponOwner = pWeaponComponents->GetConstData(weapon.EntityId).WeaponOwner;
+					auto it = std::find_if(m_PlayerData.Begin(), m_PlayerData.End(),
+						[&weaponOwner](const PlayerData& pd) { return pd.EntityId == weaponOwner; });
+
+					if (it != m_PlayerData.end())
+					{
+						it->Weapon = weapon;
+						it->HasWeapon = true;
+					}
+					else
+					{
+						LOG_WARNING("[PlayerRenderer] A Weapon %d without a player is present.", weapon.EntityId);
 					}
 				}
 
@@ -357,13 +469,13 @@ namespace LambdaEngine
 					}
 				}
 
-				// Get Paint Mask Texture from each player
+				// Get Paint Mask Texture from each player & weapon
 				for (uint32 d = 0; d < count; d++)
 				{
 					constexpr DescriptorSetIndex setIndex = 3U;
 
 					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
 
 					if (m_DescriptorSetList3[d] != nullptr)
 					{
@@ -383,15 +495,15 @@ namespace LambdaEngine
 								uint32 numExtensions = extensionGroup->ExtensionCount;
 								for (uint32 e = 0; e < numExtensions; e++)
 								{
-									uint32 mask = extensionGroup->pExtensionMasks[e];
+									uint32 flag = extensionGroup->pExtensionFlags[e];
 									bool inverted;
-									uint32 meshPaintBit = EntityMaskManager::GetExtensionMask(MeshPaintComponent::Type(), inverted);
+									uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
 									uint32 invertedUInt = uint32(inverted);
 
-									if ((mask & meshPaintBit) != invertedUInt)
+									if ((flag & meshPaintFlag) != invertedUInt)
 									{
 										DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-										TextureView* pTextureView = extension.ppMipZeroTextureViews[0];
+										TextureView* pTextureView = extension.ppTextureViews[0];
 										textureViews.PushBack(pTextureView);
 									}
 								}
@@ -415,11 +527,10 @@ namespace LambdaEngine
 						LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs paint masks");
 					}
 				}
-
 			}
 			else
 			{
-				LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs");
+				m_DrawCount = 0;
 			}
 		}
 	}
@@ -428,9 +539,6 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
-
-		if (Sleeping)
-			return;
 
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
@@ -464,19 +572,23 @@ namespace LambdaEngine
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		pCommandList->SetViewports(&viewport, 0, 1);
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		if (m_DrawCount > 0)
+		if (!Sleeping)
 		{
-			// Render enemy with no culling to see backface of paint
-			bool renderEnemies = true;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
+			pCommandList->SetViewports(&viewport, 0, 1);
+			pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-			// Team members are transparent, Front Culling- and Back Culling is needed
-			renderEnemies = false;
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
-			RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			if (m_DrawCount > 0)
+			{
+				// Render enemy with no culling to see backface of paint
+				bool renderEnemies = true;
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDNoCull);
+
+				// Team members are transparent, Front Culling- and Back Culling is needed
+				renderEnemies = false;
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(renderEnemies, pCommandList, m_PipelineStateIDBackCull);
+			}
 		}
 
 		pCommandList->EndRenderPass();
@@ -490,8 +602,8 @@ namespace LambdaEngine
 									uint64& pipelineId)
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0);
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1);
+		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
+		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
 
 		// Sort player rendering front to back
 		for (uint32 i = 0; i < m_PlayerData.GetSize(); i++)
@@ -512,23 +624,34 @@ namespace LambdaEngine
 				bool isEnemy = (player.TeamId == 1);
 				bool isTeamMate = (player.TeamId == 0);
 
-				// Filter enemies if rendering teamates
+				// Remove enemies if rendering teamates
 				if (!renderEnemy && isEnemy) {
 					continue;
 				}
 
-				// Filter teammates if rendering enemies
+				// Remove teammates if rendering enemies
 				if (renderEnemy && isTeamMate) {
 					continue;
 				}
 
+				// Draw player
 				const DrawArg& drawArg = m_pDrawArgs[player.DrawArgIndex];
-
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
 				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
 				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+
+				// Draw player weapon
+				if (player.HasWeapon)
+				{
+					const DrawArg& drawArgWeapon = m_pDrawArgs[player.Weapon.DrawArgIndex];
+					pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
+					pCommandList->BindIndexBuffer(drawArgWeapon.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
+					pCommandList->DrawIndexInstanced(drawArgWeapon.IndexCount, 1, 0, 0, player.Weapon.InstanceIndex);
+				}
 			}
 
 		}
@@ -543,7 +666,7 @@ namespace LambdaEngine
 		perFrameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		perFrameBufferDesc.DescriptorCount = 1;
 		perFrameBufferDesc.Binding = 0;
-		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		perFrameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -603,14 +726,45 @@ namespace LambdaEngine
 		paintMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		paintMaskDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
+		// LightBuffer
+		DescriptorBindingDesc lightBufferDesc = {};
+		lightBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		lightBufferDesc.DescriptorCount = 6000;
+		lightBufferDesc.Binding = 3;
+		lightBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		lightBufferDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// u_GBufferDepthStencil
+		DescriptorBindingDesc depthStencilDesc = {};
+		depthStencilDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		depthStencilDesc.DescriptorCount = 6000;
+		depthStencilDesc.Binding = 3;
+		depthStencilDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		depthStencilDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// u_DirLShadowMap
+		DescriptorBindingDesc dirLightShadowMapDesc = {};
+		dirLightShadowMapDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		dirLightShadowMapDesc.DescriptorCount = 6000;
+		dirLightShadowMapDesc.Binding = 4;
+		dirLightShadowMapDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		dirLightShadowMapDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// u_PointLShadowMap
+		DescriptorBindingDesc pointLightShadowMapDesc = {};
+		pointLightShadowMapDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		pointLightShadowMapDesc.DescriptorCount = 6000;
+		pointLightShadowMapDesc.Binding = 5;
+		pointLightShadowMapDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		pointLightShadowMapDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
 		// maps to SET = 0 (BUFFER_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { perFrameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc };
 
 		// maps to SET = 1 (TEXTURE_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc };
+		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc, dirLightShadowMapDesc, pointLightShadowMapDesc };
 
 		// maps to SET = 2 (DRAW_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
@@ -639,7 +793,8 @@ namespace LambdaEngine
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 0;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 4;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 7;
+			;
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 4;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
@@ -854,5 +1009,4 @@ namespace LambdaEngine
 		return true;
 
 	}
-
 }

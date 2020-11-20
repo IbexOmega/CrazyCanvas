@@ -797,29 +797,29 @@ namespace LambdaEngine
 					{
 						switch (pResourceState->BindingType)
 						{
-						case ERenderGraphResourceBindingType::COMBINED_SAMPLER:
-							resourceIt->TextureParams.TextureFlags |= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
-							resourceIt->TextureParams.TextureViewFlags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-							break;
-						case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:
-							resourceIt->TextureParams.TextureFlags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
-							resourceIt->TextureParams.TextureViewFlags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
-							break;
-						case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:
-							resourceIt->TextureParams.TextureFlags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
-							resourceIt->TextureParams.TextureViewFlags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
-							break;
-						case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:
-							resourceIt->TextureParams.TextureFlags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
-							resourceIt->TextureParams.TextureViewFlags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
-							break;
-						case ERenderGraphResourceBindingType::ATTACHMENT:
-						{
-							bool isDepthStencilAttachment = resourceIt->TextureParams.TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT;
-							resourceIt->TextureParams.TextureFlags |= (isDepthStencilAttachment ? FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL : FTextureFlag::TEXTURE_FLAG_RENDER_TARGET);
-							resourceIt->TextureParams.TextureViewFlags |= (isDepthStencilAttachment ? FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL : FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET);
-							break;
-						}
+							case ERenderGraphResourceBindingType::COMBINED_SAMPLER:
+								resourceIt->TextureParams.TextureFlags |= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+								resourceIt->TextureParams.TextureViewFlags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+								break;
+							case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ:
+								resourceIt->TextureParams.TextureFlags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+								resourceIt->TextureParams.TextureViewFlags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+								break;
+							case ERenderGraphResourceBindingType::UNORDERED_ACCESS_WRITE:
+								resourceIt->TextureParams.TextureFlags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+								resourceIt->TextureParams.TextureViewFlags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+								break;
+							case ERenderGraphResourceBindingType::UNORDERED_ACCESS_READ_WRITE:
+								resourceIt->TextureParams.TextureFlags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+								resourceIt->TextureParams.TextureViewFlags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+								break;
+							case ERenderGraphResourceBindingType::ATTACHMENT:
+							{
+								bool isDepthStencilAttachment = resourceIt->TextureParams.TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT;
+								resourceIt->TextureParams.TextureFlags |= (isDepthStencilAttachment ? FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL : FTextureFlag::TEXTURE_FLAG_RENDER_TARGET);
+								resourceIt->TextureParams.TextureViewFlags |= (isDepthStencilAttachment ? FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL : FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET);
+								break;
+							}
 						}
 
 						if (resourceIt->TextureParams.TextureType == ERenderGraphTextureType::TEXTURE_CUBE)

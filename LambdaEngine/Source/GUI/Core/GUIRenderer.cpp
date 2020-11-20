@@ -34,23 +34,14 @@ namespace LambdaEngine
 
 	GUIRenderer::~GUIRenderer()
 	{
-		m_View.Reset();
+		if (m_View != nullptr)
+		{
+			m_View.Reset();
+		}
 
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pVertexBuffer);
 		SAFERELEASE(m_pGUISampler);
-
-		for (Noesis::Ptr<Noesis::RenderTarget>& renderTarget : m_GUIRenderTargets)
-		{
-			renderTarget.Reset();
-		}
-		m_GUIRenderTargets.Clear();
-
-		for (Noesis::Ptr<Noesis::Texture>& texture : m_GUITextures)
-		{
-			texture.Reset();
-		}
-		m_GUITextures.Clear();
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
@@ -168,7 +159,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
-		m_GUIRenderTargets.PushBack(renderTarget);
 		return renderTarget;
 	}
 
@@ -185,7 +175,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::RenderTarget> renderTarget = *pRenderTarget;
-		m_GUIRenderTargets.PushBack(renderTarget);
 		return renderTarget;
 	}
 
@@ -209,7 +198,6 @@ namespace LambdaEngine
 		}
 
 		Noesis::Ptr<Noesis::Texture> texture = *pTexture;
-		m_GUITextures.PushBack(texture);
 		return texture;
 	}
 
@@ -248,7 +236,6 @@ namespace LambdaEngine
 #endif
 			}
 		}
-
 	}
 
 	void GUIRenderer::SetRenderTarget(Noesis::RenderTarget* pSurface)
@@ -259,12 +246,15 @@ namespace LambdaEngine
 		EndCurrentRenderPass();
 
 #ifdef PRINT_FUNC
-		LOG_INFO("SetRenderTarget");
+		LOG_INFO("SetRenderTarget W: %u, H: %u", m_pCurrentRenderTarget->GetDesc()->Width, m_pCurrentRenderTarget->GetDesc()->Height);
 #endif
 	}
 
 	void GUIRenderer::BeginTile(const Noesis::Tile& tile, uint32_t surfaceWidth, uint32_t surfaceHeight)
 	{
+		UNREFERENCED_VARIABLE(surfaceWidth);
+		UNREFERENCED_VARIABLE(surfaceHeight);
+		
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
 		
 		// Do not set to false here will check in end tile if we were in a renderpass
@@ -288,26 +278,20 @@ namespace LambdaEngine
 
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		m_CurrentSurfaceWidth	= surfaceWidth;
-		m_CurrentSurfaceHeight	= surfaceHeight;
-
 #ifdef PRINT_FUNC
-		LOG_INFO("BeginTile");
+		LOG_INFO("BeginTile W: %u, H: %u", m_CurrentSurfaceWidth, m_CurrentSurfaceHeight);
 #endif
 	}
 
 	void GUIRenderer::EndTile()
 	{
 		EndCurrentRenderPass();
-		m_TileBegun				= false;
-		m_CurrentSurfaceWidth	= 0;
-		m_CurrentSurfaceHeight	= 0;
-
-		ResumeRenderPass();
-
+		m_TileBegun					= false;
 #ifdef PRINT_FUNC
 		LOG_INFO("EndTile");
 #endif
+
+		ResumeRenderPass();
 	}
 
 	void GUIRenderer::ResolveRenderTarget(Noesis::RenderTarget* pSurface, const Noesis::Tile* pTiles, uint32_t numTiles)
@@ -578,7 +562,9 @@ namespace LambdaEngine
 #ifdef PRINT_FUNC
 			LOG_INFO("Draw");
 #endif
-			pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
+			// Might not be the most effective way to abort, but it works
+			if (m_IsInRenderPass)
+				pRenderCommandList->DrawIndexInstanced(batch.numIndices, 1, batch.startIndex, 0, 0);
 		}
 	}
 
@@ -628,10 +614,12 @@ namespace LambdaEngine
 		const String& resourceName,
 		const TextureView* const* ppPerImageTextureViews,
 		const TextureView* const* ppPerSubImageTextureViews,
+		const Sampler* const* ppPerImageSamplers,
 		uint32 imageCount,
 		uint32 subImageCount,
 		bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(ppPerImageSamplers);
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		if (resourceName == RENDER_GRAPH_BACK_BUFFER_ATTACHMENT)
@@ -719,7 +707,7 @@ namespace LambdaEngine
 			CommandList* pUtilityCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
 			CommandList* pRenderCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
 
-			if (pUtilityCommandList->IsBegin())
+			if (pUtilityCommandList->IsRecording())
 			{
 				pUtilityCommandList->End();
 				(*ppFirstExecutionStage)		= pUtilityCommandList;
@@ -746,7 +734,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppUtilityCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			SecondaryCommandListBeginDesc beginDesc = {};
 
@@ -761,7 +749,7 @@ namespace LambdaEngine
 	{
 		CommandList* pCommandList = m_ppRenderCommandLists[m_ModFrameIndex];
 
-		if (!pCommandList->IsBegin())
+		if (!pCommandList->IsRecording())
 		{
 			SecondaryCommandListBeginDesc beginDesc = {};
 
@@ -803,15 +791,15 @@ namespace LambdaEngine
 		//Begin RenderPass
 		if (!m_TileBegun)
 		{
-			if (m_pCurrentRenderTarget)
+			if (m_pCurrentRenderTarget && m_pCurrentRenderTarget->GetRenderPass())
 			{
 				BeginRenderPassDesc beginRenderPass = {};
 				beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
 				beginRenderPass.ppRenderTargets		= m_pCurrentRenderTarget->GetRenderTargets();
 				beginRenderPass.RenderTargetCount	= 2; // The rendertarget + resolve target
 				beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
-				beginRenderPass.Width				= m_CurrentSurfaceWidth;
-				beginRenderPass.Height				= m_CurrentSurfaceHeight;
+				beginRenderPass.Width				= m_pCurrentRenderTarget->GetWidth();
+				beginRenderPass.Height				= m_pCurrentRenderTarget->GetHeight();
 				beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
 				beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
 				beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
@@ -873,6 +861,10 @@ namespace LambdaEngine
 
 	void GUIRenderer::ResumeRenderPass()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("Trying to resume renderpass: tileBegun: %d", m_TileBegun);
+#endif
+
 		if (!m_IsInRenderPass)
 		{
 			CommandList* pCommandList = BeginOrGetRenderCommandList();

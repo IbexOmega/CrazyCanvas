@@ -62,6 +62,11 @@ namespace LambdaEngine
 		virtual void BuildTopLevelAccelerationStructure(const BuildTopLevelAccelerationStructureDesc* pBuildDesc) override final;
 		virtual void BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc) override final;
 
+		virtual void ClearColorTexture(
+			Texture* pTexture,
+			ETextureState textureState,
+			const float32 color[4]) override final;
+
 		virtual void CopyBuffer(
 			const Buffer* pSrc,
 			uint64 srcOffset,
@@ -135,7 +140,7 @@ namespace LambdaEngine
 			const PipelineMemoryBarrierDesc* pMemoryBarriers,
 			uint32 bufferMemoryCount) override final;
 
-		virtual void GenerateMiplevels(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter, bool linearFiltering) override final;
+		virtual void GenerateMips(Texture* pTexture, ETextureState stateBefore, ETextureState stateAfter, bool linearFiltering) override final;
 
 		virtual void SetViewports(const Viewport* pViewports, uint32 firstViewport, uint32 viewportCount) override final;
 		virtual void SetScissorRects(const ScissorRect* pScissorRects, uint32 firstScissor, uint32 scissorCount) override final;
@@ -232,6 +237,24 @@ namespace LambdaEngine
 
 	private:
 		void BindDescriptorSet(const DescriptorSet* pDescriptorSet, const PipelineLayout* pPipelineLayout, uint32 setIndex, VkPipelineBindPoint bindPoint);
+		
+		FORCEINLINE void AddDeferredBarrier(DeferredImageBarrier& deferredBarrier, const VkImageMemoryBarrier& imageBarrier)
+		{
+			if (!m_DeferredBarriers.IsEmpty())
+			{
+				for (DeferredImageBarrier& barrier : m_DeferredBarriers)
+				{
+					if (barrier.HasCompatableStages(deferredBarrier))
+					{
+						barrier.Barriers.EmplaceBack(imageBarrier);
+						return;
+					}
+				}
+			}
+
+			deferredBarrier.Barriers.EmplaceBack(imageBarrier);
+			m_DeferredBarriers.EmplaceBack(Move(deferredBarrier));
+		}
 
 	private:
 		VkCommandBuffer							m_CmdBuffer				= VK_NULL_HANDLE;

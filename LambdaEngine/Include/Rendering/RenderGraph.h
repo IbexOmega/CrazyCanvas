@@ -131,19 +131,19 @@ namespace LambdaEngine
 
 		struct ResourceBinding
 		{
-			RenderStage*	pRenderStage		= nullptr;
-			EDescriptorType DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
-			uint32			Binding				= 0;
+			RenderStage*	pRenderStage	= nullptr;
+			EDescriptorType DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN;
+			uint32			Binding			= 0;
 
-			ETextureState	TextureState		= ETextureState::TEXTURE_STATE_UNKNOWN;
+			ETextureState	TextureState	= ETextureState::TEXTURE_STATE_UNKNOWN;
 		};
 
 		struct ResourceBarrierInfo
 		{
-			uint32				SynchronizationStageIndex	= 0;
-			uint32				SynchronizationTypeIndex	= 0;
-			uint32				BarrierIndex				= 0;
-			DrawArgMaskDesc		DrawArgsMaskDesc;
+			uint32			SynchronizationStageIndex	= 0;
+			uint32			SynchronizationTypeIndex	= 0;
+			uint32			BarrierIndex				= 0;
+			DrawArgMaskDesc	DrawArgsMaskDesc;
 		};
 
 		struct InternalResourceUpdateDesc
@@ -181,6 +181,7 @@ namespace LambdaEngine
 
 		struct DrawArgsData
 		{
+			bool						IsDirty = false;
 			PipelineBufferBarrierDesc	InitialTransitionBarrierTemplate;
 			PipelineTextureBarrierDesc	InitialTextureTransitionBarrierTemplate;
 			TArray<DrawArg>				Args;
@@ -275,12 +276,9 @@ namespace LambdaEngine
 			uint32					BufferSetIndex						= 0;
 			DescriptorSet**			ppTextureDescriptorSets				= nullptr; //# m_BackBufferCount
 			uint32					TextureSetIndex						= 0;
-			DescriptorSet***		pppDrawArgDescriptorSets			= nullptr; //# m_BackBufferCount
-			DescriptorSet***		pppDrawArgExtensionsDescriptorSets	= nullptr; //# m_BackBufferCount
-			DrawArg*				pDrawArgs							= nullptr;
-			uint32					NumDrawArgsPerFrame					= 0;
+			TArray<DrawArg>			DrawArgs;
 			uint32					DrawSetIndex						= 0;
-			uint32					DrawExtensionSetIndex				= 0;
+			uint32					DrawExtensionSetIndex				= UINT32_MAX;
 			Resource*				pDrawArgsResource					= nullptr;
 			DrawArgMaskDesc			DrawArgsMaskDesc;
 			RenderPass*				pRenderPass							= nullptr;
@@ -353,7 +351,7 @@ namespace LambdaEngine
 		/*
 		* Updates the global SBT which is used for all Ray Tracing calls, each SBTRecord should contain addresses to valid Buffers
 		*/
-		void UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, TArray<DeviceChild*>& removedDeviceResources);
+		void UpdateGlobalSBT(CommandList* pCommandList, const TArray<SBTRecord>& shaderRecords, const TArray<uint32>& hitGroupIndices, TArray<DeviceChild*>& removedDeviceResources);
 		/*
 		* Updates the dimensions of a RenderStage, will only set the dimensions which are set to EXTERNAL
 		*/
@@ -384,6 +382,14 @@ namespace LambdaEngine
 		*/
 		void UpdateResourceBindings();
 
+		/*
+		* Creates a Descriptor Set suitable for Draw Arg Storage, all Draw Arg Descriptor Sets have the same bindings
+		* The caller has the responsibility of calling RenderGraph::ReleaseDrawArgDescriptorSet on Release
+		*/
+		DescriptorSet* CreateDrawArgDescriptorSet(DescriptorSet* pSrc);
+		DescriptorSet* CreateDrawArgExtensionDataDescriptorSet(DescriptorSet* pSrc);
+
+		void DrawArgDescriptorSetQueueForRelease(DescriptorSet* pDrawArgDescriptorSet);
 
 		/*
 		* Executes the RenderGraph, goes through each Render Stage and Synchronization Stage and executes them.
@@ -421,9 +427,18 @@ namespace LambdaEngine
 		bool CreateCopyCommandLists();
 		bool CreateProfiler(uint32 pipelineStageCount);
 		bool CreateResources(const TArray<RenderGraphResourceDesc>& resourceDescriptions);
-		bool CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<CustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
-		bool CreateSynchronizationStages(const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
+		
+		bool CreateRenderStages(
+			const TArray<RenderStageDesc>& renderStages, 
+			const THashTable<String, RenderGraphShaderConstants>& shaderConstants, 
+			const TArray<CustomRenderer*>& customRenderers, 
+			TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
+		
+		bool CreateSynchronizationStages(
+			const TArray<SynchronizationStageDesc>& synchronizationStageDescriptions, 
+			TSet<DrawArgMaskDesc>& requiredDrawArgMasks);
 		bool CreatePipelineStages(const TArray<PipelineStageDesc>& pipelineStageDescriptions);
+		bool CreateDrawArgConfiguration();
 		bool CustomRenderStagesPostInit();
 
 		void UpdateRelativeParameters();
@@ -437,20 +452,44 @@ namespace LambdaEngine
 		void UpdateRelativeResourceDimensions(InternalResourceUpdateDesc* pResourceUpdateDesc);
 
 		void ExecuteSynchronizationStage(
-			SynchronizationStage* pSynchronizationStage, 
+			SynchronizationStage* pSynchronizationStage,
+			CommandAllocator* pGraphicsCommandAllocator,
+			CommandList* pGraphicsCommandList,
+			CommandAllocator* pComputeCommandAllocator,
+			CommandList* pComputeCommandList,
+			CommandList** ppFirstExecutionStage,
+			CommandList** ppSecondExecutionStage);
+		
+		void ExecuteGraphicsRenderStage(
+			RenderStage* pRenderStage, 
 			CommandAllocator* pGraphicsCommandAllocator, 
 			CommandList* pGraphicsCommandList, 
+			CommandList** ppExecutionStage);
+		
+		void ExecuteComputeRenderStage(
+			RenderStage* pRenderStage, 
 			CommandAllocator* pComputeCommandAllocator, 
 			CommandList* pComputeCommandList, 
-			CommandList** ppFirstExecutionStage, 
-			CommandList** ppSecondExecutionStage);
-		void ExecuteGraphicsRenderStage(RenderStage* pRenderStage, CommandAllocator* pGraphicsCommandAllocator, CommandList* pGraphicsCommandList, CommandList** ppExecutionStage);
-		void ExecuteComputeRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
-		void ExecuteRayTracingRenderStage(RenderStage* pRenderStage, CommandAllocator* pComputeCommandAllocator, CommandList* pComputeCommandList, CommandList** ppExecutionStage);
+			CommandList** ppExecutionStage);
+
+		void ExecuteRayTracingRenderStage(
+			RenderStage* pRenderStage, 
+			CommandAllocator* pComputeCommandAllocator, 
+			CommandList* pComputeCommandList, 
+			CommandList** ppExecutionStage);
 
 		// Helpers
-		void PipelineTextureBarriers(CommandList* pCommandList, const TArray<PipelineTextureBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage);
-		void PipelineBufferBarriers(CommandList* pCommandList, const TArray<PipelineBufferBarrierDesc>& textureBarriers, FPipelineStageFlags srcPipelineStage, FPipelineStageFlags dstPipelineStage);
+		void PipelineTextureBarriers(
+			CommandList* pCommandList, 
+			const TArray<PipelineTextureBarrierDesc>& textureBarriers, 
+			FPipelineStageFlags srcPipelineStage, 
+			FPipelineStageFlags dstPipelineStage);
+
+		void PipelineBufferBarriers(
+			CommandList* pCommandList, 
+			const TArray<PipelineBufferBarrierDesc>& textureBarriers, 
+			FPipelineStageFlags srcPipelineStage, 
+			FPipelineStageFlags dstPipelineStage);
 
 	private:
 		const GraphicsDevice*							m_pGraphicsDevice;
@@ -489,6 +528,7 @@ namespace LambdaEngine
 		uint32											m_RenderStageCount					= 0;
 		TSet<uint32>									m_WindowRelativeRenderStages;		// Contains Render Stage Indices that have Dimension Variables that depend on the current Window Size
 		TArray<SBTRecord>								m_GlobalShaderRecords;
+		TArray<uint32>									m_GlobalHitGroupIndices;
 
 		SynchronizationStage*							m_pSynchronizationStages			= nullptr;
 		uint32											m_SynchronizationStageCount			= 0;
@@ -509,5 +549,22 @@ namespace LambdaEngine
 		TArray<DeviceChild*>*							m_pDeviceResourcesToDestroy;
 
 		TArray<IRenderGraphCreateHandler*>				m_CreateHandlers;
+
+		struct
+		{
+			PipelineLayout* pDrawArgPipelineLayout			= nullptr;
+
+			uint32 DrawArgSetIndex							= UINT32_MAX;
+			uint32 DrawArgExtensionDataSetIndex				= UINT32_MAX;
+
+			void Release()
+			{
+				SAFERELEASE(pDrawArgPipelineLayout);
+
+				DrawArgSetIndex					= UINT32_MAX;
+				DrawArgExtensionDataSetIndex	= UINT32_MAX;
+			}
+
+		} m_DrawArgConfiguration;
 	};
 }

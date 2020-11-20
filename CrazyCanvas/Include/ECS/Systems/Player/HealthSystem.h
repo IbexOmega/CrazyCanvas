@@ -14,13 +14,8 @@
 class HealthSystem : public LambdaEngine::System
 {
 public:
-	HealthSystem() = default;
-	~HealthSystem() = default;
-
-	virtual void ResetEntityHealth(LambdaEngine::Entity entityToReset)
-	{
-		UNREFERENCED_VARIABLE(entityToReset);
-	}
+	HealthSystem()	= default;
+	~HealthSystem()	= default;
 
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final
 	{
@@ -30,10 +25,13 @@ public:
 	virtual void FixedTick(LambdaEngine::Timestamp deltaTime) = 0;
 
 protected:
-	virtual bool InitInternal();
+	virtual bool InitInternal() = 0;
+
+	void CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg);
 
 public:
 	static bool Init();
+	static void Release();
 
 	FORCEINLINE static HealthSystem& GetInstance() 
 	{ 
@@ -44,6 +42,6 @@ public:
 protected:
 	LambdaEngine::IDVector m_HealthEntities;
 
-private:
+protected:
 	static LambdaEngine::TUniquePtr<HealthSystem> s_Instance;
 };

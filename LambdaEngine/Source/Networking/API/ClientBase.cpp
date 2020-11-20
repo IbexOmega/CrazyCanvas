@@ -26,7 +26,8 @@ namespace LambdaEngine
 		m_ReceivedPackets(),
 		m_BufferIndex(0),
 		m_Lock(),
-		m_LockReceivedPackets()
+		m_LockReceivedPackets(),
+		m_Reason()
 	{
 		std::scoped_lock<SpinLock> lock(s_Lock);
 		s_Clients.insert(this);
@@ -222,7 +223,13 @@ namespace LambdaEngine
 	void ClientBase::DecodeReceivedPackets()
 	{
 		TArray<NetworkSegment*> packets;
-		GetPacketManager()->QueryBegin(GetTransceiver(), packets);
+		bool hasDiscardedResends = false;
+		if (!GetPacketManager()->QueryBegin(GetTransceiver(), packets, hasDiscardedResends))
+		{
+			m_SendDisconnectPacket = false;
+			Disconnect("Receive Error");
+			return;
+		}
 
 		std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
 		for (NetworkSegment* pPacket : packets)
@@ -274,6 +281,12 @@ namespace LambdaEngine
 			m_pHandler->OnServerFull(this);
 			Disconnect("Server Full");
 		}
+		else if (packetType == NetworkSegment::TYPE_SERVER_NOT_ACCEPTING)
+		{
+			m_SendDisconnectPacket = false;
+			m_pHandler->OnServerNotAccepting(this);
+			Disconnect("Server Currently Not Accepting");
+		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
 			BinaryDecoder decoder(pPacket);
@@ -285,7 +298,6 @@ namespace LambdaEngine
 		}
 		else
 		{
-			ASSERT(pPacket->GetBufferSize() > 0);
 			m_ReceivedPackets[m_BufferIndex].PushBack(pPacket);
 			return true;
 		}
@@ -330,14 +342,15 @@ namespace LambdaEngine
 		LOG_INFO("[ClientBase]: Disconnected");
 		m_State = STATE_DISCONNECTED;
 		if (m_pHandler)
-			m_pHandler->OnDisconnected(this);
+			m_pHandler->OnDisconnected(this, m_Reason);
 	}
 
 	void ClientBase::OnTerminationRequested(const std::string& reason)
 	{
 		LOG_WARNING("[ClientBase]: Disconnecting... [%s]", reason.c_str());
 		m_State = STATE_DISCONNECTING;
-		m_pHandler->OnDisconnecting(this);
+		m_Reason = reason;
+		m_pHandler->OnDisconnecting(this, reason);
 
 		if (m_SendDisconnectPacket)
 			SendDisconnect();

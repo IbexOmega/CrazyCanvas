@@ -1,21 +1,29 @@
 #pragma once
 #include "Event.h"
 
+#include "Utilities/HashUtilities.h"
+
 namespace LambdaEngine
 {
 	/*
 	* IEventHandler
 	*/
+	
 	class IEventHandler
 	{
 	public:
 		virtual ~IEventHandler() = default;
+
 		virtual bool Execute(const Event& event) = 0;
+		
+		virtual uint64 GetHash() const		= 0;
+		virtual const void*	GetPtr() const	= 0;
 	};
 
 	/*
 	* FunctionEventHandler
 	*/
+
 	template<typename TEvent>
 	class FunctionEventHandler : public IEventHandler
 	{
@@ -33,13 +41,25 @@ namespace LambdaEngine
 			return m_pFunc(static_cast<const TEvent&>(event));
 		}
 
+		virtual uint64 GetHash() const override final
+		{
+			std::hash<const void*> hasher;
+			return hasher(reinterpret_cast<const void*>(m_pFunc));
+		}
+
+		virtual const void* GetPtr() const override final
+		{
+			return reinterpret_cast<const void*>(m_pFunc);
+		}
+
 	private:
-		Func m_pFunc;
+		Func m_pFunc = nullptr;
 	};
 
 	/*
 	* MemberEventHandler
 	*/
+
 	template<typename T, typename TEvent>
 	class MemberEventHandler : public IEventHandler
 	{
@@ -55,9 +75,19 @@ namespace LambdaEngine
 
 		virtual bool Execute(const Event& event) override final
 		{
-			constexpr auto size = sizeof(MemberFunc);
 			VALIDATE(m_pThis != nullptr);
 			return ((*m_pThis).*(m_pFunc))(static_cast<const TEvent&>(event));
+		}
+
+		virtual uint64 GetHash() const override final
+		{
+			size_t hash = typeid(MemberFunc).hash_code();
+			return HashCombine(hash, m_pThis);
+		}
+
+		virtual const void* GetPtr() const override final
+		{
+			return reinterpret_cast<const void*>(m_pThis);
 		}
 
 	private:
@@ -66,8 +96,9 @@ namespace LambdaEngine
 	};
 
 	/*
-	* EventHandlerProxy
+	* EventHandler
 	*/
+
 	class EventHandler
 	{
 	public:
@@ -78,8 +109,9 @@ namespace LambdaEngine
 		{
 			constexpr auto stackSize	= sizeof(m_StackBuffer);
 			constexpr auto handlerSize	= sizeof(FunctionEventHandler<TEvent>);
-
 			static_assert(handlerSize <= stackSize);
+
+			ZERO_MEMORY(m_StackBuffer, stackSize);
 
 			// Placement new is needed to fully initialize vtable
 			new(reinterpret_cast<void*>(m_StackBuffer)) FunctionEventHandler<TEvent>(pFunc);
@@ -93,8 +125,9 @@ namespace LambdaEngine
 		{
 			constexpr auto stackSize	= sizeof(m_StackBuffer);
 			constexpr auto handlerSize	= sizeof(MemberEventHandler<T, TEvent>);
-
 			static_assert(handlerSize <= stackSize);
+
+			ZERO_MEMORY(m_StackBuffer, stackSize);
 
 			// Placement new is needed to fully initialize vtable
 			new(reinterpret_cast<void*>(m_StackBuffer)) MemberEventHandler<T, TEvent>(pThis, pMemberFunc);
@@ -146,7 +179,19 @@ namespace LambdaEngine
 
 		FORCEINLINE bool operator==(const EventHandler& other) const
 		{
-			return (memcmp(m_StackBuffer, other.m_StackBuffer, sizeof(m_StackBuffer)) == 0);
+			const uint64 hash0 = m_pEventHandler->GetHash();
+			const uint64 hash1 = other.m_pEventHandler->GetHash();
+			
+			if (hash0 == hash1)
+			{
+				const void* pPtr0 = m_pEventHandler->GetPtr();
+				const void* pPtr1 = other.m_pEventHandler->GetPtr();
+				return pPtr0 == pPtr1;
+			}
+			else
+			{
+				return false;
+			}
 		}
 
 	private:

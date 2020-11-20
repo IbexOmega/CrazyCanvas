@@ -4,6 +4,7 @@
 #include "Time/API/Timestamp.h"
 
 #include "Rendering/Core/API/GraphicsTypes.h"
+#include "Containers/String.h"
 
 namespace LambdaEngine
 {
@@ -13,6 +14,7 @@ namespace LambdaEngine
 	class CommandAllocator;
 	class CommandList;
 	class TextureView;
+	class Sampler;
 	class Buffer;
 	class AccelerationStructure;
 	struct DrawArg;
@@ -73,6 +75,7 @@ namespace LambdaEngine
 			const String& resourceName,
 			const TextureView* const* ppPerImageTextureViews,
 			const TextureView* const* ppPerSubImageTextureViews,
+			const Sampler* const* ppPerImageSamplers,
 			uint32 imageCount,
 			uint32 subImageCount,
 			bool backBufferBound)
@@ -80,6 +83,7 @@ namespace LambdaEngine
 			UNREFERENCED_VARIABLE(resourceName);
 			UNREFERENCED_VARIABLE(ppPerImageTextureViews);
 			UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
+			UNREFERENCED_VARIABLE(ppPerImageSamplers);
 			UNREFERENCED_VARIABLE(imageCount);
 			UNREFERENCED_VARIABLE(subImageCount);
 			UNREFERENCED_VARIABLE(backBufferBound);
@@ -117,7 +121,7 @@ namespace LambdaEngine
 		*/
 		virtual void UpdateAccelerationStructureResource(
 			const String& resourceName,
-			const AccelerationStructure* pAccelerationStructure)
+			const AccelerationStructure* const* pAccelerationStructure)
 		{
 			UNREFERENCED_VARIABLE(resourceName);
 			UNREFERENCED_VARIABLE(pAccelerationStructure);

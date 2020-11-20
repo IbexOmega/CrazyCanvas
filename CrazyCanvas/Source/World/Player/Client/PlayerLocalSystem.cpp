@@ -3,9 +3,6 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
-#include "Game/ECS/Components/Physics/Transform.h"
-#include "Game/ECS/Components/Physics/Collision.h"
-#include "Game/ECS/Components/Networking/NetworkPositionComponent.h"
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 
@@ -27,6 +24,8 @@
 
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
+
+#include "World/Player/Client/PlayerSoundHelper.h"
 
 #define EPSILON 0.01f
 
@@ -81,64 +80,65 @@ void PlayerLocalSystem::SendGameState(const PlayerGameState& gameState, Entity e
 	PacketPlayerAction packet		= {};
 	packet.SimulationTick	= gameState.SimulationTick;
 	packet.Rotation			= gameState.Rotation;
-	packet.DeltaForward		= gameState.DeltaForward;
-	packet.DeltaLeft		= gameState.DeltaLeft;
+	packet.DeltaAction		= gameState.DeltaAction;
+	packet.Walking			= gameState.Walking;
 
 	pPacketComponent.SendPacket(packet);
 }
 
-void PlayerLocalSystem::TickLocalPlayerAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
+void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, PlayerGameState* pGameState)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	float32 dt = (float32)deltaTime.AsSeconds();
 
-	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-	ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-	ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+	CharacterColliderComponent& characterColliderComponent		= pECS->GetComponent<CharacterColliderComponent>(entityPlayer);
+	const NetworkPositionComponent& networkPositionComponent	= pECS->GetConstComponent<NetworkPositionComponent>(entityPlayer);
+	VelocityComponent& velocityComponent						= pECS->GetComponent<VelocityComponent>(entityPlayer);
+	const PositionComponent& positionComponent					= pECS->GetConstComponent<PositionComponent>(entityPlayer);
+	const RotationComponent& rotationComponent					= pECS->GetConstComponent<RotationComponent>(entityPlayer);
+	AudibleComponent& audibleComponent							= pECS->GetComponent<AudibleComponent>(entityPlayer);
 
-	const NetworkPositionComponent& netPosComponent = pNetPosComponents->GetConstData(entityPlayer);
-	const VelocityComponent& velocityComponent = pVelocityComponents->GetConstData(entityPlayer);
-	const PositionComponent& positionComponent = pPositionComponents->GetConstData(entityPlayer);
-
-	NetworkPositionComponent& mutableNetPosComponent = const_cast<NetworkPositionComponent&>(netPosComponent);
+	NetworkPositionComponent& mutableNetPosComponent = const_cast<NetworkPositionComponent&>(networkPositionComponent);
 	mutableNetPosComponent.PositionLast = positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
 	mutableNetPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 
-	DoAction(deltaTime, entityPlayer, pGameState);
+	DoAction(dt, velocityComponent, audibleComponent, characterColliderComponent, rotationComponent, pGameState);
 
-	CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+	CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, networkPositionComponent, velocityComponent);
 
-	pGameState->Position = netPosComponent.Position;
+	pGameState->Position = networkPositionComponent.Position;
 	pGameState->Velocity = velocityComponent.Velocity;
 }
 
-void PlayerLocalSystem::DoAction(Timestamp deltaTime, Entity entityPlayer, PlayerGameState* pGameState)
+void PlayerLocalSystem::DoAction(
+	float32 dt,
+	LambdaEngine::VelocityComponent& velocityComponent,
+	LambdaEngine::AudibleComponent& audibleComponent,
+	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
+	const LambdaEngine::RotationComponent& rotationComponent,
+	PlayerGameState* pGameState)
 {
-	UNREFERENCED_VARIABLE(deltaTime);
+	physx::PxControllerState playerControllerState;
+	characterColliderComponent.pController->getState(playerControllerState);
+	bool inAir = playerControllerState.touchedShape == nullptr;
 
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	glm::i8vec2 deltaVelocity =
+	glm::i8vec3 deltaAction =
 	{
-		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),		// X: Right
-		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD) - InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD))	// Y: Forward
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),			// X: Right
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_JUMP)) * int8(!inAir),													// Y: Up
+		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD) - InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD)),	// Z: Forward
 	};
 
-	const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
-	ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
+	bool walking = InputActionSystem::IsActive(EAction::ACTION_MOVE_WALK);
 
-	const RotationComponent& rotationComponent = pRotationComponents->GetConstData(entityPlayer);
-	VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
+	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity);
+	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, deltaAction, walking, inAir);
 
-	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaVelocity.x, deltaVelocity.y, velocityComponent.Velocity);
-
-	pGameState->DeltaForward = deltaVelocity.x;
-	pGameState->DeltaLeft = deltaVelocity.y;
-	pGameState->Rotation = rotationComponent.Quaternion;
+	pGameState->DeltaAction		= deltaAction;
+	pGameState->Walking			= walking;
+	pGameState->Rotation		= rotationComponent.Quaternion;
 }
 
-void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
+void PlayerLocalSystem::PlaySimulationTick(float32 dt, PlayerGameState& clientState)
 {
 	UNREFERENCED_VARIABLE(dt);
 
@@ -151,7 +151,7 @@ void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, fl
 		const PacketComponent<PacketPlayerActionResponse>& pPacketComponent = pECS->GetComponent<PacketComponent<PacketPlayerActionResponse>>(localPlayerEntity);
 		RegisterServerGameStates(pPacketComponent.GetPacketsReceived());
 
-		TickLocalPlayerAction(deltaTime, localPlayerEntity, &clientState);
+		TickLocalPlayerAction(dt, localPlayerEntity, &clientState);
 
 		if (!MultiplayerUtils::IsSingleplayer())
 			SendGameState(clientState, localPlayerEntity);
@@ -161,25 +161,20 @@ void PlayerLocalSystem::PlaySimulationTick(LambdaEngine::Timestamp deltaTime, fl
 /*
 * Called when to replay a specific simulation tick
 */
-void PlayerLocalSystem::ReplayGameState(Timestamp deltaTime, float32 dt, PlayerGameState& clientState)
+void PlayerLocalSystem::ReplayGameState(float32 dt, PlayerGameState& clientState)
 {
-	UNREFERENCED_VARIABLE(deltaTime);
-
 	Entity entityPlayer = m_Entities[0];
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	ComponentArray<CharacterColliderComponent>* pCharacterColliderComponents = pECS->GetComponentArray<CharacterColliderComponent>();
-	ComponentArray<NetworkPositionComponent>* pNetPosComponents = pECS->GetComponentArray<NetworkPositionComponent>();
-	ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
-
-	NetworkPositionComponent& netPosComponent = pNetPosComponents->GetData(entityPlayer);
-	VelocityComponent& velocityComponent = pVelocityComponents->GetData(entityPlayer);
+	CharacterColliderComponent& characterColliderComponent	= pECS->GetComponent<CharacterColliderComponent>(entityPlayer);
+	NetworkPositionComponent& networkPositionComponent		= pECS->GetComponent<NetworkPositionComponent>(entityPlayer);
+	VelocityComponent& velocityComponent					= pECS->GetComponent<VelocityComponent>(entityPlayer);
 
 	/*
 	* Returns the velocity based on key presses
 	*/
-	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaForward, clientState.DeltaLeft, velocityComponent.Velocity);
+	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaAction, clientState.Walking, dt, velocityComponent.Velocity);
 
 	/*
 	* Sets the position of the PxController taken from the PositionComponent.
@@ -187,9 +182,9 @@ void PlayerLocalSystem::ReplayGameState(Timestamp deltaTime, float32 dt, PlayerG
 	* Calculates a new Velocity based on the difference of the last position and the new one.
 	* Sets the new position of the PositionComponent
 	*/
-	CharacterControllerHelper::TickCharacterController(dt, entityPlayer, pCharacterColliderComponents, pNetPosComponents, pVelocityComponents);
+	CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, networkPositionComponent, velocityComponent);
 
-	clientState.Position = netPosComponent.Position;
+	clientState.Position = networkPositionComponent.Position;
 	clientState.Velocity = velocityComponent.Velocity;
 }
 

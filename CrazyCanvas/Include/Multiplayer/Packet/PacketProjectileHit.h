@@ -10,5 +10,6 @@ struct PacketProjectileHit
 	uint8 Info = 0; // Bit 0-3: Team, Bit 4-7: Paint Mode
 	glm::vec3 Position;
 	glm::vec3 Direction;
+	uint32 Angle = 0;
 };
 #pragma pack(pop)

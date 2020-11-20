@@ -42,6 +42,8 @@ bool Match::CreateMatch(const MatchDescription* pDesc)
 		return false;
 	}
 
+	EventQueue::SendEvent<MatchInitializedEvent>(MatchInitializedEvent(pDesc->GameMode));
+
 	return true;
 }
 
@@ -51,25 +53,14 @@ bool Match::ResetMatch()
 	return false;
 }
 
-bool Match::ReleaseMatch()
+void Match::StartMatch()
 {
-	return false;
+	s_pMatchInstance->MatchStart();
 }
 
-void Match::KillPlayer(LambdaEngine::Entity playerEntity)
+void Match::BeginLoading()
 {
-	using namespace LambdaEngine;
-
-	// Get player position at time of death
-	ECSCore* pECS = ECSCore::GetInstance();
-	const PositionComponent& positionComp = pECS->GetConstComponent<PositionComponent>(playerEntity);
-	const glm::vec3 position = positionComp.Position;
-
-	// Send event to notify other systems
-	PlayerDiedEvent diedEvent(playerEntity, position);
-	EventQueue::SendEventImmediate(diedEvent);
-
-	s_pMatchInstance->KillPlayer(playerEntity);
+	s_pMatchInstance->BeginLoading();
 }
 
 void Match::Tick(LambdaEngine::Timestamp deltaTime)

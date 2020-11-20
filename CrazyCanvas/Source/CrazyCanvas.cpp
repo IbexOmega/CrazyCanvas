@@ -3,10 +3,17 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "Game/Multiplayer/Server/ServerSystem.h"
+
 #include "Resources/ResourceManager.h"
-#include "Rendering/EntityMaskManager.h"
+#include "Resources/ResourceCatalog.h"
+
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
+#include "Rendering/EntityMaskManager.h"
+
+#include "RenderStages/PaintMaskRenderer.h"
 #include "RenderStages/PlayerRenderer.h"
 #include "RenderStages/Projectiles/ProjectileRenderer.h"
 #include "States/BenchmarkState.h"
@@ -21,18 +28,24 @@
 
 #include "Teams/TeamHelper.h"
 
-#include "Multiplayer/ServerHostHelper.h"
-
-#include "Game/Multiplayer/Client/ClientSystem.h"
-#include "Game/Multiplayer/Server/ServerSystem.h"
-
 #include "Engine/EngineConfig.h"
+
+#include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
+#include "ECS/Components/Player/WeaponComponent.h"
+
+#include "Multiplayer/Packet/PacketType.h"
+
+#include "Lobby/PlayerManagerClient.h"
+#include "Lobby/PlayerManagerServer.h"
+
+#include "Chat/ChatManager.h"
 
 #include "GUI/CountdownGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
+#include "GUI/EnemyHitIndicatorGUI.h"
+#include "GUI/GameOverGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
-
 #include "GUI/Core/GUIApplication.h"
 
 #include <rapidjson/document.h>
@@ -45,12 +58,36 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 {
 	using namespace LambdaEngine;
 
+	constexpr const char* pGameName = "Crazy Canvas";
+	constexpr const char* pDefaultStateStr = "crazycanvas";
+	State* pStartingState = nullptr;
+	String stateStr;
+
+	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
+
+	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
+	{
+		ClientSystem::Init(pGameName);
+	}
+	else if (stateStr == "server")
+	{
+		ServerSystem::Init(pGameName);
+	}
+
+	if (!ResourceCatalog::Init())
+	{
+		LOG_ERROR("Failed to Load Resource Catalog Resources");
+	}
+
 	if (!RegisterGUIComponents())
 	{
 		LOG_ERROR("Failed to Register GUI Components");
 	}
 
-	ServerHostHelper::Init();
+	if (!BindComponentTypeMasks())
+	{
+		LOG_ERROR("Failed to bind Component Type Masks");
+	}
 
 	if (!LevelManager::Init())
 	{
@@ -62,62 +99,44 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Team Helper Init Failed");
 	}
 
-	EntityMaskManager::BindTypeToExtensionDesc(ProjectileComponent::Type(), { 0 }, false);
-	EntityMaskManager::Finalize();
+	PacketType::Init();
+	PacketTranscoderSystem::GetInstance().Init();
 
 	RenderSystem& renderSystem = RenderSystem::GetInstance();
 	renderSystem.AddCustomRenderer(DBG_NEW PlayerRenderer());
 	renderSystem.AddCustomRenderer(DBG_NEW ProjectileRenderer(RenderAPI::GetDevice()));
+	renderSystem.AddCustomRenderer(DBG_NEW PaintMaskRenderer());
 	renderSystem.InitRenderGraphs();
 
-	LoadRendererResources();
-
-	constexpr const char* pGameName = "Crazy Canvas";
-	constexpr const char* pDefaultStateStr = "crazycanvas";
-	constexpr const char* pDefaultIsHostStr = "";
-	State* pStartingState = nullptr;
-	String stateStr;
-
-	String AuthenticationIDStr; // Used on server To Identify Host(Client transmits HostID)
-	String clientHostIDStr; // Used on Client To Identify Host(Server transmits HostID)
-
-	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
-
-	if (stateStr == "server")
-	{
-		flagParser(1, pDefaultIsHostStr) >> clientHostIDStr;
-
-		flagParser(2, pDefaultIsHostStr) >> AuthenticationIDStr;
-	}
+	InitRendererResources();
 
 	if (stateStr == "crazycanvas")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW MainMenuState();
 	}
 	else if (stateStr == "sandbox")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW SandboxState();
-	}
-	else if (stateStr == "client")
-	{
-		ClientSystem::Init(pGameName);
-		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
-		pStartingState = DBG_NEW PlaySessionState(false, IPEndPoint(NetworkUtils::GetLocalAddress(), port));
 	}
 	else if (stateStr == "server")
 	{
-		ServerSystem::Init(pGameName);
-		pStartingState = DBG_NEW ServerState(clientHostIDStr, AuthenticationIDStr);
+		String clientHostIDStr;
+		flagParser(1, "") >> clientHostIDStr;
+		pStartingState = DBG_NEW ServerState(clientHostIDStr);
 	}
 	else if (stateStr == "benchmark")
 	{
-		ClientSystem::Init(pGameName);
 		pStartingState = DBG_NEW BenchmarkState();
 	}
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
+
+	if(MultiplayerUtils::IsServer())
+		PlayerManagerServer::Init();
+	else
+		PlayerManagerClient::Init();
+
+	ChatManager::Init();
 }
 
 CrazyCanvas::~CrazyCanvas()
@@ -126,6 +145,10 @@ CrazyCanvas::~CrazyCanvas()
 	{
 		LOG_ERROR("Level Manager Release Failed");
 	}
+
+	ChatManager::Release();
+	PlayerManagerBase::Release();
+	PacketType::Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -133,8 +156,11 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 	Render(delta);
 }
 
-void CrazyCanvas::FixedTick(LambdaEngine::Timestamp)
-{}
+void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
+{
+	if (LambdaEngine::MultiplayerUtils::IsServer())
+		PlayerManagerServer::FixedTick(delta);
+}
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)
 {}
@@ -150,50 +176,46 @@ namespace LambdaEngine
 bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
+	Noesis::RegisterComponent<GameOverGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
+	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
 	return true;
 }
 
-bool CrazyCanvas::LoadRendererResources()
+bool CrazyCanvas::InitRendererResources()
 {
 	using namespace LambdaEngine;
 
 	// For Skybox RenderGraph
 	{
-		String skybox[]
-		{
-			"Skybox/px.png",
-			"Skybox/nx.png",
-			"Skybox/py.png",
-			"Skybox/ny.png",
-			"Skybox/pz.png",
-			"Skybox/nz.png"
-		};
+		// Test Skybox
+		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
+			"Skybox/daytime.hdr",
+			EFormat::FORMAT_R16G16B16A16_SFLOAT,
+			768,
+			false);
 
-		GUID_Lambda cubemapTexID = ResourceManager::LoadCubeTexturesArrayFromFile("Cubemap Texture", skybox, 1, EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
-
-		Texture* pCubeTexture			= ResourceManager::GetTexture(cubemapTexID);
-		TextureView* pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
-		Sampler* pNearestSampler		= Sampler::GetNearestSampler();
+		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
+		TextureView*	pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
+		Sampler*		pLinearSampler		= Sampler::GetLinearSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};
-		cubeTextureUpdateDesc.ResourceName							= "SKYBOX";
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures		= &pCubeTexture;
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews	= &pCubeTextureView;
-		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pNearestSampler;
+		cubeTextureUpdateDesc.ResourceName										= "SKYBOX";
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextures					= &pCubeTexture;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppTextureViews				= &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews	= &pCubeTextureView;
+		cubeTextureUpdateDesc.ExternalTextureUpdate.ppSamplers					= &pLinearSampler;
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
 	// For Mesh painting in RenderGraph
 	{
-		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV3.png", EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
-
-		Texture* pTexture = ResourceManager::GetTexture(brushMaskID);
-		TextureView* pTextureView = ResourceManager::GetTextureView(brushMaskID);
+		Texture* pTexture = ResourceManager::GetTexture(ResourceCatalog::BRUSH_MASK_GUID);
+		TextureView* pTextureView = ResourceManager::GetTextureView(ResourceCatalog::BRUSH_MASK_GUID);
 		Sampler* pNearestSampler = Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};
@@ -204,6 +226,18 @@ bool CrazyCanvas::LoadRendererResources()
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
+
+	return true;
+}
+
+bool CrazyCanvas::BindComponentTypeMasks()
+{
+	using namespace LambdaEngine;
+
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
+	EntityMaskManager::BindTypeToExtensionDesc(ProjectileComponent::Type(), { 0 }, false);	// Bit = 0x20
+
+	EntityMaskManager::Finalize();
 
 	return true;
 }

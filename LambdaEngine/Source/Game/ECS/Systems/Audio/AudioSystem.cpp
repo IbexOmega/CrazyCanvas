@@ -21,13 +21,6 @@ namespace LambdaEngine
 			systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 			{
 				{
-					.pSubscriber = &m_CameraEntities,
-					.ComponentAccesses =
-					{
-						{R, AudibleComponent::Type()}, {R, PositionComponent::Type()}, {R, CameraComponent::Type()}
-					}
-				},
-				{
 					.pSubscriber = &m_AudibleEntities,
 					.ComponentAccesses =
 					{
@@ -63,7 +56,6 @@ namespace LambdaEngine
 		ComponentArray<AudibleComponent>* pAudibleComponents		= pECS->GetComponentArray<AudibleComponent>();
 		const ComponentArray<PositionComponent>* pPositionComponents	= pECS->GetComponentArray<PositionComponent>();
 		const ComponentArray<RotationComponent>* pRotationComponents	= pECS->GetComponentArray<RotationComponent>();
-		const ComponentArray<CameraComponent>* pCameraComponents		= pECS->GetComponentArray<CameraComponent>();
 		ComponentArray<ListenerComponent>* pListenerComponents			= pECS->GetComponentArray<ListenerComponent>();
 
 		for (Entity entity : m_AudibleEntities)
@@ -71,11 +63,10 @@ namespace LambdaEngine
 			auto& audibleComponent = pAudibleComponents->GetData(entity);
 			auto& positionComponent = pPositionComponents->GetConstData(entity);
 
-			auto* pSoundInstance = audibleComponent.pSoundInstance;
-			pSoundInstance->SetPosition(positionComponent.Position);
-
-			pSoundInstance->Play();
-
+			for (auto soundInstancePair : audibleComponent.SoundInstances3D)
+			{
+				soundInstancePair.second->SetPosition(positionComponent.Position);
+			}
 		}
 
 		for (Entity entity : m_ListenerEntities)
@@ -89,35 +80,23 @@ namespace LambdaEngine
 
 			AudioAPI::GetDevice()->UpdateAudioListener(pListenerComponent.ListenerId, &pListenerComponent.Desc);
 		}
-
-		for (Entity entity : m_CameraEntities)
-		{
-			auto& audibleComponent = pAudibleComponents->GetData(entity);
-			auto& positionComponent = pPositionComponents->GetConstData(entity);
-			auto& cameraComponent = pCameraComponents->GetConstData(entity);
-
-			auto* pSoundInstance = audibleComponent.pSoundInstance;
-			pSoundInstance->SetPosition(positionComponent.Position);
-
-			bool isMoving = InputActionSystem::IsActive(EAction::ACTION_MOVE_FORWARD) ||
-				InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT) ||
-				InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) ||
-				InputActionSystem::IsActive(EAction::ACTION_MOVE_BACKWARD);
-
-			if (cameraComponent.IsActive && isMoving)
-			{
-				pSoundInstance->Play();
-			}
-			else
-			{
-				pSoundInstance->Pause();
-			}
-		}
 	}
 
 	void AudioSystem::AudibleComponentDestructor(AudibleComponent& audibleComponent, Entity entity)
 	{
 		UNREFERENCED_VARIABLE(entity);
-		SAFEDELETE(audibleComponent.pSoundInstance);
+
+		for (auto soundInstancePair : audibleComponent.SoundInstances3D)
+		{
+			SAFEDELETE(soundInstancePair.second);
+		}
+
+		for (auto soundInstancePair : audibleComponent.SoundInstances2D)
+		{
+			SAFEDELETE(soundInstancePair.second);
+		}
+
+		audibleComponent.SoundInstances3D.clear();
+		audibleComponent.SoundInstances2D.clear();
 	}
 }

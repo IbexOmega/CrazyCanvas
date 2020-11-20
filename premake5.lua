@@ -511,7 +511,7 @@ workspace "LambdaEngine"
 		filter {}
 	project "*"
 
-	-- CrazyCanvas, Sandbox, Client and Server are identical projects besides from their debugargs
+	-- CrazyCanvas, Sandbox and Server are identical projects besides from their debugargs
 	-- The variables beneath are used in all projects
 	prj_include_dirs =
 	{
@@ -555,6 +555,13 @@ workspace "LambdaEngine"
 		"ImGui",
 	}
 
+	prj_links_multiplayer =
+	{
+		"LambdaEngine",
+		"ImGui",
+		"Server",
+	}
+
 	-- CrazyCanvas Project
 	project "CrazyCanvas"
 		kind "WindowedApp"
@@ -578,7 +585,7 @@ workspace "LambdaEngine"
 		-- We do not want to compile HLSL files
 		excludes { prj_excludes }
 		-- Linking
-		links { prj_links }
+		links { prj_links_multiplayer }
 
 	project "*"
 
@@ -595,33 +602,6 @@ workspace "LambdaEngine"
 		objdir ("Build/bin-int/" .. outputdir .. "/CrazyCanvas")
 
 		debugargs { "--state=sandbox" }
-
-		--Includes
-		includedirs { prj_include_dirs }
-		sysincludedirs { prj_sys_include_dirs }
-
-		-- Files
-		files { prj_files }
-		-- We do not want to compile HLSL files
-		excludes { prj_excludes }
-		-- Linking
-		links { prj_links }
-
-	project "*"
-
-	-- Client Project
-	project "Client"
-		kind "WindowedApp"
-		language "C++"
-		cppdialect "C++latest"
-		systemversion "latest"
-		location "CrazyCanvas"
-
-		-- Targets
-		targetdir ("Build/bin/" .. outputdir .. "/CrazyCanvas")
-		objdir ("Build/bin-int/" .. outputdir .. "/CrazyCanvas")
-
-		debugargs { "--state=client" }
 
 		--Includes
 		includedirs { prj_include_dirs }
@@ -653,6 +633,12 @@ workspace "LambdaEngine"
 		--Includes
 		includedirs { prj_include_dirs }
 		sysincludedirs { prj_sys_include_dirs }
+
+		-- defines
+		defines
+		{
+			"BUILD_SERVER"
+		}
 
 		-- Files
 		files { prj_files }
