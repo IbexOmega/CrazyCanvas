@@ -6,6 +6,7 @@
 #include "World/LevelObjectCreator.h"
 #include "World/LevelManager.h"
 #include "World/Level.h"
+#include "World/Player/PlayerActionSystem.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -20,6 +21,8 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
 #include "Lobby/PlayerManagerClient.h"
+
+#include "Input/API/Input.h"
 
 #include "Events/MatchEvents.h"
 
@@ -42,6 +45,8 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+
+	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &MatchClient::OnPlayerAliveUpdated);
 }
 
 bool MatchClient::InitInternal()
@@ -60,6 +65,9 @@ bool MatchClient::InitInternal()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+
+	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &MatchClient::OnPlayerAliveUpdated);
+
 
 	m_CountdownSoundEffects[4] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/five.wav");
 	m_CountdownSoundEffects[3] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/four.wav");
@@ -263,6 +271,43 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
 
 	return true;
+}
+
+bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
+{
+	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+
+
+	if (PlayerManagerClient::GetPlayerLocal()->IsDead())
+	{
+		if (currentInputLayer == EInputLayer::GUI)
+		{
+			Input::PopInputMode();
+			Input::PushInputMode(EInputLayer::DEAD);
+			Input::PushInputMode(EInputLayer::GUI);
+		}
+		else
+			Input::PushInputMode(EInputLayer::DEAD);
+		
+		//LambdaEngine::CommonApplication::Get()->SetMouseVisibility(true);
+		//PlayerActionSystem::SetMouseEnabled(false);
+	}
+	else
+	{
+		if (currentInputLayer == EInputLayer::GUI)
+		{
+			Input::PopInputMode();
+			Input::PushInputMode(EInputLayer::GAME);
+			Input::PushInputMode(EInputLayer::GUI);
+		}
+		else
+			Input::PushInputMode(EInputLayer::GAME);
+
+		//LambdaEngine::CommonApplication::Get()->SetMouseVisibility(false);
+		//PlayerActionSystem::SetMouseEnabled(true);
+	}
+
+	return false;
 }
 
 bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)

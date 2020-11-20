@@ -161,7 +161,9 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 void HUDGUI::ToggleEscapeMenu()
 {
-	if (Input::GetCurrentInputmode() == EInputLayer::GAME)
+	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+
+	if ((currentInputLayer == EInputLayer::GAME) || (currentInputLayer == EInputLayer::DEAD))
 	{
 		Input::PushInputMode(EInputLayer::GUI);
 		m_MouseEnabled = !m_MouseEnabled;
@@ -170,7 +172,7 @@ void HUDGUI::ToggleEscapeMenu()
 		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Visible);
 		m_ContextStack.push(m_pEscapeGrid);
 	}
-	else if (Input::GetCurrentInputmode() == EInputLayer::GUI)
+	else if (currentInputLayer == EInputLayer::GUI)
 	{
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);

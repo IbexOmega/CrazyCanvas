@@ -14,11 +14,11 @@
 
 class Player;
 
-class CameraChangeSystem : public LambdaEngine::System
+class SpectateCameraSystem : public LambdaEngine::System
 {
 public:
-	CameraChangeSystem() = default;
-	~CameraChangeSystem();
+	SpectateCameraSystem() = default;
+	~SpectateCameraSystem();
 	
 	void Init();
 
@@ -32,9 +32,20 @@ protected:
 	LambdaEngine::IDVector m_PlayerEntities;
 	LambdaEngine::IDVector m_CameraEntities;
 
+
 private:
+	int8 SpectatePlayer(int8 spectateIndex);
+
+	void ResetCamera();
+
+private:
+
+
+
 	uint8 m_LocalTeamIndex;
 
 	int8 m_SpectatorIndex = 0;
+
+	bool m_InSpectateView = false;
 
 };

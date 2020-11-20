@@ -17,6 +17,7 @@ namespace LambdaEngine
 		GUI		= 0,
 		GAME	= 1,
 		DEBUG	= 2,
+		DEAD	= 3,
 		NONE	= UINT8_MAX,
 	};
 
@@ -86,8 +87,8 @@ namespace LambdaEngine
 
 	private:
 		// Input states are double buffered. The first one is read from, the second is written to.
-		static KeyboardState s_KeyboardStates[3][3];
-		static MouseState s_MouseStates[3][3];
+		static KeyboardState s_KeyboardStates[4][4];
+		static MouseState s_MouseStates[4][4];
 
 		// Make sure nothing is being written to the write buffer when copying write buffer to read buffer in Input::Tick
 		static SpinLock s_WriteBufferLockMouse;

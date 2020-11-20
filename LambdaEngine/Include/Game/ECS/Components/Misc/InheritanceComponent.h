@@ -14,6 +14,12 @@ namespace LambdaEngine
 		bool	Attached;
 	};
 
+	struct StepParentComponent
+	{
+		DECL_COMPONENT(StepParentComponent);
+		Entity	Owner;
+	};
+
 	struct ChildComponent
 	{
 		DECL_COMPONENT(ParentComponent);
