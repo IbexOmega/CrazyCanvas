@@ -58,6 +58,7 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 		m_pPointsBuffer->Unmap();
 
 		m_PreviousPointsSize = 0;
+		m_ResetPointBuffer = false;
 		transferMemory = true;
 	}
 
