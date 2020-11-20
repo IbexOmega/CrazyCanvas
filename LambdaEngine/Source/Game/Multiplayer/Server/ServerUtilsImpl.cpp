@@ -16,22 +16,24 @@ namespace LambdaEngine
 
 	Entity ServerUtilsImpl::GetEntity(int32 networkUID) const
 	{
-		return (Entity)networkUID;
+		auto entityIt = m_Entities.find(Entity(networkUID));
+		return entityIt == m_Entities.end() ? UINT32_MAX : *entityIt;
 	}
 
 	int32 ServerUtilsImpl::GetNetworkUID(Entity entity) const
 	{
-		return (int32)entity;
+		auto entityIt = m_Entities.find(entity);
+		return entityIt == m_Entities.end() ? UINT32_MAX : int32(*entityIt);
 	}
 
 	void ServerUtilsImpl::RegisterEntity(Entity entity, int32 networkUID)
 	{
-		UNREFERENCED_VARIABLE(entity);
 		UNREFERENCED_VARIABLE(networkUID);
+		VALIDATE(m_Entities.insert(entity).second);
 	}
 
 	void ServerUtilsImpl::UnregisterEntity(Entity entity)
 	{
-		UNREFERENCED_VARIABLE(entity);
+		m_Entities.erase(entity);
 	}
 }

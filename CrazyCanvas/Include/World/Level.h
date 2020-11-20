@@ -40,6 +40,7 @@ public:
 	bool RegisterObjectDeletion(LambdaEngine::Entity entity);
 
 	LambdaEngine::TArray<LambdaEngine::Entity> GetEntities(ELevelObjectType levelObjectType);
+	ELevelObjectType GetLevelObjectType(LambdaEngine::Entity entity) const;
 
 private:
 	void LevelRegisteredDestructor(LevelRegisteredComponent& levelRegisteredComponent, LambdaEngine::Entity entity);

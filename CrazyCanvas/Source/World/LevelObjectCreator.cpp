@@ -1,5 +1,4 @@
 #include "World/LevelObjectCreator.h"
-#include "World/KillPlane.h"
 #include "World/Level.h"
 
 #include "Audio/AudioAPI.h"
@@ -59,6 +58,8 @@
 #include "Lobby/PlayerManagerClient.h"
 
 #include "Resources/ResourceCatalog.h"
+
+#include "Match/Match.h"
 
 bool LevelObjectCreator::Init()
 {
@@ -549,7 +550,7 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 				.CollisionGroup		= FCollisionGroup::COLLISION_GROUP_STATIC,
 				.CollisionMask		= ~FCollisionGroup::COLLISION_GROUP_STATIC,
 				.EntityID			= entity,
-				.CallbackFunction	= &KillPlaneCallback
+				.CallbackFunction	= &Match::KillPlaneCallback
 			}
 		}
 	};
@@ -559,6 +560,7 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
 	createdEntities.PushBack(entity);
 
+	D_LOG_INFO("Created Kill Plane with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_KILL_PLANE;
 }
 
@@ -663,7 +665,7 @@ bool LevelObjectCreator::CreateFlag(
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
 			{
-				{
+				{	// Triggers Flag-Player Collisions
 					/* Shape Type */		EShapeType::TRIGGER,
 					/* GeometryType */		EGeometryType::BOX,
 					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
@@ -674,7 +676,7 @@ bool LevelObjectCreator::CreateFlag(
 					/* UserData */			&flagPlayerColliderType,
 					/* UserDataSize */		sizeof(EFlagColliderType)
 				},
-				{
+				{	// Triggers Flag-Delivery Point Collisions
 					/* Shape Type */		EShapeType::SIMULATION,
 					/* GeometryType */		EGeometryType::BOX,
 					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
@@ -690,7 +692,7 @@ bool LevelObjectCreator::CreateFlag(
 		};
 
 		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicActor(collisionCreateInfo);
-		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
+		collisionComponent.pActor->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(flagEntity, collisionComponent);
 
 		networkUID = (int32)flagEntity;
@@ -800,7 +802,7 @@ bool LevelObjectCreator::CreatePlayer(
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		playerMaterialGUID = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam() ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamColorMaterialGUID(pPlayer->GetTeam());
+		playerMaterialGUID = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam() ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamPlayerMaterialGUID(pPlayer->GetTeam());
 
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{

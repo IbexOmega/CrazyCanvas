@@ -19,6 +19,8 @@ public:
 	MatchServer() = default;
 	~MatchServer();
 
+	virtual void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity) override final;
+	
 protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;

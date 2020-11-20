@@ -59,7 +59,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 				if (entity != UINT32_MAX)
 				{
 					levelEntities.PushBack(entity);
-					m_EntityToLevelObjectTypeMap[entity] = ELevelObjectType::LEVEL_OBJECT_TYPE_STATIC_GEOMTRY;
+					m_EntityToLevelObjectTypeMap[entity] = ELevelObjectType::LEVEL_OBJECT_TYPE_STATIC_GEOMETRY;
 				}
 			}
 
@@ -70,7 +70,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 					pECS->AddComponent<LevelRegisteredComponent>(entity, LevelRegisteredComponent());
 				}
 
-				m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_STATIC_GEOMTRY] = m_LevelEntities.GetSize();
+				m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_STATIC_GEOMETRY] = m_LevelEntities.GetSize();
 				m_LevelEntities.PushBack(levelEntities);
 			}
 		}
@@ -122,7 +122,7 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 					pECS->AddComponent<LevelRegisteredComponent>(entity, LevelRegisteredComponent());
 				}
 
-				m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_POINT_LIGHT] = levelEntities.GetSize();
+				m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_POINT_LIGHT] = m_LevelEntities.GetSize();
 				m_LevelEntities.PushBack(levelEntities);
 			}
 		}
@@ -263,6 +263,12 @@ LambdaEngine::TArray<LambdaEngine::Entity> Level::GetEntities(ELevelObjectType l
 	}
 
 	return {};
+}
+
+ELevelObjectType Level::GetLevelObjectType(LambdaEngine::Entity entity) const
+{
+	auto levelObjectTypeIt = m_EntityToLevelObjectTypeMap.find(entity);
+	return levelObjectTypeIt != m_EntityToLevelObjectTypeMap.end() ? levelObjectTypeIt->second : ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
 }
 
 void Level::LevelRegisteredDestructor(LevelRegisteredComponent& levelRegisteredComponent, LambdaEngine::Entity entity)

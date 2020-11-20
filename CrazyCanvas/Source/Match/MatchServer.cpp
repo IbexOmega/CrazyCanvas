@@ -102,10 +102,19 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					std::string name = "Flag " + std::to_string(f) + ": [EntityID=" + std::to_string(flagEntity) + "]";
 					if (ImGui::TreeNode(name.c_str()))
 					{
-						const TeamComponent& flagTeamComponent			= pTeamComponents->GetConstData(flagEntity);
+						TeamComponent flagTeamComponent = {};
+						
+						if (pTeamComponents->GetConstIf(flagEntity, flagTeamComponent))
+						{
+							ImGui::Text("Flag Team Index: %u", flagTeamComponent.TeamIndex);
+						}
+						else
+						{
+							flagTeamComponent.TeamIndex = UINT8_MAX;
+						}
+
 						const ParentComponent& flagParentComponent		= pParentComponents->GetConstData(flagEntity);
 						const PositionComponent& flagPositionComponent	= pPositionComponent->GetConstData(flagEntity);
-						ImGui::Text("Flag Team Index: %u", flagTeamComponent.TeamIndex);
 						ImGui::Text("Flag Position: [ %f, %f, %f ]", flagPositionComponent.Position.x, flagPositionComponent.Position.y, flagPositionComponent.Position.z);
 						ImGui::Text("Flag Status: %s", flagParentComponent.Attached ? "Carried" : "Not Carried");
 
@@ -406,6 +415,60 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 
 	LOG_INFO("SERVER: Weapon fired");
 	return false;
+}
+
+void MatchServer::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity)
+{
+	UNREFERENCED_VARIABLE(killPlaneEntity);
+
+	using namespace LambdaEngine;
+
+	ELevelObjectType levelObjectType = m_pLevel->GetLevelObjectType(otherEntity);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
+	{
+		switch (levelObjectType)
+		{
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER:
+			{
+				LOG_WARNING("[MatchServer]: A player hit the Kill Plane");
+				KillPlayer(otherEntity, UINT32_MAX);
+				break;
+			}
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
+			{
+				LOG_WARNING("[MatchServer]: A flag hit the Kill Plane");
+				TeamComponent flagTeamComponent = {};
+
+				if (!pECS->GetConstComponentIf(otherEntity, flagTeamComponent))
+				{
+					flagTeamComponent.TeamIndex = UINT8_MAX;
+				}
+
+				glm::vec3 flagPosition;
+				if (CreateFlagSpawnProperties(flagTeamComponent.TeamIndex, flagPosition))
+				{
+					FlagSystemBase::GetInstance()->OnFlagDropped(otherEntity, flagPosition);
+				}
+				break;
+			}
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE:
+			{
+				m_pLevel->DeleteObject(otherEntity);
+				break;
+			}
+			default:
+			{
+				LOG_WARNING("[MatchServer]: Non Implemented Level Object Type hit the Kill Plane");
+				break;
+			}
+		}
+	}
+	else
+	{
+		pECS->RemoveEntity(otherEntity);
+	}
 }
 
 void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)

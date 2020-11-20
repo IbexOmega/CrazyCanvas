@@ -415,7 +415,7 @@ namespace LambdaEngine
 		EventQueue::UnregisterAll();
 
 		//Needs to be released before ECSCore to prevent it from deleting parent/child entities
-		if (InheritanceComponentOwner::GetInstance()->Release())
+		if (!InheritanceComponentOwner::GetInstance()->Release())
 		{
 			return false;
 		}
