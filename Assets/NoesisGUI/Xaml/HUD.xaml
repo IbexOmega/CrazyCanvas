@@ -396,7 +396,7 @@
                             <CheckBox x:Name="RayTracingCheckBox" Grid.Column="1" VerticalAlignment="Center" />
                         </Grid> -->
 
-                        <!--Ray Tracing Toggle-->
+                        <!--Fullscreen Toggle-->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1*" />
@@ -417,16 +417,29 @@
                             <Label Content="Volume" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
                             <Slider x:Name="VolumeSlider" ValueChanged="OnVolumeSliderChanged" Grid.Column="1" VerticalAlignment="Center" />
                         </Grid>
+
+                        <!--FOV-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.5*" />
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width=".3*" />
+                            </Grid.ColumnDefinitions>
     
-                        <!--Key Bindings-->
+                            <Label Content="FOV" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Slider x:Name="FOVSlider" ValueChanged="OnFOVSliderChanged" Grid.Column="1" VerticalAlignment="Center" Minimum="70" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True" />
+                            <TextBox Text="{ Binding ElementName=FOVSlider, Path=Value, UpdateSourceTrigger=PropertyChanged }" Grid.Column="2" HorizontalAlignment="Right" TextAlignment="Center" Width="40" />
+                        </Grid>
+    
+                        <!--Controls-->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1*" />
                                 <ColumnDefinition Width="1*" />
                             </Grid.ColumnDefinitions>
     
-                            <Label Content="Key Bindings" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
-                            <Button Click="OnButtonChangeKeyBindingsClick" Content="Change" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0" />
+                            <Label Content="Controls" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Button Click="OnButtonChangeControlsClick" Content="Change" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0" />
                         </Grid>
     
                         <!--Finish Buttons-->
@@ -444,9 +457,9 @@
             </Grid>
         </Viewbox>
     
-        <!--Key bindings grid-->
+        <!--Controls grid-->
         <Viewbox Grid.Column="1" Grid.ColumnSpan="8" Grid.Row="2" Grid.RowSpan="9" Stretch="UniformToFill">
-            <Grid x:Name="KeyBindingsGrid" Background="#CC101010" Visibility="Hidden">
+            <Grid x:Name="ControlsGrid" Background="#CC101010" Visibility="Hidden">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*"/>
                     <RowDefinition Height="6*"/>
@@ -456,10 +469,10 @@
     
                 <!--Title-->
                 <Grid Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="0" Grid.RowSpan="11" MinHeight="700">
-                    <Label Content="Key Bindings" Foreground="White" FontSize="96" HorizontalAlignment="Center" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" VerticalAlignment="Top"/>
+                    <Label Content="Controls" Foreground="White" FontSize="96" HorizontalAlignment="Center" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" VerticalAlignment="Top"/>
                 </Grid>
     
-                <!--Key Bindings-->
+                <!--Controls-->
                 <Grid Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="0" Grid.RowSpan="11">
                     <StackPanel Grid.Row="1" MinHeight="700" MinWidth="1200" Margin="200 0 200 0" VerticalAlignment="Center">
                         <!--Movement Title-->
@@ -472,7 +485,18 @@
                             <Label Content="Movement" Foreground="#FF05DFD7" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
                         </Grid>
                         <Separator/>
-    
+
+                        <!--Look Sensitivity-->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="1*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Label Content="Look Sensitivity" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                            <Slider x:Name="LookSensitivitySlider" ValueChanged="OnLookSensitivityChanged" Grid.Column="1" VerticalAlignment="Center" Margin="0 5 0 5" />
+                        </Grid>
+
                         <!--Forward-->
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -590,8 +614,8 @@
                                 <ColumnDefinition Width="1*" />
                             </Grid.ColumnDefinitions>
     
-                            <Button Click="OnButtonApplyKeyBindingsClick" Content="Apply" Grid.Column="0" FontSize="29.333" Margin="50 0 50 0" />
-                            <Button Click="OnButtonCancelKeyBindingsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0"/>
+                            <Button Click="OnButtonApplyControlsClick" Content="Apply" Grid.Column="0" FontSize="29.333" Margin="50 0 50 0" />
+                            <Button Click="OnButtonCancelControlsClick" Content="Cancel" Grid.Column="1" FontSize="29.333" Margin="50 0 50 0"/>
                         </Grid>
                     </StackPanel>
                 </Grid>

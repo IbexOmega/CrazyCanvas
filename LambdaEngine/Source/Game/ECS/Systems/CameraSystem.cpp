@@ -13,6 +13,8 @@
 
 #include "Rendering/LineRenderer.h"
 
+#include "Engine/EngineConfig.h"
+
 namespace LambdaEngine
 {
 	CameraSystem CameraSystem::s_Instance;
@@ -27,8 +29,8 @@ namespace LambdaEngine
 					.pSubscriber = &m_CameraEntities,
 					.ComponentAccesses =
 					{
-						{R, CameraComponent::Type()},
-						{NDA, ViewProjectionMatricesComponent::Type()},
+						{RW, CameraComponent::Type()},
+						{RW, ViewProjectionMatricesComponent::Type()},
 						{RW, VelocityComponent::Type()},
 						{NDA, PositionComponent::Type()},
 						{RW, RotationComponent::Type()},
@@ -38,8 +40,8 @@ namespace LambdaEngine
 					.pSubscriber = &m_AttachedCameraEntities,
 					.ComponentAccesses =
 					{
-						{R, CameraComponent::Type()},
-						{NDA, ViewProjectionMatricesComponent::Type()},
+						{RW, CameraComponent::Type()},
+						{RW, ViewProjectionMatricesComponent::Type()},
 						{R, ParentComponent::Type()},
 						{R, OffsetComponent::Type()},
 						{RW, PositionComponent::Type()},
@@ -53,6 +55,8 @@ namespace LambdaEngine
 			RegisterSystem(TYPE_NAME(CameraSystem), systemReg);
 		}
 
+		m_MainFOV = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV);
+
 		return true;
 	}
 
@@ -61,18 +65,36 @@ namespace LambdaEngine
 		const float32 dt = (float32)deltaTime.AsSeconds();
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
-		const ComponentArray<CameraComponent>*			pCameraComponents		= pECSCore->GetComponentArray<CameraComponent>();
-		const ComponentArray<FreeCameraComponent>*		pFreeCameraComponents	= pECSCore->GetComponentArray<FreeCameraComponent>();
-		const ComponentArray<FPSControllerComponent>*	pFPSCameraComponents	= pECSCore->GetComponentArray<FPSControllerComponent>();
-		const ComponentArray<ParentComponent>*			pParentComponents		= pECSCore->GetComponentArray<ParentComponent>();
-		const ComponentArray<OffsetComponent>*			pOffsetComponents		= pECSCore->GetComponentArray<OffsetComponent>();
-		ComponentArray<PositionComponent>*				pPositionComponents		= pECSCore->GetComponentArray<PositionComponent>();
-		ComponentArray<RotationComponent>*				pRotationComponents		= pECSCore->GetComponentArray<RotationComponent>();
-		ComponentArray<VelocityComponent>*				pVelocityComponents		= pECSCore->GetComponentArray<VelocityComponent>();
+		ComponentArray<CameraComponent>*					pCameraComponents			= pECSCore->GetComponentArray<CameraComponent>();
+		ComponentArray<ViewProjectionMatricesComponent>*	pViewProjectionComponent	= pECSCore->GetComponentArray<ViewProjectionMatricesComponent>();
+		const ComponentArray<FreeCameraComponent>*			pFreeCameraComponents		= pECSCore->GetComponentArray<FreeCameraComponent>();
+		const ComponentArray<FPSControllerComponent>*		pFPSCameraComponents		= pECSCore->GetComponentArray<FPSControllerComponent>();
+		const ComponentArray<ParentComponent>*				pParentComponents			= pECSCore->GetComponentArray<ParentComponent>();
+		const ComponentArray<OffsetComponent>*				pOffsetComponents			= pECSCore->GetComponentArray<OffsetComponent>();
+		ComponentArray<PositionComponent>*					pPositionComponents			= pECSCore->GetComponentArray<PositionComponent>();
+		ComponentArray<RotationComponent>*					pRotationComponents			= pECSCore->GetComponentArray<RotationComponent>();
+		ComponentArray<VelocityComponent>*					pVelocityComponents			= pECSCore->GetComponentArray<VelocityComponent>();
+
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+		float32 windowWidth = float32(window->GetWidth());
+		float32 windowHeight = float32(window->GetHeight());
 
 		for (Entity entity : m_AttachedCameraEntities)
 		{
 			const ParentComponent&		parentComp			= pParentComponents->GetConstData(entity);
+			CameraComponent&			cameraComp			= pCameraComponents->GetData(entity);
+
+			if (cameraComp.FOV != m_MainFOV)
+			{
+				ViewProjectionMatricesComponent& viewProjectionComponent = pViewProjectionComponent->GetData(entity);
+
+				cameraComp.FOV = m_MainFOV;
+				viewProjectionComponent.Projection = glm::perspective(
+					glm::radians(cameraComp.FOV),
+					windowWidth / windowHeight,
+					cameraComp.NearPlane,
+					cameraComp.FarPlane);
+			}
 
 			if (parentComp.Attached)
 			{
@@ -81,7 +103,7 @@ namespace LambdaEngine
 				const OffsetComponent&		cameraOffsetComp	= pOffsetComponents->GetConstData(entity);
 				PositionComponent&			cameraPositionComp	= pPositionComponents->GetData(entity);
 				RotationComponent&			cameraRotationComp	= pRotationComponents->GetData(entity);
-
+				
 				cameraPositionComp.Position		= parentPositionComp.Position + cameraOffsetComp.Offset;
 				cameraRotationComp.Quaternion	= parentRotationComp.Quaternion;
 			}
@@ -89,8 +111,20 @@ namespace LambdaEngine
 
 		for (Entity entity : m_CameraEntities)
 		{
-			const auto& camComp = pCameraComponents->GetConstData(entity);
-			if (camComp.IsActive)
+			auto& cameraComp = pCameraComponents->GetData(entity);
+			if (cameraComp.FOV != m_MainFOV)
+			{
+				ViewProjectionMatricesComponent& viewProjectionComponent = pViewProjectionComponent->GetData(entity);
+
+				cameraComp.FOV = m_MainFOV;
+				viewProjectionComponent.Projection = glm::perspective(
+					glm::radians(cameraComp.FOV),
+					windowWidth / windowHeight,
+					cameraComp.NearPlane,
+					cameraComp.FarPlane);
+			}
+
+			if (cameraComp.IsActive)
 			{
 				auto& rotationComp	= pRotationComponents->GetData(entity);
 				auto& velocityComp	= pVelocityComponents->GetData(entity);

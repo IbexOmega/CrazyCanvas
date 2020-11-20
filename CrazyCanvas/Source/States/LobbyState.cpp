@@ -13,6 +13,8 @@
 
 #include "GUI/GUIHelpers.h"
 
+#include "Resources/ResourceCatalog.h"
+
 using namespace LambdaEngine;
 
 LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
@@ -53,6 +55,7 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &LobbyState::OnClientDisconnected);
 	
 	DisablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
 
 	m_LobbyGUI = *new LobbyGUI();
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
