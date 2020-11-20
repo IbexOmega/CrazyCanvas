@@ -586,19 +586,19 @@ namespace LambdaEngine
 		DescriptorBindingDesc meshletBindingDesc = {};
 		meshletBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		meshletBindingDesc.DescriptorCount = 1;
-		meshletBindingDesc.Binding = 0;
+		meshletBindingDesc.Binding = 2;
 		meshletBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
 		DescriptorBindingDesc uniqueIndicesDesc = {};
 		uniqueIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		uniqueIndicesDesc.DescriptorCount = 1;
-		uniqueIndicesDesc.Binding = 1;
+		uniqueIndicesDesc.Binding = 3;
 		uniqueIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
 		DescriptorBindingDesc primitiveIndicesDesc = {};
 		primitiveIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		primitiveIndicesDesc.DescriptorCount = 1;
-		primitiveIndicesDesc.Binding = 1;
+		primitiveIndicesDesc.Binding = 4;
 		primitiveIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
 
