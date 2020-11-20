@@ -171,8 +171,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_ERROR("[PacketTransceiverUDP]: Latest ACK already set to received ACK [%lu]", ack);
-			return;
+			resultingAckBits = currentAckBits | ackBits;
 		}
 		
 		uint64 newAckBits = resultingAckBits ^ currentAckBits;
