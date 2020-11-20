@@ -1053,9 +1053,11 @@ bool LevelObjectCreator::CreateProjectile(
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
-	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition });
+	const glm::vec3 normVelocity = glm::normalize(desc.InitalVelocity);
+	const glm::vec3 projectileOffset = normVelocity * 0.5f;
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition + projectileOffset });
 	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(0.7f) });
-	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(glm::normalize(desc.InitalVelocity), g_DefaultUp) });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(normVelocity, g_DefaultUp) });
 
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
@@ -1131,11 +1133,11 @@ bool LevelObjectCreator::CreateProjectile(
 			emitterComponent.BeginRadius = 0.1;
 			emitterComponent.Explosive = 1.0f;
 			emitterComponent.SpawnDelay = 0.1f;
-			emitterComponent.Velocity = 8.0f;
+			emitterComponent.Velocity = 6.0f;
 			emitterComponent.Angle = 45.0f;
-			const glm::vec3 normVelocity = glm::normalize(desc.InitalVelocity);
+			
 			const Entity particleEntity = pECS->CreateEntity();
-			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + normVelocity * 0.5f});
+			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + projectileOffset });
 			pECS->AddComponent<ScaleComponent>(particleEntity, { true, glm::vec3(0.7f) });
 			pECS->AddComponent<RotationComponent>(particleEntity, { true, glm::quatLookAt(normVelocity, g_DefaultUp) });
 			pECS->AddComponent<DestructionComponent>(particleEntity, { .TimeLeft = 0.1f });
