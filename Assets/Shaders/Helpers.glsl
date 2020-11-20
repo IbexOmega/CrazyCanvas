@@ -83,6 +83,12 @@ float GeometryGGX(float NdotV, float roughness)
 	return NdotV / ((NdotV * (1.0f - k_Direct)) + k_Direct);
 }
 
+float GeometryGGXIBL(float NdotV, float roughness)
+{
+	float K = (roughness * roughness) / 2.0f;
+	return NdotV / (NdotV * (1.0f - K) + K);
+}
+
 /*
 	Smith Geometry-Function
 */
@@ -92,6 +98,14 @@ float Geometry(vec3 normal, vec3 viewDir, vec3 lightDirection, float roughness)
 	float NdotL = max(dot(normal, lightDirection), 0.0f);
 
 	return GeometryGGX(NdotV, roughness) * GeometryGGX(NdotL, roughness);
+}
+
+float GeometryIBL(vec3 normal, vec3 viewDir, vec3 lightDirection, float roughness)
+{
+	float NdotV = max(dot(normal, viewDir), 0.0f);
+	float NdotL = max(dot(normal, lightDirection), 0.0f);
+
+	return GeometryGGXIBL(NdotV, roughness) * GeometryGGXIBL(NdotL, roughness);
 }
 
 /*

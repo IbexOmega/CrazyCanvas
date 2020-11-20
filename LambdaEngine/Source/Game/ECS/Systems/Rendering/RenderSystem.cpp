@@ -256,7 +256,7 @@ namespace LambdaEngine
 		// Create animation resources
 		{
 			DescriptorHeapDesc descriptorHeap;
-			descriptorHeap.DebugName											= "Animation DescriptorHeao";
+			descriptorHeap.DebugName											= "Animation DescriptorHeap";
 			descriptorHeap.DescriptorSetCount									= 1024;
 			descriptorHeap.DescriptorCount.UnorderedAccessBufferDescriptorCount	= 4;
 
@@ -437,37 +437,31 @@ namespace LambdaEngine
 		{
 			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
 			{
-				m_ppBackBuffers[v] = m_SwapChain->GetBuffer(v);
-				m_ppBackBufferViews[v] = m_SwapChain->GetBufferView(v);
+				m_ppBackBuffers[v]		= m_SwapChain->GetBuffer(v);
+				m_ppBackBufferViews[v]	= m_SwapChain->GetBufferView(v);
 			}
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_ppBackBuffers;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
-
+			resourceUpdateDesc.ResourceName							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppBackBuffers;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppBackBufferViews;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
 			if (!isServer)
 			{
 				// Load Integration LUT
-				GUID_Lambda LUTGuid = ResourceManager::LoadTextureFromFile(
-					"skybox/ibl_brdf_lut.png",
-					EFormat::FORMAT_R8G8B8A8_UNORM,
-					false, false);
-
-				m_IntegrationLUT		= MakeSharedRef<Texture>(ResourceManager::GetTexture(LUTGuid));
-				m_IntegrationLUTView	= MakeSharedRef<TextureView>(ResourceManager::GetTextureView(LUTGuid));
-
-				resourceUpdateDesc.ResourceName							= "INTEGRATION_LUT";
-				resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_IntegrationLUT.GetAddressOf();
-				resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_IntegrationLUTView.GetAddressOf();
-				resourceUpdateDesc.ExternalTextureUpdate.TextureCount	= 1;
-				resourceUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetNearestSamplerToBind();
-				resourceUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
-				m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+				if (InitIntegrationLUT())
+				{
+					resourceUpdateDesc.ResourceName							= "INTEGRATION_LUT";
+					resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_IntegrationLUT.GetAddressOf();
+					resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_IntegrationLUTView.GetAddressOf();
+					resourceUpdateDesc.ExternalTextureUpdate.TextureCount	= 1;
+					resourceUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetNearestSamplerToBind();
+					resourceUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
+					m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+				}
 			}
-		} 
+		}
 
 		UpdateBuffers();
 		UpdateRenderGraph();
@@ -851,6 +845,222 @@ namespace LambdaEngine
 		{
 			LOG_WARNING("[RenderSystem]: SetPaintMaskColor index out of range, colors unchanged");
 		}
+	}
+
+	bool RenderSystem::InitIntegrationLUT()
+	{
+		if (m_IntegrationLUT)
+		{
+			return true;
+		}
+
+		TSharedRef<CommandAllocator> commandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator(
+			"GenIntegrationLUT CommandAllocator", 
+			ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+		if (!commandAllocator)
+		{
+			LOG_ERROR("[RenderSystem]: Could not create GenIntegrationLUT CommandAllocator");
+			DEBUGBREAK();
+			return false;
+		}
+
+		CommandListDesc commandListDesc = {};
+		commandListDesc.DebugName		= "GenIntegrationLUT CommandList";
+		commandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+		TSharedRef<CommandList> commandList = RenderAPI::GetDevice()->CreateCommandList(commandAllocator.Get(), &commandListDesc);
+		if (!commandList)
+		{
+			LOG_ERROR("[RenderSystem]: Could not create GenIntegrationLUT CommandList");
+			DEBUGBREAK();
+			return false;
+		}
+
+		DescriptorHeapDesc descriptorHeapDesc;
+		descriptorHeapDesc.DebugName												= "GenIntegrationLUT DescriptorHeap";
+		descriptorHeapDesc.DescriptorSetCount										= 1;
+		descriptorHeapDesc.DescriptorCount.UnorderedAccessTextureDescriptorCount	= 1;
+
+		TSharedRef<DescriptorHeap> descriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
+		if (!descriptorHeap)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT DescriptorHeap");
+			DEBUGBREAK();
+			return false;
+		}
+
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc;
+		descriptorSetLayoutDesc.DescriptorSetLayoutFlags = 0;
+		descriptorSetLayoutDesc.DescriptorBindings =
+		{
+			{ EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE, 1, 0, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER },
+		};
+
+		ConstantRangeDesc constantRange;
+		constantRange.OffsetInBytes		= 0;
+		constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		constantRange.SizeInBytes		= 4;
+
+		PipelineLayoutDesc pipelineLayoutDesc;
+		pipelineLayoutDesc.DebugName		= "GenIntegrationLUT PipelineLayout";
+		pipelineLayoutDesc.ConstantRanges =
+		{
+			constantRange
+		};
+		pipelineLayoutDesc.DescriptorSetLayouts	= 
+		{ 
+			descriptorSetLayoutDesc 
+		};
+
+		TSharedRef<PipelineLayout> pipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
+		if (!pipelineLayout)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineLayout");
+			DEBUGBREAK();
+			return false;
+		}
+
+		TSharedRef<DescriptorSet> descriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet(
+		 "GenIntegrationLUT DescriptorSet",
+			pipelineLayout.Get(),
+			0,
+			descriptorHeap.Get());
+		if (!pipelineLayout)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineLayout");
+			DEBUGBREAK();
+			return false;
+		}
+
+		TSharedRef<Shader> shader = ResourceLoader::LoadShaderFromFile(
+			"../Assets/Shaders/Skybox/IntegrationLUTGen.comp", 
+			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+			EShaderLang::SHADER_LANG_GLSL,
+			"main");
+		if (!shader)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT Shader");
+			DEBUGBREAK();
+			return false;
+		}
+
+		ComputePipelineStateDesc pipelineDesc;
+		pipelineDesc.DebugName			= "GenIntegrationLUT PipelineState";
+		pipelineDesc.pPipelineLayout	= pipelineLayout.Get();
+		pipelineDesc.Shader.pShader		= shader.Get();
+
+		TSharedRef<PipelineState> pipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
+		if (!pipelineState)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineState");
+			DEBUGBREAK();
+			return false;
+		}
+
+		// Create textureresources
+		constexpr uint32 INTEGRATION_LUT_SIZE = 512;
+
+		TextureDesc textureDesc;
+		textureDesc.DebugName	= "IntegrationLUT";
+		textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+		textureDesc.ArrayCount	= 1;
+		textureDesc.Depth		= 1;
+		textureDesc.Flags		=
+			FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
+			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width		= INTEGRATION_LUT_SIZE;
+		textureDesc.Height		= INTEGRATION_LUT_SIZE;
+		textureDesc.Format		= EFormat::FORMAT_R16G16_SFLOAT;
+		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+		textureDesc.Miplevels	= 1;
+		textureDesc.SampleCount = 1;
+
+		m_IntegrationLUT = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+		if (!m_IntegrationLUT)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create IntegrationLUT");
+			DEBUGBREAK();
+			return false;
+		}
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.DebugName	= "IntegrationLUT View";
+		textureViewDesc.ArrayCount	= 1;
+		textureViewDesc.Format		= textureDesc.Format;
+		textureViewDesc.ArrayIndex	= 0;
+		textureViewDesc.Flags		=
+			FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
+			FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.pTexture		= m_IntegrationLUT.Get();
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+
+		m_IntegrationLUTView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+		if (!m_IntegrationLUTView)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create IntegrationLUT View");
+			DEBUGBREAK();
+			return false;
+		}
+
+		descriptorSet->WriteTextureDescriptors(
+			m_IntegrationLUTView.GetAddressOf(),
+			Sampler::GetNearestSamplerToBind(),
+			ETextureState::TEXTURE_STATE_GENERAL,
+			0, 1,
+			EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE,
+			false);
+
+		commandAllocator->Reset();
+		commandList->Begin(nullptr);
+		
+		commandList->TransitionBarrier(
+			m_IntegrationLUT.Get(),
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			0,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+			ETextureState::TEXTURE_STATE_UNKNOWN,
+			ETextureState::TEXTURE_STATE_GENERAL);
+
+		const uint32 size = INTEGRATION_LUT_SIZE;
+		commandList->SetConstantRange(
+			pipelineLayout.Get(), 
+			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
+			&size, 4, 0);
+
+		commandList->BindDescriptorSetCompute(descriptorSet.Get(), pipelineLayout.Get(), 0);
+		
+		commandList->BindComputePipeline(pipelineState.Get());
+
+		commandList->Dispatch(size, size, 1);
+
+		commandList->TransitionBarrier(
+			m_IntegrationLUT.Get(),
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			0,
+			ETextureState::TEXTURE_STATE_GENERAL,
+			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+		commandList->End();
+
+		if (!RenderAPI::GetComputeQueue()->ExecuteCommandLists(
+			commandList.GetAddressOf(), 1,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			nullptr, 0, nullptr, 0))
+		{
+			LOG_ERROR("[RenderSystem] Failed to execute commandlist");
+			DEBUGBREAK();
+			return false;
+		}
+
+		RenderAPI::GetComputeQueue()->Flush();
+
+		return true;
 	}
 
 	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)

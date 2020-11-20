@@ -323,6 +323,8 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
+		bool InitIntegrationLUT();
+
 		glm::mat4 CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes);
 		glm::mat4 CreateEntityTransform(
 			const PositionComponent& positionComp, 
