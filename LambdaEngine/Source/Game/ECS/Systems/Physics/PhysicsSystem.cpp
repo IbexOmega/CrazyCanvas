@@ -7,6 +7,7 @@
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 #include "Input/API/InputActionSystem.h"
 #include "Physics/PhysX/FilterShader.h"
+#include "Physics/PhysX/QueryFilterCallback.h"
 #include "Resources/ResourceManager.h"
 
 #define PX_RELEASE(x) if(x)	{ x->release(); x = nullptr; }
@@ -682,7 +683,7 @@ namespace LambdaEngine
 			0u
 		);
 
-		PxControllerFilters controllerFilters(pFilterData);
+		PxControllerFilters controllerFilters(pFilterData, QueryFilterCallback::GetInstance());
 
 		// Set filter data to be used when simulating the physics world
 		PxRigidDynamic* pActor = pController->getActor();
