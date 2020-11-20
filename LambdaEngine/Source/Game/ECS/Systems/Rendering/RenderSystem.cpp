@@ -1957,12 +1957,23 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderSystem::UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	void RenderSystem::UpdateParticleEmitter(
+		Entity entity, 
+		const PositionComponent& positionComp, 
+		const RotationComponent& rotationComp, 
+		const ParticleEmitterComponent& emitterComp)
 	{
 		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 	}
 
-	void RenderSystem::UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
+	void RenderSystem::UpdateDirectionalLight(
+		const glm::vec4& colorIntensity, 
+		const glm::vec3& position, 
+		const glm::quat& direction, 
+		float frustumWidth, 
+		float frustumHeight, 
+		float zNear, 
+		float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
 		m_LightBufferData.DirL_Direction = -GetForward(direction);
@@ -2047,7 +2058,7 @@ namespace LambdaEngine
 			}
 
 			{
-				const uint32 mipLevels = std::max<uint32>(std::log2(m_GlobalLightProbe.SpecularResolution), 1u);
+				const uint32 mipLevels = std::max<uint32>(uint32(std::log2(m_GlobalLightProbe.SpecularResolution)), 1u);
 
 				TextureDesc textureDesc;
 				textureDesc.DebugName	= "LightProbe Specular";

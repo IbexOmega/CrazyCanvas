@@ -758,7 +758,7 @@ namespace LambdaEngine
 		stagingBuffer->Unmap();
 
 		// Miplevels
-		const uint32 mipLevels = generateMips ? std::max<uint32>(std::log2(size), 1u) : 1u;
+		const uint32 mipLevels = generateMips ? std::max<uint32>(uint32(std::log2(size)), 1u) : 1u;
 
 		// Create texturecube
 		TextureDesc textureCubeDesc;
