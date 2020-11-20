@@ -273,5 +273,8 @@ ELevelObjectType Level::GetLevelObjectType(LambdaEngine::Entity entity) const
 
 void Level::LevelRegisteredDestructor(LevelRegisteredComponent& levelRegisteredComponent, LambdaEngine::Entity entity)
 {
+	UNREFERENCED_VARIABLE(levelRegisteredComponent);
+
+	LOG_ERROR("[LevelRegisteredDestructor]: Deleting Entity: %u", entity);
 	RegisterObjectDeletion(entity);
 }

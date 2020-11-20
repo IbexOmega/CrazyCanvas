@@ -22,6 +22,15 @@ public:
 	virtual void OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 	virtual void OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 
+	static void StaticOnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+	{
+		LOG_WARNING("ADW");
+	}
+	static void StaticOnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+	{
+		LOG_WARNING("OAJDWO");
+	}
+
 protected:
 	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
 	{

@@ -672,7 +672,7 @@ bool LevelObjectCreator::CreateFlag(
 					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
 					/* EntityID*/			flagEntity,
-					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
+					/* CallbackFunction */	&FlagSystemBase::StaticOnPlayerFlagCollision,
 					/* UserData */			&flagPlayerColliderType,
 					/* UserDataSize */		sizeof(EFlagColliderType)
 				},
@@ -683,7 +683,7 @@ bool LevelObjectCreator::CreateFlag(
 					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
 					/* EntityID*/			flagEntity,
-					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnDeliveryPointFlagCollision, FlagSystemBase::GetInstance()),
+					/* CallbackFunction */& FlagSystemBase::StaticOnDeliveryPointFlagCollision,
 					/* UserData */			&flagDeliveryPointColliderType,
 					/* UserDataSize */		sizeof(EFlagColliderType)
 				},
@@ -692,7 +692,7 @@ bool LevelObjectCreator::CreateFlag(
 		};
 
 		DynamicCollisionComponent collisionComponent = pPhysicsSystem->CreateDynamicActor(collisionCreateInfo);
-		collisionComponent.pActor->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+		collisionComponent.pActor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
 		pECS->AddComponent<DynamicCollisionComponent>(flagEntity, collisionComponent);
 
 		networkUID = (int32)flagEntity;

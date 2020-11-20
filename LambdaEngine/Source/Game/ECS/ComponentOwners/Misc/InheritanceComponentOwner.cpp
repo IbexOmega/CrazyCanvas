@@ -32,6 +32,7 @@ namespace LambdaEngine
 
 			if (m_DeletedEntities.insert(parentComponent.Parent).second)
 			{
+				LOG_ERROR("[ParentComponentDestructor]: Deleting Entity: %u", parentComponent.Parent);
 				pECS->RemoveEntity(parentComponent.Parent);
 			}
 		}
@@ -51,6 +52,7 @@ namespace LambdaEngine
 
 				if (m_DeletedEntities.insert(childEntity).second)
 				{
+					LOG_ERROR("[ChildComponentDestructor]: Deleting Entity: %u", childEntity);
 					pECS->RemoveEntity(childEntity);
 				}
 			}
