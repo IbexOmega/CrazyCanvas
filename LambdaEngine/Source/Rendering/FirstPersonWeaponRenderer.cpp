@@ -477,11 +477,15 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		if (Sleeping)
+		if (Sleeping || !m_DirtyUniformBuffers)
 			return;
 
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
+
+		ClearColorDesc ccDesc = {};
+		ccDesc.Depth = 1.0f;
+		ccDesc.Stencil = 0;
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
@@ -491,8 +495,8 @@ namespace LambdaEngine
 		beginRenderPassDesc.Width = width;
 		beginRenderPassDesc.Height = height;
 		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPassDesc.pClearColors = nullptr;
-		beginRenderPassDesc.ClearColorCount = 0;
+		beginRenderPassDesc.pClearColors = &ccDesc;
+		beginRenderPassDesc.ClearColorCount = 2; // clearValueCount must be greater than the largest attachment index in renderPass
 		beginRenderPassDesc.Offset.x = 0;
 		beginRenderPassDesc.Offset.y = 0;
 
@@ -587,7 +591,7 @@ namespace LambdaEngine
 		meshletBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		meshletBindingDesc.DescriptorCount = 1;
 		meshletBindingDesc.Binding = 2;
-		meshletBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		meshletBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 		DescriptorBindingDesc uniqueIndicesDesc = {};
 		uniqueIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -600,7 +604,6 @@ namespace LambdaEngine
 		primitiveIndicesDesc.DescriptorCount = 1;
 		primitiveIndicesDesc.Binding = 4;
 		primitiveIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
-
 
 		/* PIXEL SHADER */
 		// MaterialParameters
@@ -756,7 +759,7 @@ namespace LambdaEngine
 	bool FirstPersonWeaponRenderer::CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc)
 	{
 		RenderPassAttachmentDesc colorAttachmentDesc = {};
-		colorAttachmentDesc.Format = pColorAttachmentDesc->Format; //VK_FORMAT_R8G8B8A8_UNORM
+		colorAttachmentDesc.Format = pColorAttachmentDesc->Format;
 		colorAttachmentDesc.SampleCount = 1;
 		colorAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
 		colorAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
@@ -766,15 +769,14 @@ namespace LambdaEngine
 		colorAttachmentDesc.FinalState = pColorAttachmentDesc->FinalState;
 
 		RenderPassAttachmentDesc depthAttachmentDesc = {};
-
-		depthAttachmentDesc.Format = EFormat::FORMAT_D24_UNORM_S8_UINT; // FORMAT_D24_UNORM_S8_UINT
+		depthAttachmentDesc.Format = EFormat::FORMAT_D24_UNORM_S8_UINT;
 		depthAttachmentDesc.SampleCount = 1;
-		depthAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
+		depthAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_CLEAR;
 		depthAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
 		depthAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 		depthAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
-		depthAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT; //pDepthStencilAttachmentDesc->InitialState;
-		depthAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_DEPTH_ATTACHMENT;//pDepthStencilAttachmentDesc->FinalState;
+		depthAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_UNKNOWN; //unknown since it is only used internally
+		depthAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_UNKNOWN;
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET }; // specify render targets state
