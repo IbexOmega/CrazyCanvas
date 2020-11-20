@@ -151,8 +151,9 @@ void main()
 			particle.TileIndex = emitter.FirstAnimationIndex;
 		}
 
-		float t = clamp(particle.CurrentLife, 0.f, emitter.LifeTime)/emitter.LifeTime;
-		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount-1 - clamp(uint(t*emitter.AnimationCount), 0, emitter.AnimationCount-1);
+		// uncomment for animation, but this will remove random offset of tileindex per particle
+		// float t = clamp(particle.CurrentLife, 0.f, emitter.LifeTime)/emitter.LifeTime;
+		// particle.TileIndex = emitter.FirstAnimationIndex + uint(emitter.AnimationCount * t);
 
 		// Update ASInstance data and write particleIndex to customIndex
 		ASInstance.HitMask_CustomProperties = ((particleIndex << 8) >> 8) | ((ASInstance.HitMask_CustomProperties >> 24) << 24);
