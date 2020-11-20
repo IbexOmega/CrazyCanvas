@@ -3,7 +3,7 @@
 
 #include "Multiplayer/Packet/Packet.h"
 
-#define DEFAULT_TIME 5
+#define DEFAULT_TIME 5.0f
 
 /*
 * Destruction Component
