@@ -582,6 +582,25 @@ namespace LambdaEngine
 		instanceBindingDesc.DescriptorCount = 1;
 		instanceBindingDesc.Binding = 1;
 		instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		
+		DescriptorBindingDesc meshletBindingDesc = {};
+		meshletBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		meshletBindingDesc.DescriptorCount = 1;
+		meshletBindingDesc.Binding = 0;
+		meshletBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
+		DescriptorBindingDesc uniqueIndicesDesc = {};
+		uniqueIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		uniqueIndicesDesc.DescriptorCount = 1;
+		uniqueIndicesDesc.Binding = 1;
+		uniqueIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
+		DescriptorBindingDesc primitiveIndicesDesc = {};
+		primitiveIndicesDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		primitiveIndicesDesc.DescriptorCount = 1;
+		primitiveIndicesDesc.Binding = 1;
+		primitiveIndicesDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
 
 		/* PIXEL SHADER */
 		// MaterialParameters
@@ -655,7 +674,7 @@ namespace LambdaEngine
 
 		// maps to SET = 2 (DRAW_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
+		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, meshletBindingDesc, uniqueIndicesDesc, primitiveIndicesDesc };
 
 		// maps to SET = 3 (DRAW_EXTENSION_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
@@ -679,12 +698,12 @@ namespace LambdaEngine
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 4;
 		
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
-		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 6;
+		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 9;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
-		descriptorHeapDesc.DebugName = "Player Renderer Descriptor Heap";
+		descriptorHeapDesc.DebugName = "FirstPersonWeapon Renderer Descriptor Heap";
 		descriptorHeapDesc.DescriptorSetCount = 512;
 		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
 
