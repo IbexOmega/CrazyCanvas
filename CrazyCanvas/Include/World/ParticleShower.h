@@ -3,7 +3,7 @@
 #include "ECS/Entity.h"
 #include "ECS/ECSCore.h"
 
-#include "Rendering/PaintMaskRenderer.h"
+#include "RenderStages/PaintMaskRenderer.h"
 #include "ECS/Systems/Player/HealthSystemServer.h"
 
 struct ParticleShowerComponent
@@ -19,16 +19,16 @@ inline void ParticleShowerCallback(LambdaEngine::Entity entity0, LambdaEngine::E
 	//UNREFERENCED_VARIABLE(entity0);
 	LOG_INFO("Entity %d is taking a shower", entity1);
 
-	LambdaEngine::ECSCore* pECS = LambdaEngine::ECSCore::GetInstance();
-	ParticleShowerComponent& showerComponent = pECS->GetComponent<ParticleShowerComponent>(entity0);
+	//LambdaEngine::ECSCore* pECS = LambdaEngine::ECSCore::GetInstance();
+	//ParticleShowerComponent& showerComponent = pECS->GetComponent<ParticleShowerComponent>(entity0);
 	//PacketComponent<PacketFlagEdited>& flagPacketComponent = pECS->GetComponent<PacketComponent<PacketFlagEdited>>(entity0);
 
-	if (LambdaEngine::EngineLoop::GetTimeSinceStart() > showerComponent.ShowerAvailableTimestamp)
-	{
+	//if (LambdaEngine::EngineLoop::GetTimeSinceStart() > showerComponent.ShowerAvailableTimestamp)
+	//{
 		LambdaEngine::PaintMaskRenderer::ResetServer(entity1);
-		HealthSystemServer::ResetHealth(entity1);
+		//HealthSystemServer::ResetHealth(entity1);
 
-		showerComponent.ShowerAvailableTimestamp = LambdaEngine::EngineLoop::GetTimeSinceStart() + showerComponent.ShowerCooldown;
-	}
+		//showerComponent.ShowerAvailableTimestamp = LambdaEngine::EngineLoop::GetTimeSinceStart() + showerComponent.ShowerCooldown;
+	//}
 
 }
