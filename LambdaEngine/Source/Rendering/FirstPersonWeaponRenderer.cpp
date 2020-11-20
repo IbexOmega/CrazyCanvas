@@ -352,11 +352,8 @@ namespace LambdaEngine
 
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
-					constexpr DescriptorSetIndex setIndex = 2U;
-
-					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList2[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 2 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
-
+					m_DescriptorSetList2[d] = MakeSharedRef(pDrawArgs[d].pDescriptorSet);
+				
 					if (m_DescriptorSetList2[d] != nullptr)
 					{
 						for (uint32 i = 0; i < m_pDrawArgs[d].EntityIDs.GetSize(); i++)
@@ -364,7 +361,6 @@ namespace LambdaEngine
 							Entity entity = m_pDrawArgs[d].EntityIDs[i];
 							if (pWeaponLocalComponents->HasComponent(entity))
 							{
-
 								// Set Vertex and Instance buffer for rendering
 								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
 								uint64 pOffsets[2] = { 0, 0 };
@@ -383,15 +379,15 @@ namespace LambdaEngine
 								const Buffer* ppBuffers2 = { m_FrameBuffer.Get() };
 								const uint64 pOffsets2 = { 0 };
 								uint64 pSizesInBytes2 = { sizeof(FrameBuffer) };
-								uint32 setIndex2 = 0;
-								m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+								DescriptorSetIndex setIndex0 = 0;
+								m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex0, m_DescriptorHeap.Get());
 								if (m_DescriptorSet0 != nullptr)
 								{
 									m_DescriptorSet0->WriteBufferDescriptors(
 										&ppBuffers2,
 										&pOffsets2,
 										&pSizesInBytes2,
-										setIndex2,
+										setIndex0,
 										1,
 										EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER
 									);
@@ -570,7 +566,7 @@ namespace LambdaEngine
 	{
 		/* VERTEX SHADER */
 		DescriptorBindingDesc frameBufferDesc = {};
-		frameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		frameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		frameBufferDesc.DescriptorCount = 1;
 		frameBufferDesc.Binding = 0;
 		frameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
@@ -682,7 +678,7 @@ namespace LambdaEngine
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 4;
 		
-		descriptorCountDesc.ConstantBufferDescriptorCount = 0;
+		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 6;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 		descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
