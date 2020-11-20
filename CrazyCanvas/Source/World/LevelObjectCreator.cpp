@@ -1130,7 +1130,7 @@ bool LevelObjectCreator::CreateProjectile(
 		{
 			emitterComponent.OneTime = true;
 			emitterComponent.ParticleCount = 64;
-			emitterComponent.BeginRadius = 0.1;
+			emitterComponent.BeginRadius = 0.1f;
 			emitterComponent.Explosive = 1.0f;
 			emitterComponent.SpawnDelay = 0.1f;
 			emitterComponent.Velocity = 6.0f;
