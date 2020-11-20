@@ -118,7 +118,7 @@ namespace LambdaEngine
 		uint64 currentAckBits = pStatistics->GetReceivedAckBits();
 		uint64 resultingAckBits = 0ULL;
 
-		LOG_INFO("[PacketTransceiverUDP]: Last Received Ack [%llu], New Ack [%lu]", lastReceivedAck, ack);
+		//LOG_INFO("[PacketTransceiverUDP]: Last Received Ack [%llu], New Ack [%lu]", lastReceivedAck, ack);
 
 		if (ack > lastReceivedAck)
 		{
@@ -139,7 +139,7 @@ namespace LambdaEngine
 			//Or with ackBits to set other acked Bits besides ack
 			resultingAckBits = currentAckBits | ackBits;
 
-			LOG_INFO("[PacketTransceiverUDP]: ACK is Newer [%lu], Ackbits: %llx", ack, ackBits);
+			//LOG_INFO("[PacketTransceiverUDP]: ACK is Newer [%lu], Ackbits: %llx", ack, ackBits);
 		}
 		else if (ack < lastReceivedAck)
 		{
@@ -162,12 +162,12 @@ namespace LambdaEngine
 				if (trashedAckBits & (1ULL << i))
 				{
 					uint64 trashedAck = lastTrashedAck - i;
-					LOG_INFO("[PacketTransceiverUDP]: Trashed Ack [%lu]", trashedAck);
+					//LOG_INFO("[PacketTransceiverUDP]: Trashed Ack [%lu]", trashedAck);
 					newAcks.insert((uint32)trashedAck);
 				}
 			}
 
-			LOG_INFO("[PacketTransceiverUDP]: ACK is Older [%lu], Ackbits: %llx", ack, ackBits);
+			//LOG_INFO("[PacketTransceiverUDP]: ACK is Older [%lu], Ackbits: %llx", ack, ackBits);
 		}
 		else
 		{
@@ -186,10 +186,5 @@ namespace LambdaEngine
 		}
 
 		pStatistics->SetReceivedAckBits(resultingAckBits);
-
-		for (uint32 newAck : newAcks)
-		{
-			LOG_INFO("[PacketTransceiverUDP]: New Ack [%lu]", newAck);
-		}
 	}
 }

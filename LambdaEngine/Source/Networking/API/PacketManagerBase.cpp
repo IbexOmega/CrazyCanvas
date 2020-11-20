@@ -72,7 +72,7 @@ namespace LambdaEngine
 				}
 
 				m_Bundles.insert({ seq, bundle });
-				LOG_WARNING("Adding bundle with SEQ: %d", seq);
+				//LOG_WARNING("Adding bundle with SEQ: %d", seq);
 			}
 		}
 	}
@@ -104,7 +104,7 @@ namespace LambdaEngine
 
 		for (uint32 seq : bundlesToDelete)
 		{
-			LOG_WARNING("Removing bundle with SEQ: %d", seq);
+			//LOG_WARNING("Removing bundle with SEQ: %d", seq);
 			m_Bundles.erase(seq);
 		}
 	}
@@ -166,7 +166,7 @@ namespace LambdaEngine
 		segmentsReturned.Clear();
 		segmentsReturned.Reserve(segments.GetSize());
 
-		HandleAcks(acks, pTransceiver);
+		HandleAcks(acks);
 		hasDiscardedResends = FindSegmentsToReturn(segments, segmentsReturned);
 		return true;
 	}
@@ -176,7 +176,7 @@ namespace LambdaEngine
 	* Notifies the listener that the packet was succesfully delivered.
 	* Removes the packet and returns it to the pool.
 	*/
-	void PacketManagerBase::HandleAcks(const TSet<uint32>& ackedPackets, PacketTransceiverBase* pTransceiver)
+	void PacketManagerBase::HandleAcks(const TSet<uint32>& ackedPackets)
 	{
 		TArray<uint32> ackedReliableUIDs;
 		GetReliableUIDsFromAckedPackets(ackedPackets, ackedReliableUIDs);
@@ -232,10 +232,10 @@ namespace LambdaEngine
 				m_Bundles.erase(iterator);
 				timestamps++;
 			}
-			else
+			/*else
 			{
 				LOG_WARNING("Could not find bundle with SEQ: %d", ack);
-			}
+			}*/
 		}
 
 		if (timestamps > 0)

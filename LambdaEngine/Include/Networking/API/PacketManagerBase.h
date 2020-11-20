@@ -72,7 +72,7 @@ namespace LambdaEngine
 	private:
 		uint32 EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID);
 		void DeleteOldBundles();
-		void HandleAcks(const TSet<uint32>& acks, PacketTransceiverBase* pTransceiver);
+		void HandleAcks(const TSet<uint32>& acks);
 		void GetReliableUIDsFromAckedPackets(const TSet<uint32>& acks, TArray<uint32>& ackedReliableUIDs);
 		void GetReliableSegmentInfosFromUIDs(const TArray<uint32>& ackedReliableUIDs, TArray<SegmentInfo>& ackedReliableSegments);
 		void RegisterRTT(Timestamp rtt);
