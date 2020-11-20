@@ -50,7 +50,7 @@ void DestructionSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 		if (destructionComp.Active)
 		{
-			destructionComp.TimeLeft -= deltaTime.AsSeconds();
+			destructionComp.TimeLeft -= float(deltaTime.AsSeconds());
 
 			if (destructionComp.TimeLeft <= 0.0f)
 			{
