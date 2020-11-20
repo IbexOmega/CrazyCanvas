@@ -8,6 +8,11 @@
 
 #include "Engine/EngineLoop.h"
 
+#include "Rendering/ImGuiRenderer.h"
+
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#include <imgui.h>
+
 namespace LambdaEngine
 {
 	SpinLock ClientRemoteBase::s_LockStatic;
@@ -170,6 +175,9 @@ namespace LambdaEngine
 #endif	
 			return false;
 		}
+
+		std::scoped_lock<SpinLock> lock(m_LockShit);
+		packets[pPacket->GetType()]++;
 
 		GetPacketManager()->EnqueueSegmentReliable(pPacket, pListener);
 		return true;

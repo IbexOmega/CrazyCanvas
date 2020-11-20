@@ -86,7 +86,7 @@ namespace LambdaEngine
 		/*
 		* return - The avarage roun trip time of the 10 latest physical packets
 		*/
-		const Timestamp& GetPing() const;
+		float64 GetPing() const;
 
 		/*
 		* return - The unique salt representing this side of the connection
@@ -115,6 +115,7 @@ namespace LambdaEngine
 		uint32 GetLastReceivedAckNr()		const;
 		uint64 GetReceivedAckBits()			const;
 		uint32 GetLastReceivedReliableUID()	const;
+		uint32 GetSegmentsResent()			const;
 
 	private:
 		void Reset();
@@ -138,6 +139,8 @@ namespace LambdaEngine
 
 		void UpdatePacketsSentFixed();
 
+		void RegisterSegmentResent();
+
 	private:
 		uint32 m_PacketsSentByRemote;
 		uint32 m_PacketReceivedByRemote;
@@ -152,8 +155,9 @@ namespace LambdaEngine
 		uint32 m_SegmentsReceived;
 		uint32 m_BytesSent;
 		uint32 m_BytesReceived;
+		uint32 m_SegmentsResent;
 
-		Timestamp m_Ping;
+		float64 m_Ping;
 		Timestamp m_TimestampLastSent;
 		Timestamp m_TimestampLastReceived;
 

@@ -119,7 +119,7 @@ namespace LambdaEngine
 				continue;
 
 			TArray<NetworkSegment*> packets;
-			TArray<uint32> acks;
+			TSet<uint32> acks;
 
 			if (m_Transceiver.ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics) && packets.GetSize() == 1)
 			{

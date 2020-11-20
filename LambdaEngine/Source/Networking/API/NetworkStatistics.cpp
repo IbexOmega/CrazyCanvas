@@ -80,7 +80,7 @@ namespace LambdaEngine
 		return m_BytesReceived;
 	}
 
-	const Timestamp& NetworkStatistics::GetPing() const
+	float64 NetworkStatistics::GetPing() const
 	{
 		return m_Ping;
 	}
@@ -120,6 +120,11 @@ namespace LambdaEngine
 		return m_LastReceivedReliableUID;
 	}
 
+	uint32 NetworkStatistics::GetSegmentsResent() const
+	{
+		return m_SegmentsResent;
+	}
+
 	Timestamp NetworkStatistics::GetTimestampLastSent() const
 	{
 		return m_TimestampLastSent;
@@ -134,7 +139,7 @@ namespace LambdaEngine
 	{
 		m_Salt						= Random::UInt64();
 		m_SaltRemote				= 0;
-		m_Ping						= Timestamp::MilliSeconds(10.0f);
+		m_Ping						= 20.0f;
 		m_PacketsSent				= 0;
 		m_SegmentsRegistered		= 0;
 		m_SegmentsSent				= 0;
@@ -154,6 +159,7 @@ namespace LambdaEngine
 		m_LastReceivedReliableUID	= 0;
 		m_TimestampLastSent			= EngineLoop::GetTimeSinceStart();
 		m_TimestampLastReceived		= EngineLoop::GetTimeSinceStart();
+		m_SegmentsResent			= 0;
 	}
 
 	uint32 NetworkStatistics::RegisterPacketSent()
@@ -218,6 +224,7 @@ namespace LambdaEngine
 
 	void NetworkStatistics::SetLastReceivedAckNr(uint32 ack)
 	{
+		ASSERT(ack > m_LastReceivedAckNr);
 		m_LastReceivedAckNr = ack;
 	}
 
@@ -229,6 +236,11 @@ namespace LambdaEngine
 	void NetworkStatistics::UpdatePacketsSentFixed()
 	{
 		m_PacketsSentFixed = m_PacketsSent;
+	}
+
+	void NetworkStatistics::RegisterSegmentResent()
+	{
+		m_SegmentsResent++;
 	}
 
 	void NetworkStatistics::SetRemoteSalt(uint64 salt)

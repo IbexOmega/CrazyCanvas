@@ -51,7 +51,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PacketTransceiverUDP::OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
+	void PacketTransceiverUDP::OnReceiveEnd(PacketTranscoder::Header* pHeader, TSet<uint32>& newAcks, NetworkStatistics* pStatistics)
 	{
 		ProcessSequence(pHeader->Sequence, pStatistics);
 		ProcessAcks(pHeader->Ack, pHeader->AckBits, pStatistics, newAcks);
@@ -81,76 +81,116 @@ namespace LambdaEngine
 		if (sequence > lastReceivedSequence)
 		{
 			//New sequence number received so shift everything delta steps
-			int32 delta = sequence - lastReceivedSequence;
 			pStatistics->SetLastReceivedSequenceNr(sequence);
 
-			for (int i = 0; i < delta; i++)
+			if (lastReceivedSequence > 0)
 			{
 				uint64 sequenceBits = pStatistics->GetReceivedSequenceBits();
-				/*if (sequenceBits >> (sizeof(uint64) * 8 - 1) & 0)
-				{
-					//The last bit that was removed was never acked.
-					pStatistics->m_PacketsLost++;
-				}*/
-				pStatistics->SetReceivedSequenceBits(sequenceBits << 1);
+
+				//Shift 1, we need to insert GetLastReceivedSequenceNr(), it is not in the bitmask
+				sequenceBits <<= 1;
+				//Or 1, represents GetLastReceivedSequenceNr()
+				sequenceBits |= 1;
+				//Shift the rest of the way to align with the new ack timeline (ackBits)
+				sequenceBits <<= (sequence - lastReceivedSequence - 1);
+
+				pStatistics->SetReceivedSequenceBits(sequenceBits);
 			}
 		}
 		else if(sequence < lastReceivedSequence)
 		{
 			//Old sequence number received so write 1 to the coresponding bit
 			int64 index = lastReceivedSequence - sequence - 1;
-			if (index >= 0 && index < 64)
+			if (index < 64)
 			{
-				pStatistics->SetReceivedSequenceBits(pStatistics->GetReceivedSequenceBits() | ((uint64)1 << index));
+				pStatistics->SetReceivedSequenceBits(pStatistics->GetReceivedSequenceBits() | (1ULL << index));
 			}
+		}
+		else
+		{
+			LOG_ERROR("[PacketTransceiverUDP]: Latest SEQ already set to received SEQ [%lu]", sequence);
 		}
 	}
 
-	void PacketTransceiverUDP::ProcessAcks(uint32 ack, uint64 ackBits, NetworkStatistics* pStatistics, TArray<uint32>& newAcks)
+	void PacketTransceiverUDP::ProcessAcks(uint32 ack, uint64 ackBits, NetworkStatistics* pStatistics, TSet<uint32>& newAcks)
 	{
 		uint64 lastReceivedAck = pStatistics->GetLastReceivedAckNr();
 		uint64 currentAckBits = pStatistics->GetReceivedAckBits();
-		uint64 maxValue = std::min(64, (int32)ack);
-		uint64 bits = 0;
-		uint64 shift = 65 - maxValue;
-		ackBits &= shift == 64 ? 0 : (UINT64_MAX >> shift);
+		uint64 resultingAckBits = 0ULL;
+
+		LOG_INFO("[PacketTransceiverUDP]: Last Received Ack [%llu], New Ack [%lu]", lastReceivedAck, ack);
 
 		if (ack > lastReceivedAck)
 		{
 			pStatistics->SetLastReceivedAckNr(ack);
+			newAcks.insert(ack);
 
+			//Check if larger than 0, first ack shouldn't set the last bit because the last bit represents the last previously acked packet (GetLastReceivedAckNr())
 			if (lastReceivedAck > 0)
 			{
+				//Shift 1, we need to insert GetLastReceivedAckNr(), it is not in the bitmask
 				currentAckBits <<= 1;
+				//Or 1, represents GetLastReceivedAckNr()
 				currentAckBits |= 1;
+				//Shift the rest of the way to align with the new ack timeline (ackBits)
 				currentAckBits <<= (ack - lastReceivedAck - 1);
 			}
 
-			bits = currentAckBits;
+			//Or with ackBits to set other acked Bits besides ack
+			resultingAckBits = currentAckBits | ackBits;
+
+			LOG_INFO("[PacketTransceiverUDP]: ACK is Newer [%lu], Ackbits: %llx", ack, ackBits);
 		}
 		else if (ack < lastReceivedAck)
 		{
-			ackBits <<= 1;
-			ackBits |= 1;
-			ackBits <<= (lastReceivedAck - ack - 1);
+			//No Timeline update required for our timeline since this ack is older than our GetLastReceivedAckNr()
+			resultingAckBits = currentAckBits;
+			//Calculate which bit to set in currentAckBits
+			uint64 deltaAck = lastReceivedAck - ack - 1;
+			//Set the bit that represents ack in our timeline
+			resultingAckBits |= (1ULL << deltaAck);
+			//Set the bits in ackBits shifted to our timeline
+			resultingAckBits |= (ackBits << deltaAck);
+			//Calculate the acks that we might shift off due to the above calculation
+			uint64 trashedAckBits = (ackBits >> (64ULL - deltaAck));
 
-			bits = ackBits | pStatistics->GetReceivedAckBits();
-		}
+			uint64 lastTrashedAck = ack - (64ULL - deltaAck + 1ULL);
 
-		pStatistics->SetReceivedAckBits(currentAckBits | ackBits);
-
-		uint64 acks = (pStatistics->GetReceivedAckBits() ^ bits);
-
-		for (int i = 64; i > 0; i--)
-		{
-			if (acks >> (sizeof(uint64) * 8 - 1) & 1)
+			//Assume trashed acks are new acks, add them to newAcks
+			for (uint64 i = 0; i < deltaAck; i++)
 			{
-				newAcks.PushBack(ack - i);
+				if (trashedAckBits & (1ULL << i))
+				{
+					uint64 trashedAck = lastTrashedAck - i;
+					LOG_INFO("[PacketTransceiverUDP]: Trashed Ack [%lu]", trashedAck);
+					newAcks.insert((uint32)trashedAck);
+				}
 			}
-			acks <<= 1;
+
+			LOG_INFO("[PacketTransceiverUDP]: ACK is Older [%lu], Ackbits: %llx", ack, ackBits);
+		}
+		else
+		{
+			LOG_ERROR("[PacketTransceiverUDP]: Latest ACK already set to received ACK [%lu]", ack);
+			return;
 		}
 		
-		if (ack > lastReceivedAck)
-			newAcks.PushBack(ack);
+		uint64 newAckBits = resultingAckBits ^ currentAckBits;
+
+		for (uint64 i = 0; i < 64; i++)
+		{
+			if (newAckBits & (1ULL << i))
+			{
+				uint64 newAck = ack - (i + 1ULL);
+				newAcks.insert((uint32)newAck);
+			}
+		}
+
+		pStatistics->SetReceivedAckBits(resultingAckBits);
+
+		for (uint32 newAck : newAcks)
+		{
+			LOG_INFO("[PacketTransceiverUDP]: New Ack [%lu]", newAck);
+		}
 	}
 }

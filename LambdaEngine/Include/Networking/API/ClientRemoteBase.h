@@ -110,6 +110,11 @@ namespace LambdaEngine
 		std::atomic_int8_t m_BufferIndex;
 		TArray<NetworkSegment*> m_ReceivedPackets[2];
 
+
+	public:
+		THashTable<uint16, uint32> packets;
+		SpinLock m_LockShit;
+
 	private:
 		static SpinLock s_LockStatic;
 		static std::atomic_int s_Instances;

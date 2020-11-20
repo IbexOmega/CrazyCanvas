@@ -115,11 +115,10 @@ namespace LambdaEngine
 
 	void PacketManagerUDP::ResendOrDeleteSegments()
 	{
-		static Timestamp minTime = Timestamp::MilliSeconds(5);
-		float64 pingNanos = (float32)m_Statistics.GetPing().AsNanoSeconds();
-		Timestamp maxAllowedTime = Timestamp((uint64)(pingNanos * (float64)m_ResendRTTMultiplier));
-		if (maxAllowedTime < minTime)
-			maxAllowedTime = minTime;
+		static float64 minMillis = 5.0f;
+		float64 pingMillis = m_Statistics.GetPing() * (float64)m_ResendRTTMultiplier;
+		if (pingMillis < minMillis)
+			pingMillis = minMillis;
 
 		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
@@ -131,16 +130,20 @@ namespace LambdaEngine
 			for (auto& pair : m_SegmentsWaitingForAck)
 			{
 				SegmentInfo& messageInfo = pair.second;
-				if (currentTime - messageInfo.LastSent > maxAllowedTime)
+				if (messageInfo.LastSent != UINT64_MAX && (currentTime - messageInfo.LastSent).AsMilliSeconds() > pingMillis)
 				{
 					messageInfo.Retries++;
+
+					//LOG_INFO("%d: RESEND: %s", (int32)EngineLoop::GetTimeSinceStart().AsMilliSeconds(), messageInfo.Segment->ToString().c_str());
 
 					if (messageInfo.Retries < m_MaxRetries)
 					{
 						InsertSegment(messageInfo.Segment);
-						messageInfo.LastSent = currentTime;
+						messageInfo.LastSent = UINT64_MAX;
 						if (messageInfo.Listener)
 							messageInfo.Listener->OnPacketResent(messageInfo.Segment, messageInfo.Retries);
+
+						m_Statistics.RegisterSegmentResent();
 					}
 					else
 					{

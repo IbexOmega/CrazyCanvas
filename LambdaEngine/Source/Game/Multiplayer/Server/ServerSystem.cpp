@@ -28,7 +28,7 @@ namespace LambdaEngine
 		ServerDesc desc = {};
 		desc.Handler				= this;
 		desc.MaxRetries				= 25;
-		desc.ResendRTTMultiplier	= 5.0f;
+		desc.ResendRTTMultiplier	= 10.0f;
 		desc.MaxClients				= 10;
 		desc.PoolSize				= 8192;
 		desc.Protocol				= EProtocolParser::FromString(protocol);
@@ -37,7 +37,7 @@ namespace LambdaEngine
 		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
 
 		m_pServer = NetworkUtils::CreateServer(desc);
-		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.5f);
+		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 	}
 
 	ServerSystem::~ServerSystem()
@@ -49,7 +49,7 @@ namespace LambdaEngine
 	bool ServerSystem::Start()
 	{
 		uint16 port = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
-		NetworkDiscovery::EnableServer(m_Name, port, this);
+		//NetworkDiscovery::EnableServer(m_Name, port, this);
 		return m_pServer->Start(IPEndPoint(IPAddress::ANY, port));
 	}
 

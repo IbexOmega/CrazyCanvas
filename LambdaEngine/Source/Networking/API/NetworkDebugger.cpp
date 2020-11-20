@@ -72,8 +72,7 @@ namespace LambdaEngine
 
 	void NetworkDebugger::RenderStatisticsWithImGUI()
 	{
-
-		if (EngineLoop::GetTimeSinceStart() - s_LastUpdate >= Timestamp::MilliSeconds(100))
+		if (EngineLoop::GetTimeSinceStart() - s_LastUpdate >= EngineLoop::GetFixedTimestep()/*Timestamp::MilliSeconds(100)*/)
 		{
 			s_PingValuesOffset = (s_PingValuesOffset + 1) % 80;
 			s_LastUpdate = EngineLoop::GetTimeSinceStart();
@@ -108,6 +107,7 @@ namespace LambdaEngine
 				ImGui::Text("Remote Salt");
 				ImGui::Text("Last Packet Sent");
 				ImGui::Text("Last Packet Received");
+				ImGui::Text("Segments Resent");
 				ImGui::Text("Total Segments");
 				ImGui::Text("Free Segments");
 				ImGui::Text("Ping");
@@ -117,10 +117,11 @@ namespace LambdaEngine
 
 				for (auto& pair : s_PingValues)
 				{
-					uint32 color = IClient::StateToColor(pair.second.Client->GetState());
-					PacketManagerBase* pManager = pair.second.Client->GetPacketManager();
+					IClient* pClient = pair.second.Client;
+					uint32 color = IClient::StateToColor(pClient->GetState());
+					PacketManagerBase* pManager = pClient->GetPacketManager();
 					SegmentPool* pSegmentPool = pManager->GetSegmentPool();
-					const NetworkStatistics* pStatistics = pair.second.Client->GetStatistics();
+					const NetworkStatistics* pStatistics = pClient->GetStatistics();
 
 					ImGui::NextColumn();
 					ImGui::PushStyleColor(ImGuiCol_Text, UINT32_TO_IMVEC4(((uint8*)&color)));
@@ -141,12 +142,24 @@ namespace LambdaEngine
 					ImGui::Text("%llu", pStatistics->GetRemoteSalt());
 					ImGui::Text("%d s", (int32)(EngineLoop::GetTimeSinceStart() - pStatistics->GetTimestampLastSent()).AsSeconds());
 					ImGui::Text("%d s", (int32)(EngineLoop::GetTimeSinceStart() - pStatistics->GetTimestampLastReceived()).AsSeconds());
+					ImGui::Text("%d", pStatistics->GetSegmentsResent());
 					ImGui::Text("%d", pSegmentPool->GetSize());
 					ImGui::Text("%d", pSegmentPool->GetFreeSegments());
-					ImGui::Text("%.1f ms", pStatistics->GetPing().AsMilliSeconds());
+					ImGui::Text("%.1f ms", pStatistics->GetPing());
 
-					pair.second.PingValues[s_PingValuesOffset] = (float)pStatistics->GetPing().AsMilliSeconds();
+					pair.second.PingValues[s_PingValuesOffset] = (float32)pStatistics->GetPing();
 					ImGui::PlotLines("", pair.second.PingValues.data(), (int)pair.second.PingValues.size(), s_PingValuesOffset, "", 0.0f, 50.0f, ImVec2(0, 80.0f));
+				
+					ClientRemoteBase* pClientRemote = dynamic_cast<ClientRemoteBase*>(pClient);
+					if (pClientRemote)
+					{
+						ImGui::NewLine();
+						std::scoped_lock<SpinLock> lock(pClientRemote->m_LockShit);
+						for (auto& p : pClientRemote->packets)
+						{
+							ImGui::Text("Type %d: %d", p.first, p.second);
+						}
+					}	
 				}
 			}
 			ImGui::End();
