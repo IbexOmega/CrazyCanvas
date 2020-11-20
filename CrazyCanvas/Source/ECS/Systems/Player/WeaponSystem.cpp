@@ -9,7 +9,6 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/ECS/Components/Physics/Transform.h"
-#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 
 #include "Events/GameplayEvents.h"
 
@@ -171,7 +170,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<TeamComponent>*		pTeamComponents			= pECS->GetComponentArray<TeamComponent>();
 	const ComponentArray<ProjectileComponent>*	pProjectileComponents	= pECS->GetComponentArray<ProjectileComponent>();
-	//ComponentArray<ParticleEmitterComponent>*	pEmitterComponents		= pECS->GetComponentArray<ParticleEmitterComponent>();
 
 	// Get ammotype
 	EAmmoType ammoType	= EAmmoType::AMMO_TYPE_NONE;
@@ -202,12 +200,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	else
 	{
 		levelHit = true;
-
-		//if (pEmitterComponents->HasComponent(collisionInfo0.Entity))
-		//{
-		//	ParticleEmitterComponent& pEmitter = pEmitterComponents->GetData(collisionInfo0.Entity);
-		//	pEmitter.Active = true;
-		//}
 	}
 
 	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
