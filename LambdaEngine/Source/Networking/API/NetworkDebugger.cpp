@@ -132,8 +132,8 @@ namespace LambdaEngine
 					ImGui::Text("%d", pStatistics->GetReliableSegmentsSent());
 					ImGui::Text("%d", pStatistics->GetPacketsReceived());
 					ImGui::Text("%d", pStatistics->GetSegmentsReceived());
-					ImGui::Text("%d", pStatistics->GetSendingPacketsLost());
-					ImGui::Text("%d", pStatistics->GetReceivingPacketsLost());
+					ImGui::Text("%d", pStatistics->GetSendingPacketLoss());
+					ImGui::Text("%d", pStatistics->GetReceivingPacketLoss());
 					ImGui::Text("%.1f%%", pStatistics->GetSendingPacketLossRate() * 100.0f);
 					ImGui::Text("%.1f%%", pStatistics->GetReceivingPacketLossRate() * 100.0f);
 					ImGui::Text("%d", pStatistics->GetBytesSent());

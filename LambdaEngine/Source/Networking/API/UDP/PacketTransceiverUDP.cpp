@@ -87,12 +87,25 @@ namespace LambdaEngine
 			{
 				uint64 sequenceBits = pStatistics->GetReceivedSequenceBits();
 
+				static constexpr uint64 lastBitMask = (1ULL << 63);
+
+				//If the oldest bit is not 1 then we shift off a SEQ that never arrived, i.e. the was packet lost.
+				if (!(sequenceBits & lastBitMask) && lastReceivedSequence > 63)
+					pStatistics->RegisterReceivingPacketLoss();
+
 				//Shift 1, we need to insert GetLastReceivedSequenceNr(), it is not in the bitmask
 				sequenceBits <<= 1;
 				//Or 1, represents GetLastReceivedSequenceNr()
 				sequenceBits |= 1;
-				//Shift the rest of the way to align with the new ack timeline (ackBits)
-				sequenceBits <<= (sequence - lastReceivedSequence - 1);
+
+				//Shift the rest of the way to align with the new ack timeline (sequenceBits)
+				uint8 deltaShift = (uint8)(sequence - lastReceivedSequence - 1);
+				for (uint64 i = 0; i < deltaShift; i++)
+				{
+					if (!(sequenceBits & lastBitMask) && lastReceivedSequence > 63)
+						pStatistics->RegisterReceivingPacketLoss();
+					sequenceBits <<= 1;
+				}
 
 				pStatistics->SetReceivedSequenceBits(sequenceBits);
 			}
@@ -100,10 +113,10 @@ namespace LambdaEngine
 		else if(sequence < lastReceivedSequence)
 		{
 			//Old sequence number received so write 1 to the coresponding bit
-			int64 index = lastReceivedSequence - sequence - 1;
-			if (index < 64)
+			uint8 deltaShift = (uint8)(lastReceivedSequence - sequence - 1);
+			if (deltaShift < 64)
 			{
-				pStatistics->SetReceivedSequenceBits(pStatistics->GetReceivedSequenceBits() | (1ULL << index));
+				pStatistics->SetReceivedSequenceBits(pStatistics->GetReceivedSequenceBits() | (1ULL << deltaShift));
 			}
 		}
 		else
@@ -128,12 +141,24 @@ namespace LambdaEngine
 			//Check if larger than 0, first ack shouldn't set the last bit because the last bit represents the last previously acked packet (GetLastReceivedAckNr())
 			if (lastReceivedAck > 0)
 			{
+				static constexpr uint64 lastBitMask = (1ULL << 63);
+
+				if (!(currentAckBits & lastBitMask) && lastReceivedAck > 63)
+					pStatistics->RegisterSendingPacketLoss();
+
 				//Shift 1, we need to insert GetLastReceivedAckNr(), it is not in the bitmask
 				currentAckBits <<= 1;
 				//Or 1, represents GetLastReceivedAckNr()
 				currentAckBits |= 1;
+
 				//Shift the rest of the way to align with the new ack timeline (ackBits)
-				currentAckBits <<= (ack - lastReceivedAck - 1);
+				uint8 deltaShift = (uint8)(ack - lastReceivedAck - 1);
+				for (uint64 i = 0; i < deltaShift; i++)
+				{
+					if (!(currentAckBits & lastBitMask) && lastReceivedAck > 63)
+						pStatistics->RegisterSendingPacketLoss();
+					currentAckBits <<= 1;
+				}
 			}
 
 			//Or with ackBits to set other acked Bits besides ack
@@ -146,7 +171,7 @@ namespace LambdaEngine
 			//No Timeline update required for our timeline since this ack is older than our GetLastReceivedAckNr()
 			resultingAckBits = currentAckBits;
 			//Calculate which bit to set in currentAckBits
-			uint64 deltaAck = lastReceivedAck - ack - 1;
+			uint8 deltaAck = (uint8)(lastReceivedAck - ack - 1);
 			//Set the bit that represents ack in our timeline
 			resultingAckBits |= (1ULL << deltaAck);
 			//Set the bits in ackBits shifted to our timeline
@@ -157,13 +182,13 @@ namespace LambdaEngine
 			uint64 lastTrashedAck = ack - (64ULL - deltaAck + 1ULL);
 
 			//Assume trashed acks are new acks, add them to newAcks
-			for (uint64 i = 0; i < deltaAck; i++)
+			for (uint8 i = 0; i < deltaAck; i++)
 			{
 				if (trashedAckBits & (1ULL << i))
 				{
 					uint64 trashedAck = lastTrashedAck - i;
-					//LOG_INFO("[PacketTransceiverUDP]: Trashed Ack [%lu]", trashedAck);
 					newAcks.insert((uint32)trashedAck);
+					//LOG_INFO("[PacketTransceiverUDP]: Trashed Ack [%lu]", trashedAck);
 				}
 			}
 

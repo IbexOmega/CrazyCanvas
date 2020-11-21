@@ -56,22 +56,22 @@ namespace LambdaEngine
 		/*
 		* return - The number of physical packets lost (Packets we never received)
 		*/
-		uint32 GetReceivingPacketsLost() const;
+		uint32 GetReceivingPacketLoss() const;
 
 		/*
 		* return - The number of physical packets lost (Packets the remote never received)
 		*/
-		uint32 GetSendingPacketsLost() const;
+		uint32 GetSendingPacketLoss() const;
 
 		/*
 		* return - The percentage of physical packets lost (Packets we never received)
 		*/
-		float64 GetReceivingPacketLossRate() const;
+		float32 GetReceivingPacketLossRate() const;
 
 		/*
 		* return - The percentage of physical packets lost (Packets the remote never received)
 		*/
-		float64 GetSendingPacketLossRate() const;
+		float32 GetSendingPacketLossRate() const;
 
 		/*
 		* return - The total number of bytes sent
@@ -127,8 +127,6 @@ namespace LambdaEngine
 		void RegisterPacketReceived(uint32 segments, uint32 bytes);
 		void RegisterReliableSegmentReceived();
 
-		void SetPacketsSentByRemote(uint32 packets);
-		void SetPacketsReceivedByRemote(uint32 packetsLost);
 		void RegisterBytesSent(uint32 bytes);
 		void SetRemoteSalt(uint64 salt);
 
@@ -137,16 +135,14 @@ namespace LambdaEngine
 		void SetLastReceivedAckNr(uint32 ack);
 		void SetReceivedAckBits(uint64 ackBits);
 
+		void RegisterReceivingPacketLoss(uint32 packets = 1);
+		void RegisterSendingPacketLoss(uint32 packets = 1);
+
 		void UpdatePacketsSentFixed();
 
 		void RegisterSegmentResent();
 
 	private:
-		uint32 m_PacketsSentByRemote;
-		uint32 m_PacketReceivedByRemote;
-		uint32 m_PacketsSentFixed;
-		uint32 m_PacketsReceivedFixed;
-
 		uint32 m_PacketsSent;
 		std::atomic_uint32_t m_SegmentsRegistered;
 		uint32 m_SegmentsSent;
@@ -156,6 +152,9 @@ namespace LambdaEngine
 		uint32 m_BytesSent;
 		uint32 m_BytesReceived;
 		uint32 m_SegmentsResent;
+
+		uint32 m_PacketsLostReceiving;
+		uint32 m_PacketsLostSending;
 
 		float64 m_Ping;
 		Timestamp m_TimestampLastSent;

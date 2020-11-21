@@ -46,28 +46,28 @@ namespace LambdaEngine
 		return m_SegmentsReceived;
 	}
 
-	uint32 NetworkStatistics::GetReceivingPacketsLost() const
+	uint32 NetworkStatistics::GetReceivingPacketLoss() const
 	{
-		return m_PacketsReceivedFixed > m_PacketsSentByRemote ? 0 : m_PacketsSentByRemote - m_PacketsReceivedFixed;
+		return m_PacketsLostReceiving;
 	}
 
-	uint32 NetworkStatistics::GetSendingPacketsLost() const
+	uint32 NetworkStatistics::GetSendingPacketLoss() const
 	{
-		return m_PacketReceivedByRemote > m_PacketsSentFixed ? 0 : m_PacketsSentFixed - m_PacketReceivedByRemote;
+		return m_PacketsLostSending;
 	}
 
-	float64 NetworkStatistics::GetReceivingPacketLossRate() const
+	float32 NetworkStatistics::GetReceivingPacketLossRate() const
 	{
-		if (m_PacketsSentByRemote == 0)
+		if (m_PacketsLostReceiving == 0)
 			return 0.0;
-		return GetReceivingPacketsLost() / (float64)m_PacketsSentByRemote;
+		return m_PacketsLostReceiving / (float32)m_LastReceivedSequenceNr;
 	}
 
-	float64 NetworkStatistics::GetSendingPacketLossRate() const
+	float32 NetworkStatistics::GetSendingPacketLossRate() const
 	{
-		if (m_PacketsSentFixed == 0)
+		if (m_PacketsLostSending == 0)
 			return 0.0;
-		return GetSendingPacketsLost() / (float64)m_PacketsSentFixed;
+		return m_PacketsLostSending / (float32)m_PacketsSent;
 	}
 
 	uint32 NetworkStatistics::GetBytesSent() const
@@ -146,12 +146,8 @@ namespace LambdaEngine
 		m_ReliableSegmentsSent		= 0;
 		m_PacketsReceived			= 0;
 		m_SegmentsReceived			= 0;
-		m_PacketsSentByRemote		= 0;
-		m_PacketReceivedByRemote	= 0;
 		m_BytesSent					= 0;
 		m_BytesReceived				= 0;
-		m_PacketsSentFixed			= 0;
-		m_PacketsReceivedFixed		= 0;
 		m_LastReceivedSequenceNr	= 0;
 		m_ReceivedSequenceBits		= 0;
 		m_LastReceivedAckNr			= 0;
@@ -160,6 +156,8 @@ namespace LambdaEngine
 		m_TimestampLastSent			= EngineLoop::GetTimeSinceStart();
 		m_TimestampLastReceived		= EngineLoop::GetTimeSinceStart();
 		m_SegmentsResent			= 0;
+		m_PacketsLostReceiving		= 0;
+		m_PacketsLostSending		= 0;
 	}
 
 	uint32 NetworkStatistics::RegisterPacketSent()
@@ -196,17 +194,6 @@ namespace LambdaEngine
 		m_LastReceivedReliableUID++;
 	}
 
-	void NetworkStatistics::SetPacketsSentByRemote(uint32 packets)
-	{
-		m_PacketsReceivedFixed = m_PacketsReceived;
-		m_PacketsSentByRemote = packets;
-	}
-
-	void NetworkStatistics::SetPacketsReceivedByRemote(uint32 packets)
-	{
-		m_PacketReceivedByRemote = packets;
-	}
-
 	void NetworkStatistics::RegisterBytesSent(uint32 bytes)
 	{
 		m_BytesSent += bytes;
@@ -233,9 +220,14 @@ namespace LambdaEngine
 		m_ReceivedAckBits = ackBits;
 	}
 
-	void NetworkStatistics::UpdatePacketsSentFixed()
+	void NetworkStatistics::RegisterReceivingPacketLoss(uint32 packets)
 	{
-		m_PacketsSentFixed = m_PacketsSent;
+		m_PacketsLostReceiving += packets;
+	}
+
+	void NetworkStatistics::RegisterSendingPacketLoss(uint32 packets)
+	{
+		m_PacketsLostSending += packets;
 	}
 
 	void NetworkStatistics::RegisterSegmentResent()
