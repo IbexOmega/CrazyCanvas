@@ -101,6 +101,7 @@ namespace LambdaEngine
 
 					BinaryEncoder encoder(pResponse);
 					encoder.WriteString(m_NameOfGame);
+					encoder.WriteBool(*endpoint.GetAddress() == *IPAddress::BROADCAST);
 
 					m_Transceiver.Transmit(&m_SegmentPool, packets, reliableUIDs, endpoint, &m_Statistics);
 				}
@@ -178,15 +179,9 @@ namespace LambdaEngine
 			BinaryDecoder decoder(pPacket);
 			if (decoder.ReadString() == m_NameOfGame)
 			{
-				bool isLAN = true;
-				{
-					std::scoped_lock<SpinLock> lock(*m_pLockEndPoints);
-					isLAN = !m_pEndPoints->contains(sender);
-				}
-
 				Timestamp ping = EngineLoop::GetTimeSinceStart() - m_TimeOfLastSearch;
 				std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
-				m_ReceivedPackets[m_BufferIndex].PushBack({ decoder, sender,  ping, isLAN });
+				m_ReceivedPackets[m_BufferIndex].PushBack({ decoder, sender, ping });
 				return true;
 			}
 		}
@@ -218,9 +213,10 @@ namespace LambdaEngine
 		for (Packet& packet : packets)
 		{
 			BinaryDecoder& decoder = packet.Decoder;
+			bool isLAN = decoder.ReadBool();
 			IPEndPoint endpoint(packet.Sender.GetAddress(), decoder.ReadUInt16());
 			uint64 serverUID = decoder.ReadUInt64();
-			m_pHandler->OnServerFound(decoder, endpoint, serverUID, packet.Ping, packet.IsLAN);
+			m_pHandler->OnServerFound(decoder, endpoint, serverUID, packet.Ping, isLAN);
 #ifdef LAMBDA_CONFIG_DEBUG
 			m_SegmentPool.FreeSegment(decoder.GetPacket(), "ClientNetworkDiscovery::HandleReceivedPacketsMainThread");
 #else

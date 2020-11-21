@@ -154,6 +154,7 @@ namespace LambdaEngine
 
 				BinaryEncoder encoder(pResponse);
 				encoder.WriteString(m_NameOfGame);
+				encoder.WriteBool(decoder.ReadBool());
 				encoder.WriteUInt16(m_PortOfGameServer);
 				encoder.WriteUInt64(m_ServerUID);
 				m_pHandler->OnNetworkDiscoveryPreTransmit(encoder);
