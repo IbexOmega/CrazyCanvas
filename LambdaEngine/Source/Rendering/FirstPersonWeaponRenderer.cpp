@@ -211,7 +211,7 @@ namespace LambdaEngine
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
 
-			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
 				Sampler* pSampler = Sampler::GetLinearSampler();
@@ -227,7 +227,7 @@ namespace LambdaEngine
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
 
-			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
 				Sampler* pSampler = Sampler::GetLinearSampler();
@@ -243,7 +243,7 @@ namespace LambdaEngine
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
 
-			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
 				Sampler* pSampler = Sampler::GetLinearSampler();
@@ -269,7 +269,7 @@ namespace LambdaEngine
 		{
 			constexpr DescriptorSetIndex setIndex = 0U;
 
-			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet0 != nullptr)
 			{
 				m_DescriptorSet0->WriteBufferDescriptors(
@@ -290,7 +290,7 @@ namespace LambdaEngine
 		{
 			constexpr DescriptorSetIndex setIndex = 0U;
 
-			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet0 != nullptr)
 			{
 				m_DescriptorSet0->WriteBufferDescriptors(
@@ -311,7 +311,7 @@ namespace LambdaEngine
 		{
 			constexpr DescriptorSetIndex setIndex = 0U;
 
-			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet0 != nullptr)
 			{
 				m_DescriptorSet0->WriteBufferDescriptors(
@@ -380,7 +380,7 @@ namespace LambdaEngine
 								const uint64 pOffsets2 = { 0 };
 								uint64 pSizesInBytes2 = { sizeof(FrameBuffer) };
 								DescriptorSetIndex setIndex0 = 0;
-								m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex0, m_DescriptorHeap.Get());
+								m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex0, m_DescriptorHeap.Get());
 								if (m_DescriptorSet0 != nullptr)
 								{
 									m_DescriptorSet0->WriteBufferDescriptors(
@@ -775,7 +775,7 @@ namespace LambdaEngine
 		depthAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 		depthAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
 		depthAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_UNKNOWN; //unknown since it is only used internally
-		depthAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_UNKNOWN;
+		depthAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDesc subpassDesc = {};
 		subpassDesc.RenderTargetStates = { ETextureState::TEXTURE_STATE_RENDER_TARGET }; // specify render targets state
@@ -803,7 +803,7 @@ namespace LambdaEngine
 	bool FirstPersonWeaponRenderer::CreatePipelineState()
 	{
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
-		pipelineStateDesc.DebugName = "Player Renderer Pipeline Back Cull State";
+		pipelineStateDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Back Cull State";
 		pipelineStateDesc.RenderPass = m_RenderPass;
 		pipelineStateDesc.PipelineLayout = m_PipelineLayout;
 
@@ -838,7 +838,7 @@ namespace LambdaEngine
 
 
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc2 = {};
-		pipelineStateDesc2.DebugName = "Player Renderer Pipeline Front Cull State";
+		pipelineStateDesc2.DebugName = "FirstPersonWeapon Renderer Pipeline Front Cull State";
 		pipelineStateDesc2.RenderPass = m_RenderPass;
 		pipelineStateDesc2.PipelineLayout = m_PipelineLayout;
 
