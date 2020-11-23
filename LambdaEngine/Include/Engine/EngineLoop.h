@@ -60,9 +60,6 @@ namespace LambdaEngine
 		static Timestamp GetTimeSinceStart();
 
 	private:
-		static bool InitComponentOwners();
-		static bool ReleaseComponentOwners();
-
 		/*
 		* Initializes ECS systems. Separate from EngineLoop::Init to avoid cluttering.
 		*/

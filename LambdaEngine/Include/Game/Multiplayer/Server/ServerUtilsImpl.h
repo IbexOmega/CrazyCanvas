@@ -19,5 +19,8 @@ namespace LambdaEngine
 
 	private:
 		ServerUtilsImpl();
+
+	private:
+		TSet<Entity> m_Entities;
 	};
 }
