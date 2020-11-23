@@ -15,10 +15,18 @@ typedef std::pair<LambdaEngine::Entity, float32> PlayerRespawnTimer;
 
 class MatchServer : public MatchBase
 {
+	struct PlayerKillDesc
+	{
+		LambdaEngine::Entity PlayerToKill	= UINT32_MAX;
+		bool RespawnFlagIfCarried			= false;
+	};
+
 public:
 	MatchServer() = default;
 	~MatchServer();
 
+	virtual void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity) override final;
+	
 protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
@@ -41,19 +49,19 @@ private:
 	bool OnFlagRespawn(const FlagRespawnEvent& event);
 
 	void RespawnPlayer(LambdaEngine::Entity entity);
-	void DoKillPlayer(LambdaEngine::Entity playerEntity);
+	void DoKillPlayer(LambdaEngine::Entity playerEntity, bool respawnFlag);
 
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
-	void InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
+	void InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity, bool respawnFlagIfCarried);
 
 public:
-	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
+	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity, bool respawnFlagIfCarried);
 
 	bool CreateFlagSpawnProperties(uint8 teamIndex, glm::vec3& position);
 
 private:
 	LambdaEngine::SpinLock m_PlayersToKillLock;
-	LambdaEngine::TArray<LambdaEngine::Entity> m_PlayersToKill;
+	LambdaEngine::TArray<PlayerKillDesc> m_PlayersToKill;
 
 	LambdaEngine::SpinLock m_PlayersToRespawnLock;
 	//LambdaEngine::TQueue<PlayerTimers> m_PlayersToRespawn;

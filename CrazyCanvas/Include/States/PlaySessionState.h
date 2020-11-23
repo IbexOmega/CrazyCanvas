@@ -2,6 +2,7 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Player/HealthSystem.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Misc/DestructionSystem.h"
 
 #include "Game/State.h"
 
@@ -50,6 +51,7 @@ private:
 	HUDSystem m_HUDSystem;
 	SpectateCameraSystem m_CamSystem;
 	MultiplayerClient m_MultiplayerClient;
+	DestructionSystem m_DestructionSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;

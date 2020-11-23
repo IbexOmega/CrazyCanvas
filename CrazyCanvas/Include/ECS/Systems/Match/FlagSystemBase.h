@@ -22,6 +22,18 @@ public:
 	virtual void OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 	virtual void OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 
+	static void StaticOnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+	{
+		VALIDATE(s_pInstance != nullptr);
+		s_pInstance->OnPlayerFlagCollision(entity0, entity1);
+	}
+
+	static void StaticOnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+	{
+		VALIDATE(s_pInstance != nullptr);
+		s_pInstance->OnDeliveryPointFlagCollision(entity0, entity1);
+	}
+
 protected:
 	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
 	{
@@ -39,7 +51,7 @@ protected:
 public:
 	FORCEINLINE static FlagSystemBase* GetInstance() 
 	{ 
-		return s_Instance; 
+		return s_pInstance;
 	}
 
 protected:
@@ -54,5 +66,5 @@ protected:
 	LambdaEngine::IDVector m_Flags;
 
 private:
-	inline static FlagSystemBase* s_Instance = nullptr;
+	inline static FlagSystemBase* s_pInstance = nullptr;
 };
