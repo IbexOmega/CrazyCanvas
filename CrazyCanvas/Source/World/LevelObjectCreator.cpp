@@ -32,6 +32,7 @@
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/GUI/ProjectedGUIComponent.h"
+#include "ECS/Components/Misc/DestructionComponent.h"
 
 #include "Teams/TeamHelper.h"
 
@@ -1081,9 +1082,11 @@ bool LevelObjectCreator::CreateProjectile(
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
-	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition });
+	const glm::vec3 normVelocity = glm::normalize(desc.InitalVelocity);
+	const glm::vec3 projectileOffset = normVelocity * 0.5f;
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition + projectileOffset });
 	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(0.7f) });
-	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(glm::normalize(desc.InitalVelocity), g_DefaultUp) });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(normVelocity, g_DefaultUp) });
 
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
@@ -1124,29 +1127,51 @@ bool LevelObjectCreator::CreateProjectile(
 			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
 			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 		}
-
-		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{
+		
+		// Create particles
+		ParticleEmitterComponent emitterComponent = ParticleEmitterComponent{
 				.Active = true,
-				.OneTime = true,
-				.Explosive = 1.0f,
+				.OneTime = false,
+				.Explosive = 0.5f,
+				.SpawnDelay = 0.05f,
 				.ParticleCount = 64,
 				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 15.f,
+				.Angle = 90.f,
 				.VelocityRandomness = 0.5f,
-				.Velocity = 10.0,
+				.Velocity = 1.0,
 				.Acceleration = 0.0,
-				.Gravity = -4.f,
-				.LifeTime = 2.0f,
+				.Gravity = -7.f,
+				.LifeTime = 3.0f,
 				.RadiusRandomness = 0.5f,
-				.BeginRadius = 0.1f,
+				.BeginRadius = 0.2f,
 				.FrictionFactor = 0.f,
 				.Bounciness = 0.f,
-				.TileIndex = 14,
-				.AnimationCount = 1,
-				.FirstAnimationIndex = 14,
+				.RandomStartIndex = true,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 0,
 				.Color = particleColor,
-			}
-		);
+		};
+
+		// Create trail particles
+		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, emitterComponent);
+
+		// Create muzzle particles
+		{
+			emitterComponent.OneTime = true;
+			emitterComponent.ParticleCount = 64;
+			emitterComponent.BeginRadius = 0.1f;
+			emitterComponent.Explosive = 1.0f;
+			emitterComponent.SpawnDelay = 0.1f;
+			emitterComponent.Velocity = 6.0f;
+			emitterComponent.Angle = 45.0f;
+			
+			const Entity particleEntity = pECS->CreateEntity();
+			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + projectileOffset });
+			pECS->AddComponent<ScaleComponent>(particleEntity, { true, glm::vec3(0.7f) });
+			pECS->AddComponent<RotationComponent>(particleEntity, { true, glm::quatLookAt(normVelocity, g_DefaultUp) });
+			pECS->AddComponent<DestructionComponent>(particleEntity, { .TimeLeft = 0.1f });
+			pECS->AddComponent<ParticleEmitterComponent>(particleEntity, emitterComponent);
+		}
 
 		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
 				.HitMask = 0x02
