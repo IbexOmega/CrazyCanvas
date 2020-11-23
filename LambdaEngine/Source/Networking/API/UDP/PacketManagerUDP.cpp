@@ -47,9 +47,14 @@ namespace LambdaEngine
 			if (!pPacket->IsReliable())																//Unreliable Packet
 			{
 				if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_ACK)
+				{
 					packetsToFree.PushBack(pPacket);
+				}
 				else
+				{
 					segmentsReturned.PushBack(pPacket);
+					m_Statistics.RegisterUniqueSegmentReceived(pPacket->GetType());
+				}
 			}
 			else
 			{
@@ -58,6 +63,7 @@ namespace LambdaEngine
 				if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)		//Reliable Packet in correct order
 				{
 					segmentsReturned.PushBack(pPacket);
+					m_Statistics.RegisterUniqueSegmentReceived(pPacket->GetType());
 					m_Statistics.RegisterReliableSegmentReceived();
 					runUntangler = true;
 				}
@@ -75,7 +81,7 @@ namespace LambdaEngine
 		}
 		
 #ifdef LAMBDA_CONFIG_DEBUG
-		m_SegmentPool.FreeSegments(packetsToFree, "PacketManagerTCP::FindSegmentsToReturn");
+		m_SegmentPool.FreeSegments(packetsToFree, "PacketManagerUDP::FindSegmentsToReturn");
 #else
 		m_SegmentPool.FreeSegments(packetsToFree);
 #endif
@@ -102,6 +108,7 @@ namespace LambdaEngine
 			if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)
 			{
 				segmentsReturned.PushBack(pPacket);
+				m_Statistics.RegisterUniqueSegmentReceived(pPacket->GetType());
 				packetsToErase.PushBack(pPacket);
 				m_Statistics.RegisterReliableSegmentReceived();
 			}
@@ -115,11 +122,10 @@ namespace LambdaEngine
 
 	void PacketManagerUDP::ResendOrDeleteSegments()
 	{
-		static Timestamp minTime = Timestamp::MilliSeconds(5);
-		float64 pingNanos = (float32)m_Statistics.GetPing().AsNanoSeconds();
-		Timestamp maxAllowedTime = Timestamp((uint64)(pingNanos * (float64)m_ResendRTTMultiplier));
-		if (maxAllowedTime < minTime)
-			maxAllowedTime = minTime;
+		static float64 minMillis = 5.0f;
+		float64 pingMillis = m_Statistics.GetPing() * (float64)m_ResendRTTMultiplier;
+		if (pingMillis < minMillis)
+			pingMillis = minMillis;
 
 		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 
@@ -131,16 +137,20 @@ namespace LambdaEngine
 			for (auto& pair : m_SegmentsWaitingForAck)
 			{
 				SegmentInfo& messageInfo = pair.second;
-				if (currentTime - messageInfo.LastSent > maxAllowedTime)
+				if (messageInfo.LastSent != UINT64_MAX && (currentTime - messageInfo.LastSent).AsMilliSeconds() > pingMillis)
 				{
 					messageInfo.Retries++;
+
+					//LOG_INFO("%d: RESEND: %s", (int32)EngineLoop::GetTimeSinceStart().AsMilliSeconds(), messageInfo.Segment->ToString().c_str());
 
 					if (messageInfo.Retries < m_MaxRetries)
 					{
 						InsertSegment(messageInfo.Segment);
-						messageInfo.LastSent = currentTime;
+						messageInfo.LastSent = UINT64_MAX;
 						if (messageInfo.Listener)
 							messageInfo.Listener->OnPacketResent(messageInfo.Segment, messageInfo.Retries);
+
+						m_Statistics.RegisterSegmentResent();
 					}
 					else
 					{

@@ -12,6 +12,7 @@
 
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Misc/DestructionComponent.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -32,6 +33,8 @@
 #include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
+
+#include "Teams/TeamHelper.h"
 
 #include "Input/API/Input.h"
 
@@ -91,6 +94,7 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
+	m_DestructionSystem.Init();
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
@@ -106,10 +110,16 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[5]
 		};
 
 		Match::CreateMatch(&matchDescription);
+	}
+
+	// Set Team Colors
+	{
+		TeamHelper::SetTeamColor(0, glm::vec3(1.0f, 1.0f, 0.0f));
+		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
 	}
 
 	{
@@ -265,23 +275,23 @@ void SandboxState::Init()
 
 	// Emitter
 	{
-		//Entity entity = pECS->CreateEntity();
-		//pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		//pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		//pECS->AddComponent<ParticleEmitterComponent>(entity,
-		//	ParticleEmitterComponent{
-		//		.ParticleCount = 5,
-		//		.EmitterShape = EEmitterShape::TUBE,
-		//		.Velocity = 1.0f,
-		//		.Acceleration = 0.0f,
-		//		.BeginRadius = 0.5f,
-		//		.TileIndex = 16,
-		//		.AnimationCount = 4,
-		//		.FirstAnimationIndex = 16,
-		//		.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
-		//	}
-		//);
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 2.0f, 5.0f } });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 5,
+				.EmitterShape = EEmitterShape::TUBE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 0.5f,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 0,
+				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+			}
+		);
 	}
+
 
 
 	// Create dirLight
@@ -420,7 +430,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 				m_Emitters[modIndex] = e;
 
 				pECSCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -4.f + float(modIndex) } });
-				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), float(modIndex % 3U), float(modIndex % 5U)))) });
+				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), 5.0f + float(modIndex % 3U), float(modIndex % 5U)))) });
 				pECSCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
 					.OneTime = true,
 					.Explosive = 0.9f,
@@ -431,8 +441,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 					.Gravity = Random::Float32(-5.0f, 5.0f),
 					.LifeTime = Random::Float32(1.0f, 3.0f),
 					.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f),
-					.TileIndex = 14,
-					.FirstAnimationIndex = 14,
+					.FirstAnimationIndex = 6,
 					.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
 				});
 			}

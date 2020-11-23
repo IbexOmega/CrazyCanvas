@@ -31,6 +31,10 @@ public:
 	inline static LambdaEngine::TArray<GUID_Lambda> PLAYER_STRAFE_RIGHT_GUIDs;
 	inline static GUID_Lambda PLAYER_STEP_SOUND_GUID = GUID_NONE;
 
+	// Projectile
+	inline static GUID_Lambda PROJECTILE_MESH_GUID = GUID_NONE;
+	inline static GUID_Lambda PROJECTILE_WATER_MATERIAL = GUID_NONE;
+
 	//Weapon
 	inline static GUID_Lambda WEAPON_MESH_GUID = GUID_NONE;
 	inline static GUID_Lambda WEAPON_MATERIAL_GUID = GUID_NONE;

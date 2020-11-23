@@ -100,7 +100,7 @@ namespace LambdaEngine
 		return m_State;
 	}
 
-	const NetworkStatistics* ClientBase::GetStatistics() const
+	NetworkStatistics* ClientBase::GetStatistics()
 	{
 		return GetPacketManager()->GetStatistics();
 	}
@@ -136,7 +136,7 @@ namespace LambdaEngine
 
 	uint64 ClientBase::GetUID() const
 	{
-		return GetStatistics()->GetRemoteSalt();
+		return GetPacketManager()->GetStatistics()->GetRemoteSalt();
 	}
 
 	void ClientBase::SendConnect()
@@ -185,11 +185,6 @@ namespace LambdaEngine
 				{
 					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
 					NetworkSegment* pPacket = GetFreePacket(NetworkSegment::TYPE_PING);
-					BinaryEncoder encoder(pPacket);
-					NetworkStatistics& pStatistics = GetPacketManager()->m_Statistics;
-					encoder.WriteUInt32(pStatistics.GetPacketsSent());
-					encoder.WriteUInt32(pStatistics.GetPacketsReceived());
-					pStatistics.UpdatePacketsSentFixed();
 					SendReliable(pPacket);
 				}
 			}
@@ -289,12 +284,7 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
-			BinaryDecoder decoder(pPacket);
-			uint32 packetsSentByRemote		= decoder.ReadUInt32() + 1;
-			uint32 packetsReceivedByRemote	= decoder.ReadUInt32();
-			NetworkStatistics& statistics = GetPacketManager()->m_Statistics;
-			statistics.SetPacketsSentByRemote(packetsSentByRemote);
-			statistics.SetPacketsReceivedByRemote(packetsReceivedByRemote);
+			
 		}
 		else
 		{

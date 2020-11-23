@@ -81,6 +81,21 @@ void Match::BeginLoading()
 		s_pMatchInstance->BeginLoading();
 }
 
+void Match::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity)
+{
+	using namespace LambdaEngine;
+
+	if (s_pMatchInstance != nullptr)
+	{
+		s_pMatchInstance->KillPlaneCallback(killPlaneEntity, otherEntity);
+	}
+	else
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		pECS->RemoveEntity(otherEntity);
+	}
+}
+
 void Match::Tick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;

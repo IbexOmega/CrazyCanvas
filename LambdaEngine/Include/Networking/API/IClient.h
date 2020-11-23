@@ -40,7 +40,7 @@ namespace LambdaEngine
 		virtual const IPEndPoint& GetEndPoint() const = 0;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) = 0;
 		virtual EClientState GetState() const = 0;
-		virtual const NetworkStatistics* GetStatistics() const = 0;
+		virtual NetworkStatistics* GetStatistics() = 0;
 		virtual PacketManagerBase* GetPacketManager() = 0;
 		virtual const PacketManagerBase* GetPacketManager() const = 0;
 		virtual IClientRemoteHandler* GetHandler() = 0;

@@ -16,6 +16,8 @@
 
 #include "World/LevelManager.h"
 
+#include "Teams/TeamHelper.h"
+
 using namespace Noesis;
 using namespace LambdaEngine;
 
@@ -26,8 +28,10 @@ LobbyGUI::LobbyGUI(PacketGameSettings* pGameSettings) :
 	GUI::LoadComponent(this, "Lobby.xaml");
 
 	// Get commonly used elements
-	m_pBlueTeamStackPanel		= FrameworkElement::FindName<StackPanel>("BlueTeamStackPanel");
-	m_pRedTeamStackPanel		= FrameworkElement::FindName<StackPanel>("RedTeamStackPanel");
+	m_pTeam1StackPanel			= FrameworkElement::FindName<StackPanel>("Team1StackPanel");
+	m_pTeam2StackPanel			= FrameworkElement::FindName<StackPanel>("Team2StackPanel");
+	m_pTeam1Label				= FrameworkElement::FindName<Label>("Team1Label");
+	m_pTeam2Label				= FrameworkElement::FindName<Label>("Team2Label");
 	m_pChatScrollViewer			= FrameworkElement::FindName<ScrollViewer>("ChatScrollViewer");
 	m_pChatPanel				= FrameworkElement::FindName<StackPanel>("ChatStackPanel");
 	m_pSettingsNamesStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsNamesStackPanel");
@@ -58,7 +62,9 @@ void LobbyGUI::InitGUI()
 	for (EGameMode gameMode : gameModes)
 		gameModeNames.PushBack(GameModeToString(gameMode));
 
-	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_pGameSettings->ServerName);
+	TArray<glm::vec3> colors = TeamHelper::GetAllAvailableColors();
+
+	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_GameSettings.ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
 	AddSettingComboBox(SETTING_GAME_MODE,		"Game Mode",			gameModeNames, (uint8)m_pGameSettings->GameMode);
 	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
@@ -66,6 +72,8 @@ void LobbyGUI::InitGUI()
 	/*AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
+	AddSettingColorBox(SETTING_CHANGE_TEAM_0_COLOR, "Team Color 0", colors, 0);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team Color 1", colors, 1);
 
 	UpdateSettings(*m_pGameSettings);
 
@@ -74,7 +82,7 @@ void LobbyGUI::InitGUI()
 
 void LobbyGUI::AddPlayer(const Player& player)
 {
-	StackPanel* pPanel = player.GetTeam() == 0 ? m_pBlueTeamStackPanel : m_pRedTeamStackPanel;
+	StackPanel* pPanel = player.GetTeam() == 0 ? m_pTeam1StackPanel : m_pTeam2StackPanel;
 
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
@@ -114,13 +122,13 @@ void LobbyGUI::RemovePlayer(const Player& player)
 
 	Grid* pGrid = FrameworkElement::FindName<Grid>(uidGrid.c_str());
 
-	if (m_pBlueTeamStackPanel->GetChildren()->Contains(pGrid))
+	if (m_pTeam1StackPanel->GetChildren()->Contains(pGrid))
 	{
-		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
+		m_pTeam1StackPanel->GetChildren()->Remove(pGrid);
 	}
 	else
 	{
-		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
+		m_pTeam2StackPanel->GetChildren()->Remove(pGrid);
 	}
 
 	UnregisterName(uidGrid);
@@ -218,10 +226,11 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 	}
 	else
 	{
-		Color colorBlue;
-		Color::TryParse("#05DFD7", colorBlue);
+		uint8 colorIndex = chatMessage.Team == 0 ? m_GameSettings.TeamColor0 : m_GameSettings.TeamColor1;
+		glm::vec3 teamColor = TeamHelper::GetAvailableColor(colorIndex);
+		Color chatMessageColor(teamColor.r, teamColor.g, teamColor.b);
 
-		pBrush->SetColor(chatMessage.Team == 0 ? colorBlue : Color::Red());
+		pBrush->SetColor(chatMessageColor);
 	}
 	pLabel->SetForeground(pBrush);
 
@@ -257,6 +266,8 @@ void LobbyGUI::SetHostMode(bool isHost)
 
 void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 {
+	*m_pGameSettings = packet;
+
 	Label* pSettingServerName = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_SERVER_NAME) + "_client").c_str());
 	if(pSettingServerName)
 		pSettingServerName->SetContent(packet.ServerName);
@@ -289,6 +300,43 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 	if (pSettingChangeTeam)
 		pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
 
+	TextBlock* pSettingChangeTeamColor0 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_0_COLOR) + "_client").c_str());
+	if (pSettingChangeTeamColor0)
+	{
+		glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor0);
+		Color teamColor = Color(color.r, color.g, color.b);
+
+		// Update Settings Color
+		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor0->GetBackground());
+		pSolidColorBrush->SetColor(teamColor);
+		
+		// Update Team Label color
+		pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
+		pSolidColorBrush->SetColor(teamColor);
+
+		// Update old messages text color
+		m_pChatPanel->GetChildren()->Clear();
+		ChatManager::RenotifyAllChatMessages();
+	}
+
+	TextBlock* pSettingChangeTeamColor1 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_1_COLOR) + "_client").c_str());
+	if (pSettingChangeTeamColor1)
+	{
+		glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor1);
+		Color teamColor = Color(color.r, color.g, color.b);
+
+		// Update Settings Color
+		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor1->GetBackground());
+		pSolidColorBrush->SetColor(teamColor);
+
+		// Update Team Label color
+		pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
+		pSolidColorBrush->SetColor(teamColor);
+
+		// Update old messages text color
+		m_pChatPanel->GetChildren()->Clear();
+		ChatManager::RenotifyAllChatMessages();
+	}
 
 
 	TextBox* pServerNameTextBox = FrameworkElement::FindName<TextBox>((LambdaEngine::String(SETTING_SERVER_NAME) + "_host").c_str());
@@ -355,7 +403,6 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		pSettingChangeTeamHost->SetSelectedIndex(packet.ChangeTeam ? 0 : 1);
 
 	UpdatePlayersLabel();
-	*m_pGameSettings = packet;
 }
 
 void LobbyGUI::AddSettingComboBox(
@@ -389,6 +436,38 @@ void LobbyGUI::AddSettingComboBox(
 	settingComboBox->SetFocusable(false);
 }
 
+void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::TArray<glm::vec3>& settingColors, uint8 defaultIndex)
+{
+	// Add setting text
+	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
+
+	// Add setting client text (default value is set as content)
+	// Temporary until Rectangle can be adjusted to fit parent
+	AddTextBoxWithColor(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientTextStyle", "\t\t\t\t", TeamHelper::GetAvailableColor(defaultIndex));
+
+	// Add setting combobox for colors
+	Ptr<ComboBox> settingComboBox = *new ComboBox();
+	Style* pStyle = FrameworkElement::FindResource<Style>("SettingsHostStyle");
+	settingComboBox->SetStyle(pStyle);
+	settingComboBox->SetName((settingKey + "_host").c_str());
+	settingComboBox->SelectionChanged() += MakeDelegate(this, &LobbyGUI::OnComboBoxSelectionChanged);
+	settingComboBox->SetFocusable(false);
+	RegisterName(settingComboBox->GetName(), settingComboBox);
+	m_pSettingsHostStackPanel->GetChildren()->Add(settingComboBox);
+
+	for (auto& color : settingColors)
+	{
+		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+		pBrush->SetColor(Color(color.r, color.g, color.b));
+
+		Ptr<TextBlock> settingTextBlock = *new TextBlock();
+		settingTextBlock->SetText("");
+		settingTextBlock->SetBackground(pBrush);
+		settingComboBox->GetItems()->Add(settingTextBlock);
+	}
+	settingComboBox->SetSelectedIndex(defaultIndex);
+
+}
 
 void LobbyGUI::AddSettingTextBox(
 	const LambdaEngine::String& settingKey,
@@ -523,6 +602,38 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	{
 		m_pGameSettings->ChangeTeam = textSelected == "True";
 	}
+	else if (setting == SETTING_CHANGE_TEAM_0_COLOR || setting == SETTING_CHANGE_TEAM_1_COLOR)
+	{
+		// Update combobox display color
+		glm::vec3 color = TeamHelper::GetAvailableColor(indexSelected);
+		Color teamColor = Color(color.r, color.g, color.b);
+		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+		pBrush->SetColor(Color(color.r, color.g, color.b));
+
+		// Update Settings Color
+		pComboBox->SetBackground(pBrush);
+
+		if (setting == SETTING_CHANGE_TEAM_0_COLOR)
+		{
+			// Update Settings Color
+			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
+			pSolidColorBrush->SetColor(teamColor);
+
+			m_GameSettings.TeamColor0 = (uint8)indexSelected;
+		}
+		else
+		{
+			// Update Settings Color
+			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
+			pSolidColorBrush->SetColor(teamColor);
+
+			m_GameSettings.TeamColor1 = (uint8)indexSelected;
+		}
+
+		// Update old messages text color
+		m_pChatPanel->GetChildren()->Clear();
+		ChatManager::RenotifyAllChatMessages();
+	}
 
 	SendGameSettings();
 }
@@ -547,7 +658,7 @@ void LobbyGUI::AddColumnDefinitionStar(ColumnDefinitionCollection* columnCollect
 	columnCollection->Add(col);
 }
 
-Label* LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Panel* parent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content)
+Label* LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& content)
 {
 	Ptr<Label> label = *new Label();
 
@@ -562,9 +673,30 @@ Label* LobbyGUI::AddLabelWithStyle(const LambdaEngine::String& name, Panel* pare
 
 	Style* pStyle = FrameworkElement::FindResource<Style>(styleKey.c_str());
 	label->SetStyle(pStyle);
-	parent->GetChildren()->Add(label);
+	pParent->GetChildren()->Add(label);
 
 	return label;
+}
+
+void LobbyGUI::AddTextBoxWithColor(const LambdaEngine::String& name, Noesis::Panel* pParent, const LambdaEngine::String& styleKey, const LambdaEngine::String& text, const glm::vec3& color)
+{
+	Ptr<TextBlock> textBlock = *new TextBlock();
+
+	if (name != "")
+	{
+		textBlock->SetName(name.c_str());
+		RegisterName(name, textBlock);
+	}
+
+	textBlock->SetText(text.c_str());
+
+	Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
+	pBrush->SetColor(Color(color.r, color.g, color.b));
+	textBlock->SetBackground(pBrush);
+
+	Style* pStyle = FrameworkElement::FindResource<Style>(styleKey.c_str());
+	textBlock->SetStyle(pStyle);
+	pParent->GetChildren()->Add(textBlock);
 }
 
 void LobbyGUI::RegisterName(const LambdaEngine::String& name, BaseComponent* comp)
@@ -596,12 +728,12 @@ Grid* LobbyGUI::GetPlayerGrid(const Player& player)
 {
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
-	Grid* pGrid = m_pBlueTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	Grid* pGrid = m_pTeam1StackPanel->FindName<Grid>((uid + "_grid").c_str());
 	if (pGrid)
 	{
 		return pGrid;
 	}
 
-	pGrid = m_pRedTeamStackPanel->FindName<Grid>((uid + "_grid").c_str());
+	pGrid = m_pTeam2StackPanel->FindName<Grid>((uid + "_grid").c_str());
 	return pGrid;
 }

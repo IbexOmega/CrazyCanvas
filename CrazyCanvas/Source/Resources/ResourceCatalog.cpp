@@ -39,6 +39,25 @@ bool ResourceCatalog::Init()
 		PLAYER_STEP_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
 	}
 
+	// Projectile
+	{
+		ResourceManager::LoadMeshFromFile("sphere.obj", PROJECTILE_MESH_GUID);
+
+		MaterialProperties projectileMaterialProperties;
+		projectileMaterialProperties.Metallic = 0.5f;
+		projectileMaterialProperties.Roughness = 0.1f;
+		projectileMaterialProperties.Albedo = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
+
+		PROJECTILE_WATER_MATERIAL = ResourceManager::LoadMaterialFromMemory(
+			"Water Projectile",
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			projectileMaterialProperties);
+	}
+
 	//Weapon
 	{
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", WEAPON_MESH_GUID, WEAPON_MATERIAL_GUID);

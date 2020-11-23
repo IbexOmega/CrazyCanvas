@@ -369,7 +369,6 @@ bool BenchmarkState::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.InitalVelocity = event.InitialVelocity;
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
-	createProjectileDesc.MeshComponent	= event.MeshComponent;
 
 	TArray<Entity> createdFlagEntities;
 	if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE, &createProjectileDesc, createdFlagEntities))

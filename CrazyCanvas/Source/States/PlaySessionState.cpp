@@ -41,9 +41,13 @@
 #include "Game/StateManager.h"
 #include "States/MainMenuState.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "GUI/GUIHelpers.h"
 
 #include "Resources/ResourceCatalog.h"
+
+#include "ECS/Systems/Misc/DestructionSystem.h"
 
 using namespace LambdaEngine;
 
@@ -58,6 +62,15 @@ PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool 
 	{
 		SingleplayerInitializer::Init();
 	}
+
+	// Update Team colors and materials
+	TeamHelper::SetTeamColor(0, TeamHelper::GetAvailableColor(gameSettings.TeamColor0));
+	TeamHelper::SetTeamColor(1, TeamHelper::GetAvailableColor(gameSettings.TeamColor1));
+
+	// Set Team Paint colors
+	auto& renderSystem = RenderSystem::GetInstance();
+	renderSystem.SetPaintMaskColor(2, TeamHelper::GetTeamColor(0));
+	renderSystem.SetPaintMaskColor(1, TeamHelper::GetTeamColor(1));
 
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
 }
@@ -113,7 +126,10 @@ void PlaySessionState::Init()
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
 
+	// Init Systems
 	m_HUDSystem.Init();
+	m_DestructionSystem.Init();
+
 }
 
 void PlaySessionState::Tick(Timestamp delta)

@@ -120,7 +120,7 @@ namespace LambdaEngine
 				continue;
 			
 			TArray<NetworkSegment*> packets;
-			TArray<uint32> acks;
+			TSet<uint32> acks;
 
 			if (m_Transceiver.ReceiveEnd(&m_SegmentPool, packets, acks, &m_Statistics) && packets.GetSize() == 1)
 				HandleReceivedPacket(sender, packets[0]);
@@ -154,6 +154,7 @@ namespace LambdaEngine
 
 				BinaryEncoder encoder(pResponse);
 				encoder.WriteString(m_NameOfGame);
+				encoder.WriteBool(decoder.ReadBool());
 				encoder.WriteUInt16(m_PortOfGameServer);
 				encoder.WriteUInt64(m_ServerUID);
 				m_pHandler->OnNetworkDiscoveryPreTransmit(encoder);

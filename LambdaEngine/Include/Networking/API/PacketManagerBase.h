@@ -60,6 +60,7 @@ namespace LambdaEngine
 		virtual void Tick(Timestamp delta);
 
 		SegmentPool* GetSegmentPool();
+		NetworkStatistics* GetStatistics();
 		const NetworkStatistics* GetStatistics() const;
 		const IPEndPoint& GetEndPoint() const;
 		void SetEndPoint(const IPEndPoint& ipEndPoint);
@@ -72,8 +73,8 @@ namespace LambdaEngine
 	private:
 		uint32 EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID);
 		void DeleteOldBundles();
-		void HandleAcks(const TArray<uint32>& acks);
-		void GetReliableUIDsFromAckedPackets(const TArray<uint32>& acks, TArray<uint32>& ackedReliableUIDs);
+		void HandleAcks(const TSet<uint32>& acks);
+		void GetReliableUIDsFromAckedPackets(const TSet<uint32>& acks, TArray<uint32>& ackedReliableUIDs);
 		void GetReliableSegmentInfosFromUIDs(const TArray<uint32>& ackedReliableUIDs, TArray<SegmentInfo>& ackedReliableSegments);
 		void RegisterRTT(Timestamp rtt);
 

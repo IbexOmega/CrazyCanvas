@@ -53,6 +53,8 @@ public:
 	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE(teamIndex < m_Scores.GetSize()); return m_Scores[teamIndex]; }
 	FORCEINLINE EGameMode GetGameMode() const { return m_MatchDesc.GameMode; }
 
+	virtual void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity) = 0;
+
 protected:
 	bool SetScore(uint8 teamIndex, uint32 score);
 

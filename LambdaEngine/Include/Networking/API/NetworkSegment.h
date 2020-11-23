@@ -27,7 +27,7 @@ namespace LambdaEngine
 
 		enum Type : uint16
 		{
-			TYPE_UNDEFINED				= UINT16_MAX - 0,
+			TYPE_UNDEFINED				= UINT16_MAX - 0, //65 535
 			TYPE_PING					= UINT16_MAX - 1,
 			TYPE_SERVER_FULL			= UINT16_MAX - 2,
 			TYPE_SERVER_NOT_ACCEPTING	= UINT16_MAX - 3,

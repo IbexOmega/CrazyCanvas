@@ -31,13 +31,19 @@ namespace LambdaEngine
 			if (!pSegment->IsReliable())
 			{
 				if (pSegment->GetType() == NetworkSegment::TYPE_NETWORK_ACK)
+				{
 					packetsToFree.PushBack(pSegment);
+				}
 				else
+				{
 					segmentsReturned.PushBack(pSegment);
+					m_Statistics.RegisterUniqueSegmentReceived(pSegment->GetType());
+				}
 			}
 			else
 			{
 				segmentsReturned.PushBack(pSegment);
+				m_Statistics.RegisterUniqueSegmentReceived(pSegment->GetType());
 				hasReliableSegment = true;
 			}
 		}

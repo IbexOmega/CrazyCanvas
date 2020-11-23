@@ -8,6 +8,11 @@
 
 #include "Engine/EngineLoop.h"
 
+#include "Rendering/ImGuiRenderer.h"
+
+#define IMGUI_DISABLE_OBSOLETE_FUNCTIONS
+#include <imgui.h>
+
 namespace LambdaEngine
 {
 	SpinLock ClientRemoteBase::s_LockStatic;
@@ -214,7 +219,7 @@ namespace LambdaEngine
 		return m_State;
 	}
 
-	const NetworkStatistics* ClientRemoteBase::GetStatistics() const
+	NetworkStatistics* ClientRemoteBase::GetStatistics()
 	{
 		return GetPacketManager()->GetStatistics();
 	}
@@ -226,7 +231,7 @@ namespace LambdaEngine
 
 	uint64 ClientRemoteBase::GetUID() const
 	{
-		return GetStatistics()->GetSalt();
+		return GetPacketManager()->GetStatistics()->GetSalt();
 	}
 
 	void ClientRemoteBase::TransmitPackets()
@@ -329,11 +334,6 @@ namespace LambdaEngine
 				{
 					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
 					NetworkSegment* pPacket = GetFreePacket(NetworkSegment::TYPE_PING);
-					BinaryEncoder encoder(pPacket);
-					NetworkStatistics& pStatistics = GetPacketManager()->m_Statistics;
-					encoder.WriteUInt32(pStatistics.GetPacketsSent());
-					encoder.WriteUInt32(pStatistics.GetPacketsReceived());
-					pStatistics.UpdatePacketsSentFixed();
 					SendReliable(pPacket);
 				}
 			}
@@ -383,12 +383,7 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
-			BinaryDecoder decoder(pPacket);
-			uint32 packetsSentByRemote		= decoder.ReadUInt32() + 1;
-			uint32 packetsReceivedByRemote	= decoder.ReadUInt32();
-			NetworkStatistics& statistics = GetPacketManager()->m_Statistics;
-			statistics.SetPacketsSentByRemote(packetsSentByRemote);
-			statistics.SetPacketsReceivedByRemote(packetsReceivedByRemote);
+			
 		}
 		else if (IsConnected())
 		{

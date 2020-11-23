@@ -30,7 +30,7 @@ namespace LambdaEngine
 enum class ELevelObjectType : uint8
 {
 	LEVEL_OBJECT_TYPE_NONE					= 0,
-	LEVEL_OBJECT_TYPE_STATIC_GEOMTRY		= 1,
+	LEVEL_OBJECT_TYPE_STATIC_GEOMETRY		= 1,
 	LEVEL_OBJECT_TYPE_DIR_LIGHT				= 2,
 	LEVEL_OBJECT_TYPE_POINT_LIGHT			= 3,
 	LEVEL_OBJECT_TYPE_PLAYER_SPAWN			= 4,
@@ -86,7 +86,6 @@ struct CreateProjectileDesc
 	uint8		TeamIndex;
 	LambdaEngine::Entity			WeaponOwner;
 	LambdaEngine::CollisionCallback	Callback;
-	LambdaEngine::MeshComponent		MeshComponent;
 	uint32 Angle = 0;
 };
 
@@ -100,7 +99,7 @@ class LevelObjectCreator
 	typedef bool(*LevelObjectCreateByTypeFunc)(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>&,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>&);
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>&);
 
 	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.8f;
 	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.2f;
@@ -133,8 +132,7 @@ public:
 	static bool CreateLevelObjectOfType(
 		ELevelObjectType levelObjectType,
 		const void* pData,
-		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities);
 
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc>& GetLevelObjectOnLoadDescriptions()
 	{
@@ -161,6 +159,7 @@ private:
 		const LambdaEngine::LevelObjectOnLoad& levelObject,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
+
 	static ELevelObjectType CreateKillPlane(
 		const LambdaEngine::LevelObjectOnLoad& levelObject,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
@@ -169,17 +168,17 @@ private:
 	static bool CreateFlag(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
 
 	static bool CreatePlayer(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
 
 	static bool CreateProjectile(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-		LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities);
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
 
 	static bool FindTeamIndex(const LambdaEngine::String& objectName, uint8& teamIndex);
 
