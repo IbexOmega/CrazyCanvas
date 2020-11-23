@@ -69,7 +69,7 @@
             "name": "Canvas Map",
             "modules": [
                 {
-                    "filename": "NewMap1.glb",
+                    "filename": "CanvasMap.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,
