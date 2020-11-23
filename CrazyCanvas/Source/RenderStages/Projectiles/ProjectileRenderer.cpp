@@ -589,7 +589,8 @@ void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 
 void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 {
+	m_MarchingCubesGrids.Pop(entity);
+
 	RenderSystem& renderSystem = RenderSystem::GetInstance();
 	renderSystem.RemoveRenderableEntity(entity);
-	m_MarchingCubesGrids.Pop(entity);
 }

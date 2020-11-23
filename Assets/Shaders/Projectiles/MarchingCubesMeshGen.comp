@@ -72,42 +72,42 @@ void DefineNodes(uint threadID, uint gridWidth, out SNode nodes[8])
 
 	nodes = SNode[8](
 		SNode(
-			cellPosition + vec3(-cellHalfWidth, -cellHalfWidth, -cellHalfWidth),
+			cellPosition + vec3(-cellHalfWidth, -cellHalfWidth, -cellHalfWidth) - vec3(0.5),
 			b_Densities.Val[cornerDensityIdx],
 			b_Gradients.Val[cornerGradientIdx].xyz
 		),
 		SNode(
-			cellPosition + vec3(cellHalfWidth, -cellHalfWidth, -cellHalfWidth),
+			cellPosition + vec3(cellHalfWidth, -cellHalfWidth, -cellHalfWidth) - vec3(0.5),
 			b_Densities.Val[cornerDensityIdx + 1],
 			b_Gradients.Val[cornerGradientIdx + 1].xyz
 		),
 		SNode(
-			cellPosition + vec3(cellHalfWidth, -cellHalfWidth, cellHalfWidth),
+			cellPosition + vec3(cellHalfWidth, -cellHalfWidth, cellHalfWidth) - vec3(0.5),
 			b_Densities.Val[cornerDensityIdx + 1 + gridWidthSquared],
 			b_Gradients.Val[cornerGradientIdx + 1 + gradientGridWidthSquared].xyz
 		),
 		SNode(
-			cellPosition + vec3(-cellHalfWidth, -cellHalfWidth, cellHalfWidth),
+			cellPosition + vec3(-cellHalfWidth, -cellHalfWidth, cellHalfWidth) - vec3(0.5),
 			b_Densities.Val[cornerDensityIdx + gridWidthSquared],
 			b_Gradients.Val[cornerGradientIdx + gradientGridWidthSquared].xyz
 		),
 		SNode(
-			cellPosition + vec3(-cellHalfWidth, cellHalfWidth, -cellHalfWidth),
+			cellPosition + vec3(-cellHalfWidth, cellHalfWidth, -cellHalfWidth) - vec3(0.5),
 			b_Densities.Val[cornerDensityIdx + gridWidth],
 			b_Gradients.Val[cornerGradientIdx + gradientGridWidth].xyz
 		),
 		SNode(
-			cellPosition + vec3(cellHalfWidth, cellHalfWidth, -cellHalfWidth),
+			cellPosition + vec3(cellHalfWidth, cellHalfWidth, -cellHalfWidth) - vec3(0.5),
 			b_Densities.Val[cornerDensityIdx + 1 + gridWidth],
 			b_Gradients.Val[cornerGradientIdx + 1 + gradientGridWidth].xyz
 		),
 		SNode(
-			cellPosition + vec3(cellHalfWidth, cellHalfWidth, cellHalfWidth),
+			cellPosition + vec3(cellHalfWidth, cellHalfWidth, cellHalfWidth) - vec3(0.5),
 			b_Densities.Val[cornerDensityIdx + 1 + gridWidth + gridWidthSquared],
 			b_Gradients.Val[cornerGradientIdx + 1 + gradientGridWidth + gradientGridWidthSquared].xyz
 		),
 		SNode(
-			cellPosition + vec3(-cellHalfWidth, cellHalfWidth, cellHalfWidth),
+			cellPosition + vec3(-cellHalfWidth, cellHalfWidth, cellHalfWidth) - vec3(0.5),
 			b_Densities.Val[cornerDensityIdx + gridWidth + gridWidthSquared],
 			b_Gradients.Val[cornerGradientIdx + gradientGridWidth + gradientGridWidthSquared].xyz
 		)
