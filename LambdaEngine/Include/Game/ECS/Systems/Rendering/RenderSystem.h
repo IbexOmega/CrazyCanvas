@@ -35,6 +35,8 @@
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
+#define RENDER_SYSTEM_DEBUG 1
+
 namespace LambdaEngine
 {
 	class Window;
@@ -375,6 +377,11 @@ namespace LambdaEngine
 
 		void UpdateRenderGraph();
 
+#ifdef RENDER_SYSTEM_DEBUG
+		// Debug
+		void CheckWhereEntityAlreadyRegistered(Entity entity);
+#endif
+
 	private:
 		IDVector m_StaticMeshEntities;
 		IDVector m_AnimatedEntities;
@@ -478,6 +485,11 @@ namespace LambdaEngine
 		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
+
+#ifdef RENDER_SYSTEM_DEBUG
+		// Debug
+		TSet<Entity> m_RenderableEntities;
+#endif
 
 	private:
 		static RenderSystem		s_Instance;
