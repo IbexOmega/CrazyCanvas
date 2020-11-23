@@ -2,7 +2,7 @@
 #define MC_TABLES
 
 #define MAX_TRIANGLES_PER_CELL 5
-#define SPHERES_PER_GRID 3
+#define SPHERES_PER_GRID 7
 
 struct SEdge
 {

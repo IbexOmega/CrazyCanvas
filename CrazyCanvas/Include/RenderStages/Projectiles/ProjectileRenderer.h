@@ -7,7 +7,7 @@
 #include "Rendering/RenderGraph.h"
 
 #define GRID_WIDTH 18
-#define SPHERES_PER_GRID 3
+#define SPHERES_PER_GRID 7
 
 namespace LambdaEngine
 {

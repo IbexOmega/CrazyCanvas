@@ -95,7 +95,7 @@ void ProjectileRenderer::Update(LambdaEngine::Timestamp delta, uint32 modFrameIn
 	UNREFERENCED_VARIABLE(backBufferIndex);
 
 	const float32 dt = (float32)delta.AsSeconds();
-	const float32 angularVelocity = (glm::two_pi<float32>() / 4.2f) * dt;
+	const float32 angularVelocity = glm::two_pi<float32>() * dt;
 
 	for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 	{
@@ -287,13 +287,18 @@ float32 ProjectileRenderer::GetSpheresMaxDistToCenter(const MarchingCubesGrid& m
 
 void ProjectileRenderer::RandomizeSpheres(MarchingCubesGrid& marchingCubesGrid)
 {
-	// Randomize radii
-	constexpr const float32 minRadius = 0.08f;
-	constexpr const float32 maxRadius = 0.12f;
+	/* Each grid has a set of small spheres a larger spheres. The smaller spheres are placed at the grid's borde. */
+	constexpr const uint32 largeSpheresCount = SPHERES_PER_GRID / 2;
+	constexpr const uint32 smallSpheresCount = largeSpheresCount + 1;
 
-	for (glm::vec4& positionRadius : marchingCubesGrid.GPUData.SpherePositionsRadii)
+	// Randomize radii
+	constexpr const float32 minRadius = 0.07f;
+	constexpr const float32 maxRadius = 0.10f;
+
+	for (uint32 sphereIdx = 0; sphereIdx < SPHERES_PER_GRID; sphereIdx++)
 	{
-		positionRadius.w = Random::Float32(minRadius, maxRadius);
+		marchingCubesGrid.GPUData.SpherePositionsRadii[sphereIdx].w = sphereIdx < smallSpheresCount ?
+			minRadius : Random::Float32(minRadius, maxRadius);
 	}
 
 	// Randomize positions and rotations
@@ -306,8 +311,10 @@ void ProjectileRenderer::RandomizeSpheres(MarchingCubesGrid& marchingCubesGrid)
 		glm::vec4& positionRadius = marchingCubesGrid.GPUData.SpherePositionsRadii[sphereIdx];
 
 		const glm::vec3 randPosition = { Random::Float32(), Random::Float32(), Random::Float32() };
-		const float32 randDistance = Random::Float32(maxDistanceToCenter / 2.0f, maxDistanceToCenter);
-		positionRadius = glm::vec4(glm::vec3(0.5f) + glm::normalize(randPosition) * randDistance, positionRadius.w);
+		const float32 distanceToCenter = sphereIdx < smallSpheresCount ?
+			maxDistanceToCenter : Random::Float32(maxDistanceToCenter / 2.0f, maxDistanceToCenter);
+
+		positionRadius = glm::vec4(glm::vec3(0.5f) + glm::normalize(randPosition) * distanceToCenter, positionRadius.w);
 
 		// Find a rotation vector that is perpendicular to the position vector
 		const glm::vec3 positionDir = glm::normalize(glm::vec3(positionRadius) - glm::vec3(0.5f));
