@@ -26,6 +26,8 @@ namespace LambdaEngine
 
 	void InheritanceComponentOwner::ParentComponentDestructor(ParentComponent& parentComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		if (parentComponent.DeleteParentOnRemoval)
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
@@ -39,6 +41,8 @@ namespace LambdaEngine
 
 	void InheritanceComponentOwner::ChildComponentDestructor(ChildComponent& childComponent, Entity entity)
 	{
+		UNREFERENCED_VARIABLE(entity);
+
 		ECSCore* pECS = ECSCore::GetInstance();
 		TArray<Entity> childEntities = childComponent.GetEntities();
 		TArray<bool> chilrenDeletionProperties = childComponent.GetDeletionProperties();
