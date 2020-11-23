@@ -126,7 +126,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				bool killed = false;
 				if (healthComponent.CurrentHealth <= 0)
 				{
-					MatchServer::KillPlayer(entity, projectileOwner);
+					MatchServer::KillPlayer(entity, projectileOwner, false);
 					killed = true;
 
 					LOG_INFO("PLAYER DIED");

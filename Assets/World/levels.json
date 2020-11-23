@@ -1,5 +1,18 @@
 {
     "levels": [
+		{
+			"name": "Canvas Map",
+			"modules": [
+				{
+					"filename": "CanvasMap.glb",
+					"translation": {
+						"x": 0.0,
+						"y": 0.0,
+						"z": 0.0
+                    }
+                }
+            ]
+        },
         {
             "name": "Test Level 0",
             "modules": [
@@ -57,19 +70,6 @@
             "modules": [
                 {
                     "filename": "directional_light_debug.glb",
-                    "translation": {
-                        "x": 0.0,
-                        "y": 0.0,
-                        "z": 0.0
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Canvas Map",
-            "modules": [
-                {
-                    "filename": "CanvasMap.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,
