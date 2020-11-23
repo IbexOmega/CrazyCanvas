@@ -48,7 +48,6 @@ void SpectateCameraSystem::Init()
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &SpectateCameraSystem::OnPlayerAliveUpdated);
 
 	m_LocalTeamIndex = PlayerManagerClient::GetPlayerLocal()->GetTeam();
-
 }
 
 void SpectateCameraSystem::Tick(LambdaEngine::Timestamp deltaTime)
@@ -159,9 +158,6 @@ void SpectateCameraSystem::SpectatePlayer()
 
 				Entity nextPlayer = teamPlayers[m_SpectatorIndex]->GetEntity();
 				parentComponent.Parent = nextPlayer;
-
-				/*LOG_INFO("Jumping to player entity %d", nextPlayer);
-				LOG_INFO("Current m_SpectatorIndex %d", m_SpectatorIndex);*/
 			}
 		}
 	}

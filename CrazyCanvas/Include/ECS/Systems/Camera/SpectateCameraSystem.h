@@ -28,15 +28,11 @@ public:
 	bool OnMouseButtonClicked(const LambdaEngine::MouseButtonClickedEvent& event);
 	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
 
-protected:
-	LambdaEngine::IDVector m_CameraEntities;
-
-
 private:
 	void SpectatePlayer();
 
 private:
-
+	LambdaEngine::IDVector m_CameraEntities;
 	uint8 m_LocalTeamIndex;
 
 	int8 m_SpectatorIndex = 0;
