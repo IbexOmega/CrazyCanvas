@@ -35,7 +35,6 @@ void SpectateCameraSystem::Init()
 				{ RW, CameraComponent::Type() }, 
 				{ RW, OffsetComponent::Type() },
 				{ RW, ParentComponent::Type() }
-
 			}
 		}
 	};
@@ -59,7 +58,6 @@ void SpectateCameraSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	UNREFERENCED_VARIABLE(deltaTime);
 }
-
 
 bool SpectateCameraSystem::OnMouseButtonClicked(const MouseButtonClickedEvent& event)
 {

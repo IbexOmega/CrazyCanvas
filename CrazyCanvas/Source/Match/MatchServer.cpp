@@ -447,6 +447,8 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		PacketTeamScored packet;
 		packet.TeamIndex	= event.ScoringTeamIndex;
 		packet.Score		= newScore;
+		packet.PlayerUID	= pPlayer->GetUID();
+
 		ServerHelper::SendBroadcast(packet);
 
 		if (newScore == m_MatchDesc.MaxScore) // game over
