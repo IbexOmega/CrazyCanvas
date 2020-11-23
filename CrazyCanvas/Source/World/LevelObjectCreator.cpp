@@ -556,44 +556,49 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 
 	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
 
-	pECS->AddComponent<ParticleEmitterComponent>(entity,
-		ParticleEmitterComponent{
-			.ParticleCount			= 20,
-			.EmitterShape			= EEmitterShape::CONE,
-			.Velocity				= 1.0f,
-			.Acceleration			= 0.0f,
-			.BeginRadius			= 1.0f,
-			.TileIndex				= 16,
-			.AnimationCount			= 4,
-			.FirstAnimationIndex	= 16,
-			.Color					= glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
-		}
-	);
-
-	const CollisionCreateInfo collisionCreateInfo =
+	if (!MultiplayerUtils::IsServer())
 	{
-		.Entity		= entity,
-		.Position	= pECS->AddComponent<PositionComponent>(entity,	{ true, levelObject.DefaultPosition + translation }),
-		.Scale		= pECS->AddComponent<ScaleComponent>(entity,	{ true, levelObject.DefaultScale }),
-		.Rotation	= pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() }),
-		.Shapes =
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 20,
+				.EmitterShape = EEmitterShape::CONE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 1.0f,
+				.TileIndex = 16,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
+			}
+		);
+	}
+	else
+	{
+		const CollisionCreateInfo collisionCreateInfo =
 		{
+			.Entity = entity,
+			.Position = pECS->AddComponent<PositionComponent>(entity,	{ true, levelObject.DefaultPosition + translation }),
+			.Scale = pECS->AddComponent<ScaleComponent>(entity,	{ true, levelObject.DefaultScale }),
+			.Rotation = pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() }),
+			.Shapes =
 			{
-				/* Shape Type */		EShapeType::TRIGGER,
-				/* GeometryType */		EGeometryType::BOX,
-				/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
-				/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-				/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-				/* EntityID*/			entity,
-				/* CallbackFunction*/	&ParticleShowerCallback
+				{
+					/* Shape Type */		EShapeType::TRIGGER,
+					/* GeometryType */		EGeometryType::BOX,
+					/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
+					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
+					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					/* EntityID*/			entity,
+					/* CallbackFunction*/	&ParticleShowerCallback
+				},
 			},
-		},
-	};
+		};
 
-	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-	const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
-	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
-	createdEntities.PushBack(entity);
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+		const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
+		createdEntities.PushBack(entity);
+	}
 
 	D_LOG_INFO("Created Particle Shower with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PARTICLE_SHOWER;
@@ -792,7 +797,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.CollisionMask	= (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
-						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC | (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
 		.EntityID		= playerEntity
 	};
 
@@ -820,12 +825,6 @@ bool LevelObjectCreator::CreatePlayer(
 
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
-
-	//Create Shower Entity
-	const Timestamp			showerCooldown = Timestamp::Seconds(5.0f);
-	const ParticleShowerComponent		particleShowerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
-
-	pECS->AddComponent<ParticleShowerComponent>(playerEntity, particleShowerComponent);
 
 	const bool readback = MultiplayerUtils::IsServer();
 	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
@@ -1074,6 +1073,10 @@ bool LevelObjectCreator::CreatePlayer(
 		playerMaterialGUID = TeamHelper::GetMyTeamPlayerMaterialGUID();
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
+
+		const Timestamp	showerCooldown = Timestamp::Seconds(5.0f);
+		const ParticleShowerComponent particleShowerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
+		pECS->AddComponent<ParticleShowerComponent>(playerEntity, particleShowerComponent);
 	}
 
 	pECS->AddComponent<MeshComponent>(playerEntity,

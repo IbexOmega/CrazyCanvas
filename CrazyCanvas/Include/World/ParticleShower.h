@@ -20,7 +20,7 @@ struct ParticleShowerComponent
 // ParticleShowerCallback is called when an entity intersect with a bounding box. Entity0 is the particle shower.
 inline void ParticleShowerCallback(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
-	//UNREFERENCED_VARIABLE(entity0);
+	UNREFERENCED_VARIABLE(entity0);
 	//LOG_INFO("Entity %d is taking a shower", entity1);
 
 	LambdaEngine::ECSCore* pECS = LambdaEngine::ECSCore::GetInstance();
@@ -33,10 +33,5 @@ inline void ParticleShowerCallback(LambdaEngine::Entity entity0, LambdaEngine::E
 		HealthSystemServer::ResetHealth(entity1);
 
 		showerComponent.ShowerAvailableTimestamp = LambdaEngine::EngineLoop::GetTimeSinceStart() + showerComponent.ShowerCooldown;
-	}
-	else
-	{
-		//UNREFERENCED_VARIABLE(entity0);
-		UNREFERENCED_VARIABLE(entity1);
 	}
 }
