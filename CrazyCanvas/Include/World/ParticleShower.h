@@ -1,10 +1,8 @@
 #pragma once
 
-#include "ECS/Entity.h"
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/Components/Player/WeaponComponent.h"
-#include "ECS/Component.h"
 #include "ECS/Components/Match/ShowerComponent.h"
 
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"

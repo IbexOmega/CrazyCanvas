@@ -1,5 +1,4 @@
 #include "World/LevelObjectCreator.h"
-#include "World/KillPlane.h"
 #include "World/ParticleShower.h"
 #include "World/Level.h"
 
@@ -314,7 +313,7 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 				}
 			}
 		}
-		
+
 		return success;
 	}
 	else
@@ -603,7 +602,6 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 				.Velocity = 1.0f,
 				.Acceleration = 0.0f,
 				.BeginRadius = 1.0f,
-				.TileIndex = 16,
 				.AnimationCount = 4,
 				.FirstAnimationIndex = 16,
 				.Color = glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
@@ -1214,7 +1212,7 @@ bool LevelObjectCreator::CreateProjectile(
 			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
 			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 		}
-		
+
 		// Create particles
 		ParticleEmitterComponent emitterComponent = ParticleEmitterComponent{
 				.Active = true,
@@ -1251,7 +1249,7 @@ bool LevelObjectCreator::CreateProjectile(
 			emitterComponent.SpawnDelay = 0.1f;
 			emitterComponent.Velocity = 6.0f;
 			emitterComponent.Angle = 45.0f;
-			
+
 			const Entity particleEntity = pECS->CreateEntity();
 			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + projectileOffset });
 			pECS->AddComponent<ScaleComponent>(particleEntity, { true, glm::vec3(0.7f) });
