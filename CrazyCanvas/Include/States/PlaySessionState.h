@@ -52,4 +52,7 @@ private:
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
+
+	/* Commands */
+	bool m_UpdateShaders = false;
 };

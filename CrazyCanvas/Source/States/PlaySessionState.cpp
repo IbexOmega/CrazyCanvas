@@ -43,6 +43,8 @@
 
 #include "GUI/GUIHelpers.h"
 
+#include "Game/GameConsole.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
@@ -106,10 +108,25 @@ void PlaySessionState::Init()
 	}
 
 	m_HUDSystem.Init();
+
+	// Commands
+	ConsoleCommand cmd1;
+	cmd1.Init("update_shaders", true);
+	cmd1.AddDescription("Update all shaders. \n\t'update_shaders'");
+	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
+		m_UpdateShaders = true;
+	});
 }
 
 void PlaySessionState::Tick(Timestamp delta)
 {
+	if (m_UpdateShaders)
+	{
+		m_UpdateShaders = false; 
+		EventQueue::SendEvent(ShaderRecompileEvent());
+		EventQueue::SendEvent(PipelineStateRecompileEvent());
+	}
+
 	m_MultiplayerClient.TickMainThreadInternal(delta);
 	m_MeshPaintHandler.Tick(delta);
 }
