@@ -43,6 +43,7 @@ void SpectateCameraSystem::Init()
 	systemReg.Phase = 1;
 
 	RegisterSystem(TYPE_NAME(HUDSystem), systemReg);
+
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &SpectateCameraSystem::OnMouseButtonClicked);
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &SpectateCameraSystem::OnPlayerAliveUpdated);
 
@@ -57,7 +58,6 @@ void SpectateCameraSystem::Tick(LambdaEngine::Timestamp deltaTime)
 
 void SpectateCameraSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
-
 	UNREFERENCED_VARIABLE(deltaTime);
 }
 

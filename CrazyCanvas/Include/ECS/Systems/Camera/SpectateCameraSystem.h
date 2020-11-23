@@ -29,7 +29,6 @@ public:
 	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
 
 protected:
-	LambdaEngine::IDVector m_PlayerEntities;
 	LambdaEngine::IDVector m_CameraEntities;
 
 
