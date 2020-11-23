@@ -147,10 +147,14 @@ void SpectateCameraSystem::SpectatePlayer()
 
 		for (uint32 i = 0; i < teamPlayers.GetSize(); i++)
 		{
-			if (teamPlayers[i]->GetEntity() == localPlayer)
+			if (teamPlayers[i]->GetEntity() == localPlayer) //remove local player from list
 			{
 				teamPlayers.Erase(teamPlayers.begin() + i);
-				break;
+				
+			}
+			else if (teamPlayers[i]->IsDead()) //remove dead players from list
+			{
+				teamPlayers.Erase(teamPlayers.begin() + i);
 			}
 		}
 
