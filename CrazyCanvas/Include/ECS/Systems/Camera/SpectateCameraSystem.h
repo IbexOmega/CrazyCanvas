@@ -34,13 +34,9 @@ protected:
 
 
 private:
-	int8 SpectatePlayer(int8 spectateIndex);
-
-	void ResetCamera();
+	void SpectatePlayer();
 
 private:
-
-
 
 	uint8 m_LocalTeamIndex;
 
