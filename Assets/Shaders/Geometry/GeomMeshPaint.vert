@@ -91,7 +91,7 @@ void main()
 		float u		= (dot(-targetPosToWorldPos, right) / BRUSH_SIZE * 1.5f) * 0.5f + 0.5f;
 		float v		= (dot(-targetPosToWorldPos, up) / BRUSH_SIZE * 1.5f) * 0.5f + 0.5f;
 		vec2 maskUV = vec2(u, v);
-		//maskUV = rotate(maskUV-0.5f, unwrapData.TargetDirectionXYZAngleW.a)+0.5f;
+		maskUV = rotate(maskUV-0.5f, unwrapData.TargetDirectionXYZAngleW.a)+0.5f;
 
 		// Do not paint if they are in the same team. But they can remove paint.
 		float isRemove = 1.f - step(0.5f, float(paintMode));
@@ -104,7 +104,7 @@ void main()
 		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
 		float dist = 1.f;
 
-		if(maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
+		if(brushMask.a > 0.001f && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
 		{
 			dist = 0.f;
 
