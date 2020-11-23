@@ -111,7 +111,7 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[5]
+			.LevelHash = levelHashes[0]
 		};
 
 		Match::CreateMatch(&matchDescription);
@@ -159,6 +159,50 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<MeshComponent>(entity, meshComp);
+	}
+
+	// Sphere grid
+	{
+		GUID_Lambda sphereMeshGUID;
+		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
+		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
+
+		uint32 gridRadius = 5;
+
+		for (uint32 y = 0; y < gridRadius; y++)
+		{
+			const float32 roughness = y / float32(gridRadius - 1);
+
+			for (uint32 x = 0; x < gridRadius; x++)
+			{
+				const float32 metallic = x / float32(gridRadius - 1);
+
+				MaterialProperties materialProperties;
+				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+				materialProperties.Roughness = roughness;
+				materialProperties.Metallic = metallic;
+
+				MeshComponent sphereMeshComp = {};
+				sphereMeshComp.MeshGUID = sphereMeshGUID;
+				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					materialProperties);
+
+				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 5.0f);
+				glm::vec3 scale(1.0f);
+
+				Entity entity = pECS->CreateEntity();
+				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				pECS->AddComponent<PositionComponent>(entity, { true, position });
+				pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+				pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+			}
+		}
 	}
 
 	// Robot

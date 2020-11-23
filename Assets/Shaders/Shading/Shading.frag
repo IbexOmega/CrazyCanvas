@@ -42,6 +42,8 @@ void main()
 	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 	vec3 colorHDR;
 
+	const float roughness	= max(0.05f, aoRoughMetalValid.g);
+
 	if (aoRoughMetalValid.a < 1.0f || aoRoughMetalValid.g == 0.0f)
 	{
 		float luminance = CalculateLuminance(albedo);
@@ -58,7 +60,6 @@ void main()
 	else
 	{
 		float ao		= aoRoughMetalValid.r;
-		float roughness	= max(0.05f, aoRoughMetalValid.g);
 		float metallic	= aoRoughMetalValid.b;
 		float depth 	= texture(u_GBufferDepthStencil, in_TexCoord).r;
 
@@ -136,19 +137,19 @@ void main()
 		float dotNV = max(dot(N, V), 0.0f);
 		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
 		vec3 Ks_IBL	= F_IBL;
-		vec3 Kd_IBL	= 1.0f - Ks_IBL;
-		Kd_IBL		*= 1.0f - metallic;
+		vec3 Kd_IBL	= vec3(1.0f) - Ks_IBL;
+		Kd_IBL		*= (1.0f - metallic);
 	
 		vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
-		vec3 IBL_Diffuse	= irradiance * albedo * Kd_IBL;
+		vec3 IBL_Diffuse	= irradiance * albedo;
 	
-		const int numberOfMips = textureQueryLevels(u_GlobalSpecularProbe);
-		vec3 reflection			= reflect(-V, N);
-		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, reflection, roughness * float(numberOfMips)).rgb;
+		const float numberOfMips = 7.0;
+		vec3 R					= reflect(-V, N);
+		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, R, roughness * float(numberOfMips)).rgb;
 		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
 		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
 	
-		vec3 ambient	= (IBL_Diffuse + IBL_Specular) * ao;
+		vec3 ambient	= (Kd_IBL * IBL_Diffuse + IBL_Specular) * ao;
 		colorHDR		= ambient + Lo;
 	}
 

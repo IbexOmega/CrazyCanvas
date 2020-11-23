@@ -44,7 +44,6 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 	// Global Light Probe
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
 		Entity entity = pECS->CreateEntity();
 
 		TArray<Entity> levelEntities;
@@ -59,7 +58,6 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 		{
 			m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE] = m_LevelEntities.GetSize();
 			m_LevelEntities.PushBack(levelEntities);
-			m_LevelChildEntities.PushBack({});
 		}
 	}
 
