@@ -1,4 +1,4 @@
-#include "DestructionSystem.h"
+#include "ECS/Systems/Misc/DestructionSystem.h"
 
 #include "ECS/Components/Misc/DestructionComponent.h"
 #include "ECS/ECSCore.h"
@@ -30,7 +30,7 @@ bool DestructionSystem::Init()
 		};
 		systemReg.Phase = 1u;
 
-		RegisterSystem(TYPE_NAME(PlayerAnimationSystem), systemReg);
+		RegisterSystem(TYPE_NAME(DestructionSystem), systemReg);
 	}
 
 	return true;
