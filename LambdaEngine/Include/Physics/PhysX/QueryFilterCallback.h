@@ -6,17 +6,20 @@ namespace LambdaEngine
 	class QueryFilterCallback : public physx::PxQueryFilterCallback
 	{
 	public:
-		DECL_SINGLETON_CLASS(QueryFilterCallback);
+		DECL_UNIQUE_CLASS(QueryFilterCallback);
 
-		inline virtual physx::PxQueryHitType::Enum preFilter(const physx::PxFilterData& filterData, const physx::PxShape* shape, const physx::PxRigidActor* actor, physx::PxHitFlags& queryFlags) override final
+		QueryFilterCallback() = default;
+		~QueryFilterCallback() = default;
+
+		inline virtual physx::PxQueryHitType::Enum preFilter(const physx::PxFilterData& filterData, const physx::PxShape* pShape, const physx::PxRigidActor* pActor, physx::PxHitFlags& queryFlags) override final
 		{
-			UNREFERENCED_VARIABLE(actor);
+			UNREFERENCED_VARIABLE(pActor);
 			UNREFERENCED_VARIABLE(queryFlags);
 
 			using namespace physx;
 
 			// We only need to check word2 as it has already passed dataFilter, we also use SimulationFilterData for this
-			if (filterData.word2 != shape->getSimulationFilterData().word2)
+			if (filterData.word2 != pShape->getSimulationFilterData().word2)
 			{
 				return PxQueryHitType::eTOUCH;
 			}
@@ -31,14 +34,5 @@ namespace LambdaEngine
 
 			return physx::PxQueryHitType::eTOUCH;
 		}
-
-		FORCEINLINE static QueryFilterCallback* GetInstance() 
-		{
-			static QueryFilterCallback callbackInstance;
-			return &callbackInstance;
-		}
-		
-	private:
-		static QueryFilterCallback s_Instance;
 	};
 }
