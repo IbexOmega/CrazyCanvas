@@ -60,6 +60,7 @@ namespace LambdaEngine
 		virtual void Tick(Timestamp delta);
 
 		SegmentPool* GetSegmentPool();
+		NetworkStatistics* GetStatistics();
 		const NetworkStatistics* GetStatistics() const;
 		const IPEndPoint& GetEndPoint() const;
 		void SetEndPoint(const IPEndPoint& ipEndPoint);

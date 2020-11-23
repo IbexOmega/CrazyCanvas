@@ -176,9 +176,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		std::scoped_lock<SpinLock> lock(m_LockShit);
-		packets[pPacket->GetType()]++;
-
 		GetPacketManager()->EnqueueSegmentReliable(pPacket, pListener);
 		return true;
 	}
@@ -222,7 +219,7 @@ namespace LambdaEngine
 		return m_State;
 	}
 
-	const NetworkStatistics* ClientRemoteBase::GetStatistics() const
+	NetworkStatistics* ClientRemoteBase::GetStatistics()
 	{
 		return GetPacketManager()->GetStatistics();
 	}
@@ -234,7 +231,7 @@ namespace LambdaEngine
 
 	uint64 ClientRemoteBase::GetUID() const
 	{
-		return GetStatistics()->GetSalt();
+		return GetPacketManager()->GetStatistics()->GetSalt();
 	}
 
 	void ClientRemoteBase::TransmitPackets()

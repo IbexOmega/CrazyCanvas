@@ -125,6 +125,50 @@ namespace LambdaEngine
 		return m_SegmentsResent;
 	}
 
+	const THashTable<uint16, uint32>& NetworkStatistics::BeginGetSentSegmentTypeCountTable()
+	{
+		m_LockPacketTypeSendCounter.lock();
+		return m_PacketTypeSendCounter;
+	}
+
+	const THashTable<uint16, uint32>& NetworkStatistics::BeginGetReceivedSegmentTypeCountTable()
+	{
+		m_LockPacketTypeReceiveCounter.lock();
+		return m_PacketTypeReceiveCounter;
+	}
+
+	void NetworkStatistics::EndGetSentSegmentTypeCountTable()
+	{
+		m_LockPacketTypeSendCounter.unlock();
+	}
+
+	void NetworkStatistics::EndGetReceivedSegmentTypeCountTable()
+	{
+		m_LockPacketTypeReceiveCounter.unlock();
+	}
+
+	CCBuffer<uint16, 60>& NetworkStatistics::BeginGetBytesSentHistory()
+	{
+		m_LockBytesSentHistory.lock();
+		return m_BytesSentHistory;
+	}
+
+	CCBuffer<uint16, 60>& NetworkStatistics::BeginGetBytesReceivedHistory()
+	{
+		m_LockBytesReceivedHistory.lock();
+		return m_BytesReceivedHistory;
+	}
+
+	void NetworkStatistics::EndGetBytesSentHistory()
+	{
+		m_LockBytesSentHistory.unlock();
+	}
+
+	void NetworkStatistics::EndGetBytesReceivedHistory()
+	{
+		m_LockBytesReceivedHistory.unlock();
+	}
+
 	Timestamp NetworkStatistics::GetTimestampLastSent() const
 	{
 		return m_TimestampLastSent;
@@ -158,6 +202,16 @@ namespace LambdaEngine
 		m_SegmentsResent			= 0;
 		m_PacketsLostReceiving		= 0;
 		m_PacketsLostSending		= 0;
+
+		std::scoped_lock<SpinLock> lock1(m_LockPacketTypeSendCounter);
+		std::scoped_lock<SpinLock> lock2(m_LockPacketTypeReceiveCounter);
+		m_PacketTypeSendCounter.clear();
+		m_PacketTypeReceiveCounter.clear();
+
+		std::scoped_lock<SpinLock> lock3(m_LockBytesSentHistory);
+		std::scoped_lock<SpinLock> lock4(m_LockBytesReceivedHistory);
+		m_BytesSentHistory.Clear();
+		m_BytesReceivedHistory.Clear();
 	}
 
 	uint32 NetworkStatistics::RegisterPacketSent()
@@ -166,9 +220,22 @@ namespace LambdaEngine
 		return ++m_PacketsSent;
 	}
 
-	uint32 NetworkStatistics::RegisterUniqueSegment()
+	uint32 NetworkStatistics::RegisterUniqueSegment(uint16 type)
 	{
+#ifndef LAMBDA_PRODUCTION
+		std::scoped_lock<SpinLock> lock(m_LockPacketTypeSendCounter);
+		m_PacketTypeSendCounter[type]++;
+#endif
+
 		return ++m_SegmentsRegistered;
+	}
+
+	void NetworkStatistics::RegisterUniqueSegmentReceived(uint16 type)
+	{
+#ifndef LAMBDA_PRODUCTION
+		std::scoped_lock<SpinLock> lock(m_LockPacketTypeReceiveCounter);
+		m_PacketTypeReceiveCounter[type]++;
+#endif
 	}
 
 	void NetworkStatistics::RegisterSegmentSent(uint32 segments)
@@ -187,6 +254,11 @@ namespace LambdaEngine
 		m_SegmentsReceived += segments,
 		m_BytesReceived += bytes;
 		m_TimestampLastReceived = EngineLoop::GetTimeSinceStart();
+
+#ifndef LAMBDA_PRODUCTION
+		std::scoped_lock<SpinLock> lock(m_LockBytesReceivedHistory);
+		m_BytesReceivedHistory.Write((uint16)bytes);
+#endif
 	}
 
 	void NetworkStatistics::RegisterReliableSegmentReceived()
@@ -197,6 +269,11 @@ namespace LambdaEngine
 	void NetworkStatistics::RegisterBytesSent(uint32 bytes)
 	{
 		m_BytesSent += bytes;
+
+#ifndef LAMBDA_PRODUCTION
+		std::scoped_lock<SpinLock> lock(m_LockBytesSentHistory);
+		m_BytesSentHistory.Write((uint16)bytes);
+#endif
 	}
 
 	void NetworkStatistics::SetLastReceivedSequenceNr(uint32 sequence)

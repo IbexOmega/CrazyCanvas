@@ -30,7 +30,7 @@ namespace LambdaEngine
 
 	uint32 PacketManagerBase::EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID)
 	{
-		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment();
+		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment(pSegment->GetType());
 		pSegment->GetHeader().ReliableUID = reliableUID;
 		InsertSegment(pSegment);
 		return pSegment->GetHeader().UID;
@@ -124,6 +124,11 @@ namespace LambdaEngine
 	SegmentPool* PacketManagerBase::GetSegmentPool()
 	{
 		return &m_SegmentPool;
+	}
+
+	NetworkStatistics* PacketManagerBase::GetStatistics()
+	{
+		return &m_Statistics;
 	}
 
 	const NetworkStatistics* PacketManagerBase::GetStatistics() const

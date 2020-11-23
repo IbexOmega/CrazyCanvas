@@ -47,9 +47,14 @@ namespace LambdaEngine
 			if (!pPacket->IsReliable())																//Unreliable Packet
 			{
 				if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_ACK)
+				{
 					packetsToFree.PushBack(pPacket);
+				}
 				else
+				{
 					segmentsReturned.PushBack(pPacket);
+					m_Statistics.RegisterUniqueSegmentReceived(pPacket->GetType());
+				}
 			}
 			else
 			{
@@ -58,6 +63,7 @@ namespace LambdaEngine
 				if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)		//Reliable Packet in correct order
 				{
 					segmentsReturned.PushBack(pPacket);
+					m_Statistics.RegisterUniqueSegmentReceived(pPacket->GetType());
 					m_Statistics.RegisterReliableSegmentReceived();
 					runUntangler = true;
 				}
@@ -102,6 +108,7 @@ namespace LambdaEngine
 			if (pPacket->GetReliableUID() == m_Statistics.GetLastReceivedReliableUID() + 1)
 			{
 				segmentsReturned.PushBack(pPacket);
+				m_Statistics.RegisterUniqueSegmentReceived(pPacket->GetType());
 				packetsToErase.PushBack(pPacket);
 				m_Statistics.RegisterReliableSegmentReceived();
 			}

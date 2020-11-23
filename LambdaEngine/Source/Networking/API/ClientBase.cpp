@@ -100,7 +100,7 @@ namespace LambdaEngine
 		return m_State;
 	}
 
-	const NetworkStatistics* ClientBase::GetStatistics() const
+	NetworkStatistics* ClientBase::GetStatistics()
 	{
 		return GetPacketManager()->GetStatistics();
 	}
@@ -136,7 +136,7 @@ namespace LambdaEngine
 
 	uint64 ClientBase::GetUID() const
 	{
-		return GetStatistics()->GetRemoteSalt();
+		return GetPacketManager()->GetStatistics()->GetRemoteSalt();
 	}
 
 	void ClientBase::SendConnect()

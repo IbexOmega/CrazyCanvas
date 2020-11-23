@@ -4,6 +4,10 @@
 
 #include "Time/API/Timestamp.h"
 
+#include "Containers/CCBuffer.h"
+
+#include "Threading/API/SpinLock.h"
+
 #include <atomic>
 
 namespace LambdaEngine
@@ -14,6 +18,7 @@ namespace LambdaEngine
 		friend class PacketTransceiverUDP;
 		friend class PacketTransceiverTCP;
 		friend class PacketManagerUDP;
+		friend class PacketManagerTCP;
 		friend class PacketManagerBase;
 		friend class ClientBase;
 		friend class ClientRemoteBase;
@@ -117,11 +122,22 @@ namespace LambdaEngine
 		uint32 GetLastReceivedReliableUID()	const;
 		uint32 GetSegmentsResent()			const;
 
+		const THashTable<uint16, uint32>& BeginGetSentSegmentTypeCountTable();
+		const THashTable<uint16, uint32>& BeginGetReceivedSegmentTypeCountTable();
+		void EndGetSentSegmentTypeCountTable();
+		void EndGetReceivedSegmentTypeCountTable();
+
+		CCBuffer<uint16, 60>& BeginGetBytesSentHistory();
+		CCBuffer<uint16, 60>& BeginGetBytesReceivedHistory();
+		void EndGetBytesSentHistory();
+		void EndGetBytesReceivedHistory();
+
 	private:
 		void Reset();
 
 		uint32 RegisterPacketSent();
-		uint32 RegisterUniqueSegment();
+		uint32 RegisterUniqueSegment(uint16 type);
+		void RegisterUniqueSegmentReceived(uint16 type);
 		void RegisterSegmentSent(uint32 segments);
 		uint32 RegisterReliableSegmentSent();
 		void RegisterPacketReceived(uint32 segments, uint32 bytes);
@@ -137,8 +153,6 @@ namespace LambdaEngine
 
 		void RegisterReceivingPacketLoss(uint32 packets = 1);
 		void RegisterSendingPacketLoss(uint32 packets = 1);
-
-		void UpdatePacketsSentFixed();
 
 		void RegisterSegmentResent();
 
@@ -170,5 +184,15 @@ namespace LambdaEngine
 		std::atomic_uint64_t m_ReceivedAckBits;
 
 		std::atomic_uint32_t m_LastReceivedReliableUID;
+
+		THashTable<uint16, uint32> m_PacketTypeSendCounter;
+		THashTable<uint16, uint32> m_PacketTypeReceiveCounter;
+		SpinLock m_LockPacketTypeSendCounter;
+		SpinLock m_LockPacketTypeReceiveCounter;
+
+		CCBuffer<uint16, 60> m_BytesSentHistory;
+		CCBuffer<uint16, 60> m_BytesReceivedHistory;
+		SpinLock m_LockBytesSentHistory;
+		SpinLock m_LockBytesReceivedHistory;
 	};
 }

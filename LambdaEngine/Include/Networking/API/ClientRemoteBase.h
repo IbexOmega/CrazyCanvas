@@ -37,7 +37,7 @@ namespace LambdaEngine
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
-		virtual const NetworkStatistics* GetStatistics() const override;
+		virtual NetworkStatistics* GetStatistics() override;
 		virtual IClientRemoteHandler* GetHandler() override;
 		virtual uint64 GetUID() const override;
 
@@ -109,11 +109,6 @@ namespace LambdaEngine
 		SpinLock m_LockReceivedPackets;
 		std::atomic_int8_t m_BufferIndex;
 		TArray<NetworkSegment*> m_ReceivedPackets[2];
-
-
-	public:
-		THashTable<uint16, uint32> packets;
-		SpinLock m_LockShit;
 
 	private:
 		static SpinLock s_LockStatic;

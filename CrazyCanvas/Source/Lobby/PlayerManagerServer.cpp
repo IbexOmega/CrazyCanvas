@@ -1,5 +1,7 @@
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Networking/API/NetworkDebugger.h"
+
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Multiplayer/ServerHelper.h"
@@ -125,6 +127,8 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 	{
 		SetPlayerHost(pPlayer);
 	}
+
+	NetworkDebugger::RegisterClientName(pClient, pPlayer->GetName());
 
 	return true;
 }
