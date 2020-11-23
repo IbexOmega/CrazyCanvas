@@ -6,6 +6,8 @@
 
 #include "Application/API/Events/WindowEvents.h"
 
+#include "Resources/ResourceCatalog.h"
+
 struct ProjectileHitEvent;
 
 namespace LambdaEngine

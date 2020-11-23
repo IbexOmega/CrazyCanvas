@@ -37,6 +37,7 @@ bool ResourceCatalog::Init()
 #endif
 
 		PLAYER_STEP_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
+		PLAYER_DEATH_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/DeathSound.mp3");
 	}
 
 	// Projectile
@@ -65,7 +66,14 @@ bool ResourceCatalog::Init()
 		// Soundeffects
 		WEAPON_SOUND_GUNFIRE_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/Shootsound.mp3");
 		WEAPON_SOUND_GUNFIRE_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Weapon/Shootsound.mp3");
-		WEAPON_SOUND_OUTOFAMMO_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/WaterSound.mp3");
+		WEAPON_SOUND_OUTOFAMMO_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/WaterSound.mp3");
+	}
+
+	// General Sound Effects
+	{
+		SOUND_EFFECT_SPLASH0_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/HitSound0.mp3");
+		SOUND_EFFECT_SPLASH1_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Player/HitSound1.mp3");
+		SOUND_EFFECT_PLAYER_CONNECTED_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("connect_sound.mp3");
 	}
 
 	return true;

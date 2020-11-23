@@ -31,18 +31,12 @@ void AudioEffectHandler::Init()
 		// Load resources
 		{
 			// Load 3D sounds
-			GUID_Lambda killedSoundID = ResourceManager::LoadSoundEffect3DFromFile("Player/DeathSound.mp3");
-			m_pPlayerKilledSound = ResourceManager::GetSoundEffect3D(killedSoundID);
-
-			GUID_Lambda enemyhitSoundID = ResourceManager::LoadSoundEffect3DFromFile("Player/HitSound0.mp3");
-			m_pEnemyHitSound = ResourceManager::GetSoundEffect3D(enemyhitSoundID);
+			m_pPlayerKilledSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_DEATH_SOUND_GUID);
+			m_pEnemyHitSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::SOUND_EFFECT_SPLASH0_3D_GUID);
 
 			// Load 2D sounds
-			GUID_Lambda connectSoundID = ResourceManager::LoadSoundEffect2DFromFile("connect_sound.mp3");
-			m_pConnectSound = ResourceManager::GetSoundEffect2D(connectSoundID);
-
-			GUID_Lambda hitSoundID = ResourceManager::LoadSoundEffect2DFromFile("Player/HitSound1.mp3");
-			m_pHitSound = ResourceManager::GetSoundEffect2D(hitSoundID);
+			m_pConnectSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::SOUND_EFFECT_PLAYER_CONNECTED_2D_GUID);
+			m_pHitSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::SOUND_EFFECT_SPLASH1_2D_GUID);
 		}
 		// Register callbacks
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerAliveUpdatedEvent);

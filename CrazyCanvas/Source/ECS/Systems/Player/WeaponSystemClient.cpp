@@ -241,7 +241,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 	else
 	{
 		// Play out of ammo
-		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_OUTOFAMMO_GUID);
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_OUTOFAMMO_2D_GUID);
 		pSound->PlayOnce(1.0f, 1.0f);
 
 		return false;
