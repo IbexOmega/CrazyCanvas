@@ -29,7 +29,12 @@ namespace LambdaEngine
 	void ServerUtilsImpl::RegisterEntity(Entity entity, int32 networkUID)
 	{
 		UNREFERENCED_VARIABLE(networkUID);
+
+#ifdef LAMBDA_DEBUG
 		VALIDATE(m_Entities.insert(entity).second);
+#else
+		m_Entities.insert(entity);
+#endif
 	}
 
 	void ServerUtilsImpl::UnregisterEntity(Entity entity)

@@ -24,11 +24,14 @@ public:
 
 	static void StaticOnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 	{
-		LOG_WARNING("ADW");
+		VALIDATE(s_pInstance != nullptr);
+		s_pInstance->OnPlayerFlagCollision(entity0, entity1);
 	}
+
 	static void StaticOnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 	{
-		LOG_WARNING("OAJDWO");
+		VALIDATE(s_pInstance != nullptr);
+		s_pInstance->OnDeliveryPointFlagCollision(entity0, entity1);
 	}
 
 protected:
@@ -48,7 +51,7 @@ protected:
 public:
 	FORCEINLINE static FlagSystemBase* GetInstance() 
 	{ 
-		return s_Instance; 
+		return s_pInstance;
 	}
 
 protected:
@@ -63,5 +66,5 @@ protected:
 	LambdaEngine::IDVector m_Flags;
 
 private:
-	inline static FlagSystemBase* s_Instance = nullptr;
+	inline static FlagSystemBase* s_pInstance = nullptr;
 };

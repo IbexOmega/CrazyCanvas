@@ -56,11 +56,8 @@ void ServerFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 
 		FlagComponent& flagComponent = pECS->GetComponent<FlagComponent>(flagEntity);
 
-		LOG_WARNING("Flag Collision");
-
 		if (EngineLoop::GetTimeSinceStart() > flagComponent.DroppedTimestamp + flagComponent.PickupCooldown)
 		{
-			LOG_WARNING("Flag Pickup");
 			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 
 			TeamComponent flagTeamComponent = {};
@@ -146,8 +143,6 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 	job.Function = [flagEntity, dropPosition]()
 	{
-		LOG_WARNING("Flag Dropped");
-
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		FlagComponent& flagComponent							= pECS->GetComponent<FlagComponent>(flagEntity);
