@@ -96,11 +96,11 @@ bool AudioEffectHandler::OnPlayerHit(const PlayerHitEvent& event)
 	{
 		if (event.IsLocal)
 		{
-			m_pHitSound->PlayOnce(0.5f);
+			m_pHitSound->PlayOnce(0.25f);
 		}
 		else
 		{
-			m_pEnemyHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
+			m_pEnemyHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.25f);
 		}
 
 		return true;

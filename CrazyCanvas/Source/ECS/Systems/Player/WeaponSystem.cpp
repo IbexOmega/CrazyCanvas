@@ -202,7 +202,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	{
 		// Play Level Hit Sound
 		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::SOUND_EFFECT_SPLASH0_3D_GUID);
-		pSound->PlayOnceAt(collisionInfo1.Position, glm::vec3(0.0f), 0.5f, 1.0f);
+		pSound->PlayOnceAt(collisionInfo1.Position, glm::vec3(0.0f), 0.15f, 1.0f);
 
 		levelHit = true;
 	}

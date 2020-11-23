@@ -145,7 +145,7 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 	else
 	{
 		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_3D_GUID);
-		pSound->PlayOnceAt(position, velocity, 0.5f, 1.0f);
+		pSound->PlayOnceAt(position, velocity, 0.25f, 1.0f);
 	}
 }
 
