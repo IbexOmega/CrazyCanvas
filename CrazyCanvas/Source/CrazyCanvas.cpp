@@ -225,7 +225,10 @@ bool CrazyCanvas::BindComponentTypeMasks()
 {
 	using namespace LambdaEngine;
 
-	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
+	// NOTE: Previous implementation had a comment that said the bitmask was 0xF, even though
+	// the value that is being set is 0x10. This seems to be assumed on other places but doesn't seem to cause
+	// any notable errors, but might have to be looked at later.
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false, 0x10);	// Bit = 0x10
 
 	EntityMaskManager::Finalize();
 

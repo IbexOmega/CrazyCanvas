@@ -1,0 +1,29 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#include "Defines.glsl"
+#include "Helpers.glsl"
+
+struct SVertexCount
+{
+	uint VertexCount;
+};
+
+#define WORK_GROUP_INVOCATIONS 32
+layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = WORK_GROUP_INVOCATIONS, local_size_z = 1) in;
+
+// Buffers
+layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer		Vertices { SVertex val[]; }		b_Vertices;
+layout(binding = 0, set = BUFFER_SET_INDEX) restrict writeonly buffer	PlayerHealths { uint val[10]; }	b_PlayerHealths;
+layout(binding = 1, set = BUFFER_SET_INDEX) uniform						VertexCount { uint val; }		u_VertexCount;
+
+// Main
+void main()
+{
+	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	uint indexOffset = gl_GlobalInvocationID.x;
+
+	b_PlayerHealths.val[0] = u_VertexCount.val;
+}
