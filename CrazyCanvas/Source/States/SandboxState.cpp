@@ -12,6 +12,7 @@
 
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Misc/DestructionComponent.h"
 #include "ECS/ECSCore.h"
 
 #include "Engine/EngineConfig.h"
@@ -93,6 +94,7 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
+	m_DestructionSystem.Init();
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
@@ -273,23 +275,24 @@ void SandboxState::Init()
 
 	// Emitter
 	{
-		//Entity entity = pECS->CreateEntity();
-		//pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		//pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		//pECS->AddComponent<ParticleEmitterComponent>(entity,
-		//	ParticleEmitterComponent{
-		//		.ParticleCount = 5,
-		//		.EmitterShape = EEmitterShape::TUBE,
-		//		.Velocity = 1.0f,
-		//		.Acceleration = 0.0f,
-		//		.BeginRadius = 0.5f,
-		//		.TileIndex = 16,
-		//		.AnimationCount = 4,
-		//		.FirstAnimationIndex = 16,
-		//		.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
-		//	}
-		//);
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 5,
+				.EmitterShape = EEmitterShape::TUBE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 0.5f,
+				.TileIndex = 16,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+			}
+		);
 	}
+
 
 
 	// Create dirLight

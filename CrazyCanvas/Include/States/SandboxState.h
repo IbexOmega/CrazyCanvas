@@ -14,6 +14,7 @@
 
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Player/HealthSystem.h"
+#include "ECS/Systems/Misc/DestructionSystem.h"
 
 #include "EventHandlers/AudioEffectHandler.h"
 #include "EventHandlers/MeshPaintHandler.h"
@@ -72,6 +73,7 @@ private:
 
 	/* Systems */
 	MultiplayerClient m_MultiplayerClient;
+	DestructionSystem m_DestructionSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
