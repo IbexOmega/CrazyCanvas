@@ -3,6 +3,6 @@
 struct ShowerComponent
 {
 	DECL_COMPONENT(ShowerComponent);
-	LambdaEngine::Timestamp PickupAvailableTimestamp;
-	LambdaEngine::Timestamp PickupCooldown;
+	LambdaEngine::Timestamp ShowerAvailableTimestamp;
+	LambdaEngine::Timestamp ShowerCooldown;
 };

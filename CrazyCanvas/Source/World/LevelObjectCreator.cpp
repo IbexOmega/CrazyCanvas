@@ -556,10 +556,6 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 
 	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
 
-	const Timestamp						showerCooldown = Timestamp::Seconds(5.0f);
-	const ParticleShowerComponent		particleShowerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
-
-	pECS->AddComponent<ParticleShowerComponent>(entity, particleShowerComponent);
 	pECS->AddComponent<ParticleEmitterComponent>(entity,
 		ParticleEmitterComponent{
 			.ParticleCount			= 20,
@@ -824,6 +820,12 @@ bool LevelObjectCreator::CreatePlayer(
 
 	ChildComponent playerChildComp;
 	playerChildComp.AddChild(weaponEntity, "weapon");
+
+	//Create Shower Entity
+	const Timestamp			showerCooldown = Timestamp::Seconds(5.0f);
+	const ParticleShowerComponent		particleShowerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
+
+	pECS->AddComponent<ParticleShowerComponent>(playerEntity, particleShowerComponent);
 
 	const bool readback = MultiplayerUtils::IsServer();
 	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
