@@ -766,7 +766,7 @@ namespace LambdaEngine
 
 		const CollisionCallback* pCollisionCallback0 = std::get_if<CollisionCallback>(&pShapeUserDatas[0]->CallbackFunction);
 		const CollisionCallback* pCollisionCallback1 = std::get_if<CollisionCallback>(&pShapeUserDatas[1]->CallbackFunction);
-		if (!pCollisionCallback0 && !*pCollisionCallback0 && !pCollisionCallback1 && !*pCollisionCallback1)
+		if ((!pCollisionCallback0 || !*pCollisionCallback0) && (!pCollisionCallback1 || !*pCollisionCallback1))
 		{
 			return;
 		}
