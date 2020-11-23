@@ -64,7 +64,7 @@ void LobbyGUI::InitGUI()
 
 	TArray<glm::vec3> colors = TeamHelper::GetAllAvailableColors();
 
-	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_GameSettings.ServerName);
+	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_pGameSettings->ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
 	AddSettingComboBox(SETTING_GAME_MODE,		"Game Mode",			gameModeNames, (uint8)m_pGameSettings->GameMode);
 	AddSettingComboBox(SETTING_FLAGS_TO_WIN,	"Flags To Win",			{ "3", "5", "10", "15" }, 1);
@@ -226,7 +226,7 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 	}
 	else
 	{
-		uint8 colorIndex = chatMessage.Team == 0 ? m_GameSettings.TeamColor0 : m_GameSettings.TeamColor1;
+		uint8 colorIndex = chatMessage.Team == 0 ? m_pGameSettings->TeamColor0 : m_pGameSettings->TeamColor1;
 		glm::vec3 teamColor = TeamHelper::GetAvailableColor(colorIndex);
 		Color chatMessageColor(teamColor.r, teamColor.g, teamColor.b);
 
@@ -619,7 +619,7 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
 			pSolidColorBrush->SetColor(teamColor);
 
-			m_GameSettings.TeamColor0 = (uint8)indexSelected;
+			m_pGameSettings->TeamColor0 = (uint8)indexSelected;
 		}
 		else
 		{
@@ -627,7 +627,7 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
 			pSolidColorBrush->SetColor(teamColor);
 
-			m_GameSettings.TeamColor1 = (uint8)indexSelected;
+			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
 		}
 
 		// Update old messages text color
