@@ -35,6 +35,8 @@
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
+#define RENDER_SYSTEM_DEBUG 1
+
 namespace LambdaEngine
 {
 	class Window;
@@ -269,6 +271,11 @@ namespace LambdaEngine
 		*/
 		void SetRenderStageSleeping(const String& renderStageName, bool sleeping);
 
+		/*
+		* Set Paintmask colors (index 2 -> Team 1 & index 1 -> team 2)
+		*/
+		void SetPaintMaskColor(uint32 index, const glm::vec3& color);
+
 		RenderGraph*	GetRenderGraph()					{ return m_pRenderGraph;			}
 		uint64			GetFrameIndex() const	 			{ return m_FrameIndex;				}
 		uint64			GetModFrameIndex() const			{ return m_ModFrameIndex;			}
@@ -369,6 +376,11 @@ namespace LambdaEngine
 		void UpdatePaintMaskColorBuffer(CommandList* pCommandList);
 
 		void UpdateRenderGraph();
+
+#ifdef RENDER_SYSTEM_DEBUG
+		// Debug
+		void CheckWhereEntityAlreadyRegistered(Entity entity);
+#endif
 
 	private:
 		IDVector m_StaticMeshEntities;
@@ -473,6 +485,11 @@ namespace LambdaEngine
 		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
+
+#ifdef RENDER_SYSTEM_DEBUG
+		// Debug
+		TSet<Entity> m_RenderableEntities;
+#endif
 
 	private:
 		static RenderSystem		s_Instance;

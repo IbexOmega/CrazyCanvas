@@ -23,6 +23,7 @@ public:
 	DECL_STATIC_CLASS(ChatManager);
 
 	static void SendChatMessage(LambdaEngine::String message);
+	static void RenotifyAllChatMessages();
 
 private:
 	static void Init();

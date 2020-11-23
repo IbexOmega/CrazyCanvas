@@ -182,60 +182,6 @@ bool WeaponSystemClient::InitInternal()
 		RegisterSystem(TYPE_NAME(WeaponSystemClient), systemReg);
 	}
 
-	// Create rendering resources for projectiles
-	{
-		MaterialProperties projectileMaterialProperties;
-		projectileMaterialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		projectileMaterialProperties.Metallic = 0.5f;
-		projectileMaterialProperties.Roughness = 0.5f;
-
-		GUID_Lambda projectileMeshGUID;
-		ResourceManager::LoadMeshFromFile("sphere.obj", projectileMeshGUID);
-		if (projectileMeshGUID == GUID_NONE)
-		{
-			return false;
-		}
-
-		// Paint
-		m_RedPaintProjectileMeshComponent = { };
-		m_RedPaintProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
-		m_RedPaintProjectileMeshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
-			"Red Paint Projectile",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			projectileMaterialProperties);
-
-		projectileMaterialProperties.Albedo = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-
-		m_BluePaintProjectileMeshComponent = { };
-		m_BluePaintProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
-		m_BluePaintProjectileMeshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
-			"Blue Paint Projectile",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			projectileMaterialProperties);
-
-		// Water
-		projectileMaterialProperties.Albedo = glm::vec4(87.0f / 255.0f, 217.0f / 255.0f, 1.0f, 1.0f);
-
-		m_WaterProjectileMeshComponent = { };
-		m_WaterProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
-		m_WaterProjectileMeshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
-			"Water Projectile",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			projectileMaterialProperties);
-	}
-
 	// Create soundeffects
 	m_GunFireGUID	= ResourceManager::LoadSoundEffect3DFromFile("gun.wav");
 	if (m_GunFireGUID == GUID_NONE)

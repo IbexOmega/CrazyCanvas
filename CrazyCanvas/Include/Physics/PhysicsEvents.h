@@ -6,7 +6,7 @@
 
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
-#include "Rendering/PaintMaskRenderer.h"
+#include "RenderStages/PaintMaskRenderer.h"
 
 struct ProjectileHitEvent : LambdaEngine::Event
 {

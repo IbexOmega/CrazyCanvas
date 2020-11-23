@@ -85,13 +85,16 @@ public:
 	// Settings
 	void OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonChangeKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
-	// Key bindings
+	// Controls
 	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonApplyKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonCancelKeyBindingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+
 	void UpdateCountdown(uint8 countDownTime);
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
@@ -113,7 +116,6 @@ public:
 
 private:
 	void InitGUI();
-
 
 	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
 	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
@@ -162,6 +164,7 @@ private:
 	bool 			m_ListenToCallbacks		= false;
 	Noesis::Button* m_pSetKeyButton			= nullptr;
 	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
+	float32 m_LookSensitivityPercentageToSet = 0.0f;
 
 	// bool			m_RayTracingEnabled		= false;
 	bool			m_MeshShadersEnabled	= false;
@@ -172,7 +175,7 @@ private:
 
 	Noesis::Grid*	m_pEscapeGrid			= nullptr;
 	Noesis::Grid*	m_pSettingsGrid			= nullptr;
-	Noesis::Grid*	m_pKeyBindingsGrid		= nullptr;
+	Noesis::Grid*	m_pControlsGrid			= nullptr;
 
 	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
 };

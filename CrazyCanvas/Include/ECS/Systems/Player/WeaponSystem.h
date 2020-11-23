@@ -86,13 +86,6 @@ protected:
 
 	void CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg);
 
-	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam)
-	{
-		UNREFERENCED_VARIABLE(ammoType);
-		UNREFERENCED_VARIABLE(playerTeam);
-		return LambdaEngine::MeshComponent();
-	}
-
 	void UpdateWeapon(WeaponComponent& weaponComponent, float32 dt);
 
 	void StartReload(WeaponComponent& weaponComponent, PacketComponent<PacketPlayerAction>& packets);

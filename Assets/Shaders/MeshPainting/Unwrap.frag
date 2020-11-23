@@ -9,12 +9,13 @@ layout(location = 0) in vec3 in_WorldPosition;
 layout(location = 1) in vec3 in_Normal;
 layout(location = 2) in vec3 in_TargetPosition;
 layout(location = 3) in vec3 in_TargetDirection;
+layout(location = 4) in flat int in_InstanceTeam;
 
 layout(push_constant) uniform FrameSettingBuffer
 {
-	layout(offset = 4) uint ShouldReset;
-	layout(offset = 8) uint ShouldPaint;
-	layout(offset = 12) uint PaintCount;
+	layout(offset = 8) uint ShouldReset;
+	layout(offset = 12) uint ShouldPaint;
+	layout(offset = 16) uint PaintCount;
 } p_FrameSettings;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
@@ -26,11 +27,6 @@ layout(binding = 0, set = UNWRAP_DRAW_SET_INDEX) uniform UnwrapData
 
 layout(location = 0, component = 0) out uint out_BitsServer;
 layout(location = 0, component = 1) out uint out_BitsClient;
-
-float random(in vec3 x) 
-{
-	return fract(sin(dot(x, vec3(12.9898f, 78.233f, 37.31633f))) * 43758.5453123f);
-}
 
 vec2 rotate(in vec2 v, float a)
 {
@@ -50,7 +46,7 @@ void main()
 	}
 
 	for (uint hitPointIndex = 0; hitPointIndex < p_FrameSettings.PaintCount; hitPointIndex++)
-	{		
+	{
 		const vec3 GLOBAL_UP	= vec3(0.0f, 1.0f, 0.0f);
 		const float BRUSH_SIZE	= 0.5f;
 		const float PAINT_DEPTH = BRUSH_SIZE * 2.0f;
@@ -61,6 +57,10 @@ void main()
 		vec3 direction			= normalize(in_TargetDirection);
 
 		vec3 targetPosToWorldPos = worldPosition-targetPosition;
+
+		uint teamMode = u_UnwrapData.val[hitPointIndex].TeamMode;
+		uint paintMode = u_UnwrapData.val[hitPointIndex].PaintMode;
+		uint remoteMode = u_UnwrapData.val[hitPointIndex].RemoteMode;
 
 		float valid = step(0.0f, dot(normal, -direction)); // Checks if looking from infront, else 0
 		float len = abs(dot(targetPosToWorldPos, direction));
@@ -83,19 +83,25 @@ void main()
 		// Apply brush mask
 		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
 
+		// Do not paint if they are in the same team. But they can remove paint.
+		float isRemove = 1.f - step(0.5f, float(paintMode));
+		float isSameTeam = 1.f - step(0.5f, abs(float(in_InstanceTeam) - float(teamMode)));
+		valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
+
+		// Only paint if the position is within the texture's uv coordinates.
 		if(brushMask.a > EPSILON && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
 		{
 			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
-			if (u_UnwrapData.val[hitPointIndex].RemoteMode == 1)
+			if (remoteMode == 1)
 			{
-				uint client = u_UnwrapData.val[hitPointIndex].TeamMode << 1;
-				client |= u_UnwrapData.val[hitPointIndex].PaintMode & 0x1;
+				uint client = teamMode << 1;
+				client |= paintMode & 0x1;
 				out_BitsClient = client & 0xFF;
 			}
-			else if (u_UnwrapData.val[hitPointIndex].RemoteMode == 2)
+			else if (remoteMode == 2)
 			{
-				uint server = u_UnwrapData.val[hitPointIndex].TeamMode << 1;
-				server |= u_UnwrapData.val[hitPointIndex].PaintMode & 0x1;
+				uint server = teamMode << 1;
+				server |= paintMode & 0x1;
 				out_BitsServer = server & 0xFF;
 			}
 

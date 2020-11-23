@@ -31,6 +31,8 @@ namespace LambdaEngine
 		m_pColorTextureView			= nullptr;
 		m_pResolveTexture			= nullptr;
 		m_pResolveTextureView		= nullptr;
+
+		ZERO_MEMORY(m_ppRenderTargets, sizeof(m_ppRenderTargets));
 	}
 
 	bool GUIRenderTarget::Init(const GUIRenderTargetDesc* pDesc)

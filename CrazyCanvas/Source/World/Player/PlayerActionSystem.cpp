@@ -40,12 +40,13 @@ void PlayerActionSystem::Init()
 
 void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	ECSCore* pECS = ECSCore::GetInstance();
-	float32 dt = (float32)deltaTime.AsSeconds();
 
 	// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-	float addedPitch = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
-	float addedYaw = dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
+	float addedPitch = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
+	float addedYaw = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
 	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
 
@@ -61,8 +62,8 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 
 		if (glm::length(mouseDelta) > glm::epsilon<float>())
 		{
-			addedYaw -= MOUSE_SPEED_FACTOR * (float)mouseDelta.x * dt;
-			addedPitch -= MOUSE_SPEED_FACTOR * (float)mouseDelta.y * dt;
+			addedYaw -= InputActionSystem::GetLookSensitivity() * (float)mouseDelta.x;
+			addedPitch -= InputActionSystem::GetLookSensitivity() * (float)mouseDelta.y;
 		}
 
 		CommonApplication::Get()->SetMousePosition(halfWidth, halfHeight);
@@ -110,8 +111,13 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 
 	if (horizontalMovement)
 	{
+		glm::quat rotationNoPitch = rotation;
+		rotationNoPitch.x = 0.0f;
+		rotationNoPitch.z = 0.0f;
+		rotationNoPitch = glm::normalize(rotationNoPitch);
+
 		glm::vec3 currentVelocity;
-		currentVelocity		= rotation * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
+		currentVelocity		= rotationNoPitch * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
 		currentVelocity.y	= 0.0f;
 		currentVelocity		= glm::normalize(currentVelocity);
 		currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking));

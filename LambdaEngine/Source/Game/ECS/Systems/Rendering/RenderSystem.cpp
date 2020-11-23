@@ -14,7 +14,6 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
-#include "Rendering/PaintMaskRenderer.h"
 #include "Rendering/StagingBufferCache.h"
 
 #include "Application/API/Window.h"
@@ -356,14 +355,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers				= { };
 
-			// Add paint mask renderer to the custom renderers inside the render graph.
-			{
-				m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
-				m_pPaintMaskRenderer->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
-			}
-
 			// Light Renderer
 			bool isServer = MultiplayerUtils::IsServer();
 			if (!isServer)
@@ -477,7 +468,6 @@ namespace LambdaEngine
 		}
 
 		SAFEDELETE(m_pLineRenderer);
-		SAFEDELETE(m_pPaintMaskRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
@@ -747,13 +737,7 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 		}
 
-		// Paint Mask Renderer
-		{
-			m_pPaintMaskRenderer = DBG_NEW PaintMaskRenderer(RenderAPI::GetDevice(), BACK_BUFFER_COUNT);
-			m_pPaintMaskRenderer->Init();
-
-			renderGraphDesc.CustomRenderers.PushBack(m_pPaintMaskRenderer);
-		}
+		// TODO: Add the game specific custom renderers!
 
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
@@ -794,6 +778,19 @@ namespace LambdaEngine
 
 	}
 
+	void RenderSystem::SetPaintMaskColor(uint32 index, const glm::vec3& color)
+	{
+		if (index < m_PaintMaskColors.GetSize())
+		{
+			m_PaintMaskColors[index] = glm::vec4(color, 1.0f);
+			m_PaintMaskColorsResourceDirty = true;
+		}
+		else
+		{
+			LOG_WARNING("[RenderSystem]: SetPaintMaskColor index out of range, colors unchanged");
+		}
+	}
+
 	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)
 	{
 		const ECSCore* pECSCore	= ECSCore::GetInstance();
@@ -828,6 +825,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("[RenderSystem]: Static Mesh Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -837,6 +842,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("[RenderSystem]: Animated Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -846,6 +859,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("[RenderSystem]: Animation Attached Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto& animationAttachedComponent = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
@@ -858,6 +879,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("[RenderSystem]: Player Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
@@ -1448,6 +1477,10 @@ namespace LambdaEngine
 
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		m_RenderableEntities.erase(entity);
+#endif
+
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
@@ -2550,4 +2583,52 @@ namespace LambdaEngine
 			m_MaterialsResourceDirty = false;
 		}
 	}
+
+#ifdef RENDER_SYSTEM_DEBUG
+	void RenderSystem::CheckWhereEntityAlreadyRegistered(Entity entity)
+	{
+		bool foundEntity = false;
+
+		for (Entity e : m_StaticMeshEntities)
+		{
+			if (entity == e)
+			{
+				foundEntity = true;
+				LOG_ERROR("[RenderSystem]: Previously was Static Mesh Entity", entity);
+			}
+		}
+
+		for (Entity e : m_AnimatedEntities)
+		{
+			if (entity == e)
+			{
+				foundEntity = true;
+				LOG_ERROR("[RenderSystem]: Previously was Animated Entity", entity);
+			}
+		}
+
+		for (Entity e : m_AnimationAttachedEntities)
+		{
+			if (entity == e)
+			{
+				foundEntity = true;
+				LOG_ERROR("[RenderSystem]: Previously was Animation Attached Entity", entity);
+			}
+		}
+
+		for (Entity e : m_LocalPlayerEntities)
+		{
+			if (entity == e)
+			{
+				foundEntity = true;
+				LOG_ERROR("[RenderSystem]: Previously was Local Player Entity", entity);
+			}
+		}
+
+		if (!foundEntity)
+		{
+			LOG_ERROR("[RenderSystem]: This really isn't good...", entity);
+		}
+	}
+#endif
 }

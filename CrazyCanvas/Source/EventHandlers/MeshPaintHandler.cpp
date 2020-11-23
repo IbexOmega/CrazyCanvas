@@ -1,5 +1,6 @@
 #include "EventHandlers/MeshPaintHandler.h"
 
+#include "RenderStages/PaintMaskRenderer.h"
 #include "Application/API/Events/EventQueue.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
