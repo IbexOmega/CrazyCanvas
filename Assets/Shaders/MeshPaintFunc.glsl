@@ -1,0 +1,62 @@
+#ifndef MESH_PAINT_FUNC_SHADER
+#define MESH_PAINT_FUNC_SHADER
+
+#define PAINT_THRESHOLD			0.4f
+
+float CalculateDistance(in vec2 st)
+{
+	float a = atan(st.y, st.x);
+	float r = length(st);
+	float n = snoise(vec3(sin(a*1.548f)))*8.864f;
+	float b = PAINT_THRESHOLD;
+	float dist = r-b;
+    dist *= step(0.001f, dist);
+
+	return dist;
+}
+
+uint PackPaintInfo(in uint paintInfo)
+{
+	uint client = (paintInfo >> 4) & 0x0F;
+	uint server = paintInfo & 0x0F;
+
+	uint clientTeam				= client & 0x0F;
+	uint serverTeam				= server & 0x0F;
+	uint clientPainting			= uint(step(1, int(client)));
+	uint serverPainting			= uint(step(1, int(server)));
+
+	uint shouldPaint = clientPainting | serverPainting;
+	uint teamIndex = clientPainting * clientTeam + (1 - clientPainting) * serverTeam;
+	return shouldPaint*teamIndex;
+}
+
+vec4 PackedPaintInfoToVec4(in uint paintInfo)
+{
+    // This only supports four teams, because a vec4 has only four channels.
+    float t1 = 1. - float(step(1, abs(int(paintInfo) - 1)));
+    float t2 = 1. - float(step(1, abs(int(paintInfo) - 2)));
+    float t3 = 1. - float(step(1, abs(int(paintInfo) - 3)));
+    float t4 = 1. - float(step(1, abs(int(paintInfo) - 4)));
+    return vec4(t1, t2, t3, t4);
+}
+
+uint Vec4ToPackedPaintInfo(in vec4 v)
+{
+    // This only supports four teams, because a vec4 has only four channels.
+    float t1 = v.x;
+    float t2 = v.y;
+    float t3 = v.z;
+    float t4 = v.w;
+
+    if(t1 > 0.001f && t1 > t2 && t1 > t3 && t1 > t4)
+        return 1;
+    if(t2 > 0.001f && t2 > t1 && t2 > t3 && t2 > t4)
+        return 2;
+    if(t3 > 0.001f && t3 > t1 && t3 > t2 && t3 > t4)
+        return 3;
+    if(t4 > 0.001f && t4 > t1 && t4 > t2 && t4 > t3)
+        return 4;
+    return 0;
+}
+
+#endif

@@ -10,6 +10,7 @@
 layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
 layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 #include "../MeshPaintHelper.glsl"
+#include "../MeshPaintFunc.glsl"
 
 layout(location = 0) in flat uint	in_MaterialSlot;
 layout(location = 1) in vec3		in_WorldPosition;
@@ -19,8 +20,9 @@ layout(location = 4) in vec3		in_Bitangent;
 layout(location = 5) in vec2		in_TexCoord;
 layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
-layout(location = 8) in flat uint	in_PaintInfo;
+layout(location = 8) in vec4		in_PaintInfo4;
 layout(location = 9) in float 		in_PaintDist;
+layout(location = 10) in vec2 		in_TPos;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
 
@@ -48,12 +50,21 @@ void main()
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_PaintInfo, in_PaintDist);
+	uint packedPaintInfo = Vec4ToPackedPaintInfo(in_PaintInfo4);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, packedPaintInfo, in_PaintDist);
 
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 	out_Albedo					= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
 
+	//out_Albedo = vec3(in_TexCoord, 0.f);
+	//out_Albedo = vec3(in_PaintDist);
+	/*float b = 0.5f;
+	float lo = 1.f-smoothstep(b, b+0.01f, in_PaintDist);
+	float hi = smoothstep(b-0.01f, b, in_PaintDist);
+	out_Albedo += mix(vec3(0.f), vec3(0.f, 1.f, 0.f), hi*lo);
+	*/
+	
 	//1
 	vec3 storedMaterial			= vec3(
 									materialParameters.AO * sampledCombinedMaterial.r, 

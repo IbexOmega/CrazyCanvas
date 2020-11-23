@@ -15,7 +15,8 @@ struct SRayHitDescription
 	mat3 	TBN;
 	vec2	TexCoord;
 	uint	MaterialIndex;
-	uint	PaintMaskIndex;
+	uint	PackedPaintInfo;
+	float	PaintDist;
 };
 
 layout(buffer_reference, buffer_reference_align = 16) buffer VertexBuffer 
@@ -58,6 +59,13 @@ SRayHitDescription CalculateHitData()
 	mat3 TBN = mat3(T, B, N);
 
 	vec2 texCoord = (v0.TexCoord.xy * barycentricCoords.x + v1.TexCoord.xy * barycentricCoords.y + v2.TexCoord.xy * barycentricCoords.z);
+	float dist = (v0.Normal.w * barycentricCoords.x + v1.Normal.w * barycentricCoords.y + v2.Normal.w * barycentricCoords.z);
+	
+	vec4 paintInfo4V0 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v0.Position.w)));
+	vec4 paintInfo4V1 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v1.Position.w)));
+	vec4 paintInfo4V2 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v2.Position.w)));
+	vec4 paintInfo4 = (paintInfo4V0 * barycentricCoords.x + paintInfo4V1 * barycentricCoords.y + paintInfo4V2 * barycentricCoords.z);
+	uint packedPaintInfo = Vec4ToPackedPaintInfo(paintInfo4);
 
 	uint materialIndex		= (gl_InstanceCustomIndexEXT & 0xFF00) >> 8;
 	uint paintMaskIndex		= gl_InstanceCustomIndexEXT & 0xFF;
@@ -74,7 +82,8 @@ SRayHitDescription CalculateHitData()
 	hitDescription.TBN				= TBN;
 	hitDescription.TexCoord			= texCoord;
 	hitDescription.MaterialIndex	= materialIndex;
-	hitDescription.PaintMaskIndex	= paintMaskIndex;
+	hitDescription.PackedPaintInfo	= packedPaintInfo;
+	hitDescription.PaintDist		= dist;
 	
 	return hitDescription;
 }
@@ -82,7 +91,7 @@ SRayHitDescription CalculateHitData()
 void main() 
 {
 	SRayHitDescription hitDescription = CalculateHitData();
-	SPaintDescription paintDescription = InterpolatePaint(hitDescription.TBN, hitDescription.Position, hitDescription.Tangent, hitDescription.Bitangent, hitDescription.TexCoord, hitDescription.PaintMaskIndex, 0.f);
+	SPaintDescription paintDescription = InterpolatePaint(hitDescription.TBN, hitDescription.Position, hitDescription.Tangent, hitDescription.Bitangent, hitDescription.TexCoord, hitDescription.PackedPaintInfo, hitDescription.PaintDist);
 	
 	SMaterialParameters materialParameters = u_MaterialParameters.val[hitDescription.MaterialIndex];
 
