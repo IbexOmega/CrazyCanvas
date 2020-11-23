@@ -1664,6 +1664,22 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
+                    "name": "DIRL_SHADOWMAP",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "DIRL_SHADOWMAP"
+                },
+                {
+                    "name": "SCENE_POINT_SHADOWMAPS",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
                     "name": "SCENE_PARTICLE_VERTEX_BUFFER",
                     "removable": true,
                     "draw_args_include_mask": 1,
@@ -1696,11 +1712,19 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
+                    "name": "SCENE_LIGHTS_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
                     "name": "SCENE_PARTICLE_ATLAS_INFO_BUFFER",
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "CONSTANT_BUFFER",
+                    "binding_type": "UNORDERED_ACCESS_R",
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {

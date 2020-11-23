@@ -12,6 +12,7 @@ namespace LambdaEngine
 		DECL_COMPONENT(ParentComponent);
 		Entity	Parent;
 		bool	Attached;
+		bool	DeleteParentOnRemoval = false;
 	};
 
 	struct ChildComponent
@@ -19,7 +20,7 @@ namespace LambdaEngine
 		DECL_COMPONENT(ParentComponent);
 
 	public:
-		inline void AddChild(Entity entity, const String& tag)
+		inline void AddChild(const String& tag, Entity entity, bool deleteOnRemoval)
 		{
 			int32 index = GetIndex(tag);
 			if (index != -1)
@@ -28,8 +29,9 @@ namespace LambdaEngine
 				return;
 			}
 
-			Children.EmplaceBack(entity);
 			Tags.EmplaceBack(tag);
+			Children.EmplaceBack(entity);
+			DeleteChildrenOnRemoval.EmplaceBack(deleteOnRemoval);
 		}
 
 		inline void RemoveChild(const String& tag)
@@ -37,8 +39,9 @@ namespace LambdaEngine
 			int32 index = GetIndex(tag);
 			if (index != -1)
 			{
-				Children.Erase(Children.Begin() + index);
 				Tags.Erase(Tags.Begin() + index);
+				Children.Erase(Children.Begin() + index);
+				DeleteChildrenOnRemoval.Erase(DeleteChildrenOnRemoval.Begin() + index);
 			}
 		}
 
@@ -56,6 +59,16 @@ namespace LambdaEngine
 			return Tags;
 		}
 
+		inline const TArray<Entity>& GetEntities() const
+		{
+			return Children;
+		}
+
+		inline const TArray<bool>& GetDeletionProperties() const
+		{
+			return DeleteChildrenOnRemoval;
+		}
+
 	private:
 		inline int32 GetIndex(const String& tag) const
 		{
@@ -70,7 +83,8 @@ namespace LambdaEngine
 		}
 
 	private:
-		TArray<Entity> Children;
 		TArray<String> Tags;
+		TArray<Entity> Children;
+		TArray<bool> DeleteChildrenOnRemoval;
 	};
 }
