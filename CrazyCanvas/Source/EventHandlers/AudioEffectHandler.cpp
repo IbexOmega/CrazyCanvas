@@ -29,18 +29,21 @@ void AudioEffectHandler::Init()
 	if (!MultiplayerUtils::IsServer())
 	{
 		// Load resources
-		GUID_Lambda killedSoundID = ResourceManager::LoadSoundEffect2DFromFile("death_sound.mp3");
-		m_pPlayerKilledSound = ResourceManager::GetSoundEffect2D(killedSoundID);
+		{
+			// Load 3D sounds
+			GUID_Lambda killedSoundID = ResourceManager::LoadSoundEffect3DFromFile("Player/DeathSound.mp3");
+			m_pPlayerKilledSound = ResourceManager::GetSoundEffect3D(killedSoundID);
 
-		GUID_Lambda connectSoundID = ResourceManager::LoadSoundEffect2DFromFile("connect_sound.mp3");
-		m_pConnectSound = ResourceManager::GetSoundEffect2D(connectSoundID);
+			GUID_Lambda enemyhitSoundID = ResourceManager::LoadSoundEffect3DFromFile("Player/HitSound0.mp3");
+			m_pEnemyHitSound = ResourceManager::GetSoundEffect3D(enemyhitSoundID);
 
-		GUID_Lambda hitSoundID = ResourceManager::LoadSoundEffect2DFromFile("hit_sound.mp3");
-		m_pHitSound = ResourceManager::GetSoundEffect2D(hitSoundID);
+			// Load 2D sounds
+			GUID_Lambda connectSoundID = ResourceManager::LoadSoundEffect2DFromFile("connect_sound.mp3");
+			m_pConnectSound = ResourceManager::GetSoundEffect2D(connectSoundID);
 
-		GUID_Lambda enemyhitSoundID = ResourceManager::LoadSoundEffect2DFromFile("enemy_hit_sound.mp3");
-		m_pEnemyHitSound = ResourceManager::GetSoundEffect2D(enemyhitSoundID);
-
+			GUID_Lambda hitSoundID = ResourceManager::LoadSoundEffect2DFromFile("Player/HitSound1.mp3");
+			m_pHitSound = ResourceManager::GetSoundEffect2D(hitSoundID);
+		}
 		// Register callbacks
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerAliveUpdatedEvent);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerConnected);
@@ -56,12 +59,19 @@ void AudioEffectHandler::Init()
 bool AudioEffectHandler::OnPlayerAliveUpdatedEvent(const PlayerAliveUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
+	const ECSCore* pECSCore = ECSCore::GetInstance();
 
 	if (m_HasFocus)
 	{
 		if (pPlayer->IsDead())
 		{
-			m_pPlayerKilledSound->PlayOnce();
+			const auto* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
+			if (pPositionComponents->HasComponent(pPlayer->GetEntity()))
+			{
+				const PositionComponent& positionComponent = pPositionComponents->GetConstData(pPlayer->GetEntity());
+
+				m_pPlayerKilledSound->PlayOnceAt(positionComponent.Position, glm::vec3(0.0f), 0.5f);
+			}
 		}
 		return true;
 	}
@@ -88,8 +98,6 @@ bool AudioEffectHandler::OnPlayerConnected(const PlayerConnectedEvent& event)
 
 bool AudioEffectHandler::OnPlayerHit(const PlayerHitEvent& event)
 {
-	UNREFERENCED_VARIABLE(event);
-
 	if (m_HasFocus)
 	{
 		if (event.IsLocal)
@@ -98,7 +106,7 @@ bool AudioEffectHandler::OnPlayerHit(const PlayerHitEvent& event)
 		}
 		else
 		{
-			m_pEnemyHitSound->PlayOnce(0.5f);
+			m_pEnemyHitSound->PlayOnceAt(event.HitPosition, glm::vec3(0.0f), 0.5f);
 		}
 
 		return true;

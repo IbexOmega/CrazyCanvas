@@ -34,6 +34,7 @@ protected:
 
 private:
 	bool m_ClientSideBegun = false;
+	bool m_HasStarted = false;
 
 	float32 m_CountdownHideTimer = 0.0f;
 	
