@@ -5,6 +5,8 @@
 #include "../Helpers.glsl"
 #include "MCTables.glsl"
 
+#define GOO_FACTOR 1.1
+
 layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
 
 layout(push_constant) uniform PushConstants
@@ -36,7 +38,7 @@ void main()
 	{
 		const vec4 positionRadius = u_PC.SpherePositions[sphereIdx];
 		const vec3 distanceVec = position - positionRadius.xyz;
-		density += (positionRadius.w * positionRadius.w) / dot(distanceVec, distanceVec);
+		density += (positionRadius.w * positionRadius.w) / pow(dot(distanceVec, distanceVec), GOO_FACTOR);
 	}
 
 	b_Densities.Val[threadID] = density;

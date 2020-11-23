@@ -1472,6 +1472,55 @@ namespace LambdaEngine
 		}
 	}
 
+	void RenderSystem::UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
+	{
+		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+			return;
+
+		const glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+
+		UpdateTransformData(entity, transform);
+	}
+
+	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
+	{
+		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+			return;
+
+		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+		transform = transform * additionalTransform;
+
+		UpdateTransformData(entity, transform);
+	}
+
+	void RenderSystem::UpdateTransformData(Entity entity, const glm::mat4& transform)
+	{
+		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
+		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
+		{
+			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which is not registered");
+			return;
+		}
+
+		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
+		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
+		{
+			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which has no MeshAndInstancesMap entry");
+			return;
+		}
+
+		if (m_RayTracingEnabled)
+		{
+			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceKeyIt->second.InstanceIndex];
+			m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
+		}
+
+		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
+		pRasterInstanceToUpdate->PrevTransform	= pRasterInstanceToUpdate->Transform;
+		pRasterInstanceToUpdate->Transform		= transform;
+		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
+	}
+
 	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
 	{
 		ECSCore* pECSCore = ECSCore::GetInstance();
@@ -1743,55 +1792,6 @@ namespace LambdaEngine
 					true);
 			}
 		}
-	}
-
-	void RenderSystem::UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
-	{
-		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
-			return;
-
-		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
-
-		UpdateTransformData(entity, transform);
-	}
-
-	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
-	{
-		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
-			return;
-
-		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
-		transform = transform * additionalTransform;
-
-		UpdateTransformData(entity, transform);
-	}
-
-	void RenderSystem::UpdateTransformData(Entity entity, const glm::mat4& transform)
-	{
-		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
-		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
-		{
-			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which is not registered");
-			return;
-		}
-
-		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
-		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
-		{
-			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which has no MeshAndInstancesMap entry");
-			return;
-		}
-
-		if (m_RayTracingEnabled)
-		{
-			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceKeyIt->second.InstanceIndex];
-			m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
-		}
-
-		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
-		pRasterInstanceToUpdate->PrevTransform	= pRasterInstanceToUpdate->Transform;
-		pRasterInstanceToUpdate->Transform		= transform;
-		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 	}
 
 	void RenderSystem::UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp)

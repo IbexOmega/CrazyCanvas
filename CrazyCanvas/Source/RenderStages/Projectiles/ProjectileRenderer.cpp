@@ -1,10 +1,17 @@
 #include "RenderStages/Projectiles/ProjectileRenderer.h"
 
+#include "Application/API/Window.h"
+#include "Application/API/CommonApplication.h"
+
+#include "ECS/Components/Player/ProjectileComponent.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/GameConsole.h"
+
 #include "Math/Random.h"
+
 #include "Rendering/RenderAPI.h"
 #include "Rendering/PipelineStateManager.h"
 #include "Rendering/RenderGraph.h"
-
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/PipelineLayout.h"
@@ -20,16 +27,10 @@
 #include "Rendering/Core/API/Shader.h"
 #include "Rendering/Core/API/Buffer.h"
 #include "Rendering/EntityMaskManager.h"
-#include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
-#include "ECS/Components/Player/ProjectileComponent.h"
-
-#include "Application/API/Window.h"
-#include "Application/API/CommonApplication.h"
-
+#include "Resources/ResourceCatalog.h"
 #include "Resources/ResourceManager.h"
-
-#include "Game/GameConsole.h"
+#include "Teams/TeamHelper.h"
 
 using namespace LambdaEngine;
 
@@ -192,6 +193,25 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 
 	if (!m_MarchingCubesGrids.Empty())
 	{
+		RenderSystem& renderSystem = RenderSystem::GetInstance();
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+		const ComponentArray<ScaleComponent>* pScaleComponents = pECS->GetComponentArray<ScaleComponent>();
+		const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
+
+		const glm::bvec3 rotationalAxes(true);
+		for (Entity entity : m_MarchingCubesGrids.GetIDs())
+		{
+			const glm::mat4 transform = RenderSystem::CreateEntityTransform(
+				pPositionComponents->GetConstData(entity),
+				pRotationComponents->GetConstData(entity),
+				pScaleComponents->GetConstData(entity),
+				rotationalAxes
+			);
+
+			renderSystem.UpdateTransformData(entity, transform);
+		}
+
 		CommandList* pCommandList = m_ComputeCommandLists[modFrameIndex].Get();
 		m_ComputeCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
@@ -262,14 +282,14 @@ float32 ProjectileRenderer::GetSpheresMaxDistToCenter(const MarchingCubesGrid& m
 		radiiSquaredSum += positionRadius.w * positionRadius.w;
 	}
 
-	return 0.5f - std::sqrtf(radiiSquaredSum);
+	return 0.5f - std::sqrtf(radiiSquaredSum) - 1.1f / marchingCubesGrid.GPUData.GridWidth;
 }
 
 void ProjectileRenderer::RandomizeSpheres(MarchingCubesGrid& marchingCubesGrid)
 {
 	// Randomize radii
-	constexpr const float32 minRadius = 0.1f;
-	constexpr const float32 maxRadius = 0.2f;
+	constexpr const float32 minRadius = 0.08f;
+	constexpr const float32 maxRadius = 0.12f;
 
 	for (glm::vec4& positionRadius : marchingCubesGrid.GPUData.SpherePositionsRadii)
 	{
@@ -286,7 +306,7 @@ void ProjectileRenderer::RandomizeSpheres(MarchingCubesGrid& marchingCubesGrid)
 		glm::vec4& positionRadius = marchingCubesGrid.GPUData.SpherePositionsRadii[sphereIdx];
 
 		const glm::vec3 randPosition = { Random::Float32(), Random::Float32(), Random::Float32() };
-		const float32 randDistance = Random::Float32(0.0f, maxDistanceToCenter);
+		const float32 randDistance = Random::Float32(maxDistanceToCenter / 2.0f, maxDistanceToCenter);
 		positionRadius = glm::vec4(glm::vec3(0.5f) + glm::normalize(randPosition) * randDistance, positionRadius.w);
 
 		// Find a rotation vector that is perpendicular to the position vector
@@ -545,12 +565,24 @@ void ProjectileRenderer::SubscribeToProjectiles()
 
 void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 {
+	// Fetch the material to use
+	const ECSCore* pECS = ECSCore::GetInstance();
+	const ProjectileComponent& projectileComponent = pECS->GetConstComponent<ProjectileComponent>(entity);
+
+	GUID_Lambda projectileMaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL;
+	if (projectileComponent.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
+	{
+		const TeamComponent& teamComponent = pECS->GetConstComponent<TeamComponent>(entity);
+		projectileMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(teamComponent.TeamIndex);
+	}
+
 	RenderSystem& renderSystem = RenderSystem::GetInstance();
-	renderSystem.AddRenderableEntity(entity, m_MarchingCubesMesh, GUID_MATERIAL_DEFAULT, RenderSystem::CreateEntityTransform(entity, glm::bvec3(true)), false, true);
+	renderSystem.AddRenderableEntity(entity, m_MarchingCubesMesh, projectileMaterialGUID, RenderSystem::CreateEntityTransform(entity, glm::bvec3(true)), false, true);
 }
 
 void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 {
-	// RenderSystem& renderSystem = RenderSystem::GetInstance();
+	RenderSystem& renderSystem = RenderSystem::GetInstance();
+	renderSystem.RemoveRenderableEntity(entity);
 	m_MarchingCubesGrids.Pop(entity);
 }

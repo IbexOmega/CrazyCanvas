@@ -1055,7 +1055,7 @@ bool LevelObjectCreator::CreateProjectile(
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
 	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition });
-	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(0.7f) });
+	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(1.0f) });
 	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(glm::normalize(desc.InitalVelocity), g_DefaultUp) });
 
 	const DynamicCollisionCreateInfo collisionInfo =
@@ -1069,9 +1069,10 @@ bool LevelObjectCreator::CreateProjectile(
 			{
 				/* Shape Type */		EShapeType::SIMULATION,
 				/* Geometry Type */		EGeometryType::SPHERE,
-				/* Geometry Params */	{ .Radius = 0.3f },
+				/* Geometry Params */	{ .Radius = 0.2f },
 				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
-				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
 				/* EntityID*/			desc.WeaponOwner,
 				/* CallbackFunction */	desc.Callback,
 			},
@@ -1084,16 +1085,9 @@ bool LevelObjectCreator::CreateProjectile(
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		glm::vec4 particleColor(1.0f);
-		if (desc.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
+		glm::vec4 particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
+		if (desc.AmmoType == EAmmoType::AMMO_TYPE_WATER)
 		{
-			// GUID_Lambda projectileMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(desc.TeamIndex);
-			// pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = projectileMaterialGUID });
-			particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
-		}
-		else
-		{
-			// pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
 			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 		}
 
