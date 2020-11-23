@@ -10,7 +10,7 @@ namespace LambdaEngine
 {
 	class DeviceChild;
 
-	class MeshPaintComponentOwner : ComponentOwner
+	class MeshPaintComponentOwner : public ComponentOwner
 	{
 	public:
 		DECL_SINGLETON_CLASS(MeshPaintComponentOwner);

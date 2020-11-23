@@ -385,7 +385,7 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
 
 				// Particle Renderer & Manager
-				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
+				constexpr uint32 MAX_PARTICLE_COUNT = 30000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
 
 				m_pParticleRenderer = DBG_NEW ParticleRenderer();
