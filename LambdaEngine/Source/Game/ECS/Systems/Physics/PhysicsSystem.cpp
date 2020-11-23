@@ -682,7 +682,7 @@ namespace LambdaEngine
 			0u
 		);
 
-		PxControllerFilters controllerFilters(pFilterData);
+		PxControllerFilters controllerFilters(pFilterData, &m_QueryFilterCallback);
 
 		// Set filter data to be used when simulating the physics world
 		PxRigidDynamic* pActor = pController->getActor();
