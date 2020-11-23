@@ -31,7 +31,6 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/Components/Match/FlagComponent.h"
-#include "ECS/Components/Match/ShowerComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
@@ -554,7 +553,9 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 
 	Entity entity = pECS->CreateEntity();
 
-	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
+	const PositionComponent& positionComponent	= pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	const ScaleComponent& scaleComponent		= pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	const RotationComponent& rotationComponent	= pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
 
 	if (!MultiplayerUtils::IsServer())
 	{
@@ -572,37 +573,40 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 			}
 		);
 	}
-	else
+
+	/* Static functions used in the callback function are either client or server, therefore collision needs to be checked from both side
+	* "ResetServer()" - Client
+	* "ResetHealth()" - Server
+	*/
+	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
+	const CollisionCreateInfo collisionCreateInfo =
 	{
-		const CollisionCreateInfo collisionCreateInfo =
+		.Entity		= entity,
+		.Position	= positionComponent,
+		.Scale		= scaleComponent,
+		.Rotation	= rotationComponent,
+		.Shapes =
 		{
-			.Entity = entity,
-			.Position = pECS->AddComponent<PositionComponent>(entity,	{ true, levelObject.DefaultPosition + translation }),
-			.Scale = pECS->AddComponent<ScaleComponent>(entity,	{ true, levelObject.DefaultScale }),
-			.Rotation = pECS->AddComponent<RotationComponent>(entity,	{ true, glm::identity<glm::quat>() }),
-			.Shapes =
 			{
-				{
-					/* Shape Type */		EShapeType::TRIGGER,
-					/* GeometryType */		EGeometryType::BOX,
-					/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
-					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
-					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-					/* EntityID*/			entity,
-					/* CallbackFunction*/	&ParticleShowerCallback
-				},
-			},
-		};
+				/* Shape Type */		EShapeType::TRIGGER,
+				/* GeometryType */		EGeometryType::BOX,
+				/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
+				/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
+				/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				/* EntityID*/			entity,
+				/* CallbackFunction*/	&ParticleShowerCallback
+			}
+		},
+	};
 
-		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-		const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
-		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
-		createdEntities.PushBack(entity);
-	}
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+	const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
 
+
+	createdEntities.PushBack(entity);
 	D_LOG_INFO("Created Particle Shower with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PARTICLE_SHOWER;
-
 }
 
 bool LevelObjectCreator::CreateFlag(
@@ -797,7 +801,8 @@ bool LevelObjectCreator::CreatePlayer(
 		.CollisionMask	= (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
-						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC | (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
+						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER |
+						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		.EntityID		= playerEntity
 	};
 
@@ -1073,10 +1078,6 @@ bool LevelObjectCreator::CreatePlayer(
 		playerMaterialGUID = TeamHelper::GetMyTeamPlayerMaterialGUID();
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
-
-		const Timestamp	showerCooldown = Timestamp::Seconds(5.0f);
-		const ParticleShowerComponent particleShowerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
-		pECS->AddComponent<ParticleShowerComponent>(playerEntity, particleShowerComponent);
 	}
 
 	pECS->AddComponent<MeshComponent>(playerEntity,
@@ -1092,6 +1093,11 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
+
+	// ShowerComponent needs to be checked from both server and client in order to trigger either of ResetHealth or ResetServer(Paint)
+	const Timestamp	showerCooldown = Timestamp::Seconds(5.0f);
+	const ShowerComponent showerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
+	pECS->AddComponent<ShowerComponent>(playerEntity, showerComponent);
 
 	PlayerManagerBase::SetPlayerEntity(pPlayer, playerEntity);
 
