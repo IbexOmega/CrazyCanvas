@@ -29,24 +29,15 @@ void SpectateCameraSystem::Init()
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
 		{
-			.pSubscriber = &m_PlayerEntities,
-			.ComponentAccesses =
-			{
-				{ NDA, PlayerLocalComponent::Type() }
-			}
-		},
-		{
 			.pSubscriber = &m_CameraEntities,
 			.ComponentAccesses =
 			{
-				{ RW, CameraComponent::Type() }, { RW, OffsetComponent::Type() }
+				{ RW, CameraComponent::Type() }, 
+				{ RW, OffsetComponent::Type() },
+				{ RW, ParentComponent::Type() }
+
 			}
 		}
-	};
-
-	systemReg.SubscriberRegistration.AdditionalAccesses =
-	{
-		{ R, ScaleComponent::Type() }
 	};
 
 	systemReg.Phase = 1;
