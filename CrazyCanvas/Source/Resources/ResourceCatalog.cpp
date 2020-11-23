@@ -61,6 +61,11 @@ bool ResourceCatalog::Init()
 	//Weapon
 	{
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", WEAPON_MESH_GUID, WEAPON_MATERIAL_GUID);
+
+		// Soundeffects
+		WEAPON_SOUND_GUNFIRE_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/Shootsound.mp3");
+		WEAPON_SOUND_GUNFIRE_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Weapon/Shootsound.mp3");
+		WEAPON_SOUND_OUTOFAMMO_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/WaterSound.mp3");
 	}
 
 	return true;
