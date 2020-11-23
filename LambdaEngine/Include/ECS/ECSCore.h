@@ -185,7 +185,7 @@ namespace LambdaEngine
 	template<typename Comp>
 	inline bool ECSCore::GetComponentIf(Entity entity, Comp& comp)
 	{
-		return m_ComponentStorage.GetComponent<Comp>(entity);
+		return m_ComponentStorage.GetComponentIf<Comp>(entity, comp);
 	}
 
 	template<typename Comp>

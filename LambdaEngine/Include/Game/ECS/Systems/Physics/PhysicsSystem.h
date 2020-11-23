@@ -7,6 +7,7 @@
 #include "Math/Math.h"
 #include "Physics/PhysX/ErrorCallback.h"
 #include "Physics/PhysX/PhysX.h"
+#include "Physics/PhysX/QueryFilterCallback.h"
 
 #include <variant>
 
@@ -246,5 +247,7 @@ namespace LambdaEngine
 		PxScene*				m_pScene;
 
 		PxMaterial* m_pMaterial;
+
+		QueryFilterCallback m_QueryFilterCallback;
 	};
 }
