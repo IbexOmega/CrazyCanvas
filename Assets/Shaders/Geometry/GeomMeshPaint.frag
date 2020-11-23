@@ -64,7 +64,7 @@ void main()
 	float hi = smoothstep(b-0.01f, b, in_PaintDist);
 	out_Albedo += mix(vec3(0.f), vec3(0.f, 1.f, 0.f), hi*lo);
 	*/
-	
+
 	//1
 	vec3 storedMaterial			= vec3(
 									materialParameters.AO * sampledCombinedMaterial.r, 
@@ -75,7 +75,7 @@ void main()
 	//2
 	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal				= normalize(TBN * normalize(shadingNormal));
-	out_Compact_Normal			= PackNormal(mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation));
+	out_Compact_Normal			= PackNormal(mix(shadingNormal, normalize(paintDescription.Normal+shadingNormal*0.2f), paintDescription.Interpolation));
 
 	//3
 	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
