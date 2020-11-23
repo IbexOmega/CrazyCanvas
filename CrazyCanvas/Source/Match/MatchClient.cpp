@@ -277,6 +277,7 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
 
+	UNREFERENCED_VARIABLE(event);
 
 	if (PlayerManagerClient::GetPlayerLocal()->IsDead())
 	{
