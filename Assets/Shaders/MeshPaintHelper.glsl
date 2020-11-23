@@ -47,25 +47,10 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	float lo = 1.f-smoothstep(b, b+0.2f, paintNoise);
 	float hi = smoothstep(b-0.09f, b, paintNoise);
 	b = lo*hi;
-	//float paint = 1.f - step(PAINT_THRESHOLD, paintNoise);
 
-	SPaintSample paintSample00		= SamplePaint(position, packedPaintInfo, paint);
-	SPaintSample paintSample10		= SamplePaint(position, packedPaintInfo, paint);
-	SPaintSample paintSample01		= SamplePaint(position, packedPaintInfo, paint);
-	SPaintSample paintSample11		= SamplePaint(position, packedPaintInfo, paint);
-
-	vec3 paintColor00		= b_PaintMaskColor.val[paintSample00.Team].rgb;
-	vec3 paintColor10 		= b_PaintMaskColor.val[paintSample10.Team].rgb;
-	vec3 paintColor01 		= b_PaintMaskColor.val[paintSample01.Team].rgb;
-	vec3 paintColor11 		= b_PaintMaskColor.val[paintSample11.Team].rgb;
-	
-	vec3 paintColorHor0 	= mix(paintColor00, paintColor10, subTexel.x);
-	vec3 paintColorHor1 	= mix(paintColor01, paintColor11, subTexel.x);
-	vec3 paintColorFinal	= mix(paintColorHor0, paintColorHor1, subTexel.y);
-
-	float paintAmountHor0	= mix(paintSample00.PaintAmount, paintSample10.PaintAmount, subTexel.x);
-	float paintAmountHor1	= mix(paintSample01.PaintAmount, paintSample11.PaintAmount, subTexel.x);
-	float paintAmountFinal	= mix(paintAmountHor0, paintAmountHor1, subTexel.y);
+	SPaintSample paintSample = SamplePaint(position, packedPaintInfo, paint);
+	vec3 paintColorFinal	= b_PaintMaskColor.val[paintSample.Team].rgb;
+	float paintAmountFinal	= paintSample.PaintAmount;
 
 	float h0 					= snoise(PAINT_NOISE_SCALE * (position));
 	float h_u 					= snoise(PAINT_NOISE_SCALE * (position + PAINT_DELTA_NOISE * tangent));
@@ -78,10 +63,10 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	vec3 noPaintNormal11		= normalize(vec3( 1.0f, -1.0f, 1.0f));
 	vec3 combinedNormal			= TBN * normalize(
 		paintNormal + 
-		(1.0f - paintSample00.PaintAmount) * noPaintNormal00 +
-		(1.0f - paintSample10.PaintAmount) * noPaintNormal10 +
-		(1.0f - paintSample01.PaintAmount) * noPaintNormal01 +
-		(1.0f - paintSample11.PaintAmount) * noPaintNormal11
+		(1.0f - paintAmountFinal) * noPaintNormal00 +
+		(1.0f - paintAmountFinal) * noPaintNormal10 +
+		(1.0f - paintAmountFinal) * noPaintNormal01 +
+		(1.0f - paintAmountFinal) * noPaintNormal11
 	);
 
 	SPaintDescription paintDescription;
@@ -89,7 +74,7 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	paintDescription.Normal			= combinedNormal;
 	paintDescription.Albedo 		= paintColorFinal;
 	paintDescription.Roughness 		= PAINT_ROUGHNESS;
-	paintDescription.Interpolation	= paintAmountFinal;
+	paintDescription.Interpolation	= step(1.f, paintAmountFinal);
 
 	return paintDescription;
 }
