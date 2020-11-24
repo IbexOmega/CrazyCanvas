@@ -289,9 +289,6 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 		}
 		else
 			Input::PushInputMode(EInputLayer::DEAD);
-		
-		//LambdaEngine::CommonApplication::Get()->SetMouseVisibility(true);
-		//PlayerActionSystem::SetMouseEnabled(false);
 	}
 	else
 	{
@@ -303,9 +300,6 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 		}
 		else
 			Input::PushInputMode(EInputLayer::GAME);
-
-		//LambdaEngine::CommonApplication::Get()->SetMouseVisibility(false);
-		//PlayerActionSystem::SetMouseEnabled(true);
 	}
 
 	return false;

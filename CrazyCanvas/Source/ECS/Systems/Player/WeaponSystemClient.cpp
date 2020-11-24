@@ -104,7 +104,7 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			StartReload(weaponComponent, playerActions);
 		}
 
-		if(!PlayerManagerClient::GetPlayerLocal()->IsDead())
+		if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
 		{ 
 			// Reload if we are not reloading
 			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
