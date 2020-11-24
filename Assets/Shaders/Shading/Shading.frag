@@ -5,6 +5,7 @@
 
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
+#include "../Reflections.glsl"
 
 layout(location = 0) in vec2 in_TexCoord;
 
@@ -30,6 +31,7 @@ layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube	u_PointLShadowM
 layout(binding = 7, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
 layout(binding = 8, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
 layout(binding = 9, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
+layout(binding = 10, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_Reflections;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -44,12 +46,26 @@ void main()
 
 	vec3 N 					= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
 
-	if (aoRoughMetalValid.a < 1.0f || aoRoughMetalValid.g == 0.0f)
+	if (aoRoughMetalValid.a < 1.0f)
 	{
 		float luminance = CalculateLuminance(albedo);
 
 		//Reinhard Tone-Mapping
 		vec3 colorLDR = albedo / (albedo + vec3(1.0f));
+
+		//Gamma Correction
+		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+
+		out_Color = vec4(finalColor, luminance);
+		return;
+	}
+	else if (aoRoughMetalValid.g <= REFLECTION_REJECT_THRESHOLD)
+	{
+		vec3 reflectionHDR = texture(u_Reflections, in_TexCoord).rgb;
+		float luminance = CalculateLuminance(reflectionHDR);
+
+		//Reinhard Tone-Mapping
+		vec3 colorLDR = reflectionHDR / (reflectionHDR + vec3(1.0f));
 
 		//Gamma Correction
 		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));

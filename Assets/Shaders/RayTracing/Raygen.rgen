@@ -4,14 +4,10 @@
 //#extension GL_EXT_debug_printf : enable
 
 #include "RayTracingInclude.glsl"
+#include "../Reflections.glsl"
 #include "../Helpers.glsl"
 #include "../Defines.glsl"
 #include "BxDF.glsl"
-
-#define GLOSSY_REFLECTION_ENABLED 1
-#if GLOSSY_REFLECTION_ENABLED
-	#define GLOSSY_REJECT_THRESHOLD 0.25f
-#endif
 
 #define MAX_BOUNCES 8
 
@@ -156,18 +152,8 @@ void main()
 	float roughness         = aoRoughMetalValid.g;
 	float valid             = aoRoughMetalValid.a;
 
-	if (valid < 1.0f)
+	if (valid < 1.0f || roughness > REFLECTION_REJECT_THRESHOLD)
 		return;
-
-	bool mirrorReflection = (roughness == 0.0f);
-
-#if !GLOSSY_REFLECTION_ENABLED
-	if (!mirrorReflection)
-		return;
-#else
-	if (roughness > GLOSSY_REJECT_THRESHOLD)
-		return;
-#endif
 
 	//Setup convenience variables
 	SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
@@ -194,7 +180,7 @@ void main()
 	vec3 reflDir;
 	vec3 throughput;
 
-#if !GLOSSY_REFLECTION_ENABLED
+#if !GLOSSY_REFLECTIONS_ENABLED
 	{
 		//Calculate a mirror reflection direction
 		reflDir = reflect(-w_ow_start, s_PrimaryPayload.Normal);
@@ -276,11 +262,11 @@ void main()
 			break;
 		}
 
-		mirrorReflection = (s_PrimaryPayload.Roughness == 0.0f);
+		bool rejectNextReflection = (s_PrimaryPayload.Roughness > REFLECTION_REJECT_THRESHOLD);
 
-#if !GLOSSY_REFLECTION_ENABLED
+#if !GLOSSY_REFLECTIONS_ENABLED
 		//Glossy Disabled, return if not Mirror Reflection, and reflect around normal instead of sampling BRDF
-		if (!mirrorReflection)
+		if (rejectNextReflection)
 			break;
 
 		reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
@@ -322,7 +308,7 @@ void main()
 			s_PrimaryPayload.Metallic,
 			F0);
 
-		if (s_PrimaryPayload.Roughness > GLOSSY_REJECT_THRESHOLD || reflectionDesc.diffuse)
+		if (rejectNextReflection)
 			break;
 
 		//Update Throughput
@@ -334,7 +320,7 @@ void main()
 	vec3 colorHDR;
 	if (shadeOutput)
 	{
-#if !GLOSSY_REFLECTION_ENABLED
+#if !GLOSSY_REFLECTIONS_ENABLED
 		float n_dot_o = max(dot(s_PrimaryPayload.Normal, -reflDir), 0.0f);
 
 		vec3 F0 = F0(s_PrimaryPayload.Albedo, s_PrimaryPayload.Metallic);
@@ -364,13 +350,9 @@ void main()
 	float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
 	colorHDR *= bounceDarkening;
 
-	float luminance = CalculateLuminance(colorHDR);
+	vec3 prevColorHDR = imageLoad(u_Reflections, pixelCoords).rgb;
 
-	//Reinhard Tone-Mapping
-	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
+	vec3 finalHDR = mix(prevColorHDR, colorHDR, pow(1.0f - roughness, 16.0f));
 
-	//Gamma Correction
-	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
-	imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
+	imageStore(u_Reflections, pixelCoords, vec4(finalHDR, 1.0f));
 }

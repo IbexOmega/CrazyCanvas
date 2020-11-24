@@ -6,7 +6,6 @@ struct SReflectionDesc
     vec3    f;
     float   PDF;
     vec3    w_iw;
-    bool    diffuse;
 };
 
 struct SBxDFEval
@@ -84,7 +83,6 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
     reflectionDesc.f        = vec3(0.0f);
     reflectionDesc.PDF      = 0.0f;
     reflectionDesc.w_iw     = vec3(0.0f);
-    reflectionDesc.diffuse  = false;
 
     //Don't sample for tangent directions
     if (n_dot_o == 0.0f) 
@@ -218,7 +216,6 @@ SReflectionDesc f(vec3 w_ow, vec3 w_iw, vec3 w_nw, float n_dot_o, vec3 albedo, f
     reflectionDesc.f        = vec3(0.0f);
     reflectionDesc.PDF      = 0.0f;
     reflectionDesc.w_iw     = w_iw;
-    reflectionDesc.diffuse  = false;
 
     //Perfect Specular are delta distributions -> (mathematically) zero percent chance that w_i gives a value of f > 0 
     if (n_dot_o == 0.0f || roughness == 0.0f) 
