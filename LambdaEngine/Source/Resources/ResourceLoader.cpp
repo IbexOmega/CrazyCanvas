@@ -757,6 +757,9 @@ namespace LambdaEngine
 		memcpy(pTextureDataDst, pixels.Get(), textureSize);
 		stagingBuffer->Unmap();
 
+		// Miplevels
+		const uint32 mipLevels = generateMips ? std::max<uint32>(uint32(std::log2(size)), 1u) : 1u;
+
 		// Create texturecube
 		TextureDesc textureCubeDesc;
 		textureCubeDesc.DebugName	= name;
@@ -765,13 +768,15 @@ namespace LambdaEngine
 		textureCubeDesc.ArrayCount	= 6;
 		textureCubeDesc.Depth		= 1;
 		textureCubeDesc.Flags		= 
+			FTextureFlag::TEXTURE_FLAG_COPY_SRC |
+			FTextureFlag::TEXTURE_FLAG_COPY_DST |
 			FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE |
 			FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
 			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureCubeDesc.Format		= format;
 		textureCubeDesc.Width		= size;
 		textureCubeDesc.Height		= size;
-		textureCubeDesc.Miplevels	= 1;
+		textureCubeDesc.Miplevels	= mipLevels;
 		textureCubeDesc.SampleCount	= 1;
 
 		TSharedRef<Texture> skybox = RenderAPI::GetDevice()->CreateTexture(&textureCubeDesc);
@@ -907,6 +912,40 @@ namespace LambdaEngine
 		}
 
 		RenderAPI::GetComputeQueue()->Flush();
+
+		if (generateMips)
+		{
+			// Start commandlist
+			const uint64 copyWaitValue = s_CopySignalValue - 1;
+			s_pCopyFence->Wait(copyWaitValue, UINT64_MAX);
+
+			s_pCopyCommandAllocator->Reset();
+			s_pCopyCommandList->Begin(nullptr);
+
+			s_pCopyCommandList->GenerateMips(
+				skybox.Get(),
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				true);
+
+			s_pCopyCommandList->End();
+
+			if (!RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
+				&s_pCopyCommandList, 1,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+				nullptr, 0,
+				s_pCopyFence, s_CopySignalValue))
+			{
+				LOG_ERROR("[ResourceLoader]: Texture could not be created as commandlist could not be executed for \"%s\"", name.c_str());
+				return nullptr;
+			}
+			else
+			{
+				s_CopySignalValue++;
+			}
+
+			RenderAPI::GetGraphicsQueue()->Flush();
+		}
 
 		// Adds a ref, this will be removed when sharedptr gets destroyed
 		return skybox.GetAndAddRef();
