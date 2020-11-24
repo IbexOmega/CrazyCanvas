@@ -414,7 +414,8 @@ bool ProjectileRenderer::CreateCommonMesh()
 		indices[i] = vertexCount - 1 - i;
 	}
 
-	m_MarchingCubesMesh = ResourceManager::LoadMeshFromMemory("Marching Cubes Common Mesh", vertices.get(), vertexCount, indices, vertexCount);
+	constexpr const bool useMeshletCache = true;
+	m_MarchingCubesMesh = ResourceManager::LoadMeshFromMemory("Marching Cubes Common Mesh", vertices.get(), vertexCount, indices, vertexCount, useMeshletCache);
 	return m_MarchingCubesMesh != GUID_NONE;
 }
 
