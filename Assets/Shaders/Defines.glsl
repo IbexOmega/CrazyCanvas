@@ -72,15 +72,6 @@ struct SMeshlet
 	uint PrimOffset;
 };
 
-struct SPrimaryInstance
-{
-	mat3x4	Transform;
-	uint	Mask_IndirectArgIndex;
-	uint	SBTRecordOffset_Flags;
-	uint	AccelerationStructureHandleTop32;
-	uint	AccelerationStructureHandleBottom32;
-};
-
 struct SInstance
 {
 	mat4 Transform;

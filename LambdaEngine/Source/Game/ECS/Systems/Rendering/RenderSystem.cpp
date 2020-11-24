@@ -2414,7 +2414,7 @@ namespace LambdaEngine
 
 		//Update Per Frame Data
 		{
-			m_PerFrameData.FrameIndex = 0;
+			m_PerFrameData.FrameIndex = m_FrameIndex % UINT32_MAX;
 			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
 
 			UpdatePerFrameBuffer(pGraphicsCommandList);
