@@ -76,6 +76,7 @@ void LobbyState::Init()
 
 	if (!m_IsReplayLobby)
 	{
+		PlayerManagerClient::Reset();
 		PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
 	}
 	else

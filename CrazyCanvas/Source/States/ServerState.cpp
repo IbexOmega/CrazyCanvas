@@ -186,6 +186,7 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 		if (pPlayer->IsHost())
 		{
 			SetState(SERVER_STATE_LOADING);
+			Match::Init();
 		}
 	}
 	else if (gameState == GAME_STATE_LOADING)

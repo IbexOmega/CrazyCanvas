@@ -23,7 +23,6 @@ namespace LambdaEngine
 
 		FORCEINLINE void unlock() noexcept
 		{
-			ASSERT(m_ThreadId == std::this_thread::get_id());
 			m_Flag.clear(std::memory_order_release);
 			m_ThreadId = std::thread::id();
 		}
