@@ -192,8 +192,8 @@ bool CrazyCanvas::InitRendererResources()
 		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
 			"Skybox/daytime.hdr",
 			EFormat::FORMAT_R16G16B16A16_SFLOAT,
-			768,
-			false);
+			512,
+			true);
 
 		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
 		TextureView*	pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
