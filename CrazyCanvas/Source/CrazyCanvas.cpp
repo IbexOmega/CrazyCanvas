@@ -225,7 +225,7 @@ bool CrazyCanvas::BindComponentTypeMasks()
 {
 	using namespace LambdaEngine;
 
-	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0x10
 
 	EntityMaskManager::Finalize();
 

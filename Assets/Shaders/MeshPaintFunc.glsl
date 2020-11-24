@@ -3,18 +3,6 @@
 
 #define PAINT_THRESHOLD			0.4f
 
-float CalculateDistance(in vec2 st)
-{
-	float a = atan(st.y, st.x);
-	float r = length(st);
-	float n = snoise(vec3(sin(a*1.548f)))*8.864f;
-	float b = PAINT_THRESHOLD;
-	float dist = r-b;
-    dist *= step(0.001f, dist);
-
-	return dist;
-}
-
 uint PackPaintInfo(in uint paintInfo)
 {
 	uint client = (paintInfo >> 4) & 0x0F;

@@ -22,7 +22,6 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in vec4		in_PaintInfo4;
 layout(location = 9) in float 		in_PaintDist;
-layout(location = 10) in vec2 		in_TPos;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
 
@@ -56,14 +55,6 @@ void main()
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
 	out_Albedo					= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
-
-	//out_Albedo = vec3(in_TexCoord, 0.f);
-	//out_Albedo = vec3(in_PaintDist);
-	/*float b = 0.5f;
-	float lo = 1.f-smoothstep(b, b+0.01f, in_PaintDist);
-	float hi = smoothstep(b-0.01f, b, in_PaintDist);
-	out_Albedo += mix(vec3(0.f), vec3(0.f, 1.f, 0.f), hi*lo);
-	*/
 
 	//1
 	vec3 storedMaterial			= vec3(

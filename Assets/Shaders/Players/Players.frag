@@ -19,9 +19,10 @@ layout(location = 4) in vec3		in_Bitangent;
 layout(location = 5) in vec2		in_TexCoord;
 layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
-layout(location = 8) in flat uint	in_ExtensionIndex;
-layout(location = 9) in flat uint	in_InstanceIndex;
-layout(location = 10) in vec3 		in_ViewDirection;
+layout(location = 8) in flat uint	in_InstanceIndex;
+layout(location = 9) in vec3 		in_ViewDirection;
+layout(location = 10) in vec4 		in_PaintInfo4;
+layout(location = 11) in float 		in_PaintDist;
 
 layout(push_constant) uniform TeamIndex
 {
@@ -66,23 +67,24 @@ void main()
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex, 0.f);
+	uint packedPaintInfo = Vec4ToPackedPaintInfo(in_PaintInfo4);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, packedPaintInfo, in_PaintDist);
 	shadingNormal = mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
-	uint serverData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).r);
-	uint clientData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).g);
-	float shouldPaint 			= float((serverData & 0x1) | (clientData & 0x1));
+	//uint serverData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).r);
+	//uint clientData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).g);
+	float shouldPaint 			= float(step(1, packedPaintInfo));
 
-	uint clientTeam				= (clientData >> 1) & 0x7F;
-	uint serverTeam				= (serverData >> 1) & 0x7F;
-	uint clientPainting			= clientData & 0x1;
-	uint team = serverTeam;
+	//uint clientTeam				= (clientData >> 1) & 0x7F;
+	//uint serverTeam				= (serverData >> 1) & 0x7F;
+	//uint clientPainting			= clientData & 0x1;
+	uint team = packedPaintInfo;
 	
-	if (clientPainting > 0)
-		team = clientTeam;
+	//if (clientPainting > 0)
+	//	team = clientTeam;
 
 	// Darken back faces like inside of painted legs
 	float backSide = 1.0f - step(0.0f, dot(in_ViewDirection, shadingNormal));
@@ -103,7 +105,6 @@ void main()
 	// PBR
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SLightsBuffer lightBuffer		= b_LightsBuffer.val;
-
 
 	vec3 storedMaterial	= vec3(
 								materialParameters.AO * sampledCombinedMaterial.b, 

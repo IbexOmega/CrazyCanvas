@@ -59,6 +59,8 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
+#include "Physics/CollisionGroups.h"
+
 #include <imgui.h>
 
 using namespace LambdaEngine;
@@ -102,7 +104,7 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[7]
+			.LevelHash = levelHashes[0]
 		};
 
 		Match::CreateMatch(&matchDescription);
@@ -190,6 +192,29 @@ void SandboxState::Init()
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
+		{
+			const CharacterColliderCreateInfo colliderInfo =
+			{
+				.Entity = entity,
+				.Position = pECS->GetComponent<PositionComponent>(entity),
+				.Rotation = pECS->GetComponent<RotationComponent>(entity),
+				.CollisionGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+								 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.EntityID = entity
+			};
+
+			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+			CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+				colliderInfo,
+				std::max(0.0f, 1.7f - 2.0f * 0.2f),
+				0.2f);
+
+			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+		}
+
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
 
@@ -206,6 +231,29 @@ void SandboxState::Init()
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
+		{
+			const CharacterColliderCreateInfo colliderInfo =
+			{
+				.Entity = entity,
+				.Position = pECS->GetComponent<PositionComponent>(entity),
+				.Rotation = pECS->GetComponent<RotationComponent>(entity),
+				.CollisionGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+								 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.EntityID = entity
+			};
+
+			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+			CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+				colliderInfo,
+				std::max(0.0f, 1.7f - 2.0f * 0.2f),
+				0.2f);
+
+			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+		}
+
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
 
@@ -221,6 +269,29 @@ void SandboxState::Init()
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
+
+		{
+			const CharacterColliderCreateInfo colliderInfo =
+			{
+				.Entity = entity,
+				.Position = pECS->GetComponent<PositionComponent>(entity),
+				.Rotation = pECS->GetComponent<RotationComponent>(entity),
+				.CollisionGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+								 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.EntityID = entity
+			};
+
+			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+			CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+				colliderInfo,
+				std::max(0.0f, 1.7f - 2.0f * 0.2f),
+				0.2f);
+
+			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+		}
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
@@ -257,6 +328,29 @@ void SandboxState::Init()
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
+
+		{
+			const CharacterColliderCreateInfo colliderInfo =
+			{
+				.Entity = entity,
+				.Position = pECS->GetComponent<PositionComponent>(entity),
+				.Rotation = pECS->GetComponent<RotationComponent>(entity),
+				.CollisionGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+								 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.EntityID = entity
+			};
+
+			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+			CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+				colliderInfo,
+				std::max(0.0f, 1.7f - 2.0f * 0.2f),
+				0.2f);
+
+			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+		}
 	}
 
 	// Emitter

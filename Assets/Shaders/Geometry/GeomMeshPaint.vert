@@ -29,8 +29,6 @@ layout(location = 7) out vec4 out_PrevClipPosition;
 layout(location = 8) out vec4 out_PaintInfo4;
 layout(location = 9) out float out_PaintDist;
 
-layout(location = 10) out vec2 out_TPos;
-
 vec2 rotate(in vec2 v, float a)
 {
     float c = cos(a);
@@ -98,8 +96,6 @@ void main()
 		float isSameTeam = 1.f - step(0.5f, abs(float(instanceTeam) - float(teamMode)));
 		valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
 
-		vec3 lineToPaint = targetPosToWorldPos;
-
 		// Apply brush mask
 		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
 		float dist = 1.f;
@@ -127,8 +123,6 @@ void main()
 			teamSC = (client << 4) | server;
 			vertex.Position.w = uintBitsToFloat(teamSC);
 
-			lineToPaint = vec3(0.f);
-
 			if(paintMode == 0)
 			{
 				dist = 1.f;
@@ -141,6 +135,9 @@ void main()
 		paintDist = min(paintDist, vertex.Normal.w);
 	}
 
+	vertex.Position.w = uintBitsToFloat(1);
+	vertex.Normal.w = 0.f;
+
 	// Update vertex
 	b_Vertices.val[gl_VertexIndex] = vertex;
 
@@ -152,11 +149,8 @@ void main()
 	out_TexCoord			= vertex.TexCoord.xy;
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
-   	//out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	out_PaintDist 			= paintDist;
-
-	out_TPos = vertex.TexCoord.zw;
 
 	gl_Position = out_ClipPosition;
 }

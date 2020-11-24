@@ -2039,6 +2039,18 @@ namespace LambdaEngine
 			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
 
+		static constexpr const PipelineMemoryBarrierDesc INSTANCE_BUFFER_MEMORY_BARRIER
+		{
+			.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+		};
+
+		pCommandList->PipelineMemoryBarriers(
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			&INSTANCE_BUFFER_MEMORY_BARRIER,
+			1);
+
 		m_AnimationsToUpdate.clear();
 	}
 
