@@ -6,6 +6,7 @@
 #include "RayTracingInclude.glsl"
 #include "../Helpers.glsl"
 #include "../Defines.glsl"
+#include "BxDF.glsl"
 
 #define GLOSSY_REFLECTION_ENABLED 0
 #if defined(GLOSSY_REFLECTION_ENABLED)
@@ -226,6 +227,8 @@ void main()
 #else
 		if (s_PrimaryPayload.Roughness > GLOSSY_REJECT_THRESHOLD)
 			break;
+
+		
 #endif
 
 	}
