@@ -6,6 +6,7 @@ struct SReflectionDesc
     vec3    f;
     float   PDF;
     vec3    w_iw;
+    bool    diffuse;
 };
 
 struct SBxDFEval
@@ -31,6 +32,30 @@ vec3 Sample_w_h_GGX(vec3 w_os, float alphaSqrd, vec2 u)
     return w_hs * FlipIfNotSameHemisphere(w_hs, w_os);
 }
 
+vec3 Sample_w_h_CosHemisphere(vec2 u)
+{
+    u = u * 2.0f - 1.0f;
+    if (u.x == 0.0f || u.y == 0.0f) return vec3(0.0f, 0.0f, 1.0f);
+
+    float r     = 0.0f;
+    float theta = 0.0f;
+
+    if (abs(u.x) > abs(u.y))
+    {
+        r = u.x;
+        theta = PI_OVER_FOUR * u.y / u.x;
+    }
+    else
+    {
+        r = u.y;
+        theta = PI_OVER_TWO - PI_OVER_FOUR * u.x / u.y;
+    }
+
+    vec2 d = r * vec2(cos(theta), sin(theta));
+    float z = sqrt(max(0.0f, 1.0f - dot(d, d)));
+    return vec3(d.x, d.y, z);
+}
+
 SBxDFEval Eval_f_Specular(float n_dot_i, float n_dot_h, float o_dot_h, float n_dot_o, vec3 albedo, float roughness, float alphaSqrd, vec3 F)
 {
     float   D = Distribution(n_dot_h, alphaSqrd);
@@ -53,12 +78,13 @@ SBxDFEval Eval_f_Diffuse(vec3 albedo, vec3 k_d, float cosTheta)
     return bxdfEval;
 }
 
-SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float roughness, float metallic, vec3 F0, vec2 u)
+SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float roughness, float metallic, vec3 F0, vec4 u)
 {
     SReflectionDesc reflectionDesc;
     reflectionDesc.f        = vec3(0.0f);
     reflectionDesc.PDF      = 0.0f;
     reflectionDesc.w_iw     = vec3(0.0f);
+    reflectionDesc.diffuse  = false;
 
     //Don't sample for tangent directions
     if (n_dot_o == 0.0f) 
@@ -90,39 +116,96 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
         //Transfer to Surface Space
         vec3 w_os = worldToSurface * w_ow;
 
-        //Sample Microfacet Normal using GGX Distribution
-        vec3 w_hs = Sample_w_h_GGX(w_os, alphaSqrd, u);
-        vec3 w_is = reflect(-w_os, w_hs);
-
-        reflectionDesc.w_iw = surfaceToWorld * w_is;
-
-        //Prepare some dot products
-        float n_dot_i = max(0.001f, w_is.z);
-        float n_dot_h = max(0.001f, w_hs.z);
-        float o_dot_h = max(0.001f, dot(w_os, w_hs));
-
-        //Calculate Fresnel
-        vec3 F = Fresnel(F0, n_dot_i);
-
-        //Eval common BRDF
-        SBxDFEval specularBRDFEval  = Eval_f_Specular(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
-
         //True metallic objects don't use a lambertian BRDF
         if (metallic == 1.0f)
         {
+            //Sample Microfacet Normal using GGX Distribution
+            vec3 w_hs = Sample_w_h_GGX(w_os, alphaSqrd, u.xy);
+            vec3 w_is = reflect(-w_os, w_hs);
+
+            reflectionDesc.w_iw = surfaceToWorld * w_is;
+
+            //Prepare some dot products
+            float n_dot_i = max(0.001f, w_is.z);
+            float n_dot_h = max(0.001f, w_hs.z);
+            float o_dot_h = max(0.001f, dot(w_os, w_hs));
+
+            //Calculate Fresnel
+            vec3 F = Fresnel(F0, n_dot_i);
+
+            //Eval common BRDF
+            SBxDFEval specularBRDFEval  = Eval_f_Specular(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+
             reflectionDesc.PDF  = specularBRDFEval.PDF;
             reflectionDesc.f    = specularBRDFEval.f;
         }
         else
-        {      
-            vec3 k_s = F;
-            vec3 k_d = (1.0f - k_s) * (1.0f - metallic);            
+        {     
+            //Sample Microfacet Normal using GGX Distribution
+            {
+                vec3 w_hs = Sample_w_h_GGX(w_os, alphaSqrd, u.xy);
+                vec3 w_is = reflect(-w_os, w_hs);
 
-            //Eval BRDF
-            SBxDFEval lambertBRDFEval   = Eval_f_Diffuse(albedo, k_d, n_dot_i);    
+                reflectionDesc.w_iw = surfaceToWorld * w_is;
 
-            reflectionDesc.PDF  = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
-            reflectionDesc.f    = lambertBRDFEval.f + specularBRDFEval.f;
+                //Prepare some dot products
+                float n_dot_i = max(0.001f, w_is.z);
+                float n_dot_h = max(0.001f, w_hs.z);
+                float o_dot_h = max(0.001f, dot(w_os, w_hs));
+
+                //Calculate Fresnel
+                vec3 F = Fresnel(F0, n_dot_i);
+
+                //Eval common BRDF
+                SBxDFEval specularBRDFEval  = Eval_f_Specular(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+
+                vec3 k_s = F;
+                vec3 k_d = (1.0f - k_s) * (1.0f - metallic);            
+
+                //Eval BRDF
+                SBxDFEval lambertBRDFEval   = Eval_f_Diffuse(albedo, k_d, n_dot_i);    
+
+                reflectionDesc.PDF  = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
+                reflectionDesc.f    = lambertBRDFEval.f + specularBRDFEval.f;
+            }
+
+            /* Detta är fan det smartaste jag gjort.
+            * Dielectrics should have a possibility of sampling the diffuse BRDF. 
+            * However, we want to avoid this since it creates lots of noise. 
+            * What we do instead is that we pretend that we send a ray in the same direction as sampling of the Specular BRDF gave.
+            * We can do this by writing:
+            *   l_i * cosTheta * (f(specular_sample) / pdf(specular_sample)) + l_i * cosTheta * (f(diffuse_sample) / pdf(diffuse_sample)) =
+            *   l_i * cosTheta * (f(specular_sample) / pdf(specular_sample) + f(diffuse_sample) / pdf(diffuse_sample)) =
+            *   l_i * cosTheta * ((f(specular_sample) * pdf(diffuse_sample) + f(diffuse_sample) * pdf(specular_sample)) / (pdf(specular_sample) * pdf(diffuse_sample)))
+            * and not overwriting w_iw with the diffuse sample direction
+            */       
+            {
+                vec3 w_hs = Sample_w_h_CosHemisphere(u.zw);
+                vec3 w_is = reflect(-w_os, w_hs);
+
+                //Prepare some dot products
+                float n_dot_i = max(0.001f, w_is.z);
+                float n_dot_h = max(0.001f, w_hs.z);
+                float o_dot_h = max(0.001f, dot(w_os, w_hs));
+
+                //Calculate Fresnel
+                vec3 F = Fresnel(F0, n_dot_i);
+
+                //Eval common BRDF
+                SBxDFEval specularBRDFEval  = Eval_f_Specular(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+
+                vec3 k_s = F;
+                vec3 k_d = (1.0f - k_s) * (1.0f - metallic);            
+
+                //Eval BRDF
+                SBxDFEval lambertBRDFEval   = Eval_f_Diffuse(albedo, k_d, n_dot_i);    
+
+                vec3 f      = (lambertBRDFEval.f + specularBRDFEval.f);
+                float PDF   = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
+
+                reflectionDesc.f    = (f * reflectionDesc.PDF) + (reflectionDesc.f * PDF);
+                reflectionDesc.PDF  = PDF * reflectionDesc.PDF;
+            }
         }
     }
 
@@ -135,6 +218,7 @@ SReflectionDesc f(vec3 w_ow, vec3 w_iw, vec3 w_nw, float n_dot_o, vec3 albedo, f
     reflectionDesc.f        = vec3(0.0f);
     reflectionDesc.PDF      = 0.0f;
     reflectionDesc.w_iw     = w_iw;
+    reflectionDesc.diffuse  = false;
 
     //Perfect Specular are delta distributions -> (mathematically) zero percent chance that w_i gives a value of f > 0 
     if (n_dot_o == 0.0f || roughness == 0.0f) 
@@ -169,7 +253,7 @@ SReflectionDesc f(vec3 w_ow, vec3 w_iw, vec3 w_nw, float n_dot_o, vec3 albedo, f
         vec3 k_d = (1.0f - k_s) * (1.0f - metallic);
 
         //Eval BRDF
-        SBxDFEval lambertBRDFEval   = Eval_f_Diffuse(albedo, k_d, n_dot_i);      
+        SBxDFEval lambertBRDFEval   = Eval_f_Diffuse(albedo, k_d, n_dot_i);
 
         reflectionDesc.PDF  = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
         reflectionDesc.f    = lambertBRDFEval.f + specularBRDFEval.f;

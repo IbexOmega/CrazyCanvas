@@ -63,7 +63,7 @@ void main()
 	//2
 	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal				= normalize(TBN * normalize(shadingNormal));
-	out_Compact_Normal			= PackNormal(normal);
+	out_Compact_Normal			= PackNormal(mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation));
 
 	//3
 	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
