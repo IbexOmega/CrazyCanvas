@@ -7,7 +7,7 @@
 namespace LambdaEngine
 {
 	ClientNetworkDiscovery::ClientNetworkDiscovery() : 
-		m_SegmentPool(8),
+		m_SegmentPool(256),
 		m_pSocket(nullptr),
 		m_pEndPoints(nullptr),
 		m_Statistics(),

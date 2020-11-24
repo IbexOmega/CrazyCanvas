@@ -8,7 +8,7 @@ namespace LambdaEngine
 {
 	ServerNetworkDiscovery::ServerNetworkDiscovery() :
 		m_pSocket(nullptr),
-		m_SegmentPool(8),
+		m_SegmentPool(256),
 		m_PortOfGameServer(0),
 		m_pHandler(nullptr),
 		m_IPEndPoint(),

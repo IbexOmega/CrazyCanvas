@@ -15,6 +15,10 @@
 
 #include "Resources/ResourceCatalog.h"
 
+#include "Application/API/CommonApplication.h"
+#include "World/Player/PlayerActionSystem.h"
+#include "Input/API/Input.h"
+
 using namespace LambdaEngine;
 
 LobbyState::LobbyState(const PacketGameSettings& gameSettings, const Player* pPlayer) : 
@@ -65,6 +69,10 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &LobbyState::OnClientDisconnected);
 	
+	CommonApplication::Get()->SetMouseVisibility(true);
+	PlayerActionSystem::SetMouseEnabled(false);
+	Input::PushInputMode(EInputLayer::GUI);
+
 	DisablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
 

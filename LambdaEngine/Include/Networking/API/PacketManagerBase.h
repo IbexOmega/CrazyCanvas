@@ -67,7 +67,7 @@ namespace LambdaEngine
 		virtual void Reset();
 
 	protected:
-		virtual bool FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned) = 0;
+		virtual bool FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned, bool& hasDiscardedResends) = 0;
 		void InsertSegment(NetworkSegment* pSegment);
 
 	private:

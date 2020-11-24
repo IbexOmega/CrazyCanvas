@@ -207,11 +207,22 @@ namespace LambdaEngine
 
 	NetworkSegment* ClientRemoteBase::GetFreePacket(uint16 packetType)
 	{
+		SegmentPool* pSegmentPool = GetPacketManager()->GetSegmentPool();
+
 #ifdef LAMBDA_CONFIG_DEBUG
-		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment("ClientRemoteBase")->SetType(packetType);
+		NetworkSegment* pSegment = pSegmentPool->RequestFreeSegment("ClientRemoteBase");
 #else
-		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
+		NetworkSegment* pSegment = pSegmentPool->RequestFreeSegment();
 #endif
+		if (pSegment)
+		{
+			pSegment->SetType(packetType);
+		}
+		else
+		{
+			Disconnect("No more free packets!");
+		}
+		return pSegment;
 	}
 
 	EClientState ClientRemoteBase::GetState() const
@@ -333,8 +344,9 @@ namespace LambdaEngine
 				if (timeSinceLastPacketSent >= m_PingInterval)
 				{
 					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
-					NetworkSegment* pPacket = GetFreePacket(NetworkSegment::TYPE_PING);
-					SendReliable(pPacket);
+					NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_PING);
+					if(pSegment)
+						SendReliable(pSegment);
 				}
 			}
 		}
@@ -348,13 +360,17 @@ namespace LambdaEngine
 
 		if (packetType == NetworkSegment::TYPE_CONNNECT)
 		{
-			GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_CHALLENGE));
-
-			if (!m_pHandler)
+			NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_CHALLENGE);
+			if (pSegment)
 			{
-				m_pHandler = m_pServer->CreateClientHandler();
-				m_pHandler->OnConnecting(this);
-			}
+				GetPacketManager()->EnqueueSegmentUnreliable(pSegment);
+
+				if (!m_pHandler)
+				{
+					m_pHandler = m_pServer->CreateClientHandler();
+					m_pHandler->OnConnecting(this);
+				}
+			}	
 		}
 		else if (packetType == NetworkSegment::TYPE_CHALLENGE)
 		{
@@ -363,12 +379,16 @@ namespace LambdaEngine
 			uint64 answer = decoder.ReadUInt64();
 			if (answer == expectedAnswer)
 			{
-				GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_ACCEPTED));
-
-				if (m_State == STATE_CONNECTING)
+				NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_ACCEPTED);
+				if (pSegment)
 				{
-					m_State = STATE_CONNECTED;
-					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
+					GetPacketManager()->EnqueueSegmentUnreliable(pSegment);
+
+					if (m_State == STATE_CONNECTING)
+					{
+						m_State = STATE_CONNECTED;
+						m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
+					}
 				}
 			}
 			else
@@ -395,22 +415,34 @@ namespace LambdaEngine
 
 	void ClientRemoteBase::SendDisconnect()
 	{
-		GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT));
-		TransmitPackets();
+		NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_DISCONNECT);
+		if (pSegment)
+		{
+			GetPacketManager()->EnqueueSegmentUnreliable(pSegment);
+			TransmitPackets();
+		}
 	}
 
 	void ClientRemoteBase::SendServerFull()
 	{
-		GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_SERVER_FULL));
-		TransmitPackets();
-		RequestTermination("Server Is Full");
+		NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_SERVER_FULL);
+		if (pSegment)
+		{
+			GetPacketManager()->EnqueueSegmentUnreliable(pSegment);
+			TransmitPackets();
+			RequestTermination("Server Is Full");
+		}
 	}
 
 	void ClientRemoteBase::SendServerNotAccepting()
 	{
-		GetPacketManager()->EnqueueSegmentUnreliable(GetFreePacket(NetworkSegment::TYPE_SERVER_NOT_ACCEPTING));
-		TransmitPackets();
-		RequestTermination("Server Not Accepting");
+		NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_SERVER_NOT_ACCEPTING);
+		if (pSegment)
+		{
+			GetPacketManager()->EnqueueSegmentUnreliable(pSegment);
+			TransmitPackets();
+			RequestTermination("Server Not Accepting");
+		}
 	}
 
 	void ClientRemoteBase::OnPacketDelivered(NetworkSegment* pPacket)

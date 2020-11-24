@@ -58,8 +58,6 @@ namespace LambdaEngine
 			Bundle bundle;
 			uint32 seq = pTransceiver->Transmit(&m_SegmentPool, segments, bundle.ReliableUIDs, m_IPEndPoint, &m_Statistics);
 
-			ASSERT(seq != UINT32_MAX);
-
 			if (!bundle.ReliableUIDs.empty())
 			{
 				std::scoped_lock<SpinLock> lock2(m_LockBundles);
@@ -172,8 +170,7 @@ namespace LambdaEngine
 		segmentsReturned.Reserve(segments.GetSize());
 
 		HandleAcks(acks);
-		hasDiscardedResends = FindSegmentsToReturn(segments, segmentsReturned);
-		return true;
+		return FindSegmentsToReturn(segments, segmentsReturned, hasDiscardedResends);
 	}
 
 	/*

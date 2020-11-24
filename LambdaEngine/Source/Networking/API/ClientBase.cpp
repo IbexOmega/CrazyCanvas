@@ -88,11 +88,24 @@ namespace LambdaEngine
 
 	NetworkSegment* ClientBase::GetFreePacket(uint16 packetType)
 	{
+		SegmentPool* pSegmentPool = GetPacketManager()->GetSegmentPool();
+
 #ifdef LAMBDA_CONFIG_DEBUG
-		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment("ClientBase")->SetType(packetType);
+		NetworkSegment* pSegment = pSegmentPool->RequestFreeSegment("ClientBase");
 #else
-		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
+		NetworkSegment* pSegment = pSegmentPool->RequestFreeSegment();
 #endif
+		if (pSegment)
+		{
+			pSegment->SetType(packetType);
+		}
+		else
+		{
+			m_SendDisconnectPacket = false;
+			Disconnect("No more free packets!");
+		}
+
+		return pSegment;
 	}
 
 	EClientState ClientBase::GetState() const
@@ -141,14 +154,22 @@ namespace LambdaEngine
 
 	void ClientBase::SendConnect()
 	{
-		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_CONNNECT), this);
-		TransmitPackets();
+		NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_CONNNECT);
+		if (pSegment)
+		{
+			GetPacketManager()->EnqueueSegmentReliable(pSegment, this);
+			TransmitPackets();
+		}
 	}
 
 	void ClientBase::SendDisconnect()
 	{
-		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT), this);
-		TransmitPackets();
+		NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_DISCONNECT);
+		if (pSegment)
+		{
+			GetPacketManager()->EnqueueSegmentReliable(pSegment, this);
+			TransmitPackets();
+		}
 	}
 
 	void ClientBase::FixedTick(Timestamp delta)
@@ -184,8 +205,9 @@ namespace LambdaEngine
 				if (timeSinceLastPacketSent >= m_PingInterval)
 				{
 					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
-					NetworkSegment* pPacket = GetFreePacket(NetworkSegment::TYPE_PING);
-					SendReliable(pPacket);
+					NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_PING);
+					if(pSegment)
+						SendReliable(pSegment);
 				}
 			}
 		}
@@ -252,9 +274,12 @@ namespace LambdaEngine
 			ASSERT(answer != 0);
 
 			NetworkSegment* pResponse = GetFreePacket(NetworkSegment::TYPE_CHALLENGE);
-			BinaryEncoder encoder(pResponse);
-			encoder.WriteUInt64(answer);
-			GetPacketManager()->EnqueueSegmentReliable(pResponse, this);
+			if (pResponse)
+			{
+				BinaryEncoder encoder(pResponse);
+				encoder.WriteUInt64(answer);
+				GetPacketManager()->EnqueueSegmentReliable(pResponse, this);
+			}
 		}
 		else if (packetType == NetworkSegment::TYPE_ACCEPTED)
 		{

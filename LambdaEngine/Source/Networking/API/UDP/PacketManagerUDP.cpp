@@ -33,11 +33,11 @@ namespace LambdaEngine
 		m_ReliableSegmentsReceived.clear();
 	}
 
-	bool PacketManagerUDP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
+	bool PacketManagerUDP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned, bool& hasDiscardedResends)
 	{
 		bool runUntangler = false;
 		bool hasReliableSegment = false;
-		bool hasDuplicateSegment = false;
+		hasDiscardedResends = false;
 
 		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(32);
@@ -75,7 +75,7 @@ namespace LambdaEngine
 				else																				//Reliable Packet already received before
 				{
 					packetsToFree.PushBack(pPacket);
-					hasDuplicateSegment = true;
+					hasDiscardedResends = true;
 				}
 			}
 		}
@@ -89,14 +89,20 @@ namespace LambdaEngine
 		if (runUntangler)
 			UntangleReliableSegments(segmentsReturned);
 
+
+		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
+		{
 #ifdef LAMBDA_CONFIG_DEBUG
-		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
-			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment("PacketManagerUDP_NETWORK_ACK")->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+			NetworkSegment* pSegment = m_SegmentPool.RequestFreeSegment("PacketManagerUDP_NETWORK_ACK");
 #else
-		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
-			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+			NetworkSegment* pSegment = m_SegmentPool.RequestFreeSegment();
 #endif
-		return hasDuplicateSegment;
+			if (pSegment)
+				EnqueueSegmentUnreliable(pSegment->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+			else
+				return false;
+		}
+		return true;
 	}
 
 	void PacketManagerUDP::UntangleReliableSegments(TArray<NetworkSegment*>& segmentsReturned)

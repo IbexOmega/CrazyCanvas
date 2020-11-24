@@ -91,12 +91,12 @@ void PlaySessionState::Init()
 {
 	s_pInstance = this;
 
-	EnablePlaySessionsRenderstages();
-	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
-
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
 	Input::PushInputMode(EInputLayer::GAME);
+
+	EnablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();

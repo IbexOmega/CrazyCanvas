@@ -519,7 +519,8 @@ void MatchServer::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, Lambda
 
 void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
 {
-	m_pLevel->DeleteObject(entity);
+	if(m_pLevel)
+		m_pLevel->DeleteObject(entity);
 
 	PacketDeleteLevelObject packet;
 	packet.NetworkUID = int32(entity);

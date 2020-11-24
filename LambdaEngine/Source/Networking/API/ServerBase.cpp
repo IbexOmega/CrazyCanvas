@@ -144,9 +144,16 @@ namespace LambdaEngine
 			if (pair.second != pClient)
 			{
 				NetworkSegment* pPacketDuplicate = pair.second->GetFreePacket(pPacket->GetType());
-				pPacket->CopyTo(pPacketDuplicate);
-				if (!pair.second->SendReliable(pPacketDuplicate, pListener))
+				if (pPacketDuplicate)
+				{
+					pPacket->CopyTo(pPacketDuplicate);
+					if (!pair.second->SendReliable(pPacketDuplicate, pListener))
+						result = false;
+				}
+				else
+				{
 					result = false;
+				}
 			}
 		}
 
@@ -177,9 +184,16 @@ namespace LambdaEngine
 			if (pair.second != pClient)
 			{
 				NetworkSegment* pPacketDuplicate = pair.second->GetFreePacket(pPacket->GetType());
-				pPacket->CopyTo(pPacketDuplicate);
-				if (!pair.second->SendUnreliable(pPacketDuplicate))
+				if (pPacketDuplicate)
+				{
+					pPacket->CopyTo(pPacketDuplicate);
+					if (!pair.second->SendUnreliable(pPacketDuplicate))
+						result = false;
+				}
+				else
+				{
 					result = false;
+				}
 			}
 		}
 

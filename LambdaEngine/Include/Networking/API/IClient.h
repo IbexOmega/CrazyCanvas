@@ -50,16 +50,24 @@ namespace LambdaEngine
 		bool SendUnreliableStruct(const T& packet, uint16 packetType)
 		{
 			NetworkSegment* pSegment = GetFreePacket(packetType);
-			pSegment->Write<T>(&packet);
-			return SendUnreliable(pSegment);
+			if (pSegment)
+			{
+				pSegment->Write<T>(&packet);
+				return SendUnreliable(pSegment);
+			}
+			return false;
 		}
 
 		template<class T>
 		bool SendReliableStruct(const T& packet, uint16 packetType, IPacketListener* pListener = nullptr)
 		{
 			NetworkSegment* pSegment = GetFreePacket(packetType);
-			pSegment->Write<T>(&packet);
-			return SendReliable(pSegment, pListener);
+			if (pSegment)
+			{
+				pSegment->Write<T>(&packet);
+				return SendReliable(pSegment, pListener);
+			}
+			return false;
 		}
 
 		static std::string StateToString(EClientState state)
