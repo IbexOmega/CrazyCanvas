@@ -1101,7 +1101,7 @@ namespace LambdaEngine
 						meshEntry.VertexCount,
 						sizeof(Vertex),
 						meshEntry.IndexCount,
-						isAnimated);
+						isAnimated || forceUniqueResource);
 				}
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert(std::make_pair(meshKey, meshEntry)).first;
@@ -1519,6 +1519,30 @@ namespace LambdaEngine
 		pRasterInstanceToUpdate->PrevTransform	= pRasterInstanceToUpdate->Transform;
 		pRasterInstanceToUpdate->Transform		= transform;
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
+	}
+
+	void RenderSystem::RebuildBLAS(Entity entity, GUID_Lambda meshGUID, bool isAnimated, bool forceUniqueResources)
+	{
+		if (m_RayTracingEnabled)
+		{
+			MeshKey key(meshGUID, entity, isAnimated, EntityMaskManager::FetchEntityMask(entity), forceUniqueResources);
+
+			auto meshEntryIt = m_MeshAndInstancesMap.find(key);
+			if (meshEntryIt != m_MeshAndInstancesMap.end())
+			{
+				MeshEntry* pMeshEntry = &meshEntryIt->second;
+
+				m_pASBuilder->BuildTriBLAS(
+					pMeshEntry->BLASIndex,
+					0U,
+					pMeshEntry->pVertexBuffer,
+					pMeshEntry->pIndexBuffer,
+					pMeshEntry->VertexCount,
+					sizeof(Vertex),
+					pMeshEntry->IndexCount,
+					true);
+			}
+		}
 	}
 
 	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)

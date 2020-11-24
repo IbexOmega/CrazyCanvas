@@ -298,6 +298,7 @@ namespace LambdaEngine
 			const glm::bvec3& rotationalAxes);
 
 		void UpdateTransformData(Entity entity, const glm::mat4& transform);
+		void RebuildBLAS(Entity entity, GUID_Lambda meshGUID, bool isAnimated, bool forceUniqueResources);
 
 		/*
 		* Set Paintmask colors (index 2 -> Team 1 & index 1 -> team 2)

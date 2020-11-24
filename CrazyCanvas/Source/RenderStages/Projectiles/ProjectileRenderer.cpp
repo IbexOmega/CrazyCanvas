@@ -213,6 +213,8 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 			);
 
 			renderSystem.UpdateTransformData(entity, transform);
+
+			renderSystem.RebuildBLAS(entity, m_MarchingCubesMesh, false, true);
 		}
 
 		CommandList* pCommandList = m_ComputeCommandLists[modFrameIndex].Get();
