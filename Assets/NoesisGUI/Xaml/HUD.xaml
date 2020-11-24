@@ -271,7 +271,7 @@
         </Viewbox>
 
         <!--EscapeGrid-->
-        <Grid Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="4" Grid.RowSpan="5">
+        <Grid Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="4" Grid.RowSpan="5" Stretch="Fill">
             <uc:EscapeMenuGUI x:Name="ESC_MENU_GUI" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
        

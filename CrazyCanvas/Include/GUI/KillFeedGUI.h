@@ -8,7 +8,6 @@
 #include <NoesisGUI/Include/NsGui/Storyboard.h>
 #include <NoesisGUI/Include/NsGui/StackPanel.h>
 #include <NoesisGUI/Include/NsGui/Textblock.h>
-#include <NoesisGUI/Include/NsGui/DoubleAnimation.h>
 #include <NoesisGUI/Include/NsGui/UserControl.h>
 
 #include "Time/API/Timestamp.h"
@@ -23,8 +22,6 @@ public:
 	KillFeedGUI();
 	~KillFeedGUI();
 
-	void InitGUI();
-
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	void UpdateFeedTimer(LambdaEngine::Timestamp delta);
@@ -35,9 +32,8 @@ private:
 	void RemoveFromKillFeed(Noesis::TextBlock* textblock);
 
 private:
-	//Noesis::Storyboard* m_pKillFeedStoryBoard			= nullptr;
-	//Noesis::DoubleAnimation* m_pKillFeedDoubleAnimation	= nullptr;
-	Noesis::StackPanel* m_pKillFeedStackPanel			= nullptr;
+	Noesis::Storyboard* m_pKillFeedStoryBoard = nullptr;
+	Noesis::StackPanel* m_pKillFeedStackPanel = nullptr;
 
 	uint16 m_FeedIndex = 0;
 

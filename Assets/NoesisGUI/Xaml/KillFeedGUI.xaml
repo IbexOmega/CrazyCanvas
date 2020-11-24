@@ -10,14 +10,15 @@
              d:DesignHeight="100" d:DesignWidth="100"
              x:Name="KILL_FEED_UC">
     <UserControl.Resources>
-        <Storyboard x:Key="KillFeedStoryBoard" >
-            <DoubleAnimation x:Name="KillFeedAnimation" Duration="0:0:8" From="1" To="0" StoryBoard.TargetName="FEED" StoryBoard.TargetProperty="(TextBlock.ForeGround).(SolidColorBrush.Opacity)"/>
+        <Storyboard x:Key="KillFeedStoryBoard">
+         <DoubleAnimationUsingKeyFrames Storyboard.TargetName="FEED" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)" EnableDependentAnimation="True">
+            <EasingDoubleKeyFrame  KeyTime="0"      Value="1" />
+            <EasingDoubleKeyFrame  KeyTime="0:0:8"  Value="0"/>
         </Storyboard>
     </UserControl.Resources>
     
-    <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalContentAlignment="Stretch" Background="#00000000">
+    <ScrollViewer x:Name="KillFeedStackPanel" VerticalScrollBarVisibility="Hidden" HorizontalContentAlignment="Stretch" Background="#3F212121">
         <StackPanel x:Name="KILL_FEED_STACK_PANEL" HorizontalAlignment="Center">
-
         </StackPanel>
     </ScrollViewer>
 </UserControl>
