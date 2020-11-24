@@ -22,6 +22,7 @@
 #include "Multiplayer/Packet/PacketPlayerScore.h"
 #include "Multiplayer/Packet/PacketPlayerState.h"
 #include "Multiplayer/Packet/PacketProjectileHit.h"
+#include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -51,6 +52,7 @@ void PacketType::Init()
 	PLAYER_SCORE			= RegisterPacketType<PacketPlayerScore>();
 	PLAYER_STATE			= RegisterPacketType<PacketPlayerState>();
 	PROJECTILE_HIT			= RegisterPacketType<PacketProjectileHit>();
+	RESET_PLAYER_TEXTURE	= RegisterPacketTypeWithComponent<PacketResetPlayerTexture>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw()

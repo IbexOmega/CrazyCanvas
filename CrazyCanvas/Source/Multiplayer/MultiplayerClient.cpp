@@ -13,6 +13,7 @@ MultiplayerClient::MultiplayerClient() :
 MultiplayerClient::~MultiplayerClient()
 {
 	SAFEDELETE(m_pFlagSystem);
+	SAFEDELETE(m_pShowerSystem);
 }
 
 void MultiplayerClient::Init()
@@ -25,6 +26,9 @@ void MultiplayerClient::Init()
 
 	m_pFlagSystem = DBG_NEW ClientFlagSystem();
 	m_pFlagSystem->Init();
+
+	m_pShowerSystem = DBG_NEW ClientShowerSystem();
+	m_pShowerSystem->Init();
 }
 
 void MultiplayerClient::TickMainThread(LambdaEngine::Timestamp deltaTime)
@@ -39,6 +43,8 @@ void MultiplayerClient::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 	m_ReplaySystem.FixedTickMainThread(deltaTime);
 
 	m_pFlagSystem->FixedTick(deltaTime);
+
+	m_pShowerSystem->FixedTick(deltaTime);
 }
 
 void MultiplayerClient::PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime)
