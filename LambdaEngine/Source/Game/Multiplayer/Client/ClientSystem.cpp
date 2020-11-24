@@ -36,7 +36,7 @@ namespace LambdaEngine
 
 		m_pClient = NetworkUtils::CreateClient(clientDesc);
 
-		//NetworkDiscovery::EnableClient(m_Name, this);
+		NetworkDiscovery::EnableClient(m_Name, this);
 
 		ConsoleCommand netStatsCmd;
 		netStatsCmd.Init("show_net_stats", true);
@@ -68,7 +68,7 @@ namespace LambdaEngine
 		NetworkDiscovery::DisableClient();
 		return true;
 	}
-	
+
 	ClientBase* ClientSystem::GetClient()
 	{
 		return m_pClient;
@@ -110,7 +110,7 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(event);
 
-		//NetworkDiscovery::EnableClient(m_Name, this);
+		NetworkDiscovery::EnableClient(m_Name, this);
 		return false;
 	}
 
