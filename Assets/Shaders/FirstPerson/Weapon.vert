@@ -5,7 +5,13 @@
 
 #include "../Defines.glsl"
 
+struct SWeaponData
+{
+	mat4 Model;
+};
+
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;
+layout(binding = 4, set = BUFFER_SET_INDEX) uniform WeaponData					{ SWeaponData val; }		u_WeaponData;
 
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices		{ SVertex val[]; }			b_Vertices;
 layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances	{ SInstance val[]; }		b_Instances;
@@ -27,8 +33,10 @@ void main()
 	SVertex vertex					= b_Vertices.val[gl_VertexIndex];
     SInstance instance				= b_Instances.val[gl_InstanceIndex];
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
+	SWeaponData weaponData			= u_WeaponData.val;
 
-	vec4 worldPosition		= vec4(vertex.Position.xyz, 1.0f);
+	vec3 position 			= vertex.Position.xyz;
+	vec4 worldPosition		= weaponData.Model * vec4(position, 1.0f);
 	vec4 prevWorldPosition	= instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
 	mat4 normalTransform    = instance.Transform;

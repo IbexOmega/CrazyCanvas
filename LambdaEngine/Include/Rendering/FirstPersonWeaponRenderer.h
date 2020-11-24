@@ -25,6 +25,10 @@ namespace LambdaEngine {
 		uint32 RandomSeed;
 	};
 
+	struct SWeaponBuffer {
+		glm::mat4 Model;
+	};
+
 	class FirstPersonWeaponRenderer : public CustomRenderer
 	{
 	public:
@@ -59,6 +63,7 @@ namespace LambdaEngine {
 		}
 
 	private:
+		bool PrepareResources(CommandList* pCommandList);
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
 		bool CreateShaders();
@@ -69,11 +74,15 @@ namespace LambdaEngine {
 		bool CreateBuffers();
 		void RenderCull(CommandList* pCommandList, uint64& pipelineId);
 
+		void UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex);
+
 	private:
 		bool									m_Initilized = false;
 		const DrawArg*							m_pDrawArgs = nullptr;
 		uint32									m_DrawCount = 0;
 		bool									m_UsingMeshShader = false;
+		bool									m_InitilizedWeaponBuffer = false;
+		RenderGraph*							m_pRenderGraph = nullptr;
 
 		GUID_Lambda								m_VertexShaderPointGUID = 0;
 		GUID_Lambda								m_PixelShaderPointGUID = 0;
@@ -86,8 +95,18 @@ namespace LambdaEngine {
 
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
 
-		TArray<TSharedRef<Buffer>>				m_FrameCopyBuffers;
+		TSharedRef<Buffer>						m_FrameCopyBuffer;
 		TSharedRef<Buffer>						m_FrameBuffer;
+		// First Person Weapon Vertex and Index Buffer
+		TSharedRef<Buffer>						m_pVertexBuffer = nullptr;
+		TSharedRef<Buffer>						m_pVertexStagingBuffer = nullptr;
+
+		uint32									m_IndicesCount = 0;
+		TSharedRef<Buffer>						m_pIndexBuffer = nullptr;
+		TSharedRef<Buffer>						m_pIndexStagingBuffer = nullptr;
+
+		TSharedRef<Buffer>						m_pWeaponBuffer = nullptr;
+		TArray<TSharedRef<Buffer>>				m_pWeaponStagingBuffers;
 
 		// Needed for transparent rendering
 		uint64									m_PipelineStateIDFrontCull = 0;
@@ -106,9 +125,11 @@ namespace LambdaEngine {
 		DescriptorCache							m_DescriptorCache;
 		uint32									m_BackBufferCount = 0;
 
+
 		TSharedRef<Texture>						m_DepthStencilTexture;
 		TSharedRef<const TextureView>			m_DepthStencil;
 		TSharedRef<const TextureView>			m_IntermediateOutputImage;
+
 		bool									m_DirtyUniformBuffers = true;
 
 	private:

@@ -19,6 +19,10 @@
 #include "../CrazyCanvas/Include/ECS/Components/Player/WeaponComponent.h"
 #include "Engine/EngineConfig.h"
 
+
+#include "Rendering/RenderGraph.h"
+#include "../CrazyCanvas/Include/Resources/ResourceCatalog.h"
+
 namespace LambdaEngine
 {
 	FirstPersonWeaponRenderer* FirstPersonWeaponRenderer::s_pInstance = nullptr;
@@ -85,6 +89,14 @@ namespace LambdaEngine
 
 		if (!m_Initilized)
 		{
+			m_pRenderGraph = pPreInitDesc->pRenderGraph;
+			CommandList* pCommandList = m_pRenderGraph->AcquireGraphicsCopyCommandList();
+			if (!PrepareResources(pCommandList))
+			{
+				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to create resources");
+				return false;
+			}
+
 			if (!TextureInit())
 			{
 				LOG_ERROR("[FirstPersonWeapoRenderer]: Failed to create textures for depth buffer.");
@@ -154,35 +166,99 @@ namespace LambdaEngine
 
 	bool FirstPersonWeaponRenderer::CreateBuffers()
 	{
-		BufferDesc desc = {};
-		desc.DebugName = "FirstPersonWeapon Renderer Uniform Copy Buffer";
-		desc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		desc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		desc.SizeInBytes = sizeof(FrameBuffer);
-
-		m_FrameCopyBuffers.Resize(m_BackBufferCount);
-		for (uint32 b = 0; b < m_BackBufferCount; b++)
+		bool succeded = true;
+		
+		// Per frame buffers
 		{
-			TSharedRef<Buffer> buffer = RenderAPI::GetDevice()->CreateBuffer(&desc);
-			if (buffer != nullptr)
-			{
-				m_FrameCopyBuffers[b] = buffer;
-			}
-			else
-			{
-				return false;
-			}
+			BufferDesc stagingBufferDesc = {};
+			stagingBufferDesc.DebugName = "FirstPersonWeapon Renderer Uniform Copy Buffer";
+			stagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+			stagingBufferDesc.SizeInBytes = sizeof(FrameBuffer);
+	
+			m_FrameCopyBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+			succeded = m_FrameCopyBuffer != nullptr;
+
+			BufferDesc bufferDesc = {};
+			bufferDesc.DebugName = "FirstPersonWeapon Renderer Data Buffer";
+			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
+
+			m_FrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			succeded = m_FrameBuffer != nullptr;
 		}
 
-		BufferDesc desc2 = {};
-		desc2.DebugName = "FirstPersonWeapon Renderer Data Buffer";
-		desc2.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-		desc2.Flags = FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-		desc2.SizeInBytes = desc.SizeInBytes;
+		Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
+		// Weapon Vertex Buffer
+		{
 
-		m_FrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&desc2);
+			BufferDesc stagingBufferDesc = {};
+			stagingBufferDesc.DebugName = "FirstPersonWeapon Renderer Vertex Copy Buffer";
+			stagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+			stagingBufferDesc.SizeInBytes = sizeof(Vertex) * pMesh->Vertices.GetSize();
 
-		return m_FrameBuffer != nullptr;
+			m_pVertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+			succeded = m_pVertexStagingBuffer != nullptr;
+
+			BufferDesc bufferDesc = {};
+			bufferDesc.DebugName = "FirstPersonWeapon Vertex Data Buffer";
+			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
+
+			m_pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			succeded = m_pVertexBuffer != nullptr;
+		}
+
+		// Weapon Index Buffer
+		{
+			BufferDesc stagingBufferDesc = {};
+			stagingBufferDesc.DebugName = "FirstPersonWeapon Renderer Index Copy Buffer";
+			stagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+			stagingBufferDesc.SizeInBytes = sizeof(MeshIndexType) * pMesh->Indices.GetSize();
+
+			m_pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+			succeded = m_pIndexStagingBuffer != nullptr;
+
+			BufferDesc bufferDesc = {};
+			bufferDesc.DebugName = "FirstPersonWeapon Index Data Buffer";
+			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
+
+			m_pIndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			succeded = m_pIndexBuffer != nullptr;
+		}
+
+		// Weapon Data Buffer
+		{
+			BufferDesc stagingBufferDesc = {};
+			stagingBufferDesc.DebugName = "FirstPersonWeapon Renderer WeaponData Copy Buffer";
+			stagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+			stagingBufferDesc.SizeInBytes = sizeof(SWeaponBuffer);
+
+			m_pWeaponStagingBuffers.Resize(m_BackBufferCount);
+			for (uint32 b = 0; b < m_pWeaponStagingBuffers.GetSize(); b++)
+			{
+				m_pWeaponStagingBuffers[b] = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+				succeded = m_pWeaponStagingBuffers[b] != nullptr;
+			}
+
+			BufferDesc bufferDesc = {};
+			bufferDesc.DebugName = "FirstPersonWeapon WeaponData Data Buffer";
+			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
+
+			m_pWeaponBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			succeded = m_pWeaponBuffer != nullptr;
+		}
+
+		return succeded;
 	}
 
 	void FirstPersonWeaponRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
@@ -190,6 +266,35 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(delta);
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
+
+		// Update descriptor of weapon buffer set
+		if (!m_InitilizedWeaponBuffer) 
+		{
+			constexpr DescriptorSetIndex setIndex = 0U;
+
+			Buffer* ppBuffers = m_pWeaponBuffer.Get();
+			uint64 pOffsets = 0;
+			uint64 pSizes = m_pWeaponBuffer->GetDesc().SizeInBytes;
+
+			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet0 != nullptr)
+			{
+				m_DescriptorSet0->WriteBufferDescriptors(
+					&ppBuffers,
+					&pOffsets,
+					&pSizes,
+					4,
+					1,
+					EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] SCENE_LIGHTS_BUFFER", setIndex);
+			}
+
+			m_InitilizedWeaponBuffer = true;
+		}
 	}
 
 	void FirstPersonWeaponRenderer::UpdateTextureResource(const String& resourceName, const TextureView* const* ppPerImageTextureViews, const TextureView* const* ppPerSubImageTextureViews, const Sampler* const* ppPerImageSamplers, uint32 imageCount, uint32 subImageCount, bool backBufferBound)
@@ -328,7 +433,6 @@ namespace LambdaEngine
 				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] SCENE_LIGHTS_BUFFER", setIndex);
 			}
 		}
-
 	}
 
 	void FirstPersonWeaponRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
@@ -362,9 +466,9 @@ namespace LambdaEngine
 							if (pWeaponLocalComponents->HasComponent(entity))
 							{
 								// Set Vertex and Instance buffer for rendering
-								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
+								Buffer* ppBuffers[2] = { m_pVertexBuffer.Get(), m_pDrawArgs[d].pInstanceBuffer };
 								uint64 pOffsets[2] = { 0, 0 };
-								uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
+								uint64 pSizes[2] = { m_pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
 
 								m_DescriptorSetList2[d]->WriteBufferDescriptors(
 									ppBuffers,
@@ -517,31 +621,7 @@ namespace LambdaEngine
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
-		glm::mat4 view = glm::mat4(1.0f);
-		view = glm::rotate(view, 3.1415f * 0.15f, glm::vec3(0.0, 0.0, 1.0));
-		view = glm::translate(view, glm::vec3(1.65, -1.5, 0));
-		view = glm::scale(view, glm::vec3(1.4f));
-
-		// Set Weapon Transformations
-		FrameBuffer fb = {
-			.Projection = glm::mat4(1.0f),
-			.View = view,
-			.PrevProjection = glm::mat4(1.0f),
-			.PrevView = glm::mat4(1.0f),
-			.ViewInv = glm::mat4(1.0f),
-			.ProjectionInv = glm::mat4(1.0f),
-			.CameraPosition = glm::vec4(0.f, 0.f, -1.5f, 1.0f),
-			.CameraRight = glm::vec4(1.0f, 0.0, 0.0, 1.0f),
-			.CameraUp = glm::vec4(0.f, 1.0f, 0.0, 1.0f),
-			.Jitter = glm::vec2(0, 0),
-			.FrameIndex = 0,
-			.RandomSeed = 0,
-		};
-
-		byte* pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffers[modFrameIndex]->Map());
-		memcpy(pMapping, &fb, sizeof(fb));
-		m_FrameCopyBuffers[modFrameIndex]->Unmap();
-		pCommandList->CopyBuffer(m_FrameCopyBuffers[modFrameIndex].Get(), 0, m_FrameBuffer.Get(), 0, sizeof(FrameBuffer));
+		UpdateWeaponBuffer(pCommandList, modFrameIndex);
 
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 		pCommandList->SetViewports(&viewport, 0, 1);
@@ -566,21 +646,96 @@ namespace LambdaEngine
 
 		// Draw Weapon
 		const DrawArg& drawArg = m_pDrawArgs[0];
-		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+		pCommandList->BindIndexBuffer(m_pIndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT32);
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[0].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[0].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
-		pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+		pCommandList->DrawIndexInstanced(m_IndicesCount, drawArg.InstanceCount, 0, 0, 0);
+	}
+
+	void FirstPersonWeaponRenderer::UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex)
+	{
+		SWeaponBuffer data = {};
+
+		data.Model = glm::translate(glm::vec3(-0.5f, -0.4f, -0.6f));
+
+		Buffer* pStagingBuffer = m_pWeaponStagingBuffers[modFrameIndex].Get();
+		byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());
+		memcpy(pMapping, &data, sizeof(data));
+		pStagingBuffer->Unmap();
+		pCommandList->CopyBuffer(pStagingBuffer, 0, m_pWeaponBuffer.Get(), 0, sizeof(SWeaponBuffer));
+	}
+
+	bool FirstPersonWeaponRenderer::PrepareResources(CommandList* pCommandList)
+	{
+		Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
+
+		// Copy vertices
+		const TArray<Vertex>& vertices = pMesh->Vertices;
+		const uint32 verticesSize = sizeof(Vertex) * vertices.GetSize();
+
+		byte* pMapping = reinterpret_cast<byte*>(m_pVertexStagingBuffer->Map());
+		memcpy(pMapping, vertices.GetData(), verticesSize);
+		m_pVertexStagingBuffer->Unmap();
+		pCommandList->CopyBuffer(m_pVertexStagingBuffer.Get(), 0, m_pVertexBuffer.Get(), 0, verticesSize);
+	
+		// Copy indices
+		const TArray<MeshIndexType>& indices = pMesh->Indices;
+		m_IndicesCount = indices.GetSize();
+		const uint32 indicesSize = sizeof(MeshIndexType) * m_IndicesCount;
+
+		pMapping = reinterpret_cast<byte*>(m_pIndexStagingBuffer->Map());
+		memcpy(pMapping, indices.GetData(), indicesSize);
+		m_pIndexStagingBuffer->Unmap();
+		pCommandList->CopyBuffer(m_pIndexStagingBuffer.Get(), 0, m_pIndexBuffer.Get(), 0, indicesSize);
+
+		// Copy Per FrameBuffer
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+		float32 windowWidth = float32(window->GetWidth());
+		float32 windowHeight = float32(window->GetHeight());
+
+		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, windowWidth / windowHeight, 0.1f, 100.0f);
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0f), g_DefaultUp);
+
+		// Weapon Transformations
+		FrameBuffer fb = {
+			.Projection = projection,
+			.View = view,
+			.PrevProjection = glm::mat4(1.0f),
+			.PrevView = glm::mat4(1.0f),
+			.ViewInv = glm::mat4(1.0f),
+			.ProjectionInv = glm::mat4(1.0f),
+			.CameraPosition = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+			.CameraRight = glm::vec4(g_DefaultRight, 1.0f),
+			.CameraUp = glm::vec4(g_DefaultUp, 1.0f),
+			.Jitter = glm::vec2(0, 0),
+			.FrameIndex = 0,
+			.RandomSeed = 0,
+		};
+
+		pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffer->Map());
+		memcpy(pMapping, &fb, sizeof(fb));
+		m_FrameCopyBuffer->Unmap();
+		pCommandList->CopyBuffer(m_FrameCopyBuffer.Get(), 0, m_FrameBuffer.Get(), 0, sizeof(FrameBuffer));
+
+		return true;
 	}
 
 	bool FirstPersonWeaponRenderer::CreatePipelineLayout()
 	{
-		/* ALL */
+		/* Uniform buffers */
 		DescriptorBindingDesc frameBufferDesc = {};
 		frameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		frameBufferDesc.DescriptorCount = 1;
 		frameBufferDesc.Binding = 0;
 		frameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
+		DescriptorBindingDesc weaponDataDesc = {};
+		weaponDataDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		weaponDataDesc.DescriptorCount = 1;
+		weaponDataDesc.Binding = 4;
+		weaponDataDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
+		/* Storage/Unordered access buffers */
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		verticesBindingDesc.DescriptorCount = 1;
@@ -675,7 +830,7 @@ namespace LambdaEngine
 
 		// maps to SET = 0 (BUFFER_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
-		descriptorSetLayoutDesc0.DescriptorBindings = { frameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc };
+		descriptorSetLayoutDesc0.DescriptorBindings = { frameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc, weaponDataDesc };
 
 		// maps to SET = 1 (TEXTURE_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
