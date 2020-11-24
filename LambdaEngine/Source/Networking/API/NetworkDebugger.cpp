@@ -194,7 +194,7 @@ namespace LambdaEngine
 						const THashTable<uint16, uint32>& sentTable = pStatistics->BeginGetSentSegmentTypeCountTable();
 						for (auto& p : sentTable)
 						{
-							ImGui::Text("%d : %s", p.second, s_PacketNames[p.first].c_str());
+							ImGui::Text("%7d : %s", p.second, s_PacketNames[p.first].c_str());
 						}
 						pStatistics->EndGetSentSegmentTypeCountTable();
 						ImGui::TreePop();
@@ -204,7 +204,7 @@ namespace LambdaEngine
 						const THashTable<uint16, uint32>& sentTable = pStatistics->BeginGetReceivedSegmentTypeCountTable();
 						for (auto& p : sentTable)
 						{
-							ImGui::Text("%d : %s", p.second, s_PacketNames[p.first].c_str());
+							ImGui::Text("%7d : %s", p.second, s_PacketNames[p.first].c_str());
 						}
 						pStatistics->EndGetReceivedSegmentTypeCountTable();
 						ImGui::TreePop();
