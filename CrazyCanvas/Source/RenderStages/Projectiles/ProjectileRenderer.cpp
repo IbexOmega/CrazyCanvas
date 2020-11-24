@@ -123,7 +123,11 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 		ASSERT(drawArg.EntityIDs.GetSize() == 1);
 
 		const Entity entity = drawArg.EntityIDs.GetFront();
-		if (m_MarchingCubesGrids.HasElement(entity))
+
+		/*	A marching cubes grid will already have been created for the entity inside
+			ProjectileRenderer::OnProjectileAdded, but has UpdateDrawArgsResource been called for the entity as well? */
+		MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids.IndexID(entity);
+		if (marchingCubesGrid.DescriptorSet)
 		{
 			continue;
 		}
@@ -151,7 +155,7 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 			.SizeInBytes	= sizeof(glm::vec4) * innerGridCorners
 		};
 
-		MarchingCubesGrid marchingCubesGrid =
+		marchingCubesGrid =
 		{
 			.GPUData =
 			{
@@ -180,7 +184,6 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 		marchingCubesGrid.DescriptorSet->WriteBufferDescriptors(ppDescriptorSetBuffers, pOffsets, pSizes, 0, descriptorCount, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 
 		drawArg.pVertexBuffer->SetName("Projectile Vertex Buffer");
-		m_MarchingCubesGrids.PushBack(marchingCubesGrid, entity);
 	}
 }
 
@@ -573,6 +576,9 @@ void ProjectileRenderer::SubscribeToProjectiles()
 
 void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 {
+	// Add an undefined grid, it will be populated when CustomRenderer::UpdateDrawArgsResource is called
+	m_MarchingCubesGrids.PushBack({}, entity);
+
 	// Fetch the material to use
 	const ECSCore* pECS = ECSCore::GetInstance();
 	const ProjectileComponent& projectileComponent = pECS->GetConstComponent<ProjectileComponent>(entity);
