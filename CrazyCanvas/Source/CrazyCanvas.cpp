@@ -13,6 +13,7 @@
 #include "Rendering/EntityMaskManager.h"
 
 #include "RenderStages/PlayerRenderer.h"
+#include "RenderStages/HealthCompute.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -94,7 +95,17 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	PacketType::Init();
 	PacketTranscoderSystem::GetInstance().Init();
 
-	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
+
+	if (stateStr == "server")
+	{
+		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW HealthCompute());
+	}
+	else
+	{
+		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
+	}
+
+
 	RenderSystem::GetInstance().InitRenderGraphs();
 
 	LoadRendererResources();

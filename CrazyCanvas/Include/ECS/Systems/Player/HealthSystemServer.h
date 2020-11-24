@@ -53,14 +53,14 @@ private:
 	LambdaEngine::TArray<LambdaEngine::Entity> m_DeferredResets;
 	LambdaEngine::TArray<LambdaEngine::Entity> m_ResetsToProcess;
 
-	LambdaEngine::CommandAllocator*	m_CommandAllocator		= nullptr;
-	LambdaEngine::CommandList*		m_CommandList			= nullptr;
-	LambdaEngine::Buffer*			m_HealthBuffer			= nullptr;
-	LambdaEngine::Buffer*			m_CopyBuffer			= nullptr;
-	LambdaEngine::Buffer*			m_VertexCountBuffer		= nullptr;
-	LambdaEngine::Fence*			m_CopyFence				= nullptr;
-	uint64							m_FenceCounter			= 1;
+	// LambdaEngine::CommandAllocator*	m_CommandAllocator		= nullptr;
+	// LambdaEngine::CommandList*		m_CommandList			= nullptr;
+	// LambdaEngine::Buffer*			m_HealthBuffer			= nullptr;
+	// LambdaEngine::Buffer*			m_CopyBuffer			= nullptr;
+	// LambdaEngine::Buffer*			m_VertexCountBuffer		= nullptr;
+	// LambdaEngine::Fence*			m_CopyFence				= nullptr;
+	// uint64							m_FenceCounter			= 1;
 
-	uint64 m_PlayerHealths[10];
+	LambdaEngine::TArray<uint32> m_PlayerHealths;
 	uint32 m_VertexCount = 0;
 };

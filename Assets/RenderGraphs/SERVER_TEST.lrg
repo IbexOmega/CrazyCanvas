@@ -236,9 +236,9 @@
         {
             "name": "COMPUTE_HEALTH",
             "type": "COMPUTE",
-            "custom_renderer": false,
+            "custom_renderer": true,
             "allow_overriding_of_binding_types": true,
-            "trigger_type": "TRIGGERED",
+            "trigger_type": "EVERY",
             "frame_delay": 0,
             "frame_offset": 0,
             "x_dim_type": "RELATIVE",
@@ -248,7 +248,7 @@
             "y_dim_var": 1.0,
             "z_dim_var": 1.0,
             "shaders": {
-                "shader": "/ComputeHealth.comp"
+                "shader": ""
             },
             "resource_states": [
                 {

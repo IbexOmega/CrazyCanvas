@@ -41,6 +41,7 @@
 
 #include "Engine/EngineConfig.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/PlayerIndexHelper.h"
 
 namespace LambdaEngine
 {
@@ -1426,6 +1427,7 @@ namespace LambdaEngine
 		instance.TexturesPerExtensionGroup	= texturesPerExtensionGroup;
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
 		instance.TeamIndex					= teamIndex;
+		// instance.PlayerIndex				= PlayerIndexHelper::GetPlayerIndex(entity);
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		meshAndInstancesIt->second.EntityIDs.PushBack(entity);

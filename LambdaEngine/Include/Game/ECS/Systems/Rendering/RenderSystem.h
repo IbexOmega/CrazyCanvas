@@ -71,7 +71,7 @@ namespace LambdaEngine
 			uint32		TexturesPerExtensionGroup	= 0;
 			uint32		MeshletCount				= 0;
 			uint32		TeamIndex					= 0;
-			uint32		Padding0					= 0;
+			uint32		PlayerIndex					= 0;
 			uint32		Padding1					= 0;
 			uint32		Padding2					= 0;
 		};
