@@ -61,9 +61,9 @@ void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& feedMessage, uint8 k
 
 	feed->SetText(feedMessage.c_str());
 	feed->SetFontSize(23.0f);
-	//feed->SetName(name.c_str());
 	feed->SetForeground(pBrush);
 
+	//feed->SetName(name.c_str());
 	//FrameworkElement::GetView()->GetContent()->RegisterName(name.c_str(), feed);
 
 	TextFeedTimer pair = std::make_pair(feed, 8.0f);
@@ -72,7 +72,6 @@ void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& feedMessage, uint8 k
 	m_pKillFeedStackPanel->GetChildren()->Add(feed);
 
 	/*m_pKillFeedStoryBoard->SetTargetName(m_pKillFeedDoubleAnimation, name.c_str());
-
 	m_pKillFeedStoryBoard->Begin();*/
 }
 

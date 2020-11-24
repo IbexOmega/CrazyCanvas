@@ -34,15 +34,15 @@ public:
 private:
 	void RemoveFromKillFeed(Noesis::TextBlock* textblock);
 
+	NS_IMPLEMENT_INLINE_REFLECTION_(KillFeedGUI, Noesis::UserControl, "CrazyCanvas.KillFeedGUI")
 private:
 	//Noesis::Storyboard* m_pKillFeedStoryBoard			= nullptr;
 	//Noesis::DoubleAnimation* m_pKillFeedDoubleAnimation	= nullptr;
 	Noesis::StackPanel* m_pKillFeedStackPanel			= nullptr;
 
-	uint16 m_FeedIndex = 0;
+	//uint16 m_FeedIndex = 0;
 
 	LambdaEngine::TArray<TextFeedTimer> m_KillFeedTimers;
 
-	NS_IMPLEMENT_INLINE_REFLECTION_(KillFeedGUI, Noesis::UserControl, "CrazyCanvas.KillFeedGUI")
 
 };

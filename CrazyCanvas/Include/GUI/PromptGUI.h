@@ -19,10 +19,11 @@ public:
 	void DisplayPrompt(const LambdaEngine::String& promptMessage);
 
 private:
+	NS_IMPLEMENT_INLINE_REFLECTION_(PromptGUI, Noesis::UserControl, "CrazyCanvas.PromptGUI")
+
+private:
 	Noesis::Storyboard* m_pPromptStoryboard				= nullptr;
 	Noesis::Storyboard* m_pPromptVisibilityStoryboard	= nullptr;
 	Noesis::TextBlock* m_pPromptTextblock				= nullptr;
-
-	NS_IMPLEMENT_INLINE_REFLECTION_(PromptGUI, Noesis::UserControl, "CrazyCanvas.PromptGUI")
 
 };
