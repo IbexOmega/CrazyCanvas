@@ -28,7 +28,7 @@ void main()
     SInstance instance				= b_Instances.val[gl_InstanceIndex];
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 
-	vec4 worldPosition		= instance.Transform * vec4(vertex.Position.xyz, 1.0f);
+	vec4 worldPosition		= vec4(vertex.Position.xyz, 1.0f);
 	vec4 prevWorldPosition	= instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
 	mat4 normalTransform    = instance.Transform;

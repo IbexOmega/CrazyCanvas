@@ -22,12 +22,7 @@ layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
 layout(location = 9) in flat uint	in_InstanceIndex;
 layout(location = 10) in vec3 		in_ViewDirection;
-
-layout(push_constant) uniform TeamIndex
-{
-	uint Index;
-} p_TeamIndex;
-
+	
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 { 
 	SPerFrameBuffer val; 
@@ -44,11 +39,13 @@ layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_DepthStencil;
 
-
 layout(location = 0) out vec4 out_Color;
 
 void main()
 {
+	// out_Color = vec4(1.0f, 1.0f, 0.0f, 0.5);
+	// return;
+
 	vec3 normal		= normalize(in_Normal);
 	vec3 tangent	= normalize(in_Tangent);
 	vec3 bitangent	= normalize(in_Bitangent);
@@ -57,6 +54,7 @@ void main()
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
 	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
+
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 
@@ -178,7 +176,7 @@ void main()
 	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
 
 	// Transparent team players
-	float alpha = isPainted ? 1.0f : 0.65f;
+	//float alpha = isPainted ? 1.0f : 0.65f;
 	
-	out_Color = vec4(finalColor, alpha);
+	out_Color = vec4(finalColor, 1.0f);
 }

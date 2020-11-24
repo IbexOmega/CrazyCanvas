@@ -119,8 +119,7 @@ namespace LambdaEngine
 		ViewerData								m_Viewer;
 		TArray<PlayerData>						m_PlayerData;
 
-		bool									m_DirtyUniformBuffers = false;
-		bool									m_IsSceneMatParamBufferWritten = false;
+		bool									m_DirtyUniformBuffers = true;
 
 	private:
 		static PlayerRenderer* s_pInstance;

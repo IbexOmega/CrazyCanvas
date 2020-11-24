@@ -930,7 +930,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "RENDER_STAGE_PARTICLE_RENDER"
+                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
                 },
                 {
                     "name": "INTERMEDIATE_OUTPUT_IMAGE",
@@ -938,7 +938,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "RENDER_STAGE_FIRST_PERSON_WEAPON"
+                    "src_stage": "RAY_TRACING"
                 }
             ]
         },
@@ -1773,7 +1773,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
+                    "src_stage": "SKYBOX_PASS"
                 },
                 {
                     "name": "INTERMEDIATE_OUTPUT_IMAGE",
@@ -1781,7 +1781,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "RAY_TRACING"
+                    "src_stage": "SKYBOX_PASS"
                 },
                 {
                     "name": "SCENE_MAT_PARAM_BUFFER",
@@ -2029,7 +2029,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
-                    "src_stage": "SKYBOX_PASS"
+                    "src_stage": "RENDER_STAGE_FIRST_PERSON_WEAPON"
                 }
             ]
         },
@@ -2180,6 +2180,14 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
+                    "name": "SCENE_MAT_PARAM_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
                     "name": "PAINT_MASK_TEXTURES",
                     "removable": true,
                     "draw_args_include_mask": 1,
@@ -2201,14 +2209,6 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "EXTERNAL_RESOURCES"
-                },
-                {
-                    "name": "SCENE_MAT_PARAM_BUFFER",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]

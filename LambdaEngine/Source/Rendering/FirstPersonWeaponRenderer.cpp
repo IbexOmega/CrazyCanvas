@@ -263,8 +263,8 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(count);
 		UNREFERENCED_VARIABLE(pOffsets);
 		UNREFERENCED_VARIABLE(ppBuffers);
-		// create the descriptors that we described in CreatePipelineLayout()
 
+		// create the descriptors that we described in CreatePipelineLayout()
 		if (resourceName == SCENE_MAT_PARAM_BUFFER)
 		{
 			constexpr DescriptorSetIndex setIndex = 0U;
@@ -482,9 +482,11 @@ namespace LambdaEngine
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
 
-		ClearColorDesc ccDesc = {};
-		ccDesc.Depth = 1.0f;
-		ccDesc.Stencil = 0;
+		ClearColorDesc ccDesc[2];
+		ccDesc[0].Depth = 1.0f;
+		ccDesc[0].Stencil = 0;
+		ccDesc[1].Depth = 1.0f;
+		ccDesc[1].Stencil = 0;
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
@@ -494,7 +496,7 @@ namespace LambdaEngine
 		beginRenderPassDesc.Width = width;
 		beginRenderPassDesc.Height = height;
 		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-		beginRenderPassDesc.pClearColors = &ccDesc;
+		beginRenderPassDesc.pClearColors = ccDesc;
 		beginRenderPassDesc.ClearColorCount = 2; // clearValueCount must be greater than the largest attachment index in renderPass
 		beginRenderPassDesc.Offset.x = 0;
 		beginRenderPassDesc.Offset.y = 0;
@@ -515,15 +517,20 @@ namespace LambdaEngine
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
 
+		glm::mat4 view = glm::mat4(1.0f);
+		view = glm::rotate(view, 3.1415f * 0.15f, glm::vec3(0.0, 0.0, 1.0));
+		view = glm::translate(view, glm::vec3(1.65, -1.5, 0));
+		view = glm::scale(view, glm::vec3(1.4f));
+
 		// Set Weapon Transformations
 		FrameBuffer fb = {
 			.Projection = glm::mat4(1.0f),
-			.View = glm::mat4(1.0f),
+			.View = view,
 			.PrevProjection = glm::mat4(1.0f),
 			.PrevView = glm::mat4(1.0f),
 			.ViewInv = glm::mat4(1.0f),
 			.ProjectionInv = glm::mat4(1.0f),
-			.CameraPosition = glm::vec4(0.f, 0.f, -2.0f, 1.0f),
+			.CameraPosition = glm::vec4(0.f, 0.f, -1.5f, 1.0f),
 			.CameraRight = glm::vec4(1.0f, 0.0, 0.0, 1.0f),
 			.CameraUp = glm::vec4(0.f, 1.0f, 0.0, 1.0f),
 			.Jitter = glm::vec2(0, 0),
@@ -774,7 +781,7 @@ namespace LambdaEngine
 		depthAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
 		depthAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 		depthAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
-		depthAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_UNKNOWN; //unknown since it is only used internally
+		depthAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 		depthAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDesc subpassDesc = {};
