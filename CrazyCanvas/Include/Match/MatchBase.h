@@ -31,7 +31,7 @@ static constexpr const float32 MATCH_BEGIN_COUNTDOWN_TIME = 5.0f;
 class MatchBase
 {
 public:
-	MatchBase() = default;
+	MatchBase();
 	virtual ~MatchBase();
 
 	bool Init(const MatchDescription* pDesc);
@@ -60,6 +60,7 @@ protected:
 
 	virtual bool InitInternal() = 0;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
+	virtual bool ResetMatchInternal() = 0;
 
 	virtual void FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 	{

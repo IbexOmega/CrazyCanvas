@@ -22,7 +22,7 @@ class MatchServer : public MatchBase
 	};
 
 public:
-	MatchServer() = default;
+	MatchServer();
 	~MatchServer();
 
 	virtual void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity) override final;
@@ -32,8 +32,10 @@ protected:
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
 	virtual void FixedTickInternal(LambdaEngine::Timestamp deltaTime) override final;
 
-	virtual void BeginLoading() override final;;
-	virtual void MatchStart() override final;;
+	virtual bool ResetMatchInternal() override final;
+
+	virtual void BeginLoading() override final;
+	virtual void MatchStart() override final;
 	void MatchBegin();
 
 	void SpawnPlayer(const Player& player);

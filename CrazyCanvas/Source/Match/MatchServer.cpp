@@ -50,6 +50,15 @@
 
 #define RENDER_MATCH_INFORMATION
 
+MatchServer::MatchServer()
+{
+	using namespace LambdaEngine;
+
+	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::RegisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
+	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
+}
+
 MatchServer::~MatchServer()
 {
 	using namespace LambdaEngine;
@@ -61,12 +70,6 @@ MatchServer::~MatchServer()
 
 bool MatchServer::InitInternal()
 {
-	using namespace LambdaEngine;
-
-	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
-	EventQueue::RegisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
-	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
-
 	return true;
 }
 
@@ -381,6 +384,15 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 			}
 		}
 	}
+}
+
+bool MatchServer::ResetMatchInternal()
+{
+	m_PlayersToKill.Clear();
+	m_PlayersToRespawn.Clear();
+	m_ShouldBeginMatch = false;
+
+	return false;
 }
 
 void MatchServer::SpawnFlag(uint8 teamIndex)
@@ -737,8 +749,6 @@ void MatchServer::InternalSetScore(uint8 team, uint32 score)
 			gameOverPacket.WinningTeamIndex = team;
 
 			ServerHelper::SendBroadcast(gameOverPacket);
-
-			ResetMatch();
 
 			EventQueue::SendEvent<GameOverEvent>(team);
 		}

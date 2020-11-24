@@ -186,7 +186,6 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 		if (pPlayer->IsHost())
 		{
 			SetState(SERVER_STATE_LOADING);
-			Match::Init();
 		}
 	}
 	else if (gameState == GAME_STATE_LOADING)
@@ -239,7 +238,7 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	EServerState state = event.State;
 	if (state == SERVER_STATE_LOBBY)
 	{
-		Match::Release();
+		Match::ResetMatch();
 
 		const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
 		for (auto& pair : players)

@@ -33,18 +33,7 @@
 
 using namespace LambdaEngine;
 
-MatchClient::~MatchClient()
-{
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
-}
-
-bool MatchClient::InitInternal()
+MatchClient::MatchClient()
 {
 	if (MultiplayerUtils::IsSingleplayer())
 	{
@@ -67,6 +56,22 @@ bool MatchClient::InitInternal()
 	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
 	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
 	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/go.mp3");
+}
+
+MatchClient::~MatchClient()
+{
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+}
+
+bool MatchClient::InitInternal()
+{
+	
 
 	return true;
 }
@@ -127,6 +132,14 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 			EventQueue::SendEvent<MatchCountdownEvent>(UINT8_MAX);
 		}
 	}
+}
+
+bool MatchClient::ResetMatchInternal()
+{
+	m_ClientSideBegun = false;
+	m_CountdownHideTimer = 0.0f;
+
+	return false;
 }
 
 bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
@@ -258,9 +271,10 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 	const PacketGameOver& packet = event.Packet;
 
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
-	ResetMatch();
 
 	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
+
+	ResetMatch();
 
 	return true;
 }

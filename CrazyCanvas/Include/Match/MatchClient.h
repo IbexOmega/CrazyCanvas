@@ -15,7 +15,7 @@
 class MatchClient : public MatchBase
 {
 public:
-	MatchClient() = default;
+	MatchClient();
 	~MatchClient();
 
 	virtual void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity) override final;
@@ -23,6 +23,7 @@ public:
 protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
+	virtual bool ResetMatchInternal() override final;
 
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
 
