@@ -29,6 +29,7 @@
 #include "Lobby/PlayerManagerBase.h"
 
 #include "GUI/EscapeMenuGUI.h"
+#include "GUI/KillFeedGUI.h"
 
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
@@ -88,6 +89,8 @@ public:
 	void UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value);
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
+	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex);
+	void UpdateKillFeedTimer(LambdaEngine::Timestamp delta);
 
 	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
 	void CreateProjectedGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
@@ -130,6 +133,7 @@ private:
 	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
 	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
 
+
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
@@ -138,6 +142,7 @@ private:
 
 	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
 
-	EscapeMenuGUI* m_pEscMenuGUI = nullptr;
+	KillFeedGUI* m_pKillFeedGUI		= nullptr;
+	EscapeMenuGUI* m_pEscMenuGUI	= nullptr;
 
 };

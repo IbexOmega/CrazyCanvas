@@ -9,6 +9,7 @@
 #include "GUI/HUDGUI.h"
 #include "GUI/CountdownGUI.h"
 #include "GUI/PromptGUI.h"
+#include "GUI/KillFeedGUI.h"
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/GameOverGUI.h"
@@ -387,6 +388,18 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
+void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex)
+{
+	LambdaEngine::String feedText = killer + " Killed " + killed;
+
+	m_pKillFeedGUI->AddToKillFeed(feedText, killedPlayerTeamIndex);
+}
+
+void HUDGUI::UpdateKillFeedTimer(LambdaEngine::Timestamp delta)
+{
+	m_pKillFeedGUI->UpdateFeedTimer(delta);
+}
+
 void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity)
 {
 
@@ -469,7 +482,8 @@ void HUDGUI::InitGUI()
 
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
-
+	
+	m_pKillFeedGUI = FindName<KillFeedGUI>("HIT_INDICATOR");
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	std::string ammoString;

@@ -79,6 +79,11 @@
 
                 <uc:PromptGUI x:Name="PROMPT" Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
+                <Grid Grid.Column="8" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="2" Margin="0,0,25,0">
+                    <uc:KillFeedGUI x:Name="KILL_FEED"/>
+                </Grid>
+
+
                 <Grid x:Name="HEALTH_DISPLAY_GRID" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4" Margin="25,0,-25,-25">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
