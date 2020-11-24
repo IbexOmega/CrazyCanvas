@@ -135,8 +135,8 @@ void main()
 		paintDist = min(paintDist, vertex.Normal.w);
 	}
 
-	vertex.Position.w = uintBitsToFloat(1);
-	vertex.Normal.w = 0.f;
+	//vertex.Position.w = uintBitsToFloat(1);
+	//vertex.Normal.w = 0.f;
 
 	// Update vertex
 	b_Vertices.val[gl_VertexIndex] = vertex;
