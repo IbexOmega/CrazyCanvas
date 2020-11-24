@@ -168,19 +168,13 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(
-			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, 
-			pDesc->pRenderGraphStructureDesc->ShaderConstants, 
-			pDesc->CustomRenderers, 
-			requiredDrawArgMasks))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, pDesc->CustomRenderers, requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
 		}
 
-		if (!CreateSynchronizationStages(
-			pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, 
-			requiredDrawArgMasks))
+		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
 			return false;
@@ -267,11 +261,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!CreateRenderStages(
-			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, 
-			pDesc->pRenderGraphStructureDesc->ShaderConstants, 
-			pDesc->CustomRenderers, 
-			requiredDrawArgMasks))
+		if (!CreateRenderStages(pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, pDesc->pRenderGraphStructureDesc->ShaderConstants, pDesc->CustomRenderers, requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
@@ -324,8 +314,7 @@ namespace LambdaEngine
 
 	void RenderGraph::UpdateResource(const ResourceUpdateDesc* pDesc)
 	{
-		String resourceName = String(pDesc->ResourceName);
-		auto it = m_ResourceMap.find(resourceName);
+		auto it = m_ResourceMap.find(pDesc->ResourceName);
 
 		if (it != m_ResourceMap.end())
 		{
@@ -1735,11 +1724,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderGraph::CreateRenderStages(
-		const TArray<RenderStageDesc>& renderStages, 
-		const THashTable<String, RenderGraphShaderConstants>& shaderConstants, 
-		const TArray<CustomRenderer*>& customRenderers, 
-		TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
+	bool RenderGraph::CreateRenderStages(const TArray<RenderStageDesc>& renderStages, const THashTable<String, RenderGraphShaderConstants>& shaderConstants, const TArray<CustomRenderer*>& customRenderers, TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
 		m_RenderStageMap.reserve(m_RenderStageCount);
@@ -3467,13 +3452,8 @@ namespace LambdaEngine
 
 				if (pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews != nullptr)
 				{
-					// Make sure there are enough room
-					if (pResource->Texture.PerSubImageTextureViews.GetSize() < pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount)
-					{
-						pResource->Texture.PerSubImageTextureViews.Resize(pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount);
-					}
-
 					uint32 subImageBaseIndex = sr * pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount;
+
 					for (uint32 si = 0; si < pDesc->ExternalTextureUpdate.PerImageSubImageTextureViewCount; si++)
 					{
 						pResource->Texture.PerSubImageTextureViews[subImageBaseIndex + si] = pDesc->ExternalTextureUpdate.ppPerSubImageTextureViews[subImageBaseIndex + si];

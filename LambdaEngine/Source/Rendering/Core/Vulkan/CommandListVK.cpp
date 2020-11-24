@@ -695,9 +695,9 @@ namespace LambdaEngine
 
 		TextureVK*		pVkTexture		= reinterpret_cast<TextureVK*>(pTexture);
 		TextureDesc		desc			= pVkTexture->GetDesc();
-		const uint32	mipLevelCount	= desc.Miplevels;
+		const uint32	miplevelCount	= desc.Miplevels;
 
-		if (mipLevelCount < 2)
+		if (miplevelCount < 2)
 		{
 			LOG_WARNING("[CommandListVK::GenerateMips]: pTexture only has 1 miplevel allocated, no other mips will be generated");
 			return;
@@ -711,7 +711,8 @@ namespace LambdaEngine
 			return;
 		}
 
-		// TODO: Fix for devices that do NOT support linear filtering
+		//TODO: Fix for devices that do NOT support linear filtering
+
 		if (linearFiltering)
 		{
 			VkFormat			formatVk			= ConvertFormat(desc.Format);
@@ -724,10 +725,10 @@ namespace LambdaEngine
 		}
 
 		PipelineTextureBarrierDesc textureBarrier = { };
-		textureBarrier.pTexture		= pTexture;
-		textureBarrier.TextureFlags	= desc.Flags;
-		textureBarrier.QueueAfter	= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
-		textureBarrier.QueueBefore	= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		textureBarrier.pTexture				= pTexture;
+		textureBarrier.TextureFlags			= desc.Flags;
+		textureBarrier.QueueAfter			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
+		textureBarrier.QueueBefore			= ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
 
 		if (stateBefore != ETextureState::TEXTURE_STATE_COPY_DST)
 		{
@@ -739,33 +740,24 @@ namespace LambdaEngine
 			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			textureBarrier.StateBefore			= stateBefore;
 			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_DST;
-			PipelineTextureBarriers(
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
-				&textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 		}
 
-		VkFilter	filterType			= linearFiltering ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
 		VkImage		imageVk				= pVkTexture->GetImage();
 		VkExtent2D	destinationExtent	= {};
 		VkExtent2D	sourceExtent		= { desc.Width, desc.Height };
-
-		for (uint32_t i = 1; i < mipLevelCount; i++)
+		for (uint32_t i = 1; i < miplevelCount; i++)
 		{
 			destinationExtent = { std::max(sourceExtent.width / 2U, 1u), std::max(sourceExtent.height / 2U, 1U) };
 
 			textureBarrier.Miplevel				= i - 1;
 			textureBarrier.MiplevelCount		= 1;
-			textureBarrier.ArrayIndex			= 0;
-			textureBarrier.ArrayCount			= desc.ArrayCount;
+			textureBarrier.ArrayCount			= 1;
 			textureBarrier.StateBefore			= ETextureState::TEXTURE_STATE_COPY_DST;
 			textureBarrier.StateAfter			= ETextureState::TEXTURE_STATE_COPY_SRC;
 			textureBarrier.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
 			textureBarrier.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ;
-			PipelineTextureBarriers(
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
-				&textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 			VkImageBlit blit = {};
 			blit.srcOffsets[0]					= { 0, 0, 0 };
@@ -773,31 +765,24 @@ namespace LambdaEngine
 			blit.srcSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
 			blit.srcSubresource.mipLevel		= i - 1;
 			blit.srcSubresource.baseArrayLayer	= 0;
-			blit.srcSubresource.layerCount		= desc.ArrayCount;
+			blit.srcSubresource.layerCount		= 1;
 			blit.dstOffsets[0]					= { 0, 0, 0 };
 			blit.dstOffsets[1]					= { int32_t(destinationExtent.width), int32_t(destinationExtent.height), int32_t(1) };
 			blit.dstSubresource.aspectMask		= VK_IMAGE_ASPECT_COLOR_BIT;
 			blit.dstSubresource.mipLevel		= i;
 			blit.dstSubresource.baseArrayLayer	= 0;
-			blit.dstSubresource.layerCount		= desc.ArrayCount;
+			blit.dstSubresource.layerCount		= 1;
 
-			vkCmdBlitImage(
-				m_CmdBuffer, 
-				imageVk, 
-				VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
-				imageVk, 
-				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
-				1, &blit, 
-				filterType);
+			if (linearFiltering)
+				vkCmdBlitImage(m_CmdBuffer, imageVk, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageVk, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+			else
+				vkCmdBlitImage(m_CmdBuffer, imageVk, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, imageVk, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_NEAREST);
 
 			sourceExtent = destinationExtent;
 		}
 
-		textureBarrier.Miplevel = mipLevelCount - 1;
-		PipelineTextureBarriers(
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
-			&textureBarrier, 1);
+		textureBarrier.Miplevel = miplevelCount - 1;
+		PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, &textureBarrier, 1);
 
 		if (stateAfter != ETextureState::TEXTURE_STATE_COPY_SRC)
 		{
@@ -806,10 +791,7 @@ namespace LambdaEngine
 			textureBarrier.ArrayCount		= desc.ArrayCount;
 			textureBarrier.StateBefore		= ETextureState::TEXTURE_STATE_COPY_SRC;
 			textureBarrier.StateAfter		= stateAfter;
-			PipelineTextureBarriers(
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, 
-				&textureBarrier, 1);
+			PipelineTextureBarriers(FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, &textureBarrier, 1);
 		}
 	}
 

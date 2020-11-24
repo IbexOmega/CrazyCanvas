@@ -84,13 +84,13 @@ namespace LambdaEngine
 
 			struct
 			{
-				Texture* const*		ppTextures;
-				TextureView* const*	ppTextureViews;
-				TextureView* const*	ppPerSubImageTextureViews;
-				Sampler* const*		ppSamplers;
-				uint32				TextureCount;
-				uint32				SamplerCount;
-				uint32				PerImageSubImageTextureViewCount;
+				Texture**		ppTextures;
+				TextureView**	ppTextureViews;
+				TextureView**	ppPerSubImageTextureViews;
+				Sampler**		ppSamplers;
+				uint32			TextureCount;
+				uint32			SamplerCount;
+				uint32			PerImageSubImageTextureViewCount;
 			} ExternalTextureUpdate;
 
 			struct
@@ -102,8 +102,8 @@ namespace LambdaEngine
 
 			struct
 			{
-				Buffer* const*	ppBuffer;
-				uint32			Count;
+				Buffer**	ppBuffer;
+				uint32		Count;
 			} ExternalBufferUpdate;
 
 			struct

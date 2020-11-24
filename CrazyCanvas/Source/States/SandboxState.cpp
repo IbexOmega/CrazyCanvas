@@ -14,7 +14,6 @@
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Misc/DestructionComponent.h"
 #include "ECS/ECSCore.h"
-#include "ECS/Systems/Player/WeaponSystem.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -28,12 +27,11 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
-#include "Game/ECS/Components/Rendering/GlobalLightProbeComponent.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
 #include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
-#include "Game/Multiplayer/Client/ClientSystem.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "Game/GameConsole.h"
 
 #include "Teams/TeamHelper.h"
@@ -47,10 +45,8 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphEditor.h"
 #include "Rendering/Animation/AnimationGraph.h"
-#include "Rendering/EntityMaskManager.h"
 
 #include "Math/Random.h"
-
 #include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
@@ -60,6 +56,9 @@
 
 #include "Match/Match.h"
 
+#include "Game/Multiplayer/Client/ClientSystem.h"
+
+#include "Rendering/EntityMaskManager.h"
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
@@ -111,16 +110,10 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[5]
 		};
 
 		Match::CreateMatch(&matchDescription);
-	}
-
-	// Global Light Probe
-	{
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<GlobalLightProbeComponent>(entity, GlobalLightProbeComponent());
 	}
 
 	// Set Team Colors
@@ -129,7 +122,6 @@ void SandboxState::Init()
 		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
 	}
 
-	// Load character
 	{
 		GUID_Lambda characterMeshGUID;
 		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
@@ -159,50 +151,6 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<MeshComponent>(entity, meshComp);
-	}
-
-	// Sphere grid
-	{
-		GUID_Lambda sphereMeshGUID;
-		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
-		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
-
-		uint32 gridRadius = 5;
-
-		for (uint32 y = 0; y < gridRadius; y++)
-		{
-			const float32 roughness = y / float32(gridRadius - 1);
-
-			for (uint32 x = 0; x < gridRadius; x++)
-			{
-				const float32 metallic = x / float32(gridRadius - 1);
-
-				MaterialProperties materialProperties;
-				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				materialProperties.Roughness = roughness;
-				materialProperties.Metallic = metallic;
-
-				MeshComponent sphereMeshComp = {};
-				sphereMeshComp.MeshGUID = sphereMeshGUID;
-				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
-					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					GUID_TEXTURE_DEFAULT_COLOR_MAP,
-					materialProperties);
-
-				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 5.0f);
-				glm::vec3 scale(1.0f);
-
-				Entity entity = pECS->CreateEntity();
-				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
-				pECS->AddComponent<PositionComponent>(entity, { true, position });
-				pECS->AddComponent<ScaleComponent>(entity, { true, scale });
-				pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
-			}
-		}
 	}
 
 	// Robot
@@ -367,6 +315,7 @@ void SandboxState::Init()
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
 	}
+
 
 	if constexpr (IMGUI_ENABLED)
 	{

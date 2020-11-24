@@ -94,11 +94,11 @@ void main()
 	float roughness			= 		materialParameters.Roughness * sampledMaterial.g;
 	float metallic			= 		materialParameters.Metallic * sampledMaterial.b * float(paintDescription.Interpolation == 0.0f);
 
-	s_PrimaryPayload.HitPosition	= hitDescription.Position;
-	s_PrimaryPayload.Normal			= mix(hitDescription.Normal, paintDescription.Normal, paintDescription.Interpolation);
-	s_PrimaryPayload.Albedo			= mix(albedo, paintDescription.Albedo, paintDescription.Interpolation);
-	s_PrimaryPayload.AO				= ao;
-	s_PrimaryPayload.Roughness		= mix(roughness, paintDescription.Roughness, paintDescription.Interpolation);
-	s_PrimaryPayload.Metallic		= metallic;
-	s_PrimaryPayload.Distance		= gl_HitTEXT;
+	s_PrimaryPayload.HitPosition		= hitDescription.Position;
+	s_PrimaryPayload.Normal				= mix(hitDescription.Normal, paintDescription.Normal, paintDescription.Interpolation);
+	s_PrimaryPayload.Albedo				= mix(albedo, paintDescription.Albedo, paintDescription.Interpolation);
+	s_PrimaryPayload.AO					= ao;
+	s_PrimaryPayload.Roughness			= mix(roughness, paintDescription.Roughness, paintDescription.Interpolation);
+	s_PrimaryPayload.Metallic			= metallic;
+	s_PrimaryPayload.Distance			= gl_HitTEXT;
 }
