@@ -22,10 +22,8 @@ namespace LambdaEngine
 	{
 		InternalRelease();
 
-		const TextureVK*	pTextureVk  = reinterpret_cast<const TextureVK*>(pDesc->pTexture);
-		TextureDesc			textureDesc = pTextureVk->GetDesc();
-		
-		VALIDATE(pDesc->Format == textureDesc.Format);
+		const TextureVK* pTextureVk = reinterpret_cast<const TextureVK*>(pDesc->pTexture);
+		VALIDATE(pDesc->Format == pTextureVk->GetDesc().Format);
 		
 		VkImageViewCreateInfo createInfo = { };
 		createInfo.sType							= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
