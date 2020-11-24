@@ -2,6 +2,8 @@
 
 #include "ECS/ECSCore.h"
 
+#include "Game/ECS/Components/Rendering/GlobalLightProbeComponent.h"
+
 Level::Level()
 {
 	SetComponentOwner<LevelRegisteredComponent>({ .Destructor = std::bind_front(&Level::LevelRegisteredDestructor, this) });
@@ -40,6 +42,26 @@ bool Level::Init(const LevelCreateDesc* pDesc)
 
 	std::scoped_lock<SpinLock> lock(m_SpinLock);
 
+	// Global Light Probe
+	{
+		Entity entity = pECS->CreateEntity();
+
+		TArray<Entity> levelEntities;
+		if (entity != UINT32_MAX)
+		{
+			pECS->AddComponent<GlobalLightProbeComponent>(entity, GlobalLightProbeComponent());
+			levelEntities.PushBack(entity);
+			m_EntityToLevelObjectTypeMap[entity] = ELevelObjectType::LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE;
+		}
+
+		if (!levelEntities.IsEmpty())
+		{
+			m_EntityTypeMap[ELevelObjectType::LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE] = m_LevelEntities.GetSize();
+			m_LevelEntities.PushBack(levelEntities);
+		}
+	}
+
+	// Load Modules
 	for (LevelModule* pModule : pDesc->LevelModules)
 	{
 		const glm::vec3& translation = pModule->GetTranslation();
