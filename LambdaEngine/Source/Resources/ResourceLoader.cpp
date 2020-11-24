@@ -241,10 +241,10 @@ namespace LambdaEngine
 	* Assimp Parsing
 	*/
 	static LoadedTexture* LoadAssimpTexture(
-		SceneLoadingContext& context, 
-		const aiScene* pScene, 
-		const aiMaterial* pMaterial, 
-		aiTextureType type, 
+		SceneLoadingContext& context,
+		const aiScene* pScene,
+		const aiMaterial* pMaterial,
+		aiTextureType type,
 		uint32 index)
 	{
 		if (pMaterial->GetTextureCount(type) > index)
@@ -405,7 +405,7 @@ namespace LambdaEngine
 			aiProcess_OptimizeMeshes			|
 			aiProcess_FindInvalidData;
 
-		SceneLoadRequest loadRequest = 
+		SceneLoadRequest loadRequest =
 		{
 			.Filepath					= ConvertSlashes(filepath),
 			.AssimpFlags				= assimpFlags,
@@ -425,10 +425,10 @@ namespace LambdaEngine
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromFile(
-		const String& filepath, 
-		TArray<LoadedMaterial*>* pMaterials, 
-		TArray<LoadedTexture*>* pTextures, 
-		TArray<Animation*>* pAnimations, 
+		const String& filepath,
+		TArray<LoadedMaterial*>* pMaterials,
+		TArray<LoadedTexture*>* pTextures,
+		TArray<Animation*>* pAnimations,
 		int32 assimpFlags)
 	{
 		TArray<Mesh*>			meshes;
@@ -543,10 +543,12 @@ namespace LambdaEngine
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(
-		const Vertex* pVertices, 
-		uint32 numVertices, 
-		const uint32* pIndices, 
-		uint32 numIndices)
+		const String& name,
+		const Vertex* pVertices,
+		uint32 numVertices,
+		const uint32* pIndices,
+		uint32 numIndices,
+		bool useMeshletCache)
 	{
 		Mesh* pMesh = DBG_NEW Mesh();
 		pMesh->Vertices.Resize(numVertices);
@@ -555,17 +557,25 @@ namespace LambdaEngine
 		pMesh->Indices.Resize(numVertices);
 		memcpy(pMesh->Indices.GetData(), pIndices, sizeof(uint32) * numIndices);
 
-		MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+		if (useMeshletCache)
+		{
+			LoadMeshletsFromCache(name, pMesh);
+		}
+		else
+		{
+			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+		}
+
 		return pMesh;
 	}
 
 	Texture* ResourceLoader::LoadTextureArrayFromFile(
-		const String& name, 
-		const String& dir, 
-		const String* pFilenames, 
-		uint32 count, 
-		EFormat format, 
-		bool generateMips, 
+		const String& name,
+		const String& dir,
+		const String* pFilenames,
+		uint32 count,
+		EFormat format,
+		bool generateMips,
 		bool linearFilteringMips)
 	{
 		int32 texWidth	= 0;
@@ -607,14 +617,14 @@ namespace LambdaEngine
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
 			pTexture = LoadTextureArrayFromMemory(
-				name, 
-				stbi_pixels.GetData(), 
-				stbi_pixels.GetSize(), 
-				texWidth, 
-				texHeight, 
-				format, 
-				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, 
-				generateMips, 
+				name,
+				stbi_pixels.GetData(),
+				stbi_pixels.GetSize(),
+				texWidth,
+				texHeight,
+				format,
+				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE,
+				generateMips,
 				linearFilteringMips);
 		}
 		else if (format == EFormat::FORMAT_R16_UNORM)
@@ -645,14 +655,14 @@ namespace LambdaEngine
 			}
 
 			pTexture = LoadTextureArrayFromMemory(
-				name, 
-				pixels.GetData(), 
-				pixels.GetSize(), 
-				texWidth, 
-				texHeight, 
-				format, 
-				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, 
-				generateMips, 
+				name,
+				pixels.GetData(),
+				pixels.GetSize(),
+				texWidth,
+				texHeight,
+				format,
+				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE,
+				generateMips,
 				linearFilteringMips);
 
 			for (uint32 i = 0; i < pixels.GetSize(); i++)
@@ -671,9 +681,9 @@ namespace LambdaEngine
 	}
 
 	Texture* ResourceLoader::LoadTextureCubeFromPanoramaFile(
-		const String& name, 
+		const String& name,
 		const String& dir,
-		const String& filename, 
+		const String& filename,
 		uint32 size,
 		EFormat format,
 		bool generateMips)
@@ -698,8 +708,8 @@ namespace LambdaEngine
 		// Create texture for panorama image
 		TextureDesc panoramaDesc;
 		panoramaDesc.DebugName		= name + " Staging-Panorama";
-		panoramaDesc.Flags			=	
-			FTextureFlag::TEXTURE_FLAG_COPY_DST | 
+		panoramaDesc.Flags			=
+			FTextureFlag::TEXTURE_FLAG_COPY_DST |
 			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
 		panoramaDesc.Depth			= 1;
 		panoramaDesc.ArrayCount		= 1;
@@ -729,14 +739,14 @@ namespace LambdaEngine
 		panoramaViewDesc.MiplevelCount	= panoramaDesc.Miplevels;
 		panoramaViewDesc.Miplevel		= 0;
 		panoramaViewDesc.pTexture		= panoramaTexture.Get();
-		
+
 		TSharedRef<TextureView> panoramaTextureView = RenderAPI::GetDevice()->CreateTextureView(&panoramaViewDesc);
 		if (!panoramaTextureView)
 		{
 			LOG_ERROR("[ResourceLoader]: Failed to create panorama textureview");
 			return nullptr;
 		}
-		
+
 		// Staging buffer
 		const uint64 textureSize = texWidth * texHeight * 4ULL * 4ULL;
 		BufferDesc bufferDesc = { };
@@ -764,7 +774,7 @@ namespace LambdaEngine
 		textureCubeDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		textureCubeDesc.ArrayCount	= 6;
 		textureCubeDesc.Depth		= 1;
-		textureCubeDesc.Flags		= 
+		textureCubeDesc.Flags		=
 			FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE |
 			FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
 			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
@@ -784,7 +794,7 @@ namespace LambdaEngine
 		// Create textureview
 		TextureViewDesc skyboxViewDesc;
 		skyboxViewDesc.DebugName		= name + " Staging-Skybox-View";
-		skyboxViewDesc.Flags			= 
+		skyboxViewDesc.Flags			=
 			FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
 			FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
 		skyboxViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
@@ -805,11 +815,11 @@ namespace LambdaEngine
 		// Write DescriptorSet
 		Sampler* pNearestSampler = Sampler::GetNearestSampler();
 		s_pCubeMapGenDescriptorSet->WriteTextureDescriptors(
-			&panoramaTextureView, 
-			&pNearestSampler, 
-			ETextureState::TEXTURE_STATE_GENERAL, 
-			0, 1, 
-			EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, 
+			&panoramaTextureView,
+			&pNearestSampler,
+			ETextureState::TEXTURE_STATE_GENERAL,
+			0, 1,
+			EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
 			true);
 		s_pCubeMapGenDescriptorSet->WriteTextureDescriptors(
 			&skyboxTextureView,
@@ -868,10 +878,10 @@ namespace LambdaEngine
 			ETextureState::TEXTURE_STATE_GENERAL);
 
 		s_pComputeCommandList->SetConstantRange(
-			s_pCubeMapGenPipelineLayout, 
-			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
-			&size, 
-			4, 
+			s_pCubeMapGenPipelineLayout,
+			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+			&size,
+			4,
 			0);
 
 		s_pComputeCommandList->BindComputePipeline(s_pCubeMapGenPipelineState);
@@ -913,12 +923,12 @@ namespace LambdaEngine
 	}
 
 	Texture* ResourceLoader::LoadCubeTexturesArrayFromFile(
-		const String& name, 
-		const String& dir, 
-		const String* pFilenames, 
-		uint32 count, 
-		EFormat format, 
-		bool generateMips, 
+		const String& name,
+		const String& dir,
+		const String* pFilenames,
+		uint32 count,
+		EFormat format,
+		bool generateMips,
 		bool linearFilteringMips)
 	{
 		int texWidth	= 0;
@@ -958,14 +968,14 @@ namespace LambdaEngine
 		{
 			const uint32 flags = FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
 			pTexture = LoadTextureArrayFromMemory(
-				name, 
-				stbi_pixels.GetData(), 
-				stbi_pixels.GetSize(), 
-				texWidth, 
-				texHeight, 
-				format, 
-				flags, 
-				generateMips, 
+				name,
+				stbi_pixels.GetData(),
+				stbi_pixels.GetSize(),
+				texWidth,
+				texHeight,
+				format,
+				flags,
+				generateMips,
 				linearFilteringMips);
 		}
 
@@ -978,14 +988,14 @@ namespace LambdaEngine
 	}
 
 	Texture* ResourceLoader::LoadTextureArrayFromMemory(
-		const String& name, 
-		const void* const * ppData, 
-		uint32 arrayCount, 
-		uint32 width, 
-		uint32 height, 
-		EFormat format, 
-		uint32 usageFlags, 
-		bool generateMips, 
+		const String& name,
+		const void* const * ppData,
+		uint32 arrayCount,
+		uint32 width,
+		uint32 height,
+		EFormat format,
+		uint32 usageFlags,
+		bool generateMips,
 		bool linearFilteringMips)
 	{
 		uint32_t miplevels = 1u;
@@ -1050,8 +1060,8 @@ namespace LambdaEngine
 		transitionToCopyDstBarrier.ArrayCount				= textureDesc.ArrayCount;
 
 		s_pCopyCommandList->PipelineTextureBarriers(
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
 			&transitionToCopyDstBarrier, 1);
 
 		for (uint32 i = 0; i < arrayCount; i++)
@@ -1081,9 +1091,9 @@ namespace LambdaEngine
 		if (generateMips)
 		{
 			s_pCopyCommandList->GenerateMips(
-				pTexture, 
-				ETextureState::TEXTURE_STATE_COPY_DST, 
-				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+				pTexture,
+				ETextureState::TEXTURE_STATE_COPY_DST,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 				linearFilteringMips);
 		}
 		else
@@ -1103,16 +1113,16 @@ namespace LambdaEngine
 			transitionToShaderReadBarrier.ArrayCount			= textureDesc.ArrayCount;
 
 			s_pCopyCommandList->PipelineTextureBarriers(
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
 				&transitionToShaderReadBarrier, 1);
 		}
 
 		s_pCopyCommandList->End();
 
 		if (!RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
-			&s_pCopyCommandList, 1, 
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+			&s_pCopyCommandList, 1,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
 			nullptr, 0,
 			s_pCopyFence, s_CopySignalValue))
 		{
@@ -1184,10 +1194,10 @@ namespace LambdaEngine
 	}
 
 	Shader* ResourceLoader::LoadShaderFromMemory(
-		const String& source, 
-		const String& name, 
-		FShaderStageFlag stage, 
-		EShaderLang lang, 
+		const String& source,
+		const String& name,
+		FShaderStageFlag stage,
+		EShaderLang lang,
 		const String& entryPoint)
 	{
 		TArray<uint32> sourceSPIRV;
@@ -1433,9 +1443,9 @@ namespace LambdaEngine
 			{
 				pushConstantRange
 			};
-			pPipelineLayoutDesc.DescriptorSetLayouts = 
-			{ 
-				descriptorSetLayoutDesc 
+			pPipelineLayoutDesc.DescriptorSetLayouts =
+			{
+				descriptorSetLayoutDesc
 			};
 
 			s_pCubeMapGenPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pPipelineLayoutDesc);
@@ -1444,11 +1454,11 @@ namespace LambdaEngine
 				LOG_ERROR("Failed to create CubeMapGen PipelineLayout");
 				return false;
 			}
-			
+
 			s_pCubeMapGenDescriptorSet	= RenderAPI::GetDevice()->CreateDescriptorSet(
-				"CubemapGen DescriptorSet", 
-				s_pCubeMapGenPipelineLayout, 
-				0, 
+				"CubemapGen DescriptorSet",
+				s_pCubeMapGenPipelineLayout,
+				0,
 				s_pCubeMapGenDescriptorHeap);
 			if (!s_pCubeMapGenDescriptorSet)
 			{
@@ -1459,8 +1469,8 @@ namespace LambdaEngine
 			// Create Shaders
 			s_pCubeMapGenShader = LoadShaderFromFile(
 				String(SHADER_DIR) + "Skybox/CubemapGen.comp",
-				FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
-				EShaderLang::SHADER_LANG_GLSL, 
+				FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+				EShaderLang::SHADER_LANG_GLSL,
 				"main");
 			if (!s_pCubeMapGenShader)
 			{
@@ -1471,9 +1481,9 @@ namespace LambdaEngine
 			ComputePipelineStateDesc computePipelineStateDesc = { };
 			computePipelineStateDesc.DebugName			= "CubemapGen PipelineState";
 			computePipelineStateDesc.pPipelineLayout	= s_pCubeMapGenPipelineLayout;
-			computePipelineStateDesc.Shader				= 
-			{ 
-				.pShader = s_pCubeMapGenShader 
+			computePipelineStateDesc.Shader				=
+			{
+				.pShader = s_pCubeMapGenShader
 			};
 
 			s_pCubeMapGenPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
@@ -1656,7 +1666,7 @@ namespace LambdaEngine
 				{
 					const aiNode* pChild	= pParent->mChildren[i];
 					const aiNode* pNode		= FindNodeInScene(nodeName, pChild);
-					
+
 					// If child contains the node -> Break and return
 					if (pNode)
 					{
@@ -1694,10 +1704,10 @@ namespace LambdaEngine
 		for (uint32 boneIndex = 0; boneIndex < numBones; boneIndex++)
 		{
 			Joint& joint = pSkeleton->Joints[boneIndex];
-			
+
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			joint.Name = pBoneAI->mName.C_Str();
-			
+
 			auto it = pSkeleton->JointMap.find(joint.Name);
 			if (it != pSkeleton->JointMap.end())
 			{
@@ -1708,7 +1718,7 @@ namespace LambdaEngine
 			{
 				pSkeleton->JointMap[joint.Name] = (unsigned char)boneIndex;
 			}
-			
+
 			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
@@ -1836,7 +1846,7 @@ namespace LambdaEngine
 		for (VertexJointData& joint : pMesh->VertexJointData)
 		{
 			const float32 weight3 = 1.0f - (joint.Weight0 + joint.Weight1 + joint.Weight2);
-			LOG_WARNING("JointData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
+			LOG_WARNING("JointData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f",
 				joint.JointID0, joint.Weight0,
 				joint.JointID1, joint.Weight1,
 				joint.JointID2, joint.Weight2,
@@ -2002,7 +2012,7 @@ namespace LambdaEngine
 		{
 			aiNodeAnim* pChannel = pAnimationAI->mChannels[channelIndex];
 			pAnimation->Channels[channelIndex].Name = pChannel->mNodeName.C_Str();
-			
+
 			pAnimation->Channels[channelIndex].Positions.Resize(pChannel->mNumPositionKeys);
 			for (uint32 i = 0; i < pChannel->mNumPositionKeys; i++)
 			{
@@ -2034,10 +2044,10 @@ namespace LambdaEngine
 
 		context.pAnimations->EmplaceBack(pAnimation);
 
-		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", NumChannels=%u, Duration=%.4f ticks, TicksPerSecond=%.4f", 
+		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", NumChannels=%u, Duration=%.4f ticks, TicksPerSecond=%.4f",
 			pAnimation->Name.GetString().c_str(),
 			pAnimation->Channels.GetSize(),
-			pAnimation->DurationInTicks, 
+			pAnimation->DurationInTicks,
 			pAnimation->TicksPerSecond);
 	}
 
@@ -2056,11 +2066,11 @@ namespace LambdaEngine
 		glm::mat4 glmMat = AssimpToGLMMat4(pNode->mTransformation);
 		for (uint32 i = 0; i < 4; i++)
 		{
-			LOG_INFO("%s [%.4f, %.4f, %.4f, %.4f]", 
-				postfix.c_str(), 
-				glmMat[i][0], 
-				glmMat[i][1], 
-				glmMat[i][2], 
+			LOG_INFO("%s [%.4f, %.4f, %.4f, %.4f]",
+				postfix.c_str(),
+				glmMat[i][0],
+				glmMat[i][1],
+				glmMat[i][2],
 				glmMat[i][3]);
 		}
 #endif
@@ -2091,7 +2101,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		SceneLoadingContext context = 
+		SceneLoadingContext context =
 		{
 			.Filename					= filepath.substr(lastPathDivisor + 1),
 			.DirectoryPath				= filepath.substr(0, lastPathDivisor + 1),
@@ -2119,7 +2129,7 @@ namespace LambdaEngine
 				{
 					string = *static_cast<aiString*>(pMetaData->mValues[i].mData);
 				}
-				
+
 				LOG_INFO("    [%s]=%s", pMetaData->mKeys[i].C_Str(), string.C_Str());
 			}
 		}
@@ -2286,7 +2296,7 @@ namespace LambdaEngine
 							const glm::mat4 skinTransform = AssimpToGLMMat4(pNode->mTransformation);
 							pSkeleton->SkinTransform			= skinTransform;
 							pSkeleton->InverseGlobalTransform	= pSkeleton->InverseGlobalTransform * skinTransform * meshTransform;
-						
+
 							//pMesh->BoundingBox.Scale(skinTransform);
 						}
 					}
@@ -2336,10 +2346,10 @@ namespace LambdaEngine
 	}
 
 	bool ResourceLoader::CompileGLSLToSPIRV(
-		const String& filepath, 
-		const char* pSource, 
-		FShaderStageFlags stage, 
-		TArray<uint32>* pSourceSPIRV, 
+		const String& filepath,
+		const char* pSource,
+		FShaderStageFlags stage,
+		TArray<uint32>* pSourceSPIRV,
 		ShaderReflection* pReflection)
 	{
 		std::string source			= std::string(pSource);
@@ -2400,7 +2410,7 @@ namespace LambdaEngine
 
 		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
 
-		
+
 
 		if (pSourceSPIRV != nullptr)
 		{
@@ -2438,5 +2448,36 @@ namespace LambdaEngine
 		pReflection->NumUniforms			= glslangReflection.getNumUniforms();
 
 		return true;
+	}
+
+	void ResourceLoader::LoadMeshletsFromCache(const String& name, Mesh* pMesh)
+	{
+		const String meshletCachePath = MESHLET_CACHE_DIR + name;
+
+		std::fstream file;
+		file.open(meshletCachePath, std::fstream::in | std::fstream::binary);
+
+		// If file doesn't exist, create it. Otherwise, load meshlets from file to memory.
+		if (!file)
+		{
+			file.open(meshletCachePath, std::fstream::out | std::fstream::binary);
+
+			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+			file.write((const char*)pMesh->Meshlets.GetData(), pMesh->Meshlets.GetSize() * sizeof(Meshlet));
+		}
+		else
+		{
+			file.ignore(std::numeric_limits<std::streamsize>::max());
+
+			const std::streamsize fileSize = file.gcount();
+
+			file.clear();
+			file.seekg(0, std::fstream::beg);
+
+			pMesh->Meshlets.Resize(uint32(fileSize / sizeof(Meshlet)));
+			file.read((char*)pMesh->Meshlets.GetData(), fileSize);
+		}
+
+		file.close();
 	}
 }
