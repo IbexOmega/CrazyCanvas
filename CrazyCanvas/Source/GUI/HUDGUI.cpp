@@ -47,7 +47,10 @@ HUDGUI::HUDGUI() :
 
 	InitGUI();
 
-	m_pEscMenuGUI = FindName<EscapeMenuGUI>("ESC_MENU_GUI");
+	m_pKillFeedGUI	= FindName<KillFeedGUI>("KILL_FEED");
+	m_pKillFeedGUI->InitGUI();
+
+	m_pEscMenuGUI	= FindName<EscapeMenuGUI>("ESC_MENU_GUI");
 	m_pEscMenuGUI->InitGUI();
 }
 
@@ -483,7 +486,6 @@ void HUDGUI::InitGUI()
 	m_pBlueTeamStackPanel	= FrameworkElement::FindName<StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel	= FrameworkElement::FindName<StackPanel>("RED_TEAM_STACK_PANEL");
 	
-	m_pKillFeedGUI = FindName<KillFeedGUI>("HIT_INDICATOR");
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	std::string ammoString;
