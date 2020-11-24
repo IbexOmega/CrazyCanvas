@@ -129,7 +129,6 @@ void PlaySessionState::Init()
 	// Init Systems
 	m_HUDSystem.Init();
 	m_DestructionSystem.Init();
-
 }
 
 void PlaySessionState::Tick(Timestamp delta)

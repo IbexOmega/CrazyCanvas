@@ -72,8 +72,8 @@ void LobbyGUI::InitGUI()
 	/*AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
-	AddSettingColorBox(SETTING_CHANGE_TEAM_0_COLOR, "Team Color 0", colors, 0);
-	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team Color 1", colors, 1);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_0_COLOR, "Team 1 Color", colors, 0);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 2 Color", colors, 1);
 
 	UpdateSettings(*m_pGameSettings);
 
@@ -402,6 +402,22 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 	if (pSettingChangeTeamHost)
 		pSettingChangeTeamHost->SetSelectedIndex(packet.ChangeTeam ? 0 : 1);
 
+	ComboBox* pSettingTeam0Color = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_CHANGE_TEAM_0_COLOR) + "_host").c_str());
+	if (pSettingTeam0Color)
+	{
+		pSettingTeam0Color->SetSelectedIndex(packet.TeamColor0);
+		TextBlock* pBox = (TextBlock*)pSettingTeam0Color->GetSelectedItem();
+		pSettingTeam0Color->SetBackground(pBox->GetBackground());
+	}
+
+	ComboBox* pSettingTeam1Color = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_CHANGE_TEAM_1_COLOR) + "_host").c_str());
+	if (pSettingTeam1Color)
+	{
+		pSettingTeam1Color->SetSelectedIndex(packet.TeamColor1);
+		TextBlock* pBox = (TextBlock*)pSettingTeam1Color->GetSelectedItem();
+		pSettingTeam1Color->SetBackground(pBox->GetBackground());
+	}
+
 	UpdatePlayersLabel();
 }
 
@@ -423,6 +439,7 @@ void LobbyGUI::AddSettingComboBox(
 	settingComboBox->SetStyle(pStyle);
 	settingComboBox->SetName((settingKey + "_host").c_str());
 	settingComboBox->SelectionChanged() += MakeDelegate(this, &LobbyGUI::OnComboBoxSelectionChanged);
+	settingComboBox->SetFocusable(false);
 	RegisterName(settingComboBox->GetName(), settingComboBox);
 	m_pSettingsHostStackPanel->GetChildren()->Add(settingComboBox);
 
@@ -433,7 +450,6 @@ void LobbyGUI::AddSettingComboBox(
 		settingComboBox->GetItems()->Add(settingTextBlock);
 	}
 	settingComboBox->SetSelectedIndex(defaultIndex);
-	settingComboBox->SetFocusable(false);
 }
 
 void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::TArray<glm::vec3>& settingColors, uint8 defaultIndex)
@@ -466,7 +482,6 @@ void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const 
 		settingComboBox->GetItems()->Add(settingTextBlock);
 	}
 	settingComboBox->SetSelectedIndex(defaultIndex);
-
 }
 
 void LobbyGUI::AddSettingTextBox(
@@ -604,33 +619,25 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	}
 	else if (setting == SETTING_CHANGE_TEAM_0_COLOR || setting == SETTING_CHANGE_TEAM_1_COLOR)
 	{
-		// Update combobox display color
-		glm::vec3 color = TeamHelper::GetAvailableColor(indexSelected);
-		Color teamColor = Color(color.r, color.g, color.b);
-		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
-		pBrush->SetColor(Color(color.r, color.g, color.b));
+		TextBlock* pBox = (TextBlock*)pComboBox->GetSelectedItem();
+		SolidColorBrush* pBoxColorBrush = static_cast<SolidColorBrush*>(pBox->GetBackground());
+		pComboBox->SetBackground(pBoxColorBrush);
 
-		// Update Settings Color
-		pComboBox->SetBackground(pBrush);
+		SolidColorBrush* pLabelColorBrush = nullptr;
 
 		if (setting == SETTING_CHANGE_TEAM_0_COLOR)
 		{
-			// Update Settings Color
-			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
-			pSolidColorBrush->SetColor(teamColor);
-
+			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
 			m_pGameSettings->TeamColor0 = (uint8)indexSelected;
 		}
 		else
 		{
-			// Update Settings Color
-			SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
-			pSolidColorBrush->SetColor(teamColor);
-
+			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
 			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
 		}
 
-		// Update old messages text color
+		pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
+			
 		m_pChatPanel->GetChildren()->Clear();
 		ChatManager::RenotifyAllChatMessages();
 	}
