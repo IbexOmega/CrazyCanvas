@@ -38,7 +38,12 @@ namespace LambdaEngine
 		*/
 		virtual bool Init() = 0;
 
-		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) = 0;
+		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc)
+		{
+			UNREFERENCED_VARIABLE(pPreInitDesc);
+			return true;
+		}
+
 		virtual bool RenderGraphPostInit() { return true; };
 
 		/*
