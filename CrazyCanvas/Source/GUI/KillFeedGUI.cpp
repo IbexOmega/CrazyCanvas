@@ -1,20 +1,26 @@
 #include "GUI/KillFeedGUI.h"
 
 #include "NoesisPCH.h"
+#include "Log/Log.h"
 
 #include "Teams/TeamHelper.h"
 
 
-KillFeedGUI::KillFeedGUI()
+KillFeedGUI::KillFeedGUI() :
+	m_KillFeedTimers()
 {
 	Noesis::GUI::LoadComponent(this, "KillFeedGUI.xaml");
-
-	m_pKillFeedStoryBoard = FindResource<Noesis::Storyboard>("KillFeedStoryBoard");
-	m_pKillFeedStackPanel = FindName<Noesis::StackPanel>("KillFeedStackPanel");
 }
 
 KillFeedGUI::~KillFeedGUI()
 {
+}
+
+void KillFeedGUI::InitGUI()
+{
+	//m_pKillFeedStoryBoard = FindResource<Noesis::Storyboard>("KillFeedStoryBoard");
+	//m_pKillFeedDoubleAnimation = FindName<Noesis::DoubleAnimation>("KillFeedAnimation");
+	m_pKillFeedStackPanel = FindName<Noesis::StackPanel>("KILL_FEED_STACK_PANEL");
 }
 
 bool KillFeedGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -24,32 +30,30 @@ bool KillFeedGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEven
 
 void KillFeedGUI::UpdateFeedTimer(LambdaEngine::Timestamp delta)
 {
-	LambdaEngine::TArray<TextFeedTimer> defferedKillFeedTimersToRemove;
-
-	for (TextFeedTimer pair : m_KillFeedTimers)
+	if (!m_KillFeedTimers.IsEmpty())
 	{
-		pair.second -= float32(delta.AsSeconds());
+		for (int i = m_KillFeedTimers.GetSize() - 1; i >= 0; i--)
+		{
+			TextFeedTimer& pair = m_KillFeedTimers[i];
+			pair.second -= float32(delta.AsSeconds());
 
-		if (pair.second <= 0.0f)
-			defferedKillFeedTimersToRemove.EmplaceBack(pair);
-	}
-
-	for (TextFeedTimer pair : defferedKillFeedTimersToRemove)
-	{
-		RemoveFromKillFeed(pair.first);
+			if (pair.second <= 0.0f)
+			{
+				RemoveFromKillFeed(pair.first);
+				m_KillFeedTimers.Erase(m_KillFeedTimers.Begin() + i);
+			}
+		}
 	}
 }
 
 void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& feedMessage, uint8 killedPlayerTeamIndex)
 {
-	LambdaEngine::String name = "feed" + std::to_string(m_FeedIndex);
+	//LambdaEngine::String name = "FEED" + std::to_string(m_FeedIndex++);
 	
 	Noesis::Ptr<Noesis::TextBlock> feed = *new Noesis::TextBlock();
 	Noesis::Ptr<Noesis::SolidColorBrush> pBrush = *new Noesis::SolidColorBrush();
 	
-
-
-	uint8 colorIndex = killedPlayerTeamIndex == 0 ? 0 : 1;
+	uint8 colorIndex = killedPlayerTeamIndex == 0 ? 1 : 0; //will only work for 2 teams, Implement a smarter way to handle this later
 	glm::vec3 teamColor = TeamHelper::GetTeamColor(colorIndex);
 	Noesis::Color killFeedColor(teamColor.r, teamColor.g, teamColor.b);
 
@@ -57,17 +61,19 @@ void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& feedMessage, uint8 k
 
 	feed->SetText(feedMessage.c_str());
 	feed->SetFontSize(23.0f);
-	feed->SetName(name.c_str());
+	//feed->SetName(name.c_str());
 	feed->SetForeground(pBrush);
+
+	//FrameworkElement::GetView()->GetContent()->RegisterName(name.c_str(), feed);
 
 	TextFeedTimer pair = std::make_pair(feed, 8.0f);
 
 	m_KillFeedTimers.EmplaceBack(pair);
-
 	m_pKillFeedStackPanel->GetChildren()->Add(feed);
-	m_pKillFeedStoryBoard->SetTargetName(m_pKillFeedStoryBoard, name.c_str());
 
-	m_pKillFeedStoryBoard->Begin();
+	/*m_pKillFeedStoryBoard->SetTargetName(m_pKillFeedDoubleAnimation, name.c_str());
+
+	m_pKillFeedStoryBoard->Begin();*/
 }
 
 void KillFeedGUI::RemoveFromKillFeed(Noesis::TextBlock* textblock)
