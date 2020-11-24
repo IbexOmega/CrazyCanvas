@@ -28,7 +28,7 @@ vec3 Sample_w_h_GGX(vec3 w_os, float alphaSqrd, vec2 u)
     float sinTheta      = sqrt(1.0f - cosThetaSqrd);
     vec3 w_hs           = SphericalToDirection(sinTheta, cosTheta, phi);
 
-    return w_os * FlipIfNotSameHemisphere(w_hs, w_os);
+    return w_hs * FlipIfNotSameHemisphere(w_hs, w_os);
 }
 
 SBxDFEval Eval_f_Specular(float n_dot_i, float n_dot_h, float o_dot_h, float n_dot_o, vec3 albedo, float roughness, float alphaSqrd, vec3 F)
@@ -92,7 +92,7 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
 
         //Sample Microfacet Normal using GGX Distribution
         vec3 w_hs = Sample_w_h_GGX(w_os, alphaSqrd, u);
-        vec3 w_is = -reflect(w_os, w_hs);
+        vec3 w_is = reflect(-w_os, w_hs);
 
         reflectionDesc.w_iw = surfaceToWorld * w_is;
 

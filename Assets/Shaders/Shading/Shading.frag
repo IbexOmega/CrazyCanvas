@@ -42,6 +42,8 @@ void main()
 	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 	vec3 colorHDR;
 
+	vec3 N 					= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
+
 	if (aoRoughMetalValid.a < 1.0f || aoRoughMetalValid.g == 0.0f)
 	{
 		float luminance = CalculateLuminance(albedo);
@@ -63,7 +65,7 @@ void main()
 		float depth 	= texture(u_GBufferDepthStencil, in_TexCoord).r;
 
 		SPositions positions	= CalculatePositionsFromDepth(in_TexCoord, depth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
-		vec3 N 					= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
+		
 		vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - positions.WorldPos;
 		float viewDistance		= length(viewVector);
 		vec3 V 					= normalize(viewVector);

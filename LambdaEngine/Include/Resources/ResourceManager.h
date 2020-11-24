@@ -15,6 +15,8 @@ namespace LambdaEngine
 	class GraphicsDevice;
 	class IAudioDevice;
 
+	constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
+
 	//Meshes
 
 	//Meshes
@@ -27,8 +29,9 @@ namespace LambdaEngine
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_COLOR_MAP	= GUID_MATERIAL_DEFAULT + 1;
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_NORMAL_MAP	= GUID_TEXTURE_DEFAULT_COLOR_MAP + 1;
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_MASK_MAP		= GUID_TEXTURE_DEFAULT_NORMAL_MAP + 1;
+	constexpr GUID_Lambda GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP	= GUID_TEXTURE_DEFAULT_MASK_MAP + 1;
 
-	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_DEFAULT_MASK_MAP + 1;
+	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP + 1;
 
 	struct SceneLoadDesc
 	{

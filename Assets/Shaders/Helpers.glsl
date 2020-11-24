@@ -42,6 +42,11 @@ vec3 UnpackNormal(vec3 normal)
 	return normalize((normal * 2.0f) - 1.0f);
 }
 
+vec3 F0(vec3 albedo, float metallic)
+{
+	return mix(vec3(0.04f), albedo, metallic);
+}
+
 /*
 	Schlick Fresnel function
 */

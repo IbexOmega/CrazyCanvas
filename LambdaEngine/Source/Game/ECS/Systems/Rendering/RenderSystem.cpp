@@ -463,6 +463,22 @@ namespace LambdaEngine
 			}
 		}
 
+		//Update RenderGraph with Blue Noise LUTs
+		{
+			Texture* pBlueNoiseTexture			= ResourceManager::GetTexture(GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP);
+			TextureView* pBlueNoiseTextureView	= ResourceManager::GetTextureView(GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP);
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName										= "BLUE_NOISE_LUTS";
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures					= &pBlueNoiseTexture;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews				= &pBlueNoiseTextureView;
+			resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews	= nullptr;
+			resourceUpdateDesc.ExternalTextureUpdate.TextureCount				= 1;
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers					= Sampler::GetNearestSamplerToBind();
+			resourceUpdateDesc.ExternalTextureUpdate.SamplerCount				= 1;
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
 		UpdateBuffers();
 		UpdateRenderGraph();
 

@@ -60,15 +60,6 @@ layout(binding = 12,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_
 layout(binding = 13,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
 layout(binding = 14,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
 layout(binding = 15,	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
+layout(binding = 16,	set = TEXTURE_SET_INDEX) uniform sampler2DArray u_BlueNoiseLUTs;
 
 #include "../MeshPaintHelper.glsl"
-
-SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition)
-{
-	vec3 origDirection = normalize(hitPosition - cameraPosition);
-
-	SRayDirections rayDirections;
-	rayDirections.ReflDir = reflect(origDirection, normal);
-	rayDirections.ViewDir = -origDirection;
-	return rayDirections;
-}

@@ -2406,6 +2406,48 @@ namespace LambdaEngine
 			s_MaterialGUIDsToNames[GUID_MATERIAL_DEFAULT]	= "Default Material";
 			s_Materials[GUID_MATERIAL_DEFAULT] = pDefaultMaterial;
 		}
+		
+		//Blue Noise
+		{
+			String blueNoiseResourceName = "Blue Noise Array";
+			String pBlueNoiseLUTFileNames[NUM_BLUE_NOISE_LUTS];
+
+			for (uint32 i = 0; i < NUM_BLUE_NOISE_LUTS; i++)
+			{
+				char str[5];
+				snprintf(str, 5, "%04d", i);
+				pBlueNoiseLUTFileNames[i] = "LUTs/BlueNoise/256_256/HDR_RGBA_" + std::string(str) + ".png";
+			}
+
+			Texture* pBlueNoiseTextureArray = ResourceLoader::LoadTextureArrayFromFile(
+				blueNoiseResourceName,
+				TEXTURE_DIR,
+				pBlueNoiseLUTFileNames,
+				NUM_BLUE_NOISE_LUTS,
+				EFormat::FORMAT_R16_UNORM,
+				false,
+				false);
+
+			TextureDesc textureDesc = pBlueNoiseTextureArray->GetDesc();
+
+			TextureViewDesc textureViewDesc = {};
+			textureViewDesc.DebugName		= blueNoiseResourceName + " Texture View";
+			textureViewDesc.pTexture		= pBlueNoiseTextureArray;
+			textureViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+			textureViewDesc.Format			= textureDesc.Format;
+			textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D_ARRAY;
+			textureViewDesc.MiplevelCount	= textureDesc.Miplevels;
+			textureViewDesc.ArrayCount		= textureDesc.ArrayCount;
+			textureViewDesc.Miplevel		= 0;
+			textureViewDesc.ArrayIndex		= 0;
+
+			TextureView* pBlueNoiseTextureViewArray = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+
+			s_Textures[GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP]				= pBlueNoiseTextureArray;
+			s_TextureViews[GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP]			= pBlueNoiseTextureViewArray;
+			s_TextureGUIDsToNames[GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP]	= blueNoiseResourceName;
+			s_TextureNamesToGUIDs[blueNoiseResourceName]				= GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP;
+		}
 	}
 
 	void ResourceManager::ReleaseMaterialCreation()
