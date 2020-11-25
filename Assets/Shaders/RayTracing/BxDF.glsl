@@ -167,7 +167,7 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
                 reflectionDesc.f    = lambertBRDFEval.f + specularBRDFEval.f;
             }
 
-            /* Detta är fan det smartaste jag gjort.
+            /*
             * Dielectrics should have a possibility of sampling the diffuse BRDF. 
             * However, we want to avoid this since it creates lots of noise. 
             * What we do instead is that we pretend that we send a ray in the same direction as sampling of the Specular BRDF gave.
@@ -201,7 +201,8 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
                 vec3 f      = (lambertBRDFEval.f + specularBRDFEval.f);
                 float PDF   = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
 
-                reflectionDesc.f    = (f * reflectionDesc.PDF) + (reflectionDesc.f * PDF);
+                //We're taking 2 samples so we need to divide by 2 (multiply by 0.5)
+                reflectionDesc.f    = ((f * reflectionDesc.PDF) + (reflectionDesc.f * PDF)) * 0.5f;
                 reflectionDesc.PDF  = PDF * reflectionDesc.PDF;
             }
         }

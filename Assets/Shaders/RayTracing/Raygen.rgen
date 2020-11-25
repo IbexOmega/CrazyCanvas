@@ -153,7 +153,10 @@ void main()
 	float valid             = aoRoughMetalValid.a;
 
 	if (valid < 1.0f || roughness > REFLECTION_REJECT_THRESHOLD)
+	{
+		imageStore(u_BRDF_PDF, pixelCoords, vec4(0.0f));
 		return;
+	}
 
 	//Setup convenience variables
 	SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
@@ -204,7 +207,7 @@ void main()
 									GenerateSample(2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
 									GenerateSample(3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize)); 
 
-	SReflectionDesc reflectionDesc = Sample_f(
+	SReflectionDesc reflectionDescStart = Sample_f(
 		w_ow_start, 
 		s_PrimaryPayload.Normal, 
 		n_dot_o_start, 
@@ -214,21 +217,25 @@ void main()
 		F0_start, 
 		u_Surface_BRDF);
 
-	reflDir = reflectionDesc.w_iw;
+	reflDir = reflectionDescStart.w_iw;
 
 	//Initialize Glossy Variables
-	throughput = reflectionDesc.f * n_dot_o_start / reflectionDesc.PDF;
-	vec3 l_o = ShadePoint(
+	throughput = reflectionDescStart.f * n_dot_o_start / reflectionDescStart.PDF;
+	vec3 l_o = vec3(0.0f);
+	if (s_PrimaryPayload.Roughness > 0.0f)
+	{
+		l_o += ShadePoint(
 			s_PrimaryPayload.HitPosition,
 			s_PrimaryPayload.Normal,
 			-reflDir,
 			n_dot_o_start,
-			s_PrimaryPayload.Distance, 
-			s_PrimaryPayload.Albedo, 
-			s_PrimaryPayload.AO, 
-			s_PrimaryPayload.Roughness, 
+			s_PrimaryPayload.Distance,
+			s_PrimaryPayload.Albedo,
+			s_PrimaryPayload.AO,
+			s_PrimaryPayload.Roughness,
 			s_PrimaryPayload.Metallic,
 			F0_start);
+	}
 #endif
 
 	bool shadeOutput     = false;
@@ -295,21 +302,24 @@ void main()
 
 		reflDir = reflectionDesc.w_iw;
 
-		//Upddate l_o
-		l_o = throughput * ShadePoint(
-			s_PrimaryPayload.HitPosition,
-			s_PrimaryPayload.Normal,
-			-reflDir,
-			n_dot_o,
-			s_PrimaryPayload.Distance, 
-			s_PrimaryPayload.Albedo, 
-			s_PrimaryPayload.AO, 
-			s_PrimaryPayload.Roughness, 
-			s_PrimaryPayload.Metallic,
-			F0);
+		//Update l_o
+		if (s_PrimaryPayload.Roughness > 0.0f)
+		{
+			l_o += throughput * ShadePoint(
+				s_PrimaryPayload.HitPosition,
+				s_PrimaryPayload.Normal,
+				-reflDir,
+				n_dot_o,
+				s_PrimaryPayload.Distance, 
+				s_PrimaryPayload.Albedo, 
+				s_PrimaryPayload.AO, 
+				s_PrimaryPayload.Roughness, 
+				s_PrimaryPayload.Metallic,
+				F0);
 
-		if (rejectNextReflection)
-			break;
+			if (rejectNextReflection)
+				break;
+		}
 
 		//Update Throughput
 		throughput *= reflectionDesc.f * n_dot_o / reflectionDesc.PDF;
@@ -355,4 +365,5 @@ void main()
 	vec3 finalHDR = mix(prevColorHDR, colorHDR, pow(1.0f - roughness, 16.0f));
 
 	imageStore(u_Reflections, pixelCoords, vec4(finalHDR, 1.0f));
+	imageStore(u_BRDF_PDF, pixelCoords, vec4(reflectionDescStart.f, reflectionDescStart.PDF));
 }

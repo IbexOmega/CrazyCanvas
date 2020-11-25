@@ -1,0 +1,51 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+
+#define NO_BUFFERS
+
+#include "../Defines.glsl"
+
+layout (local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+layout(binding = 0,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D u_Reflections;
+layout(binding = 1,	set = TEXTURE_SET_INDEX) uniform sampler2D u_BRDF_PDF;
+
+void main()
+{
+    ivec2 BLUR_IMAGE_SIZE = imageSize(u_Reflections);
+    int BLUR_IMAGE_TOTAL_NUM_PIXELS = BLUR_IMAGE_SIZE.x * BLUR_IMAGE_SIZE.y;
+
+    if (gl_GlobalInvocationID.x >= BLUR_IMAGE_TOTAL_NUM_PIXELS) 
+        return;
+
+    ivec2 p = ivec2(gl_GlobalInvocationID.x % BLUR_IMAGE_SIZE.x, gl_GlobalInvocationID.x / BLUR_IMAGE_SIZE.x);
+
+    vec3 finalColor = vec3(0.0f);
+    vec3 weightSum = vec3(0.0f);
+
+    for (int y = -2; y <= 2; y++)
+    {
+        for (int x = -2; x <= 2; x++)
+        {
+            ivec2 pp = ivec2(p.x + x, p.y + y);
+
+            if (pp.x >= 0 && pp.x < BLUR_IMAGE_SIZE.x && pp.y >= 0 && pp.y < BLUR_IMAGE_SIZE.y)
+            {
+                vec4 brdf = texelFetch(u_BRDF_PDF, pp, 0);
+
+                if (brdf.a > 0.0f)
+                {
+                    vec3 weight = brdf.rgb / brdf.a;
+                    finalColor += imageLoad(u_Reflections, pp).rgb * weight;
+                    weightSum += weight;
+                }
+            }
+        }
+    }
+
+    if (weightSum.x > 0.0f && weightSum.y > 0.0f && weightSum.z > 0.0f)
+    {
+        finalColor /= weightSum;
+        imageStore(u_Reflections, p, vec4(finalColor, 1.0f));
+    }
+}
