@@ -68,13 +68,36 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
 
+	const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
+
 	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
 	{
-		ClientSystem::Init(pGameName);
+		ClientSystemDesc desc = {};
+		desc.Name					= pGameName;
+		desc.PoolSize				= 8196;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 3.0f;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(5);
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+
+		ClientSystem::Init(desc);
 	}
 	else if (stateStr == "server")
 	{
-		ServerSystem::Init(pGameName);
+		ServerSystemDesc desc = {};
+		desc.Name					= pGameName;
+		desc.PoolSize				= 8196;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 3.0f;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(5);
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+		desc.MaxClients				= 10;
+
+		ServerSystem::Init(desc);
 	}
 
 	if (!ResourceCatalog::Init())

@@ -5,10 +5,15 @@
 	friend class PacketType; \
 	private: \
 		inline static uint16 s_Type = 0; \
+		inline static const char* s_Name = #Packet; \
 	public: \
-		FORCEINLINE static uint16 Type() \
+		FORCEINLINE static uint16 GetType() \
 		{ \
 			return s_Type; \
+		} \
+		FORCEINLINE static const char* GetName() \
+		{ \
+			return s_Name; \
 		} \
 
 #pragma pack(push, 1)

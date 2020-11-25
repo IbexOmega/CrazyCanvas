@@ -25,8 +25,8 @@ SpectateCameraSystem::~SpectateCameraSystem()
 
 void SpectateCameraSystem::Init()
 {
-	SystemRegistration systemReg = {};
-	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
+	EntitySubscriberRegistration entityReg = {};
+	entityReg.EntitySubscriptionRegistrations =
 	{
 		{
 			.pSubscriber = &m_CameraEntities,
@@ -47,24 +47,12 @@ void SpectateCameraSystem::Init()
 		}
 	};
 
-	systemReg.Phase = 1;
-
-	RegisterSystem(TYPE_NAME(HUDSystem), systemReg);
+	SubscribeToEntities(entityReg);
 
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &SpectateCameraSystem::OnMouseButtonClicked);
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &SpectateCameraSystem::OnPlayerAliveUpdated);
 
 	m_LocalTeamIndex = PlayerManagerClient::GetPlayerLocal()->GetTeam();
-}
-
-void SpectateCameraSystem::Tick(LambdaEngine::Timestamp deltaTime)
-{
-	UNREFERENCED_VARIABLE(deltaTime);
-}
-
-void SpectateCameraSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
-{
-	UNREFERENCED_VARIABLE(deltaTime);
 }
 
 bool SpectateCameraSystem::OnMouseButtonClicked(const MouseButtonClickedEvent& event)
@@ -88,24 +76,38 @@ bool SpectateCameraSystem::OnMouseButtonClicked(const MouseButtonClickedEvent& e
 
 bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
-	const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
+	using namespace LambdaEngine;
 
-	if (pLocalPlayer == event.pPlayer)
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Job job;
+	job.Components =
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-		ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
-		ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
+		{ RW, CameraComponent::Type() },
+		{ RW, OffsetComponent::Type() },
+		{ RW, ParentComponent::Type() }
+	};
 
-		if (!pLocalPlayer->IsDead())
+	job.Function = [this, event]()
+	{
+		const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
+
+		if (pLocalPlayer == event.pPlayer)
 		{
-			for (Entity cameraEntity : m_CameraEntities)
-			{
-				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
-				OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
+			ECSCore* pECS = ECSCore::GetInstance();
+			ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+			ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
 
-				cameraOffsetComponent.Offset *= 0.5; // reset camera offset
-				parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity(); // reset camera parent
-			}
+			if (!pLocalPlayer->IsDead())
+			{
+				for (Entity cameraEntity : m_CameraEntities)
+				{
+					ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
+
+					cameraOffsetComponent.Offset *= 0.5f; // reset camera offset
+					parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity(); // reset camera parent
+				}
 
 			m_SpectatorIndex = 0;
 			m_InSpectateView = false;
@@ -121,9 +123,6 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 				cameraOffsetComponent.Offset *= 2;
 				//parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity();
 			}
-
-			SpectatePlayer();
-			m_InSpectateView = true;
 		}
 	}
 	else if (m_pSpectatedPlayer == event.pPlayer)

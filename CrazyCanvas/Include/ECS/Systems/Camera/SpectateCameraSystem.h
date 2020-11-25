@@ -9,21 +9,16 @@
 
 
 /*
-* CameraSystem
+* SpectateCameraSystem
 */
 
-class Player;
-
-class SpectateCameraSystem : public LambdaEngine::System
+class SpectateCameraSystem : public LambdaEngine::EntitySubscriber
 {
 public:
 	SpectateCameraSystem() = default;
 	~SpectateCameraSystem();
 	
 	void Init();
-
-	void Tick(LambdaEngine::Timestamp deltaTime);
-	void FixedTick(LambdaEngine::Timestamp deltaTime);
 
 	bool OnMouseButtonClicked(const LambdaEngine::MouseButtonClickedEvent& event);
 	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);

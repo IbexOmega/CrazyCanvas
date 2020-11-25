@@ -43,6 +43,8 @@
 
 using namespace LambdaEngine;
 
+EServerState ServerState::s_State = SERVER_STATE_LOBBY;
+
 ServerState::ServerState(const std::string& clientHostID) :
 	m_MultiplayerServer(),
 	m_ClientHostID(0),
@@ -70,6 +72,9 @@ ServerState::~ServerState()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
 	EventQueue::UnregisterEventHandler<PlayerJoinedEvent>(this, &ServerState::OnPlayerJoinedEvent);
 	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &ServerState::OnPlayerStateUpdatedEvent);
+	EventQueue::UnregisterEventHandler<ServerStateEvent>(this, &ServerState::OnServerStateEvent);
+	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &ServerState::OnPlayerLeftEvent);
+	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &ServerState::OnGameOverEvent);
 }
 
 void ServerState::Init()
@@ -79,6 +84,9 @@ void ServerState::Init()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
 	EventQueue::RegisterEventHandler<PlayerJoinedEvent>(this, &ServerState::OnPlayerJoinedEvent);
 	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &ServerState::OnPlayerStateUpdatedEvent);
+	EventQueue::RegisterEventHandler<ServerStateEvent>(this, &ServerState::OnServerStateEvent);
+	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &ServerState::OnPlayerLeftEvent);
+	EventQueue::RegisterEventHandler<GameOverEvent>(this, &ServerState::OnGameOverEvent);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
@@ -124,6 +132,11 @@ void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 
+EServerState ServerState::GetState()
+{
+	return s_State;
+}
+
 bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& event)
 {	
 	const PacketGameSettings& packet = event.Packet;
@@ -165,15 +178,29 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 	using namespace LambdaEngine;
 
 	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+	const Player* pPlayer = event.pPlayer;
+	EGameState gameState = pPlayer->GetState();
 
-	EGameState gameState = event.pPlayer->GetState();
-
-	if (gameState == GAME_STATE_LOADING)
+	if (gameState == GAME_STATE_SETUP)
+	{
+		if (pPlayer->IsHost())
+		{
+			SetState(SERVER_STATE_LOADING);
+		}
+	}
+	else if (gameState == GAME_STATE_LOADING)
 	{
 		for (auto& pair : players)
 		{
 			if (pair.second.GetState() != gameState)
 				return false;
+		}
+
+		//Reset stats
+		for (auto& pair : players)
+		{
+			const Player* pP = &pair.second;
+			PlayerManagerServer::SetPlayerStats(pP, pP->GetTeam(), 0, 0, 0, 0);
 		}
 
 		// Load Match
@@ -198,8 +225,58 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 				return false;
 		}
 
+		SetState(SERVER_STATE_PLAYING);
+
 		Match::StartMatch();
 	}
 
 	return true;
+}
+
+bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
+{
+	EServerState state = event.State;
+	if (state == SERVER_STATE_LOBBY)
+	{
+		Match::ResetMatch();
+
+		const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+		for (auto& pair : players)
+		{
+			const Player* pPlayer = &pair.second;
+			PlayerManagerServer::SetPlayerReady(pPlayer, false);
+			PlayerManagerServer::SetPlayerState(pPlayer, EGameState::GAME_STATE_LOBBY);
+		}
+
+		ServerHelper::SetIgnoreNewClients(false);
+	}
+	else if (state == SERVER_STATE_LOADING)
+	{
+		ServerHelper::SetIgnoreNewClients(true);
+	}
+	return true;
+}
+
+bool ServerState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	if (PlayerManagerServer::GetPlayerCount() == 1)
+	{
+		SetState(SERVER_STATE_LOBBY);
+	}
+	return false;
+}
+
+bool ServerState::OnGameOverEvent(const GameOverEvent& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	SetState(SERVER_STATE_LOBBY);
+	return false;
+}
+
+void ServerState::SetState(EServerState state)
+{
+	s_State = state;
+	ServerStateEvent event(s_State);
+	EventQueue::SendEventImmediate(event);
 }
