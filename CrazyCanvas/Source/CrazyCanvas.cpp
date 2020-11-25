@@ -13,6 +13,7 @@
 #include "Rendering/EntityMaskManager.h"
 
 #include "RenderStages/PlayerRenderer.h"
+#include "RenderStages/MeshPaintUpdater.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -95,6 +96,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	PacketTranscoderSystem::GetInstance().Init();
 
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
+	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW MeshPaintUpdater());
 	RenderSystem::GetInstance().InitRenderGraphs();
 
 	LoadRendererResources();

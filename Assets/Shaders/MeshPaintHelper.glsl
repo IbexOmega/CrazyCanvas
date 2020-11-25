@@ -50,7 +50,7 @@ SPaintSample SamplePaint(in vec3 position, in uint packedPaintInfo, in float pai
 	return paintSample;
 }
 
-SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangent, in vec3 bitangent, in vec2 texCoord, in uint packedPaintInfo, in float dist)
+SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangent, in vec3 bitangent, in uint packedPaintInfo, in float dist)
 {
 	float f = 10.f;
 	float a = 0.4f;

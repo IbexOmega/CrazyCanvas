@@ -1886,11 +1886,11 @@ namespace LambdaEngine
 							return false;
 						}
 
-						if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS || pRenderStageDesc->Graphics.DrawType != ERenderStageDrawType::SCENE_INSTANCES)
+						/*if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS || pRenderStageDesc->Graphics.DrawType != ERenderStageDrawType::SCENE_INSTANCES)
 						{
 							LOG_ERROR("[RenderGraph]: Unfortunately, only GRAPHICS Render Stages with Draw Type SCENE_INSTANCES is allowed to have a resource of binding type DRAW_BUFFERS");
 							return false;
-						}
+						}*/
 
 						DrawArgMaskDesc maskDesc = {};
 						maskDesc.IncludeMask = pResourceStateDesc->DrawArgsIncludeMask;

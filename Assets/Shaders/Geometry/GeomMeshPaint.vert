@@ -8,15 +8,12 @@
 #include "../MeshPaintFunc.glsl"
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer					{ SPerFrameBuffer val; }	u_PerFrameBuffer;
-layout(binding = 3, set = BUFFER_SET_INDEX) uniform HitPointsBuffer					{ SUnwrapData val[10]; }	u_HitPointsBuffer;
 
 layout(binding = 0, set = DRAW_SET_INDEX) restrict buffer Vertices					{ SVertex val[]; }			b_Vertices;
 layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances		{ SInstance val[]; }		b_Instances;
 layout(binding = 2, set = DRAW_SET_INDEX) restrict readonly buffer Meshlets			{ SMeshlet Val[]; } 		b_Meshlets;
 layout(binding = 3, set = DRAW_SET_INDEX) restrict readonly buffer UniqueIndices	{ uint Val[]; } 			b_UniqueIndices;
 layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndices	{ uint Val[]; } 			b_PrimitiveIndices;
-
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_BrushMaskTexture;
 
 layout(location = 0) out flat uint out_MaterialSlot;
 layout(location = 1) out vec3 out_WorldPosition;
@@ -52,95 +49,6 @@ void main()
 	vec3 tangent			= normalize((normalTransform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
-	uint instanceTeam = instance.TeamIndex;
-	float paintDist = vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
-
-	uint paintCount = uint(u_HitPointsBuffer.val[0].TargetPosition.w);
-	for (uint hitPointIndex = 0; hitPointIndex < paintCount; hitPointIndex++)
-	{
-		SUnwrapData unwrapData = u_HitPointsBuffer.val[hitPointIndex];
-
-		const vec3 GLOBAL_UP	= vec3(0.0f, 1.0f, 0.0f);
-		const float BRUSH_SIZE	= 1.0f;
-		const float PAINT_DEPTH = BRUSH_SIZE * 2.0f;
-
-		vec3 normal 			= normalize(normal);
-		vec3 targetPosition		= unwrapData.TargetPosition.xyz;
-		vec3 direction			= normalize(unwrapData.TargetDirectionXYZAngleW.xyz);
-
-		vec3 targetPosToWorldPos = worldPosition.xyz-targetPosition;
-
-		uint teamMode = unwrapData.TeamMode;
-		uint paintMode = unwrapData.PaintMode;
-		uint remoteMode = unwrapData.RemoteMode;
-
-		float valid = step(0.0f, dot(normal, -direction)); // Checks if looking from infront, else 0
-		float len = abs(dot(targetPosToWorldPos, direction));
-		valid *= 1.0f - step(PAINT_DEPTH, len);
-		vec3 projectedPosition = targetPosition + len * direction;
-
-		// Calculate uv-coordinates for a square encapsulating the sphere.
-		vec3 up = GLOBAL_UP;
-		if(abs(abs(dot(direction, up)) - 1.0f) < EPSILON)
-			up = vec3(0.0f, 0.0f, 1.0f);
-		vec3 right	= normalize(cross(direction, up));
-		up			= normalize(cross(right, direction));
-
-		float u		= (dot(-targetPosToWorldPos, right) / BRUSH_SIZE * 1.5f) * 0.5f + 0.5f;
-		float v		= (dot(-targetPosToWorldPos, up) / BRUSH_SIZE * 1.5f) * 0.5f + 0.5f;
-		vec2 maskUV = vec2(u, v);
-		maskUV = rotate(maskUV-0.5f, unwrapData.TargetDirectionXYZAngleW.a)+0.5f;
-
-		// Do not paint if they are in the same team. But they can remove paint.
-		float isRemove = 1.f - step(0.5f, float(paintMode));
-		float isSameTeam = 1.f - step(0.5f, abs(float(instanceTeam) - float(teamMode)));
-		valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
-
-		// Apply brush mask
-		vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
-		float dist = 1.f;
-
-		if(brushMask.a > 0.001f && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
-		{
-			dist = 0.f;
-
-			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in MeshPaintTypes.h for enum)
-			uint teamSC = floatBitsToUint(vertex.Position.w);
-			uint client = (teamSC >> 4) & 0x0F;
-			uint server = teamSC & 0x0F;
-
-			// Client
-			if (remoteMode == 1)
-			{
-				client = (teamMode * paintMode) & 0x0F;
-			}
-			// Server
-			else if (remoteMode == 2)
-			{
-				server = (teamMode * paintMode) & 0x0F;
-			}
-
-			teamSC = (client << 4) | server;
-			vertex.Position.w = uintBitsToFloat(teamSC);
-
-			if(paintMode == 0)
-			{
-				dist = 1.f;
-				vertex.Normal.w = dist;
-				paintDist = dist;
-			}
-		}
-
-		vertex.Normal.w = min(vertex.Normal.w, dist);
-		paintDist = min(paintDist, vertex.Normal.w);
-	}
-
-	//vertex.Position.w = uintBitsToFloat(1);
-	//vertex.Normal.w = 0.f;
-
-	// Update vertex
-	b_Vertices.val[gl_VertexIndex] = vertex;
-
 	out_MaterialSlot		= instance.MaterialSlot;
 	out_WorldPosition		= worldPosition.xyz;
 	out_Normal				= normal;
@@ -150,7 +58,7 @@ void main()
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
-	out_PaintDist 			= paintDist;
+	out_PaintDist 			= vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
 
 	gl_Position = out_ClipPosition;
 }

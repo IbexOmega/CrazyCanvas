@@ -91,7 +91,7 @@ SRayHitDescription CalculateHitData()
 void main() 
 {
 	SRayHitDescription hitDescription = CalculateHitData();
-	SPaintDescription paintDescription = InterpolatePaint(hitDescription.TBN, hitDescription.Position, hitDescription.Tangent, hitDescription.Bitangent, hitDescription.TexCoord, hitDescription.PackedPaintInfo, hitDescription.PaintDist);
+	SPaintDescription paintDescription = InterpolatePaint(hitDescription.TBN, hitDescription.Position, hitDescription.Tangent, hitDescription.Bitangent, hitDescription.PackedPaintInfo, hitDescription.PaintDist);
 	
 	SMaterialParameters materialParameters = u_MaterialParameters.val[hitDescription.MaterialIndex];
 

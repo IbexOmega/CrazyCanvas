@@ -50,7 +50,7 @@ void main()
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 	uint packedPaintInfo = Vec4ToPackedPaintInfo(in_PaintInfo4);
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, packedPaintInfo, in_PaintDist);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, in_PaintDist);
 
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));

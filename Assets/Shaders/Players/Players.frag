@@ -68,8 +68,8 @@ void main()
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 	uint packedPaintInfo = Vec4ToPackedPaintInfo(in_PaintInfo4);
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, packedPaintInfo, in_PaintDist);
-	shadingNormal = mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, in_PaintDist);
+	shadingNormal = mix(shadingNormal, normalize(paintDescription.Normal + shadingNormal*0.2f), paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
