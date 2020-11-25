@@ -13,6 +13,8 @@
 
 #include "Match/Match.h"
 
+#include "Resources/ResourceCatalog.h"
+
 /*
 * WeaponSystemClients
 */
@@ -136,8 +138,20 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 	WeaponSystem::Fire(weaponEntity, weaponComponent, ammoType, position, velocity, playerTeam, angle);
 
 	// Play gun fire and spawn particles
-	ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
-	pSound->PlayOnceAt(position, velocity, 0.2f, 1.0f);
+	ECSCore* pECS = ECSCore::GetInstance();
+	const auto* pWeaponLocalComponents = pECS->GetComponentArray<WeaponLocalComponent>();
+
+	// Play 2D sound if local player shooting else play 3D sound
+	if (pWeaponLocalComponents != nullptr && pWeaponLocalComponents->HasComponent(weaponEntity))
+	{
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_2D_GUID);
+		pSound->PlayOnce(0.5f);
+	}
+	else
+	{
+		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_3D_GUID);
+		pSound->PlayOnceAt(position, velocity, 0.25f, 1.0f);
+	}
 }
 
 bool WeaponSystemClient::InitInternal()
@@ -180,19 +194,6 @@ bool WeaponSystemClient::InitInternal()
 		);
 
 		RegisterSystem(TYPE_NAME(WeaponSystemClient), systemReg);
-	}
-
-	// Create soundeffects
-	m_GunFireGUID	= ResourceManager::LoadSoundEffect3DFromFile("gun.wav");
-	if (m_GunFireGUID == GUID_NONE)
-	{
-		return false;
-	}
-
-	m_OutOfAmmoGUID = ResourceManager::LoadSoundEffect2DFromFile("out_of_ammo.wav");
-	if (m_OutOfAmmoGUID == GUID_NONE)
-	{
-		return false;
 	}
 
 	return true;
@@ -245,7 +246,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 	else
 	{
 		// Play out of ammo
-		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_OUTOFAMMO_2D_GUID);
 		pSound->PlayOnce(1.0f, 1.0f);
 
 		return false;

@@ -6,6 +6,8 @@
 
 #include "Application/API/Events/WindowEvents.h"
 
+#include "Resources/ResourceCatalog.h"
+
 struct ProjectileHitEvent;
 
 namespace LambdaEngine
@@ -29,9 +31,13 @@ private:
 	bool OnWindowFocusChanged(const LambdaEngine::WindowFocusChangedEvent& event);
 
 private:
-	LambdaEngine::ISoundEffect2D* m_pEnemyHitSound		= nullptr;
+	// 3D sounds
+	LambdaEngine::ISoundEffect3D* m_pEnemyHitSound		= nullptr;
+	LambdaEngine::ISoundEffect3D* m_pPlayerKilledSound	= nullptr;
+	
+	// 2D sounds
 	LambdaEngine::ISoundEffect2D* m_pHitSound			= nullptr;
-	LambdaEngine::ISoundEffect2D* m_pPlayerKilledSound	= nullptr;
 	LambdaEngine::ISoundEffect2D* m_pConnectSound		= nullptr;
+	
 	bool m_HasFocus = false;
 };
