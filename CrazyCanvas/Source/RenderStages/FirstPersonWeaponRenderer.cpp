@@ -943,7 +943,7 @@ namespace LambdaEngine
 		depthAttachmentDesc.StoreOp = EStoreOp::STORE_OP_STORE;
 		depthAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 		depthAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
-		depthAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
+		depthAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_DONT_CARE;
 		depthAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_DEPTH_STENCIL_ATTACHMENT;
 
 		RenderPassSubpassDesc subpassDesc = {};
