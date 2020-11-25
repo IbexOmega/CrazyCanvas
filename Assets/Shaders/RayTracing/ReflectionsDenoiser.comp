@@ -18,14 +18,14 @@ layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferDepthSte
 
 float ValidSample(ivec2 iImageDim, ivec2 reprojCoord, float depth, float reprojDepth, vec3 normal, vec3 reprojNormal)
 {
-    bool result = false;
+    bool result = true;
 
     // check whether reprojected pixel is inside of the screen
-    result = result || any(lessThan(reprojCoord, ivec2(0, 0))) || any(greaterThan(reprojCoord, iImageDim - ivec2(1, 1)));
+    result = result && (!any(lessThan(reprojCoord, ivec2(0, 0))) && !any(greaterThan(reprojCoord, iImageDim - ivec2(1, 1))));
     // check if deviation of depths is acceptable
-    result = result || abs(depth - reprojDepth) > 0.0f;
+    //result = result && !(abs(depth - reprojDepth) > 0.01f);
     // check normals for compatibility
-    result = result || distance(normal, reprojNormal) > 0.0f;
+    result = result && !(distance(normal, reprojNormal) > 0.01f);
 
     return float(result);
 }
