@@ -109,26 +109,30 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 					parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity(); // reset camera parent
 				}
 
-			m_SpectatorIndex = 0;
-			m_InSpectateView = false;
-			m_pSpectatedPlayer = nullptr;
-		}
-		else
-		{
-			for (Entity cameraEntity : m_CameraEntities)
+				m_SpectatorIndex = 0;
+				m_InSpectateView = false;
+				m_pSpectatedPlayer = nullptr;
+			}
+			else
 			{
-				//ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
-				OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
+				for (Entity cameraEntity : m_CameraEntities)
+				{
+					//ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
 
-				cameraOffsetComponent.Offset *= 2;
-				//parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity();
+					cameraOffsetComponent.Offset *= 2;
+					//parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity();
+					SpectatePlayer();
+				}
 			}
 		}
-	}
-	else if (m_pSpectatedPlayer == event.pPlayer)
-	{
-		SpectatePlayer();
-	}
+		else if (m_pSpectatedPlayer == event.pPlayer)
+		{
+			SpectatePlayer();
+		}
+	};
+
+	pECS->ScheduleJobASAP(job);
 
 	return false;
 }
