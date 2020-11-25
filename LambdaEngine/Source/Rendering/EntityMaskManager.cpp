@@ -17,9 +17,6 @@ namespace LambdaEngine
 			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 1 }, false,	0x2);	// Bit = 0x2
 			BindTypeToExtensionDesc(PlayerLocalComponent::Type(),	{ 0 }, true,	0x4);	// Bit = 0x4
 			BindTypeToExtensionDesc(PlayerRelatedComponent::Type(),	{ 0 }, false,	0x8);	// Bit = 0x8
-
-			// Used to calculate health on the server for players only
-			BindTypeToExtensionDesc(PlayerBaseComponent::Type(),	{ 0 }, false,	0x20);	// Bit = 0x20 (0x10 is used in crazyCanvas.cpp)
 		}
 
 		return true;

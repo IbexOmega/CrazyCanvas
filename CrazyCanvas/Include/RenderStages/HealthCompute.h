@@ -11,6 +11,7 @@ namespace LambdaEngine
 	class CommandList;
 	class CommandAllocator;
 	class DescriptorHeap;
+	class DescriptorSet;
 
 	struct DrawArg;
 }
@@ -66,6 +67,10 @@ public:
 		return name;
 	};
 
+public:
+	static LambdaEngine::TArray<uint32>& GetHealths();
+	static void QueueHealthCalculation(LambdaEngine::Entity entity);
+
 private:
 	bool CreatePipelineLayout();
 	bool CreateDescriptorSets();
@@ -80,11 +85,18 @@ private:
 
 	LambdaEngine::PipelineContext m_PipelineContext;
 
-	LambdaEngine::CommandAllocator**	m_ppComputeCommandAllocators	= nullptr;
-	LambdaEngine::CommandList**			m_ppComputeCommandLists			= nullptr;
-	LambdaEngine::TSharedRef<LambdaEngine::DescriptorHeap> m_DescriptorHeap = nullptr;
+	LambdaEngine::CommandAllocator**	m_ppComputeCommandAllocators		= nullptr;
+	LambdaEngine::CommandList**			m_ppComputeCommandLists				= nullptr;
+	LambdaEngine::TSharedRef<LambdaEngine::DescriptorHeap> m_DescriptorHeap	= nullptr;
 
-	LambdaEngine::Buffer*	m_pHealthBuffer		= nullptr;
-	LambdaEngine::Buffer*	m_pCopyBuffer		= nullptr;
+	LambdaEngine::Buffer*	m_pHealthBuffer			= nullptr;
+	LambdaEngine::Buffer*	m_pCopyBuffer			= nullptr;
 	LambdaEngine::Buffer*	m_pVertexCountBuffer	= nullptr;
+
+	LambdaEngine::TArray<LambdaEngine::DescriptorSet*> m_DrawArgsDescriptorSets;
+
+
+private:
+	static LambdaEngine::TArray<uint32> s_Healths;
+	static LambdaEngine::TSet<LambdaEngine::Entity> s_HealthsToCalculate;
 };

@@ -238,7 +238,7 @@
             "type": "COMPUTE",
             "custom_renderer": true,
             "allow_overriding_of_binding_types": true,
-            "trigger_type": "EVERY",
+            "trigger_type": "TRIGGERED",
             "frame_delay": 0,
             "frame_offset": 0,
             "x_dim_type": "RELATIVE",

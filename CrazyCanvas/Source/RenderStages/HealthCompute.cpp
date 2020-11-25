@@ -15,6 +15,11 @@
 
 #include "Resources/ResourceManager.h"
 
+#include "Game/PlayerIndexHelper.h"
+
+LambdaEngine::TArray<uint32> HealthCompute::s_Healths;
+LambdaEngine::TSet<LambdaEngine::Entity> HealthCompute::s_HealthsToCalculate;
+
 HealthCompute::HealthCompute()
 {
 
@@ -37,6 +42,8 @@ HealthCompute::~HealthCompute()
 		SAFERELEASE(m_pCopyBuffer);
 		SAFERELEASE(m_pVertexCountBuffer);
 	}
+
+	s_Healths.Clear();
 }
 
 bool HealthCompute::Init()
@@ -48,6 +55,8 @@ bool HealthCompute::Init()
 	ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", player, temp);
 	Mesh* pMesh = ResourceManager::GetMesh(player);
 	m_VertexCount = pMesh->Vertices.GetSize();
+
+	s_Healths.Resize(10);
 
 	if (!CreatePipelineLayout())
 	{
@@ -108,6 +117,11 @@ void HealthCompute::Update(
 	uint32 backBufferIndex)
 {
 	m_PipelineContext.Update(delta, modFrameIndex, backBufferIndex);
+
+	// Transfer current health data
+	uint32* data = reinterpret_cast<uint32*>(m_pCopyBuffer->Map());
+	memcpy(s_Healths.GetData(), data, sizeof(uint32) * 10);
+	m_pCopyBuffer->Unmap();
 }
 
 void HealthCompute::UpdateBufferResource(
@@ -165,19 +179,39 @@ void HealthCompute::UpdateDrawArgsResource(
 	{
 		if (count > 0U && pDrawArgs != nullptr)
 		{
-			constexpr uint32 setIndex = 1U;
-			constexpr uint32 setBinding = 0U;
+			if (count != m_DrawArgsDescriptorSets.GetSize())
+			{
+				m_DrawArgsDescriptorSets.Resize(count);
+			}
 
-			const uint64 size = pDrawArgs->pVertexBuffer->GetDesc().SizeInBytes;
-			SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			descriptorUpdateDesc.ppBuffers = &pDrawArgs->pVertexBuffer;
-			descriptorUpdateDesc.pOffsets = 0;
-			descriptorUpdateDesc.pSizes = &size;
-			descriptorUpdateDesc.FirstBinding = setBinding;
-			descriptorUpdateDesc.DescriptorCount = count;
-			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			for (uint32 i = 0; i < count; i++)
+			{
+				m_DrawArgsDescriptorSets[i] = pDrawArgs[i].pDescriptorSet;
+			}
+			// constexpr uint32 setIndex = 1U;
+			// constexpr uint32 setBinding = 0U;
 
-			m_PipelineContext.UpdateDescriptorSet("[HealthCompute] Health Compute Descriptor Set 1 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			// LOG_WARNING("Vertex count: %d", m_VertexCount);
+			// TArray<uint64> sizes(count);
+			// TArray<uint64> offsets(count);
+			// TArray<Buffer*> buffers(count);
+			// for (uint32 i = 0; i < count; i++)
+			// {
+			// 	sizes[i] = pDrawArgs[i].pVertexBuffer->GetDesc().SizeInBytes;
+			// 	offsets[i] = 0;
+			// 	buffers[i] = pDrawArgs[i].pVertexBuffer;
+			// 	LOG_WARNING("Size[%d]: %d\nOffset[%d]: %d", i, sizes[i], i, offsets[i]);
+			// }
+
+			// SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
+			// descriptorUpdateDesc.ppBuffers = buffers.GetData();
+			// descriptorUpdateDesc.pOffsets = offsets.GetData();
+			// descriptorUpdateDesc.pSizes = sizes.GetData();
+			// descriptorUpdateDesc.FirstBinding = setBinding;
+			// descriptorUpdateDesc.DescriptorCount = count;
+			// descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+
+			// m_PipelineContext.UpdateDescriptorSet("[HealthCompute] Health Compute Descriptor Set 1 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
 	}
 }
@@ -191,7 +225,9 @@ void HealthCompute::Render(
 {
 	using namespace LambdaEngine;
 
-	if (sleeping)
+	LOG_WARNING("Health compute called");
+
+	if (sleeping || s_HealthsToCalculate.empty())
 		return;
 
 	CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
@@ -199,14 +235,36 @@ void HealthCompute::Render(
 	pCommandList->Begin(nullptr);
 
 	m_PipelineContext.Bind(pCommandList);
-	// m_PipelineContext.BindConstantRange();
 
-	constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
-	uint32 workGroup = uint32(std::ceilf(float(m_VertexCount) / float(WORK_GROUP_INVOCATIONS)));
-	pCommandList->Dispatch(workGroup, 1U, 1U);
+	for (Entity entity : s_HealthsToCalculate)
+	{
+		uint32 index = PlayerIndexHelper::GetPlayerIndex(entity);
+		if (index == UINT32_MAX)
+			return;
+
+		pCommandList->BindDescriptorSetCompute(m_DrawArgsDescriptorSets[index], m_PipelineContext.GetPipelineLayout(), 1);
+		m_PipelineContext.BindConstantRange(pCommandList, (void*)(&index), sizeof(uint32), 0);
+
+		constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
+		const uint32 workGroup = uint32(std::ceilf(float(m_VertexCount) / float(WORK_GROUP_INVOCATIONS)));
+		pCommandList->Dispatch(workGroup, 1U, 1U);
+	}
+	s_HealthsToCalculate.clear();
+
+	pCommandList->CopyBuffer(m_pHealthBuffer, 0, m_pCopyBuffer, 0, sizeof(uint32) * 10);
 
 	pCommandList->End();
 	(*ppFirstExecutionStage) = pCommandList;
+}
+
+LambdaEngine::TArray<uint32>& HealthCompute::GetHealths()
+{
+	return s_Healths;
+}
+
+void HealthCompute::QueueHealthCalculation(LambdaEngine::Entity entity)
+{
+	s_HealthsToCalculate.insert(entity);
 }
 
 bool HealthCompute::CreatePipelineLayout()
@@ -231,7 +289,31 @@ bool HealthCompute::CreatePipelineLayout()
 	verticiesBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 	verticiesBindingDesc.DescriptorCount	= 1;
 	verticiesBindingDesc.Binding			= 0;
-	verticiesBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+	verticiesBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+	DescriptorBindingDesc instancesBindingDesc = {};
+	instancesBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+	instancesBindingDesc.DescriptorCount	= 1;
+	instancesBindingDesc.Binding			= 1;
+	instancesBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+	DescriptorBindingDesc meshletsBindingDesc = {};
+	meshletsBindingDesc.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+	meshletsBindingDesc.DescriptorCount	= 1;
+	meshletsBindingDesc.Binding			= 2;
+	meshletsBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+	DescriptorBindingDesc uniqueIndiciesBindingDesc = {};
+	uniqueIndiciesBindingDesc.DescriptorType	= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+	uniqueIndiciesBindingDesc.DescriptorCount	= 1;
+	uniqueIndiciesBindingDesc.Binding			= 3;
+	uniqueIndiciesBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+	DescriptorBindingDesc primitiveIndiciesBindingDesc = {};
+	primitiveIndiciesBindingDesc.DescriptorType		= EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+	primitiveIndiciesBindingDesc.DescriptorCount	= 1;
+	primitiveIndiciesBindingDesc.Binding			= 4;
+	primitiveIndiciesBindingDesc.ShaderStageMask	= FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 	TArray<DescriptorBindingDesc> set0 = {
 		healthBindingDesc,
@@ -239,18 +321,22 @@ bool HealthCompute::CreatePipelineLayout()
 	};
 
 	TArray<DescriptorBindingDesc> set1 = {
-		verticiesBindingDesc
+		verticiesBindingDesc,
+		instancesBindingDesc,
+		meshletsBindingDesc,
+		uniqueIndiciesBindingDesc,
+		primitiveIndiciesBindingDesc
 	};
 
 	m_PipelineContext.CreateDescriptorSetLayout(set0);
 	m_PipelineContext.CreateDescriptorSetLayout(set1);
 
-	// ConstantRangeDesc constantRange	= {};
-	// constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-	// constantRange.SizeInBytes		= sizeof(float) * 2;
-	// constantRange.OffsetInBytes		= 0;
+	ConstantRangeDesc constantRange	= {};
+	constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+	constantRange.SizeInBytes		= sizeof(uint32);
+	constantRange.OffsetInBytes		= 0;
 
-	// m_PipelineContext.CreateConstantRange(constantRange);
+	m_PipelineContext.CreateConstantRange(constantRange);
 
 	return true;
 }
@@ -265,7 +351,7 @@ bool HealthCompute::CreateDescriptorSets()
 	descriptorCountDesc.TextureDescriptorCount = 0;
 	descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 0;
 	descriptorCountDesc.ConstantBufferDescriptorCount = 1;
-	descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 2;
+	descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 6;
 	descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;
 	descriptorCountDesc.AccelerationStructureDescriptorCount = 0;
 
@@ -359,6 +445,8 @@ bool HealthCompute::CreateResources()
 	updateHealthDesc.ResourceName					= "PLAYER_HEALTH_BUFFER";
 	updateHealthDesc.ExternalBufferUpdate.ppBuffer	= &m_pHealthBuffer;
 	updateHealthDesc.ExternalBufferUpdate.Count		= 1;
+	// UpdateResources does not update resources? Can't be bothered now, will instead
+	// call the UpdateBufferResource manually.
 	RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&updateHealthDesc);
 	uint64 offset = 0;
 	uint64 sizeInBytes = m_pHealthBuffer->GetDesc().SizeInBytes;

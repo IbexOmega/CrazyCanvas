@@ -849,6 +849,8 @@ namespace LambdaEngine
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 
+		PlayerIndexHelper::AddPlayerEntity(entity);
+
 		bool forceUniqueResources = false;
 		if (MultiplayerUtils::IsServer())
 		{
@@ -1427,7 +1429,6 @@ namespace LambdaEngine
 		instance.TexturesPerExtensionGroup	= texturesPerExtensionGroup;
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
 		instance.TeamIndex					= teamIndex;
-		// instance.PlayerIndex				= PlayerIndexHelper::GetPlayerIndex(entity);
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		meshAndInstancesIt->second.EntityIDs.PushBack(entity);

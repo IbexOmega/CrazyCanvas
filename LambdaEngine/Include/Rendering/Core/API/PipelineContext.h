@@ -73,6 +73,7 @@ namespace LambdaEngine
 		GUID_Lambda GetVertexShader() { return m_VertexShaderGUID; };
 		GUID_Lambda GetFragmentShader() { return m_FragmentShaderGUID; };
 		GUID_Lambda GetComputeShader() { return m_ComputeShaderGUID; };
+		PipelineLayout* GetPipelineLayout() { return m_PipelineLayout.Get(); };
 
 	private:
 		bool									m_Initilized = false;

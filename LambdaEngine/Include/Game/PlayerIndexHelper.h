@@ -10,7 +10,8 @@ namespace LambdaEngine
 		DECL_STATIC_CLASS(PlayerIndexHelper);
 
 		/*
-		*	Converts the entity ID to a player index to be used for indexing in lists
+		*	Converts the entity ID to a player index to be used for indexing in lists.
+		*	Creates an index if the entity has not been previously added.
 		*	Return: Returns a valid index of max size player count. If entity was not
 		*			an entity, UINT32_MAX will be returned.
 		*/
@@ -22,6 +23,11 @@ namespace LambdaEngine
 		*			If entity hasn't been added before, returns UINT32_MAX
 		*/
 		static Entity GetPlayerEntity(uint32 index);
+
+		/*
+		*	Add a new player entity
+		*/
+		static bool AddPlayerEntity(Entity entity);
 
 		/*
 		*	Removes a previously added player entity

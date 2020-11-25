@@ -51,6 +51,26 @@ namespace LambdaEngine
 		return (Entity)UINT32_MAX;
 	}
 
+	bool PlayerIndexHelper::AddPlayerEntity(Entity entity)
+	{
+		// Check if player
+		ECSCore* pECS = ECSCore::GetInstance();
+		PlayerBaseComponent comp;
+		if(pECS->GetConstComponentIf<PlayerBaseComponent>(entity, comp))
+		{
+			if (m_Entities.GetSize() < m_MaxPlayers)
+			{
+				m_Entities.PushBack(entity);
+				return true;
+			}
+		}
+
+		LOG_WARNING("[PlayerIndexHelper]: Tried to add entity %d but failed. Either player was not a player or the array of indices is full. Array size: %d, max: %d",
+			entity, m_Entities.GetSize(), m_MaxPlayers);
+
+		return false;
+	}
+
 	void PlayerIndexHelper::RemovePlayerEntity(Entity entity)
 	{
 		for (uint32 i = 0; i < m_Entities.GetSize(); i++)

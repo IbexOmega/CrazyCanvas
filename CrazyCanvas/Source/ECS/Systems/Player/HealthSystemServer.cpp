@@ -19,12 +19,7 @@
 
 #include "Resources/ResourceManager.h"
 
-// Used for health buffer calculated in a compute shader
-#include "Rendering/RenderAPI.h"
-#include "Rendering/Core/API/Buffer.h"
-#include "Rendering/Core/API/CommandAllocator.h"
-#include "Rendering/Core/API/CommandList.h"
-#include "Rendering/Core/API/GraphicsDevice.h"
+#include "RenderStages/HealthCompute.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Rendering/RenderGraph.h"
 
@@ -41,13 +36,6 @@ HealthSystemServer::~HealthSystemServer()
 {
 	using namespace LambdaEngine;
 
-	// SAFERELEASE(m_CopyFence);
-	// SAFERELEASE(m_CommandList);
-	// SAFERELEASE(m_CommandAllocator);
-	// SAFERELEASE(m_HealthBuffer);
-	// SAFERELEASE(m_CopyBuffer);
-	// SAFERELEASE(m_VertexCountBuffer);
-
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HealthSystemServer::OnProjectileHit);
 }
 
@@ -62,31 +50,20 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	}
 
 	// TEMP REMOVE
-	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_F))
-		RenderSystem::GetInstance().GetRenderGraph()->TriggerRenderStage("COMPUTE_HEALTH");
+	static bool pressed = false;
+	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_F) && !pressed)
+	{
+		for (Entity entity : m_HealthEntities)
+			HealthCompute::QueueHealthCalculation(entity);
 
-	// Update health buffer from GPU
-	// Only try to copy if the signal has been signaled
-	// if (m_CopyFence->GetValue() == m_FenceCounter)
-	// {
-	// 	// Validation layer has a bug in which it will not detect that the command list is done
-	// 	// after a GetValue check, therefore this wait is added to suppress that.
-	// 	// NOTE: It should not wait at all really, it is just to make sure it is _actually_ done.
-	// 	m_CopyFence->Wait(m_FenceCounter, UINT64_MAX);
-	// 	m_CommandAllocator->Reset();
-	// 	m_CommandList->Begin(nullptr);
-	// 	m_CommandList->CopyBuffer(m_HealthBuffer, 0, m_CopyBuffer, 0, sizeof(uint32) * 10);
-	// 	m_CommandList->End();
-	// 	RenderAPI::GetComputeQueue()->ExecuteCommandLists(
-	// 		&m_CommandList,
-	// 		1,
-	// 		FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN,
-	// 		nullptr,
-	// 		0,
-	// 		m_CopyFence,
-	// 		++m_FenceCounter
-	// 	);
-	// }
+		RenderSystem::GetInstance().GetRenderGraph()->TriggerRenderStage("COMPUTE_HEALTH");
+		pressed = true;
+	}
+	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_F) && pressed)
+	{
+		pressed = false;
+	}
+
 
 	// More threadsafe
 	{
@@ -108,17 +85,20 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		}
 	}
 
-	// uint32* data = reinterpret_cast<uint32*>(m_CopyBuffer->Map());
-	// memcpy(m_PlayerHealths.GetData(), data, sizeof(uint32) * 10);
-	// m_CopyBuffer->Unmap();
-
 	// TEMP REMOVE
-	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_G))
+	static bool p = false;
+	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_G) && !p)
 	{
-		for (auto health : m_PlayerHealths)
+		TArray<uint32> healths = HealthCompute::GetHealths();
+		for (auto health : healths)
 		{
 			LOG_WARNING("Health: %d", health);
 		}
+		p = true;
+	}
+	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_G) && p)
+	{
+		p = false;
 	}
 
 
@@ -233,11 +213,6 @@ bool HealthSystemServer::InitInternal()
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HealthSystemServer::OnProjectileHit);
 
-	if (!CreateResources())
-	{
-		return false;
-	}
-
 	return true;
 }
 
@@ -285,99 +260,4 @@ void HealthSystemServer::ResetHealth(LambdaEngine::Entity entity)
 	VALIDATE(pServerHealthSystem != nullptr);
 
 	pServerHealthSystem->InternalResetHealth(entity);
-}
-
-bool HealthSystemServer::CreateResources()
-{
-	using namespace LambdaEngine;
-
-	// Prepare health buffer
-	// m_CommandAllocator	= RenderAPI::GetDevice()->CreateCommandAllocator("Health System Server Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
-
-	// CommandListDesc commandListDesc	= {};
-	// commandListDesc.DebugName		= "Health System Server Command List";
-	// commandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
-	// commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
-	// m_CommandList					= RenderAPI::GetDevice()->CreateCommandList(m_CommandAllocator, &commandListDesc);
-
-	// BufferDesc healthBufferDesc		= {};
-	// healthBufferDesc.DebugName		= "Health System Server Health Buffer";
-	// healthBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-	// healthBufferDesc.SizeInBytes	= sizeof(uint32) * 10;
-	// healthBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_SRC;
-	// m_HealthBuffer					= RenderAPI::GetDevice()->CreateBuffer(&healthBufferDesc);
-
-	// BufferDesc copyBufferDesc		= {};
-	// copyBufferDesc.DebugName		= "Health System Server Health Buffer";
-	// copyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-	// copyBufferDesc.SizeInBytes		= sizeof(uint32) * 10;
-	// copyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-	// m_CopyBuffer					= RenderAPI::GetDevice()->CreateBuffer(&copyBufferDesc);
-
-	// BufferDesc countBufferDesc		= {};
-	// countBufferDesc.DebugName		= "Health System Server Vertices Count Buffer";
-	// countBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-	// countBufferDesc.SizeInBytes		= sizeof(uint32);
-	// countBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-	// m_VertexCountBuffer				= RenderAPI::GetDevice()->CreateBuffer(&countBufferDesc);
-
-	// ResourceUpdateDesc updateHealthDesc = {};
-	// updateHealthDesc.ResourceName					= "PLAYER_HEALTH_BUFFER";
-	// updateHealthDesc.ExternalBufferUpdate.ppBuffer	= &m_HealthBuffer;
-	// updateHealthDesc.ExternalBufferUpdate.Count		= 1;
-	// RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&updateHealthDesc);
-
-	// ResourceUpdateDesc updateCountDesc = {};
-	// updateCountDesc.ResourceName					= "VERTEX_COUNT_BUFFER";
-	// updateCountDesc.ExternalBufferUpdate.ppBuffer	= &m_VertexCountBuffer;
-	// updateCountDesc.ExternalBufferUpdate.Count		= 1;
-	// RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&updateCountDesc);
-
-	// FenceDesc fenceDesc		= {};
-	// fenceDesc.DebugName		= "Health System Fence";
-	// fenceDesc.InitalValue	= m_FenceCounter;
-	// m_CopyFence				= RenderAPI::GetDevice()->CreateFence(&fenceDesc);
-
-	// // Transfer vertex count to buffer
-	// {
-	// 	BufferDesc stagingBufferDesc	= {};
-	// 	stagingBufferDesc.DebugName		= "Health System Server Vertices Count Staging Buffer";
-	// 	stagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-	// 	stagingBufferDesc.SizeInBytes	= sizeof(uint32);
-	// 	stagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_SRC;
-	// 	Buffer* stagingBuffer			= RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-
-	// 	// Get mesh to know how many vertices there are
-	// 	// NOTE: The mesh should already be loaded and should therefore
-	// 	//		 not create it again.
-	// 	GUID_Lambda player = 0;
-	// 	TArray<GUID_Lambda> temp;
-	// 	ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", player, temp);
-	// 	Mesh* pMesh = ResourceManager::GetMesh(player);
-	// 	m_VertexCount = pMesh->Vertices.GetSize();
-
-	// 	uint32* data = reinterpret_cast<uint32*>(stagingBuffer->Map());
-	// 	memcpy(data, &m_VertexCount, sizeof(uint32));
-	// 	stagingBuffer->Unmap();
-
-	// 	m_CommandAllocator->Reset();
-	// 	m_CommandList->Begin(nullptr);
-	// 	m_CommandList->CopyBuffer(stagingBuffer, 0, m_VertexCountBuffer, 0, sizeof(uint32));
-	// 	m_CommandList->End();
-	// 	RenderAPI::GetComputeQueue()->ExecuteCommandLists(
-	// 		&m_CommandList,
-	// 		1,
-	// 		FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN,
-	// 		nullptr,
-	// 		0,
-	// 		m_CopyFence,
-	// 		++m_FenceCounter
-	// 	);
-
-	// 	m_CopyFence->Wait(m_FenceCounter, UINT64_MAX);
-
-	// 	SAFERELEASE(stagingBuffer);
-	// }
-
-	return true;
 }
