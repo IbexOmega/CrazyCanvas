@@ -49,8 +49,10 @@ void main()
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	uint packedPaintInfo = Vec4ToPackedPaintInfo(in_PaintInfo4);
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, in_PaintDist);
+	uint packedPaintInfo = 0;
+	float dist = 1.f;
+	GetVec4ToPackedPaintInfoAndDistance(in_WorldPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, dist);
 
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));

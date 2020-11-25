@@ -21,8 +21,11 @@ layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
 layout(location = 8) out flat uint out_InstanceIndex;
 layout(location = 9) out vec3 out_ViewDirection;
+
+// Mesh painting
 layout(location = 10) out vec4 out_PaintInfo4;
 layout(location = 11) out float out_PaintDist;
+layout(location = 12) out vec3 out_ModelPosition;
 
 void main()
 {
@@ -48,8 +51,10 @@ void main()
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
     out_InstanceIndex		= gl_InstanceIndex;
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
+	
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	out_PaintDist 			= vertex.Normal.w;
+	out_ModelPosition		= vertex.Position.xyz;
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 	gl_Position = out_ClipPosition;

@@ -44,6 +44,7 @@
 #include "GUI/GUIHelpers.h"
 
 #include "Game/GameConsole.h"
+#include "Rendering/LineRenderer.h"
 
 using namespace LambdaEngine;
 

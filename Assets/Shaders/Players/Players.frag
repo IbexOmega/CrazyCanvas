@@ -21,8 +21,11 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_InstanceIndex;
 layout(location = 9) in vec3 		in_ViewDirection;
+
+// Mesh painting
 layout(location = 10) in vec4 		in_PaintInfo4;
 layout(location = 11) in float 		in_PaintDist;
+layout(location = 12) in vec3 		in_ModelPosition;
 
 layout(push_constant) uniform TeamIndex
 {
@@ -67,8 +70,10 @@ void main()
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	uint packedPaintInfo = Vec4ToPackedPaintInfo(in_PaintInfo4);
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, in_PaintDist);
+	uint packedPaintInfo = 0;
+	float dist = 1.f;
+	GetVec4ToPackedPaintInfoAndDistance(in_ModelPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_ModelPosition, tangent, bitangent, packedPaintInfo, dist);
 	shadingNormal = mix(shadingNormal, normalize(paintDescription.Normal + shadingNormal*0.2f), paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
