@@ -115,7 +115,7 @@ void HUDSystem::Init()
 	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 	for (auto& player : players)
 	{
-		m_HUDGUI->AddPlayer(player.second);
+		m_HUDGUI->GetScoreBoard()->AddPlayer(player.second);
 	}
 
 	GUIApplication::SetView(m_View);
@@ -199,12 +199,12 @@ void HUDSystem::FixedTick(Timestamp delta)
 	static bool activeButtonChanged = false;
 	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
-		m_HUDGUI->DisplayScoreboardMenu(true);
+		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
 	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
-		m_HUDGUI->DisplayScoreboardMenu(false);
+		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
 	}
 
@@ -255,14 +255,14 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 
 bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
 {
-	m_HUDGUI->UpdateAllPlayerProperties(*event.pPlayer);
+	m_HUDGUI->GetScoreBoard()->UpdateAllPlayerProperties(*event.pPlayer);
 
 	return false;
 }
 
 bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 {
-	m_HUDGUI->UpdatePlayerProperty(
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerProperty(
 		event.pPlayer->GetUID(),
 		EPlayerProperty::PLAYER_PROPERTY_PING,
 		std::to_string(event.pPlayer->GetPing()));
@@ -272,7 +272,7 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
-	m_HUDGUI->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
 
 
 	if(pPlayer->IsDead())

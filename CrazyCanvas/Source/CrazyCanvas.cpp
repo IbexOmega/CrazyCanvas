@@ -46,6 +46,7 @@
 #include "GUI/EscapeMenuGUI.h"
 #include "GUI/PromptGUI.h"
 #include "GUI/KillFeedGUI.h"
+#include "GUI/ScoreBoardGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
@@ -183,6 +184,7 @@ bool CrazyCanvas::RegisterGUIComponents()
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<KillFeedGUI>();
+	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
 	return true;
