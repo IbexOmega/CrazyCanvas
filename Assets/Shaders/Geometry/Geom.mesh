@@ -95,9 +95,12 @@ void main()
 	// Get data
 	SMeshlet	meshlet		= b_Meshlets.Val[meshletID];
 	SInstance	instance	= b_Instances.Val[instanceID];
-	mat4 projection	= u_PerFrameBuffer.Val.Projection;
-	mat4 view		= u_PerFrameBuffer.Val.View;
-	mat4 transform	= instance.Transform;
+	mat4 projection		= u_PerFrameBuffer.Val.Projection;
+	mat4 view			= u_PerFrameBuffer.Val.View;
+	mat4 prevProjection	= u_PerFrameBuffer.Val.PrevProjection;
+	mat4 prevView		= u_PerFrameBuffer.Val.PrevView;
+	mat4 transform		= instance.Transform;
+	mat4 prevTransform 	= instance.PrevTransform;
 	
 	// Per vertex
 	for (uint vert = threadID; vert < meshlet.VertCount; vert += NUM_THREADS)
@@ -105,10 +108,11 @@ void main()
 		uint vertexIndex = b_UniqueIndices.Val[vert + meshlet.VertOffset];
 		SVertex vertex = b_Vertices.Val[vertexIndex];
 
-		vec4 worldPosition	= transform * vec4(vertex.Position.xyz, 1.0f);
-		vec3 normal			= normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
-		vec3 tangent		= normalize((transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
-		vec2 texcoord		= vertex.TexCoord.xy;
+		vec4 worldPosition		= transform * vec4(vertex.Position.xyz, 1.0f);
+		vec4 prevWorldPosition	= prevTransform * vec4(vertex.Position.xyz, 1.0f);
+		vec3 normal				= normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+		vec3 tangent			= normalize((transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
+		vec2 texcoord			= vertex.TexCoord.xy;
 
 		// Material
 		out_WorldPosition[vert]	= worldPosition.xyz;
@@ -118,9 +122,10 @@ void main()
 		out_Bitangent[vert]		= cross(tangent, normal);
 		out_TexCoord[vert]		= texcoord;
 		
-		vec4 clipPosition = projection * view * worldPosition;
+		vec4 clipPosition 		= projection * view * worldPosition;
+		vec4 prevClipPosition 	= prevProjection * prevView * prevWorldPosition;
 		out_ClipPosition[vert]		= clipPosition;
-		out_PrevClipPosition[vert]	= clipPosition;
+		out_PrevClipPosition[vert]	= prevClipPosition;
 
 		out_ExtensionIndex[vert]	=  instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
 

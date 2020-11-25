@@ -5,6 +5,8 @@ struct SReflectionDesc
 {
     vec3    f;
     float   PDF;
+    vec3    f_Specular;
+    float   PDF_Specular;
     vec3    w_iw;
 };
 
@@ -22,8 +24,11 @@ struct SBxDFEval
 */
 vec3 Sample_w_h_GGX(vec3 w_os, float alphaSqrd, vec2 u)
 {
+
     float phi           = u.x * TWO_PI;
-    float cosThetaSqrd  = clamp((1.0f - u.y) / max(0.001f, (1.0f + (alphaSqrd - 1.0f) * u.y)), 0.0f, 1.0f); //Dividing by potentially small float, therefore, we clamp it
+    float cosThetaSqrd  = min((1.0f - u.y) / max(0.001f, (1.0f + (alphaSqrd - 1.0f) * u.y)), 1.0f); //Dividing by potentially small float, therefore, we clamp it
+    //Truncate some cosThetaSqrd to avoid Samplig GGX Tail
+    cosThetaSqrd = mix(cosThetaSqrd, 1.0f, BRDF_TAIL_TRUNCATION_BIAS);
     float cosTheta      = sqrt(cosThetaSqrd);
     float sinTheta      = sqrt(1.0f - cosThetaSqrd);
     vec3 w_hs           = SphericalToDirection(sinTheta, cosTheta, phi);
@@ -80,9 +85,11 @@ SBxDFEval Eval_f_Diffuse(vec3 albedo, vec3 k_d, float cosTheta)
 SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float roughness, float metallic, vec3 F0, vec4 u)
 {
     SReflectionDesc reflectionDesc;
-    reflectionDesc.f        = vec3(0.0f);
-    reflectionDesc.PDF      = 0.0f;
-    reflectionDesc.w_iw     = vec3(0.0f);
+    reflectionDesc.f                = vec3(0.0f);
+    reflectionDesc.PDF              = 0.0f;
+    reflectionDesc.f_Specular       = vec3(0.0f);
+    reflectionDesc.PDF_Specular     = 0.0f;
+    reflectionDesc.w_iw             = vec3(0.0f);
 
     //Don't sample for tangent directions
     if (n_dot_o == 0.0f) 
@@ -94,6 +101,8 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
         reflectionDesc.w_iw         = reflect(-w_ow,  w_nw);
         reflectionDesc.PDF          = 1.0f;
         reflectionDesc.f            = vec3(1.0f) / max(0.001f, n_dot_o);
+        reflectionDesc.PDF_Specular = reflectionDesc.PDF;
+        reflectionDesc.f_Specular   = reflectionDesc.f;
     }
     else
     {
@@ -134,8 +143,10 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
             //Eval common BRDF
             SBxDFEval specularBRDFEval  = Eval_f_Specular(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
 
-            reflectionDesc.PDF  = specularBRDFEval.PDF;
-            reflectionDesc.f    = specularBRDFEval.f;
+            reflectionDesc.PDF          = specularBRDFEval.PDF;
+            reflectionDesc.f            = specularBRDFEval.f;
+            reflectionDesc.PDF_Specular = specularBRDFEval.PDF;
+            reflectionDesc.f_Specular   = specularBRDFEval.f;
         }
         else
         {     
@@ -163,8 +174,10 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
                 //Eval BRDF
                 SBxDFEval lambertBRDFEval   = Eval_f_Diffuse(albedo, k_d, n_dot_i);    
 
-                reflectionDesc.PDF  = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
-                reflectionDesc.f    = lambertBRDFEval.f + specularBRDFEval.f;
+                reflectionDesc.PDF_Specular     = specularBRDFEval.PDF;
+                reflectionDesc.f_Specular       = specularBRDFEval.f;
+                reflectionDesc.PDF              = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
+                reflectionDesc.f                = lambertBRDFEval.f + specularBRDFEval.f;
             }
 
             /*
@@ -172,9 +185,9 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
             * However, we want to avoid this since it creates lots of noise. 
             * What we do instead is that we pretend that we send a ray in the same direction as sampling of the Specular BRDF gave.
             * We can do this by writing:
-            *   l_i * cosTheta * (f(specular_sample) / pdf(specular_sample)) + l_i * cosTheta * (f(diffuse_sample) / pdf(diffuse_sample)) =
-            *   l_i * cosTheta * (f(specular_sample) / pdf(specular_sample) + f(diffuse_sample) / pdf(diffuse_sample)) =
-            *   l_i * cosTheta * ((f(specular_sample) * pdf(diffuse_sample) + f(diffuse_sample) * pdf(specular_sample)) / (pdf(specular_sample) * pdf(diffuse_sample)))
+            *   (l_i * cosTheta * (f(specular_sample) / pdf(specular_sample)) + l_i * cosTheta * (f(diffuse_sample) / pdf(diffuse_sample))) / N =
+            *   (l_i * cosTheta * (f(specular_sample) / pdf(specular_sample) + f(diffuse_sample) / pdf(diffuse_sample))) / N =
+            *   (l_i * cosTheta * ((f(specular_sample) * pdf(diffuse_sample) + f(diffuse_sample) * pdf(specular_sample)) / (pdf(specular_sample) * pdf(diffuse_sample)))) / N
             * and not overwriting w_iw with the diffuse sample direction
             */       
             {
@@ -202,8 +215,8 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
                 float PDF   = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
 
                 //We're taking 2 samples so we need to divide by 2 (multiply by 0.5)
-                reflectionDesc.f    = ((f * reflectionDesc.PDF) + (reflectionDesc.f * PDF)) * 0.5f;
-                reflectionDesc.PDF  = PDF * reflectionDesc.PDF;
+                reflectionDesc.f                = ((f * reflectionDesc.PDF) + (reflectionDesc.f * PDF)) * 0.5f;
+                reflectionDesc.PDF              = PDF * reflectionDesc.PDF;
             }
         }
     }

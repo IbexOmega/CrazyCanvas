@@ -66,8 +66,8 @@ void main()
 	out_Compact_Normal			= PackNormal(mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation));
 
 	//3
-	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
-	vec2 screenVelocity			= (prevNDC - currentNDC);
+	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w);
+	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w);
+	vec2 screenVelocity			= (currentNDC - prevNDC);
 	out_Velocity				= vec2(screenVelocity);
 }

@@ -154,6 +154,7 @@ void main()
 
 	if (valid < 1.0f || roughness > REFLECTION_REJECT_THRESHOLD)
 	{
+		imageStore(u_Reflections, pixelCoords, vec4(0.0f));
 		imageStore(u_BRDF_PDF, pixelCoords, vec4(0.0f));
 		return;
 	}
@@ -360,10 +361,6 @@ void main()
 	float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
 	colorHDR *= bounceDarkening;
 
-	vec3 prevColorHDR = imageLoad(u_Reflections, pixelCoords).rgb;
-
-	vec3 finalHDR = mix(prevColorHDR, colorHDR, pow(1.0f - roughness, 16.0f));
-
-	imageStore(u_Reflections, pixelCoords, vec4(finalHDR, 1.0f));
-	imageStore(u_BRDF_PDF, pixelCoords, vec4(reflectionDescStart.f, reflectionDescStart.PDF));
+	imageStore(u_Reflections, pixelCoords, vec4(colorHDR, 1.0f));
+	imageStore(u_BRDF_PDF, pixelCoords, vec4(reflectionDescStart.f_Specular * n_dot_o_start, reflectionDescStart.PDF_Specular));
 }

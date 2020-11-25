@@ -639,6 +639,31 @@
                 "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
+        },
+        {
+            "name": "DENOISED_REFLECTIONS_TEXTURE",
+            "type": "TEXTURE",
+            "back_buffer_bound": false,
+            "should_synchronize": true,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": false,
+            "type_params": {
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
+                "is_of_array_type": false,
+                "unbounded_array": false,
+                "texture_type": "TEXTURE_2D",
+                "x_dim_type": "RELATIVE",
+                "y_dim_type": "RELATIVE",
+                "x_dim_var": 1.0,
+                "y_dim_var": 1.0,
+                "sample_count": 1,
+                "miplevel_count": 1,
+                "sampler_type": "NEAREST",
+                "sampler_address_mode": "REPEAT",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
+                "memory_type": "MEMORY_TYPE_GPU"
+            }
         }
     ],
     "resource_state_groups": [
@@ -825,10 +850,10 @@
             "name": "TEMPORAL_RESOURCES",
             "resource_states": [
                 {
-                    "name": "REFLECTIONS_TEXTURE",
+                    "name": "DENOISED_REFLECTIONS_TEXTURE",
                     "removable": true,
                     "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "SPATIAL_DENOISE_PASS"
+                    "src_stage": "REFLECTION_DENOISE_PASS"
                 }
             ]
         }
@@ -1314,12 +1339,12 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "REFLECTIONS_TEXTURE",
+                    "name": "DENOISED_REFLECTIONS_TEXTURE",
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "SPATIAL_DENOISE_PASS"
+                    "src_stage": "REFLECTION_DENOISE_PASS"
                 },
                 {
                     "name": "INTERMEDIATE_OUTPUT_IMAGE",
@@ -1569,8 +1594,8 @@
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "UNORDERED_ACCESS_RW",
-                    "src_stage": "TEMPORAL_RESOURCES"
+                    "binding_type": "UNORDERED_ACCESS_W",
+                    "src_stage": ""
                 },
                 {
                     "name": "BRDF_PDF_TEXTURE",
@@ -2367,7 +2392,7 @@
             ]
         },
         {
-            "name": "SPATIAL_DENOISE_PASS",
+            "name": "REFLECTION_DENOISE_PASS",
             "type": "COMPUTE",
             "custom_renderer": false,
             "allow_overriding_of_binding_types": false,
@@ -2381,7 +2406,7 @@
             "y_dim_var": 1.0,
             "z_dim_var": 1.0,
             "shaders": {
-                "shader": "/RayTracing\\SpatialDenoise.comp"
+                "shader": "/RayTracing\\ReflectionsDenoiser.comp"
             },
             "resource_states": [
                 {
@@ -2389,7 +2414,7 @@
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "UNORDERED_ACCESS_RW",
+                    "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "RAY_TRACING"
                 },
                 {
@@ -2399,6 +2424,38 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "RAY_TRACING"
+                },
+                {
+                    "name": "DENOISED_REFLECTIONS_TEXTURE",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_RW",
+                    "src_stage": "TEMPORAL_RESOURCES"
+                },
+                {
+                    "name": "G_BUFFER_COMPACT_NORMAL",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
+                },
+                {
+                    "name": "G_BUFFER_VELOCITY",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
+                },
+                {
+                    "name": "G_BUFFER_DEPTH_STENCIL",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
                 }
             ]
         }

@@ -46,8 +46,8 @@ void main()
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
-	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
+	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w);
+	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w);
 
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
@@ -61,6 +61,6 @@ void main()
 	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//3
-	vec2 screenVelocity			= (prevNDC - currentNDC);// + in_CameraJitter;
+	vec2 screenVelocity			= (currentNDC - prevNDC);// + in_CameraJitter;
 	out_Velocity				= vec2(screenVelocity);
 }
