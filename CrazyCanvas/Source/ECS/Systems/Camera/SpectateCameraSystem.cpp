@@ -117,11 +117,9 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 			{
 				for (Entity cameraEntity : m_CameraEntities)
 				{
-					//ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
 
 					cameraOffsetComponent.Offset *= 2;
-					//parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity();
 					SpectatePlayer();
 				}
 			}
@@ -161,7 +159,7 @@ void SpectateCameraSystem::SpectatePlayer()
 			}
 		}
 
-		if (teamPlayers.GetSize() > 0)
+		if (teamPlayers.GetSize() > 0) //Spectate team-member
 		{
 			for (Entity cameraEntity : m_CameraEntities)
 			{
@@ -175,7 +173,7 @@ void SpectateCameraSystem::SpectatePlayer()
 				parentComponent.Parent = nextPlayer;
 			}
 		}
-		else
+		else // spectate Flag
 		{
 			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 
