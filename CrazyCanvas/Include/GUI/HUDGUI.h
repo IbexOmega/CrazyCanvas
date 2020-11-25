@@ -115,7 +115,6 @@ private:
 	Noesis::TextBlock* m_pTeam1Score = nullptr;
 	Noesis::TextBlock* m_pTeam2Score = nullptr;
 
-
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;

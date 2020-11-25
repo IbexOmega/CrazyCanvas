@@ -1,10 +1,11 @@
 #include "ECS/Systems/Camera/SpectateCameraSystem.h"
 
-#include "ECS/ECSCore.h"
-
 #include "Application/API/Events/EventQueue.h"
 
+#include "ECS/ECSCore.h"
 #include "ECS/Components/Player/Player.h"
+#include "ECS/Components/Match/FlagComponent.h"
+
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
@@ -13,7 +14,6 @@
 #include "Lobby/Player.h"
 
 #include "Lobby/PlayerManagerClient.h"
-
 
 using namespace LambdaEngine;
 
@@ -35,6 +35,14 @@ void SpectateCameraSystem::Init()
 				{ RW, CameraComponent::Type() }, 
 				{ RW, OffsetComponent::Type() },
 				{ RW, ParentComponent::Type() }
+			}
+		},
+		{
+			.pSubscriber = &m_FlagSpawnEntities,
+			.ComponentAccesses =
+			{
+				{ R, TeamComponent::Type() },
+				{ NDA, FlagSpawnComponent::Type() },
 			}
 		}
 	};
@@ -101,23 +109,28 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 
 			m_SpectatorIndex = 0;
 			m_InSpectateView = false;
+			m_pSpectatedPlayer = nullptr;
 		}
 		else
 		{
 			for (Entity cameraEntity : m_CameraEntities)
 			{
-				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+				//ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 				OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
 
 				cameraOffsetComponent.Offset *= 2;
-				parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity();
-
+				//parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity();
 			}
 
 			SpectatePlayer();
 			m_InSpectateView = true;
 		}
 	}
+	else if (m_pSpectatedPlayer == event.pPlayer)
+	{
+		SpectatePlayer();
+	}
+
 	return false;
 }
 
@@ -133,12 +146,11 @@ void SpectateCameraSystem::SpectatePlayer()
 
 		Entity localPlayer = PlayerManagerClient::GetPlayerLocal()->GetEntity();
 
-		for (uint32 i = 0; i < teamPlayers.GetSize(); i++)
+		for (int i = teamPlayers.GetSize() - 1; i >= 0; i--)
 		{
 			if (teamPlayers[i]->GetEntity() == localPlayer) //remove local player from list
 			{
 				teamPlayers.Erase(teamPlayers.begin() + i);
-				
 			}
 			else if (teamPlayers[i]->IsDead()) //remove dead players from list
 			{
@@ -154,8 +166,28 @@ void SpectateCameraSystem::SpectatePlayer()
 
 				m_SpectatorIndex = m_SpectatorIndex % teamPlayers.GetSize();
 
-				Entity nextPlayer = teamPlayers[m_SpectatorIndex]->GetEntity();
+				m_pSpectatedPlayer = teamPlayers[m_SpectatorIndex];
+
+				Entity nextPlayer = m_pSpectatedPlayer->GetEntity();
 				parentComponent.Parent = nextPlayer;
+			}
+		}
+		else
+		{
+			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+
+			for (Entity cameraEntity : m_CameraEntities)
+			{
+				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+
+				for (Entity flagSpawnEntity : m_FlagSpawnEntities)
+				{
+					const TeamComponent& teamComponent = pTeamComponents->GetConstData(flagSpawnEntity);
+					if (teamComponent.TeamIndex == m_LocalTeamIndex)
+					{
+						parentComponent.Parent = flagSpawnEntity;
+					}
+				}
 			}
 		}
 	}
