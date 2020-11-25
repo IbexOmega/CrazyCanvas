@@ -42,9 +42,22 @@
 
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Application/API/Events/EventQueue.h"
+
+#include "States/ServerState.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
+
+MatchServer::MatchServer()
+{
+	using namespace LambdaEngine;
+
+	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::RegisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
+	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
+}
 
 MatchServer::~MatchServer()
 {
@@ -57,12 +70,6 @@ MatchServer::~MatchServer()
 
 bool MatchServer::InitInternal()
 {
-	using namespace LambdaEngine;
-
-	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
-	EventQueue::RegisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
-	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
-
 	return true;
 }
 
@@ -94,8 +101,34 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 				const ComponentArray<PositionComponent>* pPositionComponent = pECS->GetComponentArray<PositionComponent>();
 				const ComponentArray<DynamicCollisionComponent>* pCollisionComponents = pECS->GetComponentArray<DynamicCollisionComponent>();
 
+				// Server
+				ImGui::Text((String("Clients: " + std::to_string(PlayerManagerServer::GetPlayerCount()))).c_str());
+				ImGui::Text((String("Game State: ") + ServerStateToString(ServerState::GetState())).c_str());
+
+				// Scores
+				ImGui::Text("Score Status:");
+				for (uint32 s = 0; s < m_Scores.GetSize(); s++)
+				{
+					int32 score = (int32)m_Scores[s];
+
+					std::string name = "Team " + std::to_string(s) + ": [Score=" + std::to_string(score) + "]";
+					if (ImGui::TreeNode(name.c_str()))
+					{
+						if (ImGui::Button("+"))
+							InternalSetScore((uint8)s, score + 1);
+
+						ImGui::SameLine();
+
+						if (ImGui::Button("-"))
+							InternalSetScore((uint8)s, glm::max<int32>(score - 1, 0));
+
+						ImGui::TreePop();
+					}
+				}
+
 				// Flags
 				TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
+				ImGui::Text("Flag Status:");
 				for (uint32 f = 0; f < flagEntities.GetSize(); f++)
 				{
 					Entity flagEntity = flagEntities[f];
@@ -353,6 +386,15 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 	}
 }
 
+bool MatchServer::ResetMatchInternal()
+{
+	m_PlayersToKill.Clear();
+	m_PlayersToRespawn.Clear();
+	m_ShouldBeginMatch = false;
+
+	return false;
+}
+
 void MatchServer::SpawnFlag(uint8 teamIndex)
 {
 	using namespace LambdaEngine;
@@ -477,7 +519,8 @@ void MatchServer::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, Lambda
 
 void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
 {
-	m_pLevel->DeleteObject(entity);
+	if(m_pLevel)
+		m_pLevel->DeleteObject(entity);
 
 	PacketDeleteLevelObject packet;
 	packet.NetworkUID = int32(entity);
@@ -509,24 +552,7 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		FlagSystemBase::GetInstance()->OnFlagDropped(event.Entity, flagPosition);
 
 		uint32 newScore = GetScore(event.ScoringTeamIndex) + 1;
-		SetScore(event.ScoringTeamIndex, newScore);
-
-		PacketTeamScored packet;
-		packet.TeamIndex	= event.ScoringTeamIndex;
-		packet.Score		= newScore;
-		packet.PlayerUID	= pPlayer->GetUID();
-
-		ServerHelper::SendBroadcast(packet);
-
-		if (newScore == m_MatchDesc.MaxScore) // game over
-		{
-			PacketGameOver gameOverPacket;
-			gameOverPacket.WinningTeamIndex = event.ScoringTeamIndex;
-
-			ServerHelper::SendBroadcast(gameOverPacket);
-
-			ResetMatch();
-		}
+		InternalSetScore(event.ScoringTeamIndex, newScore);
 	}
 	else
 	{
@@ -705,6 +731,29 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 
 	//Set player alive again
 	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
+}
+
+void MatchServer::InternalSetScore(uint8 team, uint32 score)
+{
+	using namespace LambdaEngine;
+
+	if (SetScore(team, score))
+	{
+		PacketTeamScored packet;
+		packet.TeamIndex = team;
+		packet.Score = score;
+		ServerHelper::SendBroadcast(packet);
+
+		if (score == m_MatchDesc.MaxScore)
+		{
+			PacketGameOver gameOverPacket;
+			gameOverPacket.WinningTeamIndex = team;
+
+			ServerHelper::SendBroadcast(gameOverPacket);
+
+			EventQueue::SendEvent<GameOverEvent>(team);
+		}
+	}
 }
 
 void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity, bool respawnFlagIfCarried)

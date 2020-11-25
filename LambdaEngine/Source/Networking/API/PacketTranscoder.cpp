@@ -3,6 +3,8 @@
 
 #include "Log/Log.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
 	void PacketTranscoder::EncodeSegments(uint8* buffer, uint16 bufferSize, SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& segmentsToEncode, std::set<uint32>& reliableUIDsSent, uint16& bytesWritten, Header* pHeader)
@@ -17,7 +19,8 @@ namespace LambdaEngine
 		for (auto it = segmentsToEncode.begin(); it != segmentsToEncode.end();)
 		{
 			NetworkSegment* pSegment = *it;
-			//LOG_ERROR("PacketTranscoder::EncodeSegments(%s)", pSegment->ToString().c_str());
+
+			//LOG_ERROR("%d: PacketTranscoder::EncodeSegments(%s)", (int32)EngineLoop::GetTimeSinceStart().AsMilliSeconds(), pSegment->ToString().c_str());
 
 			ASSERT(pSegment->GetTotalSize() + sizeof(Header) <= bufferSize);
 
@@ -93,7 +96,7 @@ namespace LambdaEngine
 			offset += ReadSegment(buffer + offset, pSegment);
 			pSegment->m_Salt = pHeader->Salt;
 
-			//LOG_ERROR("PacketTranscoder::DecodeSegments(%s)", pSegment->ToString().c_str());
+			//LOG_ERROR("%d: PacketTranscoder::DecodeSegments(%s)", (int32)EngineLoop::GetTimeSinceStart().AsMilliSeconds(), pSegment->ToString().c_str());
 		}
 
 		return true;

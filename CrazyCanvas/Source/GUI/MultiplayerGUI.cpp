@@ -148,6 +148,12 @@ void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, bool forceSave)
 
 	if (currentInfo != serverInfo)
 	{
+		if (!currentInfo.IsLAN && serverInfo.IsLAN)
+		{
+			m_ServerList.RemoveServer(currentInfo);
+			currentInfo.IsLAN = true;
+		}
+
 		currentInfo = serverInfo;
 		if (currentInfo.GridUI)
 		{
@@ -296,7 +302,7 @@ bool MultiplayerGUI::JoinSelectedServer(Noesis::Grid* pGrid)
 		{
 			if (serverInfo.IsOnline)
 			{
-				return ClientSystem::GetInstance().Connect(serverInfo.EndPoint);;
+				return ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
 			}
 			return false;
 		}
@@ -322,9 +328,7 @@ bool MultiplayerGUI::CheckServerStatus()
 
 			if (serverInfo.IsLAN)
 			{
-				ListBox* pParentBox = (ListBox*)serverInfo.GridUI->GetParent();
-				pParentBox->GetItems()->Remove(serverInfo.GridUI);
-				serversToRemove.PushBack(serverInfo.EndPoint.GetAddress());
+				m_ServerList.RemoveServer(serverInfo);
 			}
 			else if(serverInfo.IsOnline)
 			{

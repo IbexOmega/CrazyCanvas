@@ -1,5 +1,7 @@
 #include "Multiplayer/Packet/PacketType.h"
 
+#include "Networking/API/NetworkDebugger.h"
+
 #include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketDeleteLevelObject.h"
 #include "Multiplayer/Packet/PacketPlayerAction.h"
@@ -43,7 +45,7 @@ void PacketType::Init()
 	GAME_SETTINGS			= RegisterPacketType<PacketGameSettings>();
 	JOIN					= RegisterPacketType<PacketJoin>();
 	LEAVE					= RegisterPacketType<PacketLeave>();
-	CHAT_MESSAGE			= RegisterPacketTypeRaw();
+	CHAT_MESSAGE			= RegisterPacketTypeRaw("CHAT_MESSAGE");
 	PLAYER_ALIVE_CHANGED	= RegisterPacketType<PacketPlayerAliveChanged>();
 	PLAYER_HOST				= RegisterPacketType<PacketPlayerHost>();
 	PLAYER_PING				= RegisterPacketType<PacketPlayerPing>();
@@ -53,9 +55,10 @@ void PacketType::Init()
 	PROJECTILE_HIT			= RegisterPacketType<PacketProjectileHit>();
 }
 
-uint16 PacketType::RegisterPacketTypeRaw()
+uint16 PacketType::RegisterPacketTypeRaw(const char* pName)
 {
-	return ++s_PacketTypeCount;
+	LambdaEngine::NetworkDebugger::RegisterPacketName(++s_PacketTypeCount, pName);
+	return s_PacketTypeCount;
 }
 
 IPacketReceivedEvent* PacketType::GetPacketReceivedEventPointer(uint16 packetType)

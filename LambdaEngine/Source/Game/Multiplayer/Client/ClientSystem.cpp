@@ -15,28 +15,18 @@ namespace LambdaEngine
 {
 	ClientSystem* ClientSystem::s_pInstance = nullptr;
 
-	ClientSystem::ClientSystem(const String& name) :
+	ClientSystem::ClientSystem(ClientSystemDesc& desc) :
 		m_pClient(nullptr),
-		m_Name(name),
+		m_Name(desc.Name),
 		m_DebuggingWindow(false)
 	{
 		MultiplayerUtils::Init(false);
 
-		const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
+		desc.Handler = this;
 
-		ClientDesc clientDesc			= {};
-		clientDesc.PoolSize				= 8192;
-		clientDesc.MaxRetries			= 25;
-		clientDesc.ResendRTTMultiplier	= 5.0f;
-		clientDesc.Handler				= this;
-		clientDesc.Protocol				= EProtocolParser::FromString(protocol);
-		clientDesc.PingInterval			= Timestamp::Seconds(1);
-		clientDesc.PingTimeout			= Timestamp::Seconds(10);
-		clientDesc.UsePingSystem		= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+		m_pClient = NetworkUtils::CreateClient(desc);
 
-		m_pClient = NetworkUtils::CreateClient(clientDesc);
-
-		//NetworkDiscovery::EnableClient(m_Name, this);
+		NetworkDiscovery::EnableClient(m_Name, this);
 
 		ConsoleCommand netStatsCmd;
 		netStatsCmd.Init("show_net_stats", true);
@@ -110,7 +100,7 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(event);
 
-		//NetworkDiscovery::EnableClient(m_Name, this);
+		NetworkDiscovery::EnableClient(m_Name, this);
 		return false;
 	}
 
