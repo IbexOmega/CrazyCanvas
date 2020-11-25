@@ -29,6 +29,8 @@ void ClientShowerSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 void ClientShowerSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 {
+	UNREFERENCED_VARIABLE(deltaTime);
+
 	using namespace LambdaEngine;
 
 	ECSCore* pECS = ECSCore::GetInstance();
