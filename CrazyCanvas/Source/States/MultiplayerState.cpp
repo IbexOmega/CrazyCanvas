@@ -5,6 +5,10 @@
 
 #include "Resources/ResourceCatalog.h"
 
+#include "Application/API/CommonApplication.h"
+#include "World/Player/PlayerActionSystem.h"
+#include "Input/API/Input.h"
+
 using namespace LambdaEngine;
 
 MultiplayerState::~MultiplayerState()
@@ -16,6 +20,10 @@ MultiplayerState::~MultiplayerState()
 void MultiplayerState::Init()
 {
 	using namespace LambdaEngine;
+
+	CommonApplication::Get()->SetMouseVisibility(true);
+	PlayerActionSystem::SetMouseEnabled(false);
+	Input::PushInputMode(EInputLayer::GUI);
 
 	DisablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();

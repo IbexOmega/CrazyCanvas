@@ -22,7 +22,7 @@ struct MatchDescription
 {
 	LambdaEngine::SHA256Hash LevelHash;
 	EGameMode GameMode	= EGameMode::CTF_TEAM_FLAG;
-	uint32 NumTeams		= 2;
+	uint8 NumTeams		= 2;
 	uint32 MaxScore		= 3;
 };
 
@@ -31,15 +31,13 @@ static constexpr const float32 MATCH_BEGIN_COUNTDOWN_TIME = 5.0f;
 class MatchBase
 {
 public:
-	MatchBase() = default;
+	MatchBase();
 	virtual ~MatchBase();
 
 	bool Init(const MatchDescription* pDesc);
 
 	void Tick(LambdaEngine::Timestamp deltaTime);
 	void FixedTick(LambdaEngine::Timestamp deltaTime);
-
-	void SetScore(uint32 teamIndex, uint32 score);
 
 	void ResetMatch();
 
@@ -58,8 +56,11 @@ public:
 	virtual void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity) = 0;
 
 protected:
+	bool SetScore(uint8 teamIndex, uint32 score);
+
 	virtual bool InitInternal() = 0;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) = 0;
+	virtual bool ResetMatchInternal() = 0;
 
 	virtual void FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 	{
