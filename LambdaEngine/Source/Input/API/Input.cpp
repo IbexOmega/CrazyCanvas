@@ -7,8 +7,8 @@
 
 namespace LambdaEngine
 {
-	KeyboardState			Input::s_KeyboardStates[3][3];
-	MouseState				Input::s_MouseStates[3][3];
+	KeyboardState			Input::s_KeyboardStates[4][4];
+	MouseState				Input::s_MouseStates[4][4];
 	std::atomic_bool		Input::s_InputEnabled = true;
 	SpinLock				Input::s_WriteBufferLockMouse;
 	SpinLock				Input::s_WriteBufferLockKeyboard;

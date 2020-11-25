@@ -3,6 +3,7 @@
 #include "Match/MatchBase.h"
 
 #include "Events/PacketEvents.h"
+#include "Events/PlayerEvents.h"
 
 #include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
@@ -11,6 +12,8 @@
 #include "Multiplayer/Packet/PacketMatchReady.h"
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
+
+
 
 class MatchClient : public MatchBase
 {
@@ -33,6 +36,8 @@ protected:
 	bool OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event);
 	bool OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event);
 	bool OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event);
+
+	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
 
 private:
 	bool m_ClientSideBegun = false;
