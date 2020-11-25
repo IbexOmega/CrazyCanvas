@@ -46,6 +46,13 @@ void SavedServerGUI::AddServer(Grid* pParentGrid, ServerInfo& serverInfo)
 	}
 }
 
+void SavedServerGUI::RemoveServer(ServerInfo& serverInfo)
+{
+	m_LocalServerList->GetItems()->Remove(serverInfo.GridUI);
+	m_SavedServerList->GetItems()->Remove(serverInfo.GridUI);
+	serverInfo.GridUI = nullptr;
+}
+
 Ptr<Grid> SavedServerGUI::AddServerItem(Grid* pParentGrid, ServerInfo& serverInfo)
 {
 	Ptr<Grid> grid = *new Grid();

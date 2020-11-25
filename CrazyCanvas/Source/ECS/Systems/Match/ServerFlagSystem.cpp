@@ -205,7 +205,7 @@ void ServerFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 void ServerFlagSystem::OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
 {
-	OnFlagPickedUp(entity1, entity0);
+ 	OnFlagPickedUp(entity1, entity0);
 }
 
 void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)

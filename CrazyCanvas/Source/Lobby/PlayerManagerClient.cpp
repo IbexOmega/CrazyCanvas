@@ -1,5 +1,7 @@
 #include "Lobby/PlayerManagerClient.h"
 
+#include "Networking/API/NetworkDebugger.h"
+
 #include "Multiplayer/ClientHelper.h"
 
 #include "Game/Multiplayer/Client/ClientSystem.h"
@@ -83,6 +85,8 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 	}
 
 	ClientHelper::Send(packet);
+
+	NetworkDebugger::RegisterClientName(pClient, name);
 }
 
 void PlayerManagerClient::SetLocalPlayerReady(bool ready)

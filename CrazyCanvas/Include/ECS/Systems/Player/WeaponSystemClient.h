@@ -24,7 +24,4 @@ protected:
 private:
 	LambdaEngine::IDVector m_LocalPlayerEntities;
 	LambdaEngine::IDVector m_ForeignPlayerEntities;
-
-	GUID_Lambda m_GunFireGUID	= GUID_NONE;
-	GUID_Lambda m_OutOfAmmoGUID	= GUID_NONE;
 };
