@@ -383,7 +383,7 @@ namespace LambdaEngine
 				m_pLightRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-
+				
 				// Particle Renderer & Manager
 				constexpr uint32 MAX_PARTICLE_COUNT = 30000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
@@ -847,7 +847,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderSystem::InitIntegrationLUT()
+bool RenderSystem::InitIntegrationLUT()
 	{
 		if (m_IntegrationLUT)
 		{
@@ -1958,21 +1958,21 @@ namespace LambdaEngine
 	}
 
 	void RenderSystem::UpdateParticleEmitter(
-		Entity entity, 
-		const PositionComponent& positionComp, 
-		const RotationComponent& rotationComp, 
+		Entity entity,
+		const PositionComponent& positionComp,
+		const RotationComponent& rotationComp,
 		const ParticleEmitterComponent& emitterComp)
 	{
 		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 	}
 
 	void RenderSystem::UpdateDirectionalLight(
-		const glm::vec4& colorIntensity, 
-		const glm::vec3& position, 
-		const glm::quat& direction, 
-		float frustumWidth, 
-		float frustumHeight, 
-		float zNear, 
+		const glm::vec4& colorIntensity,
+		const glm::vec3& position,
+		const glm::quat& direction,
+		float frustumWidth,
+		float frustumHeight,
+		float zNear,
 		float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
@@ -3036,35 +3036,38 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			Sampler* pLinearSamplers = Sampler::GetLinearSampler();
+			if (m_AlbedoMaps.GetSize() > 0)
+			{
+				Sampler* pLinearSamplers = Sampler::GetLinearSampler();
 
-			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc albedoMapsUpdateDesc = {};
+				albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
-			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
-			normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc normalMapsUpdateDesc = {};
+				normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
+				normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
-			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
-			combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_CombinedMaterialMaps.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_CombinedMaterialMapViews.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount	= m_CombinedMaterialMaps.GetSize();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
+				ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
+				combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_CombinedMaterialMaps.GetData();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_CombinedMaterialMapViews.GetData();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount	= m_CombinedMaterialMaps.GetSize();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
 
-			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
+			}
 
 			m_MaterialsResourceDirty = false;
 		}
