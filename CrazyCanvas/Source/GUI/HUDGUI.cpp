@@ -32,6 +32,7 @@
 #include "Match/Match.h"
 
 #include "Lobby/PlayerManagerClient.h"
+#include "Teams/TeamHelper.h"
 
 #include "Game/ECS/Systems/CameraSystem.h"
 
@@ -105,13 +106,13 @@ bool HUDGUI::UpdateScore()
 	{
 		m_GUIState.Scores[0] = blueScore;
 
-		m_pBlueScoreGrid->GetChildren()->Get(5 - blueScore)->SetVisibility(Visibility::Visibility_Visible);
+		m_pTeam1Score->SetText(std::to_string(blueScore).c_str());
 	}
 	else if (m_GUIState.Scores[1] != redScore && redScore != 0) //Red
 	{
 		m_GUIState.Scores[1] = redScore;
 
-		m_pRedScoreGrid->GetChildren()->Get(redScore - 1)->SetVisibility(Visibility::Visibility_Visible);
+		m_pTeam2Score->SetText(std::to_string(redScore).c_str());
 	}
 
 	return true;
@@ -298,12 +299,11 @@ void HUDGUI::InitGUI()
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
 
-	m_pRedScoreGrid = FrameworkElement::FindName<Noesis::Grid>("RED_TEAM_SCORE_GRID");
-	m_pBlueScoreGrid = FrameworkElement::FindName<Noesis::Grid>("BLUE_TEAM_SCORE_GRID");
-
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
+
+	InitScore();
 
 	std::string ammoString;
 
@@ -317,6 +317,29 @@ void HUDGUI::InitGUI()
 
 	m_WindowSize.x = CommonApplication::Get()->GetMainWindow()->GetWidth();
 	m_WindowSize.y = CommonApplication::Get()->GetMainWindow()->GetHeight();
+}
+
+void HUDGUI::InitScore()
+{
+	m_pTeam1Score = FrameworkElement::FindName<Noesis::TextBlock>("SCORE_DISPLAY_TEAM_1");
+	m_pTeam2Score = FrameworkElement::FindName<Noesis::TextBlock>("SCORE_DISPLAY_TEAM_2");
+
+	Noesis::Ptr<Noesis::SolidColorBrush> pBrush1 = *new Noesis::SolidColorBrush();
+	Noesis::Ptr<Noesis::SolidColorBrush> pBrush2 = *new Noesis::SolidColorBrush();
+
+	glm::vec3 teamColor1 = TeamHelper::GetTeamColor(0);
+	glm::vec3 teamColor2 = TeamHelper::GetTeamColor(1);
+	Noesis::Color Color1(teamColor1.r, teamColor1.g, teamColor1.b);
+	Noesis::Color Color2(teamColor2.r, teamColor2.g, teamColor2.b);
+
+	pBrush1->SetColor(Color1);
+	pBrush2->SetColor(Color2);
+
+	m_pTeam1Score->SetForeground(pBrush1);
+	m_pTeam2Score->SetForeground(pBrush2);
+
+	m_pTeam1Score->SetText("0");
+	m_pTeam2Score->SetText("0");
 }
 
 void HUDGUI::SetRenderStagesInactive()

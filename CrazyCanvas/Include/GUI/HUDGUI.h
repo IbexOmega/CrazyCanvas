@@ -88,6 +88,8 @@ public:
 private:
 	void InitGUI();
 
+	void InitScore();
+
 	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
 	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
 	void SetRenderStagesInactive();
@@ -110,8 +112,8 @@ private:
 	Noesis::Grid* m_pHitIndicatorGrid			= nullptr;
 	Noesis::Grid* m_pScoreboardGrid				= nullptr;
 
-	Noesis::Grid* m_pRedScoreGrid				= nullptr;
-	Noesis::Grid* m_pBlueScoreGrid				= nullptr;
+	Noesis::TextBlock* m_pTeam1Score = nullptr;
+	Noesis::TextBlock* m_pTeam2Score = nullptr;
 
 
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
