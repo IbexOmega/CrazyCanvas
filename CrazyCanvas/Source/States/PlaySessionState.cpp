@@ -47,6 +47,8 @@
 
 #include "Resources/ResourceCatalog.h"
 
+#include "ECS/Systems/Misc/DestructionSystem.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
@@ -119,7 +121,10 @@ void PlaySessionState::Init()
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 	}
 
+	// Init Systems
 	m_HUDSystem.Init();
+	m_DestructionSystem.Init();
+
 }
 
 void PlaySessionState::Tick(Timestamp delta)

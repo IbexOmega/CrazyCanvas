@@ -80,7 +80,7 @@ namespace LambdaEngine
 		float			Bounciness				= 1.0f;
 		GUID_Lambda		AtlasGUID				= GUID_NONE;
 		uint32			AtlasTileSize			= 64;
-		uint32			TileIndex				= 0;
+		bool			RandomStartIndex		= false;
 		uint32			AnimationCount			= 1;
 		uint32			FirstAnimationIndex		= 0;
 		uint32			LastAnimationIndex		= 0;

@@ -22,6 +22,7 @@
 #include "Rendering/Core/API/Fence.h"
 #include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/RenderPass.h"
+#include "Rendering/Core/API/TextureView.h"
 #include "Rendering/Core/API/PipelineLayout.h"
 #include "Rendering/Core/API/AccelerationStructure.h"
 
@@ -33,6 +34,7 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/AnimationComponent.h"
+#include "Game/ECS/Components/Rendering/GlobalLightProbeComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
 #define RENDER_SYSTEM_DEBUG 1
@@ -43,7 +45,6 @@ namespace LambdaEngine
 	class Texture;
 	class RenderGraph;
 	class CommandList;
-	class TextureView;
 	class ImGuiRenderer;
 	class GraphicsDevice;
 	class CommandAllocator;
@@ -243,6 +244,40 @@ namespace LambdaEngine
 			// PointLight PointLights[] unbounded
 		};
 
+		struct LightProbe
+		{
+			inline ~LightProbe()
+			{
+				Release();
+			}
+
+			FORCEINLINE void Release()
+			{
+				Specular.Reset();
+				SpecularView.Reset();
+
+				for (TSharedRef<TextureView>& view : SpecularWriteViews)
+				{
+					view.Reset();
+				}
+				RawSpecularWriteViews.Clear();
+
+				Diffuse.Reset();
+				DiffuseView.Reset();
+
+				SpecularResolution	= 0;
+				DiffuseResolution	= 0;
+			}
+
+			TSharedRef<Texture>				Specular;
+			TSharedRef<TextureView>			SpecularView;
+			TArray<TextureView*>			RawSpecularWriteViews;
+			TArray<TSharedRef<TextureView>>	SpecularWriteViews;
+			TSharedRef<Texture>		Diffuse;
+			TSharedRef<TextureView>	DiffuseView;
+			uint32 SpecularResolution	= 128;
+			uint32 DiffuseResolution	= 64;
+		};
 
 	public:
 		~RenderSystem() = default;
@@ -288,6 +323,8 @@ namespace LambdaEngine
 	private:
 		RenderSystem() = default;
 
+		bool InitIntegrationLUT();
+
 		glm::mat4 CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes);
 		glm::mat4 CreateEntityTransform(
 			const PositionComponent& positionComp, 
@@ -305,6 +342,9 @@ namespace LambdaEngine
 
 		void OnPointLightEntityAdded(Entity entity);
 		void OnPointLightEntityRemoved(Entity entity);
+
+		void OnGlobalLightProbeEntityAdded(Entity entity);
+		void OnGlobalLightProbeEntityRemoved(Entity entity);
 
 		void AddRenderableEntity(
 			Entity entity, 
@@ -332,8 +372,16 @@ namespace LambdaEngine
 			float frustumHeight, 
 			float zNear, 
 			float zFar);
+
+		void UpdateLightProbeResources(CommandList* pCommandList);
 		
-		void UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane);
+		void UpdatePointLight(
+			Entity entity, 
+			const glm::vec3& position, 
+			const glm::vec4& colorIntensity, 
+			float nearPlane, 
+			float farPlane);
+		
 		void UpdateAnimation(Entity entity, MeshComponent& meshComp, AnimationComponent& animationComp);
 		
 		void UpdateTransform(
@@ -391,6 +439,7 @@ namespace LambdaEngine
 		IDVector m_PointLightEntities;
 		IDVector m_CameraEntities;
 		IDVector m_ParticleEmitters;
+		IDVector m_GlobalLightProbeEntities;
 
 		TSharedRef<SwapChain>	m_SwapChain					= nullptr;
 		Texture**				m_ppBackBuffers				= nullptr;
@@ -418,6 +467,15 @@ namespace LambdaEngine
 		TArray<Texture*>			m_CubeTextures;
 		TArray<TextureView*>		m_CubeTextureViews;
 		TArray<TextureView*>		m_CubeSubImageTextureViews;
+
+		// Global lightprobe, there can only be one global
+		LightProbe m_GlobalLightProbe;
+		bool m_GlobalLightProbeDirty		= true;
+		bool m_GlobalLightProbeNeedsUpdate	= true;
+
+		// Integration Look-Up-Texture
+		TSharedRef<Texture>		m_IntegrationLUT;
+		TSharedRef<TextureView>	m_IntegrationLUTView;
 
 		// Data Supplied to the RenderGraph
 		MeshAndInstancesMap				m_MeshAndInstancesMap;
@@ -484,6 +542,7 @@ namespace LambdaEngine
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
 		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
+		class LightProbeRenderer*	m_pLightProbeRenderer	= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
 #ifdef RENDER_SYSTEM_DEBUG

@@ -12,7 +12,9 @@
 
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Misc/DestructionComponent.h"
 #include "ECS/ECSCore.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 
 #include "Engine/EngineConfig.h"
 
@@ -26,11 +28,12 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+#include "Game/ECS/Components/Rendering/GlobalLightProbeComponent.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Systems/TrackSystem.h"
 #include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
-#include "ECS/Systems/Player/WeaponSystem.h"
+#include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/GameConsole.h"
 
 #include "Teams/TeamHelper.h"
@@ -44,8 +47,10 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderGraphEditor.h"
 #include "Rendering/Animation/AnimationGraph.h"
+#include "Rendering/EntityMaskManager.h"
 
 #include "Math/Random.h"
+
 #include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
@@ -55,9 +60,6 @@
 
 #include "Match/Match.h"
 
-#include "Game/Multiplayer/Client/ClientSystem.h"
-
-#include "Rendering/EntityMaskManager.h"
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
@@ -93,6 +95,7 @@ void SandboxState::Init()
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
+	m_DestructionSystem.Init();
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
@@ -114,12 +117,19 @@ void SandboxState::Init()
 		Match::CreateMatch(&matchDescription);
 	}
 
+	// Global Light Probe
+	{
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<GlobalLightProbeComponent>(entity, GlobalLightProbeComponent());
+	}
+
 	// Set Team Colors
 	{
 		TeamHelper::SetTeamColor(0, glm::vec3(1.0f, 1.0f, 0.0f));
 		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
 	}
 
+	// Load character
 	{
 		GUID_Lambda characterMeshGUID;
 		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
@@ -149,6 +159,50 @@ void SandboxState::Init()
 		pECS->AddComponent<ScaleComponent>(entity, { true, scale });
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<MeshComponent>(entity, meshComp);
+	}
+
+	// Sphere grid
+	{
+		GUID_Lambda sphereMeshGUID;
+		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
+		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
+
+		uint32 gridRadius = 5;
+
+		for (uint32 y = 0; y < gridRadius; y++)
+		{
+			const float32 roughness = y / float32(gridRadius - 1);
+
+			for (uint32 x = 0; x < gridRadius; x++)
+			{
+				const float32 metallic = x / float32(gridRadius - 1);
+
+				MaterialProperties materialProperties;
+				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+				materialProperties.Roughness = roughness;
+				materialProperties.Metallic = metallic;
+
+				MeshComponent sphereMeshComp = {};
+				sphereMeshComp.MeshGUID = sphereMeshGUID;
+				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					materialProperties);
+
+				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 5.0f);
+				glm::vec3 scale(1.0f);
+
+				Entity entity = pECS->CreateEntity();
+				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				pECS->AddComponent<PositionComponent>(entity, { true, position });
+				pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+				pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+			}
+		}
 	}
 
 	// Robot
@@ -273,23 +327,23 @@ void SandboxState::Init()
 
 	// Emitter
 	{
-		//Entity entity = pECS->CreateEntity();
-		//pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		//pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		//pECS->AddComponent<ParticleEmitterComponent>(entity,
-		//	ParticleEmitterComponent{
-		//		.ParticleCount = 5,
-		//		.EmitterShape = EEmitterShape::TUBE,
-		//		.Velocity = 1.0f,
-		//		.Acceleration = 0.0f,
-		//		.BeginRadius = 0.5f,
-		//		.TileIndex = 16,
-		//		.AnimationCount = 4,
-		//		.FirstAnimationIndex = 16,
-		//		.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
-		//	}
-		//);
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 2.0f, 5.0f } });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 5,
+				.EmitterShape = EEmitterShape::TUBE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 0.5f,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 0,
+				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+			}
+		);
 	}
+
 
 
 	// Create dirLight
@@ -313,7 +367,6 @@ void SandboxState::Init()
 		TArray<GUID_Lambda> animations;
 		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
 	}
-
 
 	if constexpr (IMGUI_ENABLED)
 	{
@@ -428,7 +481,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 				m_Emitters[modIndex] = e;
 
 				pECSCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -4.f + float(modIndex) } });
-				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), float(modIndex % 3U), float(modIndex % 5U)))) });
+				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), 5.0f + float(modIndex % 3U), float(modIndex % 5U)))) });
 				pECSCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
 					.OneTime = true,
 					.Explosive = 0.9f,
@@ -439,8 +492,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 					.Gravity = Random::Float32(-5.0f, 5.0f),
 					.LifeTime = Random::Float32(1.0f, 3.0f),
 					.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f),
-					.TileIndex = 14,
-					.FirstAnimationIndex = 14,
+					.FirstAnimationIndex = 6,
 					.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
 				});
 			}
