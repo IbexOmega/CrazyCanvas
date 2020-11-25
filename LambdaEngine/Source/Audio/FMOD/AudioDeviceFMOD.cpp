@@ -93,6 +93,14 @@ namespace LambdaEngine
 			return false;
 		}
 
+		// Set 3D sound settings
+		float dopparScale = 1.0f, distanceFactor = 0.5f, rolloffScale = 1.0f;
+		if (FMOD_System_Set3DSettings(pSystem, dopparScale, distanceFactor, rolloffScale) != FMOD_OK)
+		{
+			LOG_ERROR("[AudioDeviceFMOD]: FMOD 3D Settings could not be set for %s", m_pName);
+			return false;
+		}
+
 		D_LOG_MESSAGE("[AudioDeviceFMOD]: Successfully initialized %s!", m_pName);
 
 		return true;

@@ -56,6 +56,7 @@ bool MatchClient::InitInternal()
 		m_HasBegun = true;
 		m_ClientSideBegun = true;
 		m_MatchBeginTimer = 0.0f;
+		m_HasStarted = true;
 	}
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
@@ -74,14 +75,14 @@ bool MatchClient::InitInternal()
 	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
 	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
 	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
-	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/go.mp3");
+	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/start.mp3");
 
 	return true;
 }
 
 void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 {
-	if (!m_ClientSideBegun)
+	if (m_HasStarted && !m_ClientSideBegun)
 	{
 		float32 previousTimer = m_MatchBeginTimer;
 		m_MatchBeginTimer -= float32(deltaTime.AsSeconds());
@@ -111,9 +112,9 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 			ResourceManager::GetSoundEffect2D(m_CountdownSoundEffects[0])->PlayOnce(0.1f);
 			EventQueue::SendEvent<MatchCountdownEvent>(1);
 		}
-		else if (m_MatchBeginTimer < 0.0f)
+		else if (previousTimer < 0.0f)
 		{
-			ResourceManager::GetSoundEffect2D(m_CountdownDoneSoundEffect)->PlayOnce(0.1f);
+			ResourceManager::GetSoundEffect2D(m_CountdownDoneSoundEffect)->PlayOnce(0.5f);
 			EventQueue::SendEvent<MatchCountdownEvent>(0);
 
 			m_ClientSideBegun = true;
@@ -231,6 +232,7 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 {
 	UNREFERENCED_VARIABLE(event);
 
+	m_HasStarted = true;
 	m_HasBegun = false;
 	m_ClientSideBegun = false;
 	m_MatchBeginTimer = MATCH_BEGIN_COUNTDOWN_TIME;
