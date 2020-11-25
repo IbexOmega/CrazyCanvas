@@ -71,7 +71,6 @@ public:
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
-	void DisplayScoreboardMenu(bool visible);
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
 	void DisplayPrompt(const LambdaEngine::String& promptMessage);
 
@@ -118,8 +117,6 @@ private:
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
-
-	bool m_ScoreboardVisible = false;
 
 	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
 

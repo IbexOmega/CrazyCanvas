@@ -205,22 +205,6 @@ void HUDGUI::DisplayHitIndicator()
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
-void HUDGUI::DisplayScoreboardMenu(bool visible)
-{
-	// Toggle to visible
-	if (!m_ScoreboardVisible && visible)
-	{
-		m_ScoreboardVisible = true;
-		m_pScoreboardGrid->SetVisibility(Visibility::Visibility_Visible);
-	}
-	// Toggle to hidden
-	else if (m_ScoreboardVisible && !visible)
-	{
-		m_ScoreboardVisible = false;
-		m_pScoreboardGrid->SetVisibility(Visibility::Visibility_Hidden);
-	}
-}
-
 void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex)
 {
 	LambdaEngine::String feedText = killer + " Killed " + killed;
@@ -288,6 +272,8 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	pGameOverGUI->SetMostKillsStats(mostKills.first, mostKills.second->GetName());
 	pGameOverGUI->SetMostDeathsStats(mostDeaths.first, mostDeaths.second->GetName());
 	pGameOverGUI->SetMostFlagsStats(mostFlags.first, mostFlags.second->GetName());
+
+	m_pScoreBoardGUI->DisplayScoreboardMenu(true);
 }
 
 void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage)
