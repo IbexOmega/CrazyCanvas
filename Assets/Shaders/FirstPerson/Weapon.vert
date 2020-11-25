@@ -8,6 +8,7 @@
 struct SWeaponData
 {
 	mat4 Model;
+	vec3 PlayerPos;
 };
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;
@@ -46,12 +47,12 @@ void main()
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
 	out_MaterialSlot		= instance.MaterialSlot;
-	out_WorldPosition		= worldPosition.xyz;
+	out_WorldPosition		= weaponData.PlayerPos;
 	out_Normal				= normal;
 	out_Tangent				= tangent;
 	out_Bitangent			= bitangent;
 	out_TexCoord			= vertex.TexCoord.xy;
-	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
+	out_PrevClipPosition	= perFrameBuffer.Projection * perFrameBuffer.View * prevWorldPosition;
     out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
 

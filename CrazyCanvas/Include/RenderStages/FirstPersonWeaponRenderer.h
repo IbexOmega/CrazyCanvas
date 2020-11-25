@@ -1,6 +1,6 @@
 #pragma once
-#include "CustomRenderer.h"
-#include "RenderGraphTypes.h"
+#include "Rendering/CustomRenderer.h"
+#include "Rendering/RenderGraphTypes.h"
 #include "Rendering/Core/API/DescriptorCache.h"
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/DescriptorSet.h"
@@ -27,6 +27,7 @@ namespace LambdaEngine {
 
 	struct SWeaponBuffer {
 		glm::mat4 Model;
+		glm::vec3 PlayerPos;
 	};
 
 	class FirstPersonWeaponRenderer : public CustomRenderer
@@ -98,6 +99,8 @@ namespace LambdaEngine {
 		TSharedRef<Buffer>						m_FrameCopyBuffer;
 		TSharedRef<Buffer>						m_FrameBuffer;
 		// First Person Weapon Vertex and Index Buffer
+		Entity									m_Entity;
+		glm::vec3								m_WorldPos = glm::vec3(0);
 		TSharedRef<Buffer>						m_pVertexBuffer = nullptr;
 		TSharedRef<Buffer>						m_pVertexStagingBuffer = nullptr;
 

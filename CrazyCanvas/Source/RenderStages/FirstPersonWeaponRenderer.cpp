@@ -1,6 +1,5 @@
+#include "RenderStages/FirstPersonWeaponRenderer.h"
 #include "Application/API/CommonApplication.h"
-#include "Rendering/FirstPersonWeaponRenderer.h"
-
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/PipelineState.h"
@@ -16,12 +15,13 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
-#include "../CrazyCanvas/Include/ECS/Components/Player/WeaponComponent.h"
+#include "Game/ECS/Components/Physics/Transform.h"
 #include "Engine/EngineConfig.h"
 
 
 #include "Rendering/RenderGraph.h"
-#include "../CrazyCanvas/Include/Resources/ResourceCatalog.h"
+#include "ECS/Components/Player/WeaponComponent.h"
+#include "Resources/ResourceCatalog.h"
 
 namespace LambdaEngine
 {
@@ -453,6 +453,7 @@ namespace LambdaEngine
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
 				const ComponentArray<WeaponLocalComponent>* pWeaponLocalComponents = pECSCore->GetComponentArray<WeaponLocalComponent>();
+				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
@@ -462,9 +463,11 @@ namespace LambdaEngine
 					{
 						for (uint32 i = 0; i < m_pDrawArgs[d].EntityIDs.GetSize(); i++)
 						{
-							Entity entity = m_pDrawArgs[d].EntityIDs[i];
-							if (pWeaponLocalComponents->HasComponent(entity))
-							{
+							m_Entity = m_pDrawArgs[d].EntityIDs[i];
+							if (pWeaponLocalComponents->HasComponent(m_Entity)) {
+							
+								m_WorldPos = pPositionComponents->GetConstData(m_Entity).Position;
+
 								// Set Vertex and Instance buffer for rendering
 								Buffer* ppBuffers[2] = { m_pVertexBuffer.Get(), m_pDrawArgs[d].pInstanceBuffer };
 								uint64 pOffsets[2] = { 0, 0 };
@@ -654,9 +657,13 @@ namespace LambdaEngine
 
 	void FirstPersonWeaponRenderer::UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex)
 	{
+
+		const ComponentArray<PositionComponent>* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
 		SWeaponBuffer data = {};
 
-		data.Model = glm::translate(glm::vec3(-0.5f, -0.4f, -0.6f));
+		data.Model = glm::translate(glm::vec3(-0.5f, -0.4f, -0.5f));
+		data.Model = glm::scale(data.Model, glm::vec3(1.2f, 1.2f, 1.2f));
+		data.PlayerPos = pPositionComponents->GetConstData(m_Entity).Position;
 
 		Buffer* pStagingBuffer = m_pWeaponStagingBuffers[modFrameIndex].Get();
 		byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());

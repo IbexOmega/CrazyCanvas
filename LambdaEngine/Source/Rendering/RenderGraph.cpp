@@ -2,7 +2,6 @@
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/LineRenderer.h"
-#include "Rendering/FirstPersonWeaponRenderer.h"
 
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
@@ -1740,7 +1739,6 @@ namespace LambdaEngine
 
 			bool isImGuiStage = pRenderStageDesc->Name == RENDER_GRAPH_IMGUI_STAGE_NAME;
 			bool isLineRendererStage = pRenderStageDesc->Name == RENDER_GRAPH_LINE_RENDERER_STAGE_NAME;
-			bool isFirstPersonWeaponStage = pRenderStageDesc->Name == RENDER_GRAPH_FIRST_PERSON_WEAPON_STAGE_NAME;
 
 			pRenderStage->Name			= pRenderStageDesc->Name;
 			pRenderStage->Parameters	= pRenderStageDesc->Parameters;
@@ -2298,30 +2296,6 @@ namespace LambdaEngine
 					else
 					{
 						pCustomRenderer = *imGuiRenderStageIt;
-					}
-				}
-				else if (isFirstPersonWeaponStage)
-				{
-					auto firstPersoWeaponStageIt = std::find_if(m_DebugRenderers.Begin(), m_DebugRenderers.End(), [](const CustomRenderer* pCustomRenderer) { return pCustomRenderer->GetName() == RENDER_GRAPH_IMGUI_STAGE_NAME; });
-
-					if (firstPersoWeaponStageIt == m_DebugRenderers.End())
-					{
-						FirstPersonWeaponRenderer* pFirstPersonRenderer = DBG_NEW FirstPersonWeaponRenderer();
-
-						if (!pFirstPersonRenderer->Init())
-						{
-							LOG_ERROR("[RenderGraph] Could not initialize FirstPersonWeapon Custom Renderer");
-							return false;
-						}
-
-						m_CustomRenderers.PushBack(pFirstPersonRenderer);
-						m_DebugRenderers.PushBack(pFirstPersonRenderer);
-
-						pCustomRenderer = pFirstPersonRenderer;
-					}
-					else
-					{
-						pCustomRenderer = *firstPersoWeaponStageIt;
 					}
 				}
 				else
