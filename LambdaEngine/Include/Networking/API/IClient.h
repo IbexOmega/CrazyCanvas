@@ -40,7 +40,7 @@ namespace LambdaEngine
 		virtual const IPEndPoint& GetEndPoint() const = 0;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) = 0;
 		virtual EClientState GetState() const = 0;
-		virtual const NetworkStatistics* GetStatistics() const = 0;
+		virtual NetworkStatistics* GetStatistics() = 0;
 		virtual PacketManagerBase* GetPacketManager() = 0;
 		virtual const PacketManagerBase* GetPacketManager() const = 0;
 		virtual IClientRemoteHandler* GetHandler() = 0;
@@ -50,16 +50,24 @@ namespace LambdaEngine
 		bool SendUnreliableStruct(const T& packet, uint16 packetType)
 		{
 			NetworkSegment* pSegment = GetFreePacket(packetType);
-			pSegment->Write<T>(&packet);
-			return SendUnreliable(pSegment);
+			if (pSegment)
+			{
+				pSegment->Write<T>(&packet);
+				return SendUnreliable(pSegment);
+			}
+			return false;
 		}
 
 		template<class T>
 		bool SendReliableStruct(const T& packet, uint16 packetType, IPacketListener* pListener = nullptr)
 		{
 			NetworkSegment* pSegment = GetFreePacket(packetType);
-			pSegment->Write<T>(&packet);
-			return SendReliable(pSegment, pListener);
+			if (pSegment)
+			{
+				pSegment->Write<T>(&packet);
+				return SendReliable(pSegment, pListener);
+			}
+			return false;
 		}
 
 		static std::string StateToString(EClientState state)

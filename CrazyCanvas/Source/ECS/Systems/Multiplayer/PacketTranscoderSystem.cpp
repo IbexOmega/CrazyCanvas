@@ -80,8 +80,11 @@ void PacketTranscoderSystem::FixedTickMainThreadClient(LambdaEngine::Timestamp d
 			while (pPacketComponent->GetPacketsToSendCount() > 0)
 			{
 				NetworkSegment* pSegment = pClient->GetFreePacket(packetType);
-				pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
-				pClient->SendReliable(pSegment);
+				if (pSegment)
+				{
+					pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
+					pClient->SendReliable(pSegment);
+				}
 			}
 		}
 	}
@@ -120,8 +123,11 @@ void PacketTranscoderSystem::FixedTickMainThreadServer(LambdaEngine::Timestamp d
 				while (pPacketComponent->GetPacketsToSendCount() > 0)
 				{
 					NetworkSegment* pSegment = pClient->GetFreePacket(packetType);
-					pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
-					pClient->SendReliableBroadcast(pSegment);
+					if (pSegment)
+					{
+						pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID);
+						pClient->SendReliableBroadcast(pSegment);
+					}
 				}
 			}
 		}

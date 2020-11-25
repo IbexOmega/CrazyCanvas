@@ -30,9 +30,12 @@ namespace LambdaEngine
 	NetworkSegment* SegmentPool::RequestFreeSegment(const std::string& borrower)
 	{
 		NetworkSegment* pSegment = RequestFreeSegment();
-		ASSERT(pSegment->m_IsBorrowed == false);
-		pSegment->m_IsBorrowed = true;
-		pSegment->m_Borrower = borrower;
+		if (pSegment)
+		{
+			ASSERT(pSegment->m_IsBorrowed == false);
+			pSegment->m_IsBorrowed = true;
+			pSegment->m_Borrower = borrower;
+		}
 		return pSegment;
 	}
 

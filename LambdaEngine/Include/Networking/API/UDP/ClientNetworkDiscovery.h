@@ -27,7 +27,6 @@ namespace LambdaEngine
 			BinaryDecoder Decoder;
 			IPEndPoint Sender;
 			Timestamp Ping;
-			bool IsLAN;
 		};
 
 	public:

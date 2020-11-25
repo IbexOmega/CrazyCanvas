@@ -107,6 +107,8 @@ bool HUDGUI::UpdateScore()
 	uint32 blueScore = Match::GetScore(0);
 	uint32 redScore = Match::GetScore(1);
 
+	if (blueScore > 5 || redScore > 5)
+		return true;
 
 	// poor solution to handle bug if Match being reset before entering
 
