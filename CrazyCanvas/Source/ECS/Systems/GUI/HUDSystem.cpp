@@ -388,7 +388,6 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
-	Input::PushInputMode(EInputLayer::GUI);
 
 	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
 

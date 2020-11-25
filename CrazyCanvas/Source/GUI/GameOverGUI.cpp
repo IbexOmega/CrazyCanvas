@@ -7,6 +7,8 @@
 
 #include "World/Player/PlayerActionSystem.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "Resources/ResourceManager.h"
 
 #include "NoesisPCH.h"
@@ -68,10 +70,19 @@ void GameOverGUI::SetMostFlagsStats(uint8 score, const LambdaEngine::String& pla
 
 void GameOverGUI::SetWinningTeam(uint8 winningTeamIndex)
 {
-	if (winningTeamIndex == 0)
-		m_pWinningTeamText->SetText("Team Blue won this round");
-	else
-		m_pWinningTeamText->SetText("Team Red won this round");
+	Noesis::Ptr<Noesis::SolidColorBrush> pBrush = *new Noesis::SolidColorBrush();
+
+	glm::vec3 teamColor = TeamHelper::GetTeamColor(winningTeamIndex);
+	Noesis::Color winningTeamColor(teamColor.r, teamColor.g, teamColor.b);
+	
+	pBrush->SetColor(winningTeamColor);
+
+	m_pWinningTeamText->SetForeground(pBrush);
+
+	LambdaEngine::String gameOvertext = winningTeamIndex == 0 ? "Team 1 won this round" : "Team 2 won this round";
+
+	m_pWinningTeamText->SetText(gameOvertext.c_str());
+
 }
 
 void GameOverGUI::InitGUI()

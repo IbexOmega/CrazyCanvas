@@ -10,79 +10,79 @@
              d:DesignHeight="100" d:DesignWidth="100"
              x:Name="SCORE_BOARD_UC">
     
- <Viewbox Grid.Column="1" Grid.Row="1">
+    <Viewbox Grid.Column="1" Grid.Row="1">
 
-        <Grid x:Name="SCOREBOARD_GRID" Background="#9B101010" MinHeight="800" MinWidth="1600" Visibility="Hidden">
+            <Grid x:Name="SCOREBOARD_GRID" Background="#9B101010" MinHeight="800" MinWidth="1600" Visibility="Hidden">
 
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
-            </Grid.ColumnDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
 
-            <Grid.RowDefinitions>
-                <RowDefinition Height="2*" />
-                <RowDefinition Height="1*" />
-            </Grid.RowDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="1*" />
+                </Grid.RowDefinitions>
 
-            <Grid.Resources>
-            </Grid.Resources>
+                <Grid.Resources>
+                </Grid.Resources>
 
-            <StackPanel x:Name="BLUE_TEAM_STACK_PANEL" Grid.Column="0" Margin="30 50 30 50" TextElement.FontSize="20">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="2*" />
-                        <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
+                <StackPanel x:Name="BLUE_TEAM_STACK_PANEL" Grid.Column="0" Margin="30 50 30 50" TextElement.FontSize="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
 
-                    <Label Content="Blue Team" Grid.Column="1" Foreground="#05DFD7" FontSize="30" VerticalAlignment="Bottom"/>
-                    <Label Content="K" Grid.Column="2" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    <Label Content="D" Grid.Column="3" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    <Label Content="Flags cap." Grid.Column="4" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    <Label Content="Flags def." Grid.Column="5" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    <Label Content="Ping" Grid.Column="6" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                </Grid>
+                        <Label Content="Blue Team" Grid.Column="1" Foreground="#05DFD7" FontSize="30" VerticalAlignment="Bottom"/>
+                        <Label Content="K" Grid.Column="2" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="D" Grid.Column="3" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Flags cap." Grid.Column="4" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Flags def." Grid.Column="5" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Ping" Grid.Column="6" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                    </Grid>
 
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="6*" />
-                    </Grid.ColumnDefinitions>
-                    <Separator Grid.Column="1" Background="White" />
-                </Grid>
-            </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="6*" />
+                        </Grid.ColumnDefinitions>
+                        <Separator Grid.Column="1" Background="White" />
+                    </Grid>
+                </StackPanel>
 
-            <StackPanel x:Name="RED_TEAM_STACK_PANEL" Grid.Column="1" Margin="50" TextElement.FontSize="20">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="2*" />
-                        <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
+                <StackPanel x:Name="RED_TEAM_STACK_PANEL" Grid.Column="1" Margin="50" TextElement.FontSize="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
 
-                    <Label Content="Red Team" Grid.Column="1" Foreground="#E52C2C" FontSize="30" VerticalAlignment="Bottom"/>
-                    <Label Content="K" Grid.Column="2" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    <Label Content="D" Grid.Column="3" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    <Label Content="Flags cap." Grid.Column="4" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    <Label Content="Flags def." Grid.Column="5" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                    <Label Content="Ping" Grid.Column="6" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
-                </Grid>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.5*" />
-                        <ColumnDefinition Width="6*" />
-                    </Grid.ColumnDefinitions>
-                    <Separator Grid.Column="1" Background="White" />
-                </Grid>
-            </StackPanel>
-        </Grid>
-        </Viewbox>
+                        <Label Content="Red Team" Grid.Column="1" Foreground="#E52C2C" FontSize="30" VerticalAlignment="Bottom"/>
+                        <Label Content="K" Grid.Column="2" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="D" Grid.Column="3" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Flags cap." Grid.Column="4" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Flags def." Grid.Column="5" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Ping" Grid.Column="6" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                    </Grid>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="6*" />
+                        </Grid.ColumnDefinitions>
+                        <Separator Grid.Column="1" Background="White" />
+                    </Grid>
+                </StackPanel>
+            </Grid>
+            </Viewbox>
 </UserControl>
