@@ -43,6 +43,8 @@
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/GameOverGUI.h"
+#include "GUI/EscapeMenuGUI.h"
+#include "GUI/PromptGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
@@ -197,7 +199,9 @@ bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
 	Noesis::RegisterComponent<GameOverGUI>();
+	Noesis::RegisterComponent<EscapeMenuGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
+	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();

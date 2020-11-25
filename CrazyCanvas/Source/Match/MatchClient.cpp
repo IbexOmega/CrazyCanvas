@@ -289,6 +289,8 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
 
 	UNREFERENCED_VARIABLE(event);

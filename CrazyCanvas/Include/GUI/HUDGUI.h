@@ -28,6 +28,8 @@
 
 #include "Lobby/PlayerManagerBase.h"
 
+#include "GUI/EscapeMenuGUI.h"
+
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
 
@@ -72,28 +74,6 @@ public:
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
-	void ToggleEscapeMenu();
-
-	// Escape GUI
-	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-
-	void OnButtonResumeClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-
-	// Settings
-	void OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
-	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
-
-	// Controls
-	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
 	void UpdateCountdown(uint8 countDownTime);
 
@@ -101,6 +81,7 @@ public:
 	void DisplayHitIndicator();
 	void DisplayScoreboardMenu(bool visible);
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
+	void DisplayPrompt(const LambdaEngine::String& promptMessage);
 
 	void AddPlayer(const Player& newPlayer);
 	void RemovePlayer(const Player& player);
@@ -119,11 +100,7 @@ private:
 
 	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
 	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
-	void SetDefaultSettings();
-	void SetDefaultKeyBindings();
 	void SetRenderStagesInactive();
-	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
-	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 
 	// Helpers
 	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
@@ -160,22 +137,7 @@ private:
 	bool m_ScoreboardVisible = false;
 
 	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
-	// EscapeGUI
-	bool 			m_ListenToCallbacks		= false;
-	Noesis::Button* m_pSetKeyButton			= nullptr;
-	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
-	float32 m_LookSensitivityPercentageToSet = 0.0f;
 
-	// bool			m_RayTracingEnabled		= false;
-	bool			m_MeshShadersEnabled	= false;
-	bool			m_FullscreenEnabled		= false;
-	bool			m_EscapeMenuEnabled		= false;
+	EscapeMenuGUI* m_pEscMenuGUI = nullptr;
 
-	bool			m_MouseEnabled			= false;
-
-	Noesis::Grid*	m_pEscapeGrid			= nullptr;
-	Noesis::Grid*	m_pSettingsGrid			= nullptr;
-	Noesis::Grid*	m_pControlsGrid			= nullptr;
-
-	LambdaEngine::TStack<Noesis::FrameworkElement*> m_ContextStack;
 };
