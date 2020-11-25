@@ -9,6 +9,8 @@
 
 #include "Math/Random.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 #include "Match/Match.h"
 
 /*
@@ -102,20 +104,23 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			StartReload(weaponComponent, playerActions);
 		}
 
-		// Reload if we are not reloading
-		if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
-		{
-			StartReload(weaponComponent, playerActions);
-		}
-		else if (!onCooldown) // If we did not hit the reload try and shoot
-		{
-			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
+		if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
+		{ 
+			// Reload if we are not reloading
+			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
 			{
-				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
+				StartReload(weaponComponent, playerActions);
 			}
-			else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
+			else if (!onCooldown) // If we did not hit the reload try and shoot
 			{
-				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
+				if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
+				{
+					TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
+				}
+				else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
+				{
+					TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
+				}
 			}
 		}
 

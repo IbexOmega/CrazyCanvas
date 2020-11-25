@@ -124,6 +124,7 @@ void PlaySessionState::Init()
 	{
 		//Called to tell the server we are ready to start the match
 		PlayerManagerClient::SetLocalPlayerStateLoading();
+		m_CamSystem.Init();
 	}
 
 	// Init Systems

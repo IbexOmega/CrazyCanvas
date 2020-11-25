@@ -6,6 +6,7 @@
 #include "World/LevelObjectCreator.h"
 #include "World/LevelManager.h"
 #include "World/Level.h"
+#include "World/Player/PlayerActionSystem.h"
 
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
@@ -21,6 +22,8 @@
 
 #include "Lobby/PlayerManagerClient.h"
 
+#include "Input/API/Input.h"
+
 #include "Events/MatchEvents.h"
 
 #include "Engine/EngineConfig.h"
@@ -35,13 +38,6 @@ using namespace LambdaEngine;
 
 MatchClient::MatchClient()
 {
-	if (MultiplayerUtils::IsSingleplayer())
-	{
-		m_HasBegun = true;
-		m_ClientSideBegun = true;
-		m_MatchBeginTimer = 0.0f;
-	}
-
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
@@ -49,6 +45,9 @@ MatchClient::MatchClient()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+
+	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &MatchClient::OnPlayerAliveUpdated);
+
 
 	m_CountdownSoundEffects[4] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/five.wav");
 	m_CountdownSoundEffects[3] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/four.wav");
@@ -67,11 +66,18 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+
+	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &MatchClient::OnPlayerAliveUpdated);
 }
 
 bool MatchClient::InitInternal()
 {
-	
+	if (MultiplayerUtils::IsSingleplayer())
+	{
+		m_HasBegun = true;
+		m_ClientSideBegun = true;
+		m_MatchBeginTimer = 0.0f;
+	}
 
 	return true;
 }
@@ -277,6 +283,38 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 	ResetMatch();
 
 	return true;
+}
+
+bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
+{
+	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+
+	UNREFERENCED_VARIABLE(event);
+
+	if (PlayerManagerClient::GetPlayerLocal()->IsDead())
+	{
+		if (currentInputLayer == EInputLayer::GUI)
+		{
+			Input::PopInputMode();
+			Input::PushInputMode(EInputLayer::DEAD);
+			Input::PushInputMode(EInputLayer::GUI);
+		}
+		else
+			Input::PushInputMode(EInputLayer::DEAD);
+	}
+	else
+	{
+		if (currentInputLayer == EInputLayer::GUI)
+		{
+			Input::PopInputMode();
+			Input::PushInputMode(EInputLayer::GAME);
+			Input::PushInputMode(EInputLayer::GUI);
+		}
+		else
+			Input::PushInputMode(EInputLayer::GAME);
+	}
+
+	return false;
 }
 
 bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
