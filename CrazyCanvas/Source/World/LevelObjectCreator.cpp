@@ -1021,7 +1021,7 @@ bool LevelObjectCreator::CreatePlayer(
 				.FOV		= pPlayerDesc->pCameraDesc->FOVDegrees
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
-			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
+			//pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
 		}
 	}

@@ -55,6 +55,7 @@ namespace LambdaEngine
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 		m_UsingMeshShader = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+		m_Entity = MAXUINT32;
 
 		if (!CreateBuffers())
 		{
@@ -657,19 +658,20 @@ namespace LambdaEngine
 
 	void FirstPersonWeaponRenderer::UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex)
 	{
+		if (m_Entity != MAXUINT32) {
+			const ComponentArray<PositionComponent>* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+			SWeaponBuffer data = {};
 
-		const ComponentArray<PositionComponent>* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
-		SWeaponBuffer data = {};
+			data.Model = glm::translate(glm::vec3(-0.5f, -0.4f, -0.5f));
+			data.Model = glm::scale(data.Model, glm::vec3(1.2f, 1.2f, 1.2f));
+			data.PlayerPos = pPositionComponents->GetConstData(m_Entity).Position;
 
-		data.Model = glm::translate(glm::vec3(-0.5f, -0.4f, -0.5f));
-		data.Model = glm::scale(data.Model, glm::vec3(1.2f, 1.2f, 1.2f));
-		data.PlayerPos = pPositionComponents->GetConstData(m_Entity).Position;
-
-		Buffer* pStagingBuffer = m_pWeaponStagingBuffers[modFrameIndex].Get();
-		byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());
-		memcpy(pMapping, &data, sizeof(data));
-		pStagingBuffer->Unmap();
-		pCommandList->CopyBuffer(pStagingBuffer, 0, m_pWeaponBuffer.Get(), 0, sizeof(SWeaponBuffer));
+			Buffer* pStagingBuffer = m_pWeaponStagingBuffers[modFrameIndex].Get();
+			byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());
+			memcpy(pMapping, &data, sizeof(data));
+			pStagingBuffer->Unmap();
+			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pWeaponBuffer.Get(), 0, sizeof(SWeaponBuffer));
+		}
 	}
 
 	bool FirstPersonWeaponRenderer::PrepareResources(CommandList* pCommandList)
