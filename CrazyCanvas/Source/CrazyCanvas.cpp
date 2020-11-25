@@ -103,8 +103,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	PacketTranscoderSystem::GetInstance().Init();
 
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
-	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PaintMaskRenderer());
+	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
+
 	RenderSystem::GetInstance().InitRenderGraphs();
 
 	InitRendererResources();
