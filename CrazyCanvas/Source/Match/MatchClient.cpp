@@ -289,3 +289,40 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 	LOG_INFO("CLIENT: Weapon fired");
 	return true;
 }
+
+void MatchClient::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity)
+{
+	UNREFERENCED_VARIABLE(killPlaneEntity);
+
+	using namespace LambdaEngine;
+
+	ELevelObjectType levelObjectType = m_pLevel->GetLevelObjectType(otherEntity);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
+	{
+		switch (levelObjectType)
+		{
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER:
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
+			{
+				// Do nothing, server should handle this
+				break;
+			}
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE:
+			{
+				m_pLevel->DeleteObject(otherEntity);
+				break;
+			}
+			default:
+			{
+				LOG_WARNING("[MatchClient]: Non Implemented Level Object Type hit the Kill Plane");
+				break;
+			}
+		}
+	}
+	else
+	{
+		pECS->RemoveEntity(otherEntity);
+	}
+}
