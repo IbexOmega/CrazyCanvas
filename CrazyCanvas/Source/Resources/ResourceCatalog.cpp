@@ -44,8 +44,8 @@ bool ResourceCatalog::Init()
 		ResourceManager::LoadMeshFromFile("sphere.obj", PROJECTILE_MESH_GUID);
 
 		MaterialProperties projectileMaterialProperties;
-		projectileMaterialProperties.Metallic = 0.5f;
-		projectileMaterialProperties.Roughness = 0.1f;
+		projectileMaterialProperties.Metallic = 0.8f;
+		projectileMaterialProperties.Roughness = 0.0f;
 		projectileMaterialProperties.Albedo = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 
 		PROJECTILE_WATER_MATERIAL = ResourceManager::LoadMaterialFromMemory(
