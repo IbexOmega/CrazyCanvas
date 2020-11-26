@@ -105,15 +105,15 @@ namespace LambdaEngine
 		static bool Init();
 		static bool Release();
 
-		/*
+		/**
 		* Load a Scene from file, (experimental, only tested with Sponza Scene)
-		*	filepath				- Path to the file
-		*	loadedMeshComponents	- A vector where all loaded MeshComponent(s) will be stored, the
+		* @param filepath				Path to the file
+		* @param loadedMeshComponents	A vector where all loaded MeshComponent(s) will be stored, the
 										GUIDs of each MeshComponent is an index to the loadedMeshes and loadedMaterials vectors
-		*	loadedMeshes			- A vector where all loaded Mesh(es) will be stored
-		*	loadedMaterials			- A vector where all loaded Material(s) will be stored
-		*	loadedTextures			- A vector where all loaded Texture(s) will be stored
-		* return - true if the scene was loaded, false otherwise
+		* @param loadedMeshes			A vector where all loaded Mesh(es) will be stored
+		* @param loadedMaterials		A vector where all loaded Material(s) will be stored
+		* @param loadedTextures			A vector where all loaded Texture(s) will be stored
+		* @return True if the scene was loaded, false otherwise
 		*/
 		static bool LoadSceneFromFile(
 			const String& filepath,
@@ -127,11 +127,11 @@ namespace LambdaEngine
 			TArray<LoadedMaterial*>& materials,
 			TArray<LoadedTexture*>& textures);
 
-		/*
+		/**
 		* Load a mesh from file
-		*	filepath	- Path to the file
-		*	animations	- The animations in this file
-		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
+		* @param filepath	Path to the file
+		* @param animations	The animations in this file
+		* @return A Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
 		static Mesh* LoadMeshFromFile(
 			const String& filepath,
@@ -140,22 +140,22 @@ namespace LambdaEngine
 			TArray<Animation*>* pAnimations,
 			int32 assimpFlags);
 
-		/*
+		/**
 		* Load a mesh from file
-		*	filepath	- Path to the file
-		* return - a TArray filled with Animation* if the file was loaded, otherwise an empty TArray will be returned
+		* @param filepath	 Path to the file
+		* @return A TArray filled with Animation* if the file was loaded, otherwise an empty TArray will be returned
 		*/
 		static TArray<Animation*> LoadAnimationsFromFile(const String& filepath);
 
-		/*
+		/**
 		* Load a mesh from memory
-		*	name			- A name given to the mesh resource
-		*	pVertices		- An array of vertices
-		*	numVertices		- The vertexcount
-		*	pIndices		- An array of indices
-		*	numIndices		- The Indexcount
-		*	useMeshletCache	- Enables read/write to files containing generated meshlets
-		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
+		* @param name				Name of the texture
+		* @param pVertices			An array of vertices
+		* @param numVertices		The vertexcount
+		* @param pIndices			An array of indices
+		* @param numIndices			The Indexcount
+		* @param useMeshletCache	Enables read/write to files containing generated meshlets
+		* @return A Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
 		static Mesh* LoadMeshFromMemory(
 			const String& name,
@@ -165,15 +165,15 @@ namespace LambdaEngine
 			uint32 numIndices,
 			bool useMeshletCache);
 
-		/*
+		/**
 		* Load a texture from file
-		*	name			- Name of the texture
-		*	dir				- A root directory to be appended to entries of pFilepaths
-		*	pFilenames		- Names of the texture files
-		*	count			- Number of elements in pFilenames
-		*	format			- The format of the pixeldata
-		*	generateMips	- If mipmaps should be generated on load
-		* return - an Texture* if the texture was loaded, otherwise nullptr will be returned
+		* @param name			Name of the texture
+		* @param dir			A root directory to be appended to entries of pFilepaths
+		* @param pFilenames		Names of the texture files
+		* @param count			Number of elements in pFilenames
+		* @param format			The format of the pixeldata
+		* @param generateMips	If mipmaps should be generated on load
+		* @return A Texture* if the texture was loaded, otherwise nullptr will be returned
 		*/
 		static Texture* LoadTextureArrayFromFile(
 			const String& name,
@@ -184,14 +184,14 @@ namespace LambdaEngine
 			bool generateMips,
 			bool linearFilteringMips);
 
-		/*
+		/**
 		* Load a texturecube from a equirectangular panorama file
-		*	name			- Name of the texture
-		*	dir				- A root directory to be appended to entries of pFilepaths
-		*	pFilenames		- Names of the texture files
-		*	format			- The format of the pixeldata
-		*	generateMips	- If mipmaps should be generated on load
-		* return - an Texture* if the texture was loaded, otherwise nullptr will be returned
+		* @param name			Name of the texture
+		* @param dir			A root directory to be appended to entries of pFilepaths
+		* @param pFilenames		Names of the texture files
+		* @param format			The format of the pixeldata
+		* @param generateMips	If mipmaps should be generated on load
+		* @return A Texture* if the texture was loaded, otherwise nullptr will be returned
 		*/
 		static Texture* LoadTextureCubeFromPanoramaFile(
 			const String& name,
@@ -201,14 +201,14 @@ namespace LambdaEngine
 			EFormat format,
 			bool generateMips);
 
-		/*
+		/**
 		* Load multiple Cube textures from file and combine into Texture Arrays along with TextureViews and CubeTextureViews
-		*	name - A Name of given to the cubeTexture
-		*	pFilenames - Names of the texture files
-		*	count - number of cubeTextures to load
-		*	format - The format of the pixeldata
-		*	generateMips - If mipmaps should be generated on load
-		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
+		* @param name			A Name of given to the cubeTexture
+		* @param pFilenames		Names of the texture files
+		* @param count			number of cubeTextures to load
+		* @param format 		The format of the pixeldata
+		* @param generateMips	If mipmaps should be generated on load
+		* @return A valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
 		static Texture* LoadCubeTexturesArrayFromFile(
 			const String& name,
@@ -219,17 +219,17 @@ namespace LambdaEngine
 			bool generateMips,
 			bool linearFilteringMips);
 
-		/*
+		/**
 		* Load a texture from memory
-		*	name			- Name of the texture
-		*	ppData			- An array of pixeldata
-		*	arrayCount		- Number of elements in ppData
-		*	width			- The pixel width of the texture
-		*	height			- The pixel height of the texture
-		*	format			- The format of the pixeldata
-		*	usageFlags		- Usage flags
-		*	generateMips	- If mipmaps should be generated on load
-		* return - an Texture* if the texture was loaded, otherwise nullptr will be returned
+		* @param name			Name of the texture
+		* @param ppData			An array of pixeldata
+		* @param arrayCount		Number of elements in ppData
+		* @param width			The pixel width of the texture
+		* @param height			The pixel height of the texture
+		* @param format			The format of the pixeldata
+		* @param usageFlags		Usage flags
+		* @param generateMips	If mipmaps should be generated on load
+		* @return A Texture* if the texture was loaded, otherwise nullptr will be returned
 		*/
 		static Texture* LoadTextureArrayFromMemory(
 			const String& name,
@@ -242,13 +242,13 @@ namespace LambdaEngine
 			bool generateMips,
 			bool linearFilteringMips);
 
-		/*
+		/**
 		* Load sound from file
-		*	filepath	- Path to the shader file
-		*	stage		- Which stage the shader belongs to
-		*	lang		- The language of the shader file
-		*	EntryPoint	- The name of the shader entrypoint
-		* return - an Shader* if the shader was loaded, otherwise nullptr will be returned
+		* @param filepath	Path to the shader file
+		* @param stage		Which stage the shader belongs to
+		* @param lang		The language of the shader file
+		* @param EntryPoint	The name of the shader entrypoint
+		* @return A Shader* if the shader was loaded, otherwise nullptr will be returned
 		*/
 		static Shader* LoadShaderFromFile(
 			const String& filepath,
@@ -262,14 +262,14 @@ namespace LambdaEngine
 			EShaderLang lang,
 			ShaderReflection* pReflection);
 
-		/*
+		/**
 		* Load sound from a source string
-		*	source		- Shader source
-		*	name		- Optional Shadername
-		*	stage		- Which stage the shader belongs to
-		*	lang		- The language of the shader file
-		*	EntryPoint	- The name of the shader entrypoint
-		* return - an Shader* if the shader was loaded, otherwise nullptr will be returned
+		* @param source		Shader source
+		* @param name		Optional Shadername
+		* @param stage		Which stage the shader belongs to
+		* @param lang		The language of the shader file
+		* @param EntryPoint	The name of the shader entrypoint
+		* @return A Shader* if the shader was loaded, otherwise nullptr will be returned
 		*/
 		static Shader* LoadShaderFromMemory(
 			const String& source,
@@ -290,17 +290,17 @@ namespace LambdaEngine
 		*/
 		static ISoundEffect3D* LoadSoundEffect3DFromFile(const String& filepath);
 
-		/*
+		/**
 		* Load 2D sound from file
-		*	filepath - Path to the audio file
-		* return - an ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
+		* @param filepath - Path to the audio file
+		* @return An ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
 		*/
 		static ISoundEffect2D* LoadSoundEffect2DFromFile(const String& filepath);
 
-		/*
+		/**
 		* Load Music from file
-		*	filepath - Path to the audio file
-		* return - an ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
+		* @param filepath Path to the audio file
+		* @return An ISoundEffect3D* if the sound was loaded, otherwise nullptr will be returned
 		*/
 		static IMusic* LoadMusicFromFile(const String& filepath, float32 defaultVolume = 1.0f, float32 defaultPitch = 1.0f);
 
