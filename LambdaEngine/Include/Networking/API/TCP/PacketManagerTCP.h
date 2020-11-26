@@ -15,6 +15,6 @@ namespace LambdaEngine
 		virtual void Reset() override;
 
 	protected:
-		virtual bool FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned) override;
+		virtual bool FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned, bool& hasDiscardedResends) override;
 	};
 }

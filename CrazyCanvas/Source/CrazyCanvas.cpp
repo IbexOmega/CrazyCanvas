@@ -43,6 +43,8 @@
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/GameOverGUI.h"
+#include "GUI/EscapeMenuGUI.h"
+#include "GUI/PromptGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
@@ -64,13 +66,36 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
 
+	const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
+
 	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
 	{
-		ClientSystem::Init(pGameName);
+		ClientSystemDesc desc = {};
+		desc.Name					= pGameName;
+		desc.PoolSize				= 8196;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 3.0f;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(5);
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+
+		ClientSystem::Init(desc);
 	}
 	else if (stateStr == "server")
 	{
-		ServerSystem::Init(pGameName);
+		ServerSystemDesc desc = {};
+		desc.Name					= pGameName;
+		desc.PoolSize				= 8196;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 3.0f;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(5);
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+		desc.MaxClients				= 10;
+
+		ServerSystem::Init(desc);
 	}
 
 	if (!ResourceCatalog::Init())
@@ -174,7 +199,9 @@ bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
 	Noesis::RegisterComponent<GameOverGUI>();
+	Noesis::RegisterComponent<EscapeMenuGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
+	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
@@ -192,8 +219,8 @@ bool CrazyCanvas::InitRendererResources()
 		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
 			"Skybox/daytime.hdr",
 			EFormat::FORMAT_R16G16B16A16_SFLOAT,
-			768,
-			false);
+			512,
+			true);
 
 		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
 		TextureView*	pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);

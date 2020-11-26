@@ -15,6 +15,12 @@ namespace LambdaEngine
 		bool	DeleteParentOnRemoval = false;
 	};
 
+	struct StepParentComponent
+	{
+		DECL_COMPONENT(StepParentComponent);
+		Entity	Owner;
+	};
+
 	struct ChildComponent
 	{
 		DECL_COMPONENT(ParentComponent);
