@@ -171,7 +171,7 @@ void SandboxState::Init()
 
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
-			const float32 roughness = y / float32(gridRadius - 1);
+			const float32 roughness = y / float32(gridRadius - 1) + 0.01;
 
 			for (uint32 x = 0; x < gridRadius; x++)
 			{

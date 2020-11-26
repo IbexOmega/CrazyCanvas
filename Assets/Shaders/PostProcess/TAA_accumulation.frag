@@ -7,7 +7,8 @@
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_IntermediateOutput;
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_Velocity;
-layout(binding = 2, set = TEXTURE_SET_INDEX, rgba8) uniform image2D u_HistoryBuffer;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_Depth;
+layout(binding = 3, set = TEXTURE_SET_INDEX, rgba8) uniform image2D u_HistoryBuffer;
 
 layout(location = 0) in vec2 in_TexCoord;
 layout(location = 0) out vec4 out_Color;
@@ -37,6 +38,43 @@ vec3 ClipAABB(vec3 aabbMin, vec3 aabbMax, vec3 prevSample, vec3 avg)
 		return prevSample;
 	}
 }
+
+// Helper function when dilating the depth buffer
+ivec2 FrontMostNeigbourTexCoord(ivec2 texCoord)
+{
+	float samp[5];
+	samp[0] = texelFetch(u_Depth, texCoord, 0).r;
+	samp[1] = texelFetch(u_Depth, texCoord + ivec2(-2,-2), 0).r;
+	samp[2] = texelFetch(u_Depth, texCoord + ivec2( 2,-2), 0).r;
+	samp[3] = texelFetch(u_Depth, texCoord + ivec2(-2, 2), 0).r;
+	samp[4] = texelFetch(u_Depth, texCoord + ivec2( 2, 2), 0).r;
+	
+	int neighbour = 0;
+	float minSamp = samp[0];
+	for (int i = 0; i < 9; i++)
+	{
+		if (samp[i] < minSamp)
+		{
+			minSamp = samp[i];
+			neighbour = i;
+		}
+	}
+	
+	switch (neighbour)
+	{
+	case 0:
+		return texCoord;
+	case 1:
+		return texCoord + ivec2(-2,-2);
+	case 2:
+		return texCoord + ivec2( 2,-2);
+	case 3:
+		return texCoord + ivec2(-2, 2);
+	case 4:
+		return texCoord + ivec2( 2, 2);
+  }
+}
+
 
 void main()
 {
@@ -68,7 +106,8 @@ void main()
 
 	// Read HistoryBuffer
 	const vec2 jitter = u_PerFrameBuffer.Val.Jitter;
-	vec2 velocity = texelFetch(u_Velocity, texcoord, 0).xy;
+	ivec2 bestTexCoord = FrontMostNeigbourTexCoord(texcoord);
+	vec2 velocity = texelFetch(u_Velocity, bestTexCoord, 0).xy;
 	velocity = (velocity * size);
 	
 	ivec2 prevTexcoord	= texcoord + ivec2(velocity);
@@ -77,7 +116,7 @@ void main()
 
 	// Calculate result with weights (Luminance filtering)
 	float prevWeight	= 0.9f;
-	float currentWeight	= (1.0f - prevWeight);
+	float currentWeight	= 1.0f - prevWeight;
 #if 1
 	prevWeight		= prevWeight * (1.0f / (1.0f + CalculateLuminance(previousSample)));
 	currentWeight	= currentWeight * (1.0f / (1.0f + CalculateLuminance(currentSample)));
