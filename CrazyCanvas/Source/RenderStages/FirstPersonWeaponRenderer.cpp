@@ -584,9 +584,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		if (Sleeping || !m_DirtyUniformBuffers)
-			return;
-
 		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
 		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
 
@@ -628,13 +625,17 @@ namespace LambdaEngine
 		UpdateWeaponBuffer(pCommandList, modFrameIndex);
 
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-		pCommandList->SetViewports(&viewport, 0, 1);
-		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
-		if (m_DrawCount > 0)
+		if (!Sleeping)
 		{
-			RenderCull(pCommandList, m_PipelineStateIDFrontCull);
-			RenderCull(pCommandList, m_PipelineStateIDBackCull);
+			pCommandList->SetViewports(&viewport, 0, 1);
+			pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
+			if (m_DrawCount > 0)
+			{
+				RenderCull(pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(pCommandList, m_PipelineStateIDBackCull);
+			}
 		}
 
 		pCommandList->EndRenderPass();
