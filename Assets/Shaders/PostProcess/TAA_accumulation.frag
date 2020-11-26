@@ -40,14 +40,17 @@ vec3 ClipAABB(vec3 aabbMin, vec3 aabbMax, vec3 prevSample, vec3 avg)
 }
 
 // Helper function when dilating the depth buffer
-ivec2 FrontMostNeigbourTexCoord(ivec2 texCoord)
+vec2 FrontMostNeigbourTexCoord(vec2 texCoord)
 {
+	const vec2 size			= u_PerFrameBuffer.Val.ViewPortSize;
+	const vec2 pixelSize	= 1.0f / size;
+
 	float samp[5];
-	samp[0] = texelFetch(u_Depth, texCoord, 0).r;
-	samp[1] = texelFetch(u_Depth, texCoord + ivec2(-2,-2), 0).r;
-	samp[2] = texelFetch(u_Depth, texCoord + ivec2( 2,-2), 0).r;
-	samp[3] = texelFetch(u_Depth, texCoord + ivec2(-2, 2), 0).r;
-	samp[4] = texelFetch(u_Depth, texCoord + ivec2( 2, 2), 0).r;
+	samp[0] = textureOffset(u_Depth, texCoord, ivec2( 0, 0)).r;
+	samp[1] = textureOffset(u_Depth, texCoord, ivec2(-2,-2)).r;
+	samp[2] = textureOffset(u_Depth, texCoord, ivec2( 2,-2)).r;
+	samp[3] = textureOffset(u_Depth, texCoord, ivec2(-2, 2)).r;
+	samp[4] = textureOffset(u_Depth, texCoord, ivec2( 2, 2)).r;
 	
 	int neighbour = 0;
 	float minSamp = samp[0];
@@ -65,16 +68,15 @@ ivec2 FrontMostNeigbourTexCoord(ivec2 texCoord)
 	case 0:
 		return texCoord;
 	case 1:
-		return texCoord + ivec2(-2,-2);
+		return texCoord - pixelSize * vec2( 2.0f, 2.0f);
 	case 2:
-		return texCoord + ivec2( 2,-2);
+		return texCoord - pixelSize * vec2(-2.0f, 2.0f);
 	case 3:
-		return texCoord + ivec2(-2, 2);
+		return texCoord - pixelSize * vec2( 2.0f,-2.0f);
 	case 4:
-		return texCoord + ivec2( 2, 2);
+		return texCoord - pixelSize * vec2(-2.0f,-2.0f);
   }
 }
-
 
 void main()
 {
@@ -82,19 +84,20 @@ void main()
 	const vec2 size = u_PerFrameBuffer.Val.ViewPortSize;
 	
 	// This frame's data
-	const ivec2 texcoord = ivec2(gl_FragCoord.xy);
-	vec3 currentSample	= texelFetch(u_IntermediateOutput, texcoord, 0).rgb;
+	const vec2 texcoord = vec2(gl_FragCoord.xy);
+	const vec2 texUV	= texcoord / size;
+	vec3 currentSample	= texture(u_IntermediateOutput, texUV).rgb;
 
 	float avgWeight = 0.0f;
 	vec3 avg = vec3(0.0f);
-	vec3 minSample = min(currentSample, vec3(1.0f));
-	vec3 maxSample = max(currentSample, vec3(0.0f));
+	vec3 minSample = min(currentSample, vec3(9999999.0f));
+	vec3 maxSample = max(currentSample, vec3(-9999999.0f));
 	for (int x = -1; x <= 1; x++)
 	{
 		for (int y = -1; y <= 1; y++)
 		{
 			ivec2 offset = ivec2(x, y);
-			vec3 samp = texelFetch(u_IntermediateOutput, texcoord + offset, 0).rgb;
+			vec3 samp = texelFetch(u_IntermediateOutput, ivec2(texcoord) + offset, 0).rgb;
 			minSample = min(samp, minSample);
 			maxSample = max(samp, maxSample);
 
@@ -105,12 +108,12 @@ void main()
 	avg = avg / avgWeight;
 
 	// Read HistoryBuffer
-	const vec2 jitter = u_PerFrameBuffer.Val.Jitter;
-	ivec2 bestTexCoord = FrontMostNeigbourTexCoord(texcoord);
-	vec2 velocity = texelFetch(u_Velocity, bestTexCoord, 0).xy;
+	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter;
+	vec2 bestTexCoord	= FrontMostNeigbourTexCoord(texUV);
+	vec2 velocity = texture(u_Velocity, bestTexCoord, 0).xy;
 	velocity = (velocity * size);
 	
-	ivec2 prevTexcoord	= texcoord + ivec2(velocity);
+	ivec2 prevTexcoord	= ivec2(texcoord + velocity);
 	vec3 previousSample	= imageLoad(u_HistoryBuffer, prevTexcoord).rgb;
 	previousSample		= ClipAABB(minSample, maxSample, previousSample, avg);
 
