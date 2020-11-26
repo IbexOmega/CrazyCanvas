@@ -1,5 +1,4 @@
 #include "World/LevelObjectCreator.h"
-#include "World/ParticleShower.h"
 #include "World/Level.h"
 
 #include "Audio/AudioAPI.h"
@@ -1113,6 +1112,7 @@ bool LevelObjectCreator::CreatePlayer(
 				.FOV		= pPlayerDesc->pCameraDesc->FOVDegrees
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
+			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
 		}
 	}
 	else

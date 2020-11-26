@@ -21,6 +21,8 @@
 
 using namespace LambdaEngine;
 
+HUDSystem* HUDSystem::s_pHudsystemInstance = nullptr;
+
 HUDSystem::~HUDSystem()
 {
 	m_HUDGUI.Reset();
@@ -35,10 +37,12 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 	EventQueue::UnregisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &HUDSystem::OnPacketTeamScored);
 }
 
 void HUDSystem::Init()
 {
+	s_pHudsystemInstance = this;
 
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -102,7 +106,8 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 	EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
-
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &HUDSystem::OnPacketTeamScored);
+	
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
@@ -110,7 +115,7 @@ void HUDSystem::Init()
 	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 	for (auto& player : players)
 	{
-		m_HUDGUI->AddPlayer(player.second);
+		m_HUDGUI->GetScoreBoard()->AddPlayer(player.second);
 	}
 
 	GUIApplication::SetView(m_View);
@@ -194,14 +199,16 @@ void HUDSystem::FixedTick(Timestamp delta)
 	static bool activeButtonChanged = false;
 	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
-		m_HUDGUI->DisplayScoreboardMenu(true);
+		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
 	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
-		m_HUDGUI->DisplayScoreboardMenu(false);
+		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
 	}
+
+	m_HUDGUI->UpdateKillFeedTimer(delta);
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -248,13 +255,14 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 
 bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
 {
-	m_HUDGUI->UpdateAllPlayerProperties(*event.pPlayer);
+	m_HUDGUI->GetScoreBoard()->UpdateAllPlayerProperties(*event.pPlayer);
+
 	return false;
 }
 
 bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 {
-	m_HUDGUI->UpdatePlayerProperty(
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerProperty(
 		event.pPlayer->GetUID(),
 		EPlayerProperty::PLAYER_PROPERTY_PING,
 		std::to_string(event.pPlayer->GetPing()));
@@ -264,14 +272,51 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
 
-	m_HUDGUI->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
+
+	if(pPlayer->IsDead())
+		if(event.pPlayerKiller)
+			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), event.pPlayerKiller->GetName(), event.pPlayer->GetTeam());
+		else
+			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), "Server", event.pPlayer->GetTeam());
+
+	if (pPlayer == PlayerManagerClient::GetPlayerLocal() && pPlayer->IsDead())
+	{
+		if (event.pPlayerKiller)
+		{
+			String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
+			HUDSystem::PromptMessage(promptText);
+		}
+		else
+		{
+			String promptText = "You Were Killed By Something";
+			HUDSystem::PromptMessage(promptText);
+		}
+	}
+
 	return false;
 }
 
 bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
 {
 	m_HUDGUI->UpdateCountdown(event.CountDownTime);
+
+	return false;
+}
+
+bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& event)
+{
+	String promptText = " ";
+
+	const Player* pFlagCapturer = PlayerManagerClient::GetPlayer(event.Packet.PlayerUID);
+
+	if (pFlagCapturer)
+		promptText = pFlagCapturer->GetName() + " Captured The Flag!";
+	else
+		promptText = "Someone Captured The Flag!";
+
+	HUDSystem::PromptMessage(promptText);
 
 	return false;
 }
@@ -343,7 +388,6 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
-	Input::PushInputMode(EInputLayer::GUI);
 
 	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
 
@@ -378,4 +422,9 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 {
 	m_HUDGUI->SetWindowSize(event.Width, event.Height);
 	return false;
+}
+
+void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage)
+{
+	s_pHudsystemInstance->m_HUDGUI->DisplayPrompt(promtMessage);
 }

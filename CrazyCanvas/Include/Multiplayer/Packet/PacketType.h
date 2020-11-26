@@ -57,7 +57,7 @@ private:
 	template<typename Type>
 	static uint16 RegisterPacketTypeWithComponent();
 
-	static uint16 RegisterPacketTypeRaw();
+	static uint16 RegisterPacketTypeRaw(const char* pName);
 
 	static void Release();
 
@@ -70,7 +70,7 @@ template<typename Type>
 uint16 PacketType::RegisterPacketType(const LambdaEngine::ComponentType* pType)
 {
 	PacketReceivedEvent<Type>* pEvent = DBG_NEW PacketReceivedEvent<Type>(pType);
-	uint16 packetType = RegisterPacketTypeRaw();
+	uint16 packetType = RegisterPacketTypeRaw(Type::s_Name);
 	VALIDATE_MSG(Type::s_Type == 0, "PacketType already Registered!");
 	Type::s_Type = packetType;
 	s_PacketTypeToEvent[packetType] = pEvent;

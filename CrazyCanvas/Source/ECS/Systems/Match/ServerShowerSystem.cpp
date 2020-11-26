@@ -28,7 +28,6 @@ void ServerShowerSystem::OnPlayerShowerCollision(LambdaEngine::Entity entity0, L
 	ECSCore* pECS = ECSCore::GetInstance();
 
 	ShowerComponent& showerComponent = pECS->GetComponent<ShowerComponent>(entity1);
-	LOG_INFO("Entity %d is taking a shower", entity1);
 
 	// If player has full health, do not use the shower
 	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
@@ -40,8 +39,6 @@ void ServerShowerSystem::OnPlayerShowerCollision(LambdaEngine::Entity entity0, L
 	// Check if player has recently used the shower
 	if (EngineLoop::GetTimeSinceStart() > showerComponent.ShowerAvailableTimestamp)
 	{
-		LOG_INFO("Entity %d is taking a shower", entity1);
-
 		PaintMaskRenderer::ResetServer(entity1);
 		PaintMaskRenderer::ResetServer(pECS->GetComponent<ChildComponent>(entity1).GetEntityWithTag("weapon"));
 		HealthSystemServer::ResetHealth(entity1);

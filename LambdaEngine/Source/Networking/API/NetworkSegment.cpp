@@ -89,7 +89,10 @@ namespace LambdaEngine
 	{
 		std::string type;
 		PacketTypeToString(m_Header.Type, type);
-		return "[Type=" + type + "], [Size=" + std::to_string(GetBufferSize()) + "], [UID=" + std::to_string(m_Header.UID) + "]";
+		return "[Type=" + type +
+			"], [Size=" + std::to_string(GetBufferSize()) + 
+			"], [UID=" + std::to_string(m_Header.UID) + 
+			"], [RUID=" + std::to_string(m_Header.ReliableUID) + "]";
 	}
 
 	void NetworkSegment::CopyTo(NetworkSegment* pSegment) const
