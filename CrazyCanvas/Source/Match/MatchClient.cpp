@@ -36,6 +36,27 @@
 
 using namespace LambdaEngine;
 
+MatchClient::MatchClient()
+{
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
+
+	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &MatchClient::OnPlayerAliveUpdated);
+
+
+	m_CountdownSoundEffects[4] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/five.wav");
+	m_CountdownSoundEffects[3] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/four.wav");
+	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
+	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
+	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
+	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/go.mp3");
+}
+
 MatchClient::~MatchClient()
 {
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
@@ -58,24 +79,6 @@ bool MatchClient::InitInternal()
 		m_MatchBeginTimer = 0.0f;
 		m_HasStarted = true;
 	}
-
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
-
-	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &MatchClient::OnPlayerAliveUpdated);
-
-
-	m_CountdownSoundEffects[4] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/five.wav");
-	m_CountdownSoundEffects[3] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/four.wav");
-	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
-	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
-	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
-	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/start.mp3");
 
 	return true;
 }
@@ -136,6 +139,14 @@ void MatchClient::TickInternal(LambdaEngine::Timestamp deltaTime)
 			EventQueue::SendEvent<MatchCountdownEvent>(UINT8_MAX);
 		}
 	}
+}
+
+bool MatchClient::ResetMatchInternal()
+{
+	m_ClientSideBegun = false;
+	m_CountdownHideTimer = 0.0f;
+
+	return false;
 }
 
 bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<PacketCreateLevelObject>& event)
@@ -268,15 +279,18 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 	const PacketGameOver& packet = event.Packet;
 
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
-	ResetMatch();
 
 	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
+
+	ResetMatch();
 
 	return true;
 }
 
 bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
+	UNREFERENCED_VARIABLE(event);
+
 	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
 
 	UNREFERENCED_VARIABLE(event);

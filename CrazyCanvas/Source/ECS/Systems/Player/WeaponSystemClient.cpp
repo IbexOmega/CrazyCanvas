@@ -142,7 +142,7 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 	const auto* pWeaponLocalComponents = pECS->GetComponentArray<WeaponLocalComponent>();
 
 	// Play 2D sound if local player shooting else play 3D sound
-	if (pWeaponLocalComponents->HasComponent(weaponEntity))
+	if (pWeaponLocalComponents != nullptr && pWeaponLocalComponents->HasComponent(weaponEntity))
 	{
 		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_2D_GUID);
 		pSound->PlayOnce(0.5f);

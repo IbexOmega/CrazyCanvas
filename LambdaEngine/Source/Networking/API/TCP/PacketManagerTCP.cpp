@@ -20,9 +20,10 @@ namespace LambdaEngine
 
 	}
 
-	bool PacketManagerTCP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned)
+	bool PacketManagerTCP::FindSegmentsToReturn(const TArray<NetworkSegment*>& segmentsReceived, TArray<NetworkSegment*>& segmentsReturned, bool& hasDiscardedResends)
 	{
 		bool hasReliableSegment = false;
+		hasDiscardedResends = false;
 		TArray<NetworkSegment*> packetsToFree;
 		packetsToFree.Reserve(32);
 
@@ -31,13 +32,19 @@ namespace LambdaEngine
 			if (!pSegment->IsReliable())
 			{
 				if (pSegment->GetType() == NetworkSegment::TYPE_NETWORK_ACK)
+				{
 					packetsToFree.PushBack(pSegment);
+				}
 				else
+				{
 					segmentsReturned.PushBack(pSegment);
+					m_Statistics.RegisterUniqueSegmentReceived(pSegment->GetType());
+				}
 			}
 			else
 			{
 				segmentsReturned.PushBack(pSegment);
+				m_Statistics.RegisterUniqueSegmentReceived(pSegment->GetType());
 				hasReliableSegment = true;
 			}
 		}
@@ -49,14 +56,19 @@ namespace LambdaEngine
 #endif
 
 
+		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
+		{
 #ifdef LAMBDA_CONFIG_DEBUG
-		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
-			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment("PacketManagerTCP_NETWORK_ACK")->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+			NetworkSegment* pSegment = m_SegmentPool.RequestFreeSegment("PacketManagerTCP_NETWORK_ACK");
 #else
-		if (hasReliableSegment && m_SegmentsToSend[m_QueueIndex].empty())
-			EnqueueSegmentUnreliable(m_SegmentPool.RequestFreeSegment()->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+			NetworkSegment* pSegment = m_SegmentPool.RequestFreeSegment();
 #endif
-		return false;
+			if (pSegment)
+				EnqueueSegmentUnreliable(pSegment->SetType(NetworkSegment::TYPE_NETWORK_ACK));
+			else
+				return false;
+		}
+		return true;
 	}
 
 
