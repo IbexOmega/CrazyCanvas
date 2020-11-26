@@ -86,8 +86,9 @@ void main()
 
             // Do not paint if they are in the same team. But they can remove paint.
             float isRemove = 1.f - step(0.5f, float(paintMode));
-            float isSameTeam = 1.f - step(0.5f, abs(float(instanceTeam+1) - float(teamMode)));
-            //valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
+            float isSameTeam = 1.f - step(0.5f, abs(float(instanceTeam) - float(teamMode)));
+            //teamMode = instanceTeam;
+            valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
 
             // Apply brush mask
             vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
@@ -127,8 +128,19 @@ void main()
             vertex.Normal.w = min(vertex.Normal.w, dist);
         }
 
-        //vertex.Position.w = uintBitsToFloat(0);
-	    //vertex.Normal.w = 1.f;
+        /*{
+            uint teamSC = floatBitsToUint(vertex.Position.w);
+            uint client = (teamSC >> 4) & 0x0F;
+            uint server = teamSC & 0x0F;
+
+            client = (instanceTeam) & 0x0F;
+
+            teamSC = (client << 4) | server;
+            vertex.Position.w = uintBitsToFloat(teamSC);
+        }*/
+
+        //vertex.Position.w = uintBitsToFloat(32);
+	    //vertex.Normal.w = 0.f;
 
         b_Vertices.val[vertexIndex] = vertex;
 

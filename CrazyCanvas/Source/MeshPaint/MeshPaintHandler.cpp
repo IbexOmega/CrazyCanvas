@@ -134,7 +134,7 @@ void MeshPaintHandler::AddHitPoint(
 	data.RemoteMode			= remoteMode;
 	data.Team				= team;
 	data.ClearClient		= false;
-
+	LOG_WARNING("[HitPoint] Team: %d", team);
 	s_Collisions.PushBack(data);
 }
 

@@ -1002,7 +1002,8 @@ namespace LambdaEngine
 		if (pTeamComponents->HasComponent(entity))
 		{
 			LOG_WARNING("[RenderSystem] TODO: Change TeamComponent to use 0 as \"No Team\"! For now just add 1 to the team index before sending it to shaders");
-			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex) + 1;
+			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex+1);
+			LOG_WARNING("[Mesh] Team index: %d", teamIndex);
 		}
 
 		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())
