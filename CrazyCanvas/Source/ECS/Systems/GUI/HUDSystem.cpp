@@ -347,25 +347,25 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 
 	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
 
-	PlayerPair mostKills((uint8)0, nullptr);
-	PlayerPair mostFlags((uint8)0, nullptr);
-	PlayerPair mostDeaths((uint8)0, nullptr);
+	PlayerPair mostKills((int16)-1, nullptr);
+	PlayerPair mostFlags((int16)-1, nullptr);
+	PlayerPair mostDeaths((int16)-1, nullptr);
 
 	for (auto& pair : playerMap)
 	{
 		const Player* pPlayer = &pair.second;
 
-		uint8 kills = pPlayer->GetKills();
-		uint8 deaths = pPlayer->GetDeaths();
-		uint8 flags = pPlayer->GetFlagsCaptured();
+		int16 kills = pPlayer->GetKills();
+		int16 deaths = pPlayer->GetDeaths();
+		int16 flags = pPlayer->GetFlagsCaptured();
 
-		if (kills >= mostKills.first)
+		if (kills > mostKills.first || (kills == mostKills.first && mostKills.second->GetUID() < pPlayer->GetUID()))
 			mostKills = std::make_pair(kills, pPlayer);
 
-		if (deaths >= mostDeaths.first)
+		if (deaths > mostDeaths.first || (deaths == mostDeaths.first && mostDeaths.second->GetUID() < pPlayer->GetUID()))
 			mostDeaths = std::make_pair(deaths, pPlayer);
 
-		if (flags >= mostFlags.first)
+		if (flags > mostFlags.first || (flags == mostFlags.first && mostFlags.second->GetUID() < pPlayer->GetUID()))
 			mostFlags = std::make_pair(flags, pPlayer);
 	}
 
