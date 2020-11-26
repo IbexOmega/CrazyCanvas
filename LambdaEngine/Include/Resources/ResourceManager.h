@@ -114,9 +114,9 @@ namespace LambdaEngine
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static void LoadMeshAndMaterialFromFile(
-			const String& filename, 
-			GUID_Lambda& meshGUID, 
-			GUID_Lambda& materialGUID, 
+			const String& filename,
+			GUID_Lambda& meshGUID,
+			GUID_Lambda& materialGUID,
 			TArray<GUID_Lambda>& animations);
 
 		/*
@@ -128,38 +128,40 @@ namespace LambdaEngine
 
 		/*
 		* Load a mesh from memory
-		*	name		- A name given to the mesh resource
-		*	pVertices	- An array of vertices
-		*	numVertices	- The vertexcount
-		*	pIndices	- An array of indices
-		*	numIndices	- The Indexcount
+		*	name			- A name given to the mesh resource
+		*	pVertices		- An array of vertices
+		*	numVertices		- The vertexcount
+		*	pIndices		- An array of indices
+		*	numIndices		- The Indexcount
+		*	useMeshletCache	- Enables read/write to files containing generated meshlets
 		* return - a valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadMeshFromMemory(
-			const String& name, 
-			const Vertex* pVertices, 
-			uint32 numVertices, 
-			const uint32* pIndices, 
-			uint32 numIndices);
+			const String& name,
+			const Vertex* pVertices,
+			uint32 numVertices,
+			const uint32* pIndices,
+			uint32 numIndices,
+			bool useMeshletCache = false);
 
 		/*
 		* Load a material from memory
 		*	name				- A name given to the material
-		*	albedoMap, 
-		*	normalMap, 
-		*	ambientOcclusionMap, 
-		*	metallicMap, 
+		*	albedoMap,
+		*	normalMap,
+		*	ambientOcclusionMap,
+		*	metallicMap,
 		*	roughnessMap		- The GUID of a valid Texture loaded with this ResourceManager, or GUID_NONE to use default maps
 		*	properties			- Material Properties which are to be used for this material
 		* return - a valid GUID if the materials was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadMaterialFromMemory(
-			const String& name, 
-			GUID_Lambda albedoMap, 
-			GUID_Lambda normalMap, 
-			GUID_Lambda ambientOcclusionMap, 
-			GUID_Lambda metallicMap, 
-			GUID_Lambda roughnessMap, 
+			const String& name,
+			GUID_Lambda albedoMap,
+			GUID_Lambda normalMap,
+			GUID_Lambda ambientOcclusionMap,
+			GUID_Lambda metallicMap,
+			GUID_Lambda roughnessMap,
 			const MaterialProperties& properties);
 
 		/*
@@ -172,11 +174,11 @@ namespace LambdaEngine
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadTextureArrayFromFile(
-			const String& name, 
-			const String* pFilenames, 
-			uint32 count, 
-			EFormat format, 
-			bool generateMips, 
+			const String& name,
+			const String* pFilenames,
+			uint32 count,
+			EFormat format,
+			bool generateMips,
 			bool linearFilteringMips);
 
 		/*
@@ -189,11 +191,11 @@ namespace LambdaEngine
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadCubeTexturesArrayFromFile(
-			const String& name, 
-			const String* pFilenames, 
-			uint32 count, 
-			EFormat format, 
-			bool generateMips, 
+			const String& name,
+			const String* pFilenames,
+			uint32 count,
+			EFormat format,
+			bool generateMips,
 			bool linearFilteringMips);
 
 		/*
@@ -204,9 +206,9 @@ namespace LambdaEngine
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadTextureFromFile(
-			const String& filename, 
-			EFormat format, 
-			bool generateMips, 
+			const String& filename,
+			EFormat format,
+			bool generateMips,
 			bool linearFilteringMips);
 
 		/*
@@ -217,8 +219,8 @@ namespace LambdaEngine
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadTextureCubeFromPanormaFile(
-			const String& filename, 
-			EFormat format, 
+			const String& filename,
+			EFormat format,
 			uint32 size,
 			bool generateMips);
 
@@ -234,13 +236,13 @@ namespace LambdaEngine
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
 		static GUID_Lambda LoadTextureFromMemory(
-			const String& name, 
-			const void* pData, 
-			uint32_t width, 
-			uint32_t height, 
-			EFormat format, 
-			uint32_t usageFlags, 
-			bool generateMips, 
+			const String& name,
+			const void* pData,
+			uint32_t width,
+			uint32_t height,
+			EFormat format,
+			uint32_t usageFlags,
+			bool generateMips,
 			bool linearFilteringMips);
 
 		/*
@@ -349,8 +351,8 @@ namespace LambdaEngine
 			TArray<TextureView*>& textureViewsToDelete);
 
 		static void RegisterLoadedMaterialTexture(
-			LoadedTexture* pLoadedTexture, 
-			TArray<LoadedMaterial*>& loadedMaterials, 
+			LoadedTexture* pLoadedTexture,
+			TArray<LoadedMaterial*>& loadedMaterials,
 			TArray<MaterialLoadDesc>& materialLoadDescriptions,
 			TArray<TextureView*>& textureViewsToDelete);
 
@@ -408,7 +410,7 @@ namespace LambdaEngine
 		static std::unordered_map<GUID_Lambda, MaterialLoadDesc>	s_MaterialLoadConfigurations;
 		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>		s_ShaderLoadConfigurations;
 
-		//Material Combine 
+		//Material Combine
 		static CommandAllocator* s_pMaterialComputeCommandAllocator;
 		static CommandAllocator* s_pMaterialGraphicsCommandAllocator;
 

@@ -520,8 +520,8 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>	m_AnimationDescriptorHeap;
 
 		// Pending/Dirty
-		bool						m_MaterialsPropertiesBufferDirty			= false;
-		bool						m_MaterialsResourceDirty					= false;
+		bool						m_MaterialsPropertiesBufferDirty			= true;
+		bool						m_MaterialsResourceDirty					= true;
 		bool						m_LightsResourceDirty						= false;
 		bool						m_PerFrameResourceDirty						= true;
 		bool						m_PaintMaskColorsResourceDirty				= true;

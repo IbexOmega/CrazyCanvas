@@ -96,7 +96,7 @@ namespace LambdaEngine
 #elif defined(LAMBDA_RELEASE)
 		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
 #endif
-		// Init 26/10
+		// Init 26/11
 		Noesis::GUI::Init("IbexOmega", "ukOSbAQLkmwv1TwFCEZinEuObNKKI+AKaCgtsw+CiLlyW7f4");
 
 		s_pXAMLProvider		= new NoesisApp::LocalXamlProvider("../Assets/NoesisGUI/Xaml");

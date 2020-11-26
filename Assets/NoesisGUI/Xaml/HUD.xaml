@@ -79,6 +79,19 @@
 
                 <uc:PromptGUI x:Name="PROMPT" Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
+                
+                <!--<Rectangle Grid.Column="4" Grid.ColumnSpan="3" Grid.Row="5" Height="113" Width="335" Fill="#D8FF8B00" Margin="0,0,12,0">
+                    <Rectangle.OpacityMask>
+                        <ImageBrush ImageSource="bar.png"/>
+                    </Rectangle.OpacityMask>
+                </Rectangle> -->
+
+
+                <Grid Grid.Column="8" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="2" Margin="0,0,25,0">
+                    <uc:KillFeedGUI x:Name="KILL_FEED"/>
+                </Grid>
+
+
                 <Grid x:Name="HEALTH_DISPLAY_GRID" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="9" Grid.RowSpan="4" Margin="25,0,-25,-25">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition />
@@ -96,15 +109,15 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
-                    <Image Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="3" Source="bar_background.png" RenderTransformOrigin="0.5,0.75" HorizontalAlignment="Left" Width="319.205" Margin="15,0,0,80"/>
-                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="bar.png" RenderTransformOrigin="0.12,0.5"  Width="400" Height=" 75" Margin="50,0,0,0">
+                    <Image Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="3" Source="HealthPlateNew.png"   RenderTransformOrigin="0.5,0.75" HorizontalAlignment="Left" Width="500.205" Margin="0,0,0,-2"/>
+                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="HealthRectNew.png"   RenderTransformOrigin="0.355,0.5"  Width="478" Height=" 245" Margin="11,0,0,0">
                         <Image.RenderTransform>
                             <ScaleTransform/>
                         </Image.RenderTransform>
                     </Image>
-                    <Image Grid.Column="1" Grid.Row="3" Source="bar_contour.png"   RenderTransformOrigin="0.5,0.75"  Width="410" Height=" 83" Margin="46,0,0,0"/>
+                    <Image Grid.Column="1" Grid.Row="3" Source="HealthBorderNew.png"   RenderTransformOrigin="0.5,0.75"  Width="475" Height="243" Margin="11,0,0,0"/>
 
-                <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="1" Grid.Row="3" Text="100%" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,-160,0" Foreground="Black" FontWeight="Bold" Height="31.922" Width="62.224" />
+                <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="1" Grid.Row="3" Text="100%" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,-157,28" Foreground="#Black" FontWeight="Bold" Height="31.922" Width="62.224" />
                 
                 </Grid>
 
@@ -226,6 +239,12 @@
                 <Image Source="PaintBar.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>
                 <Image Source="PaintDrop.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>
 
+                <!--<Rectangle Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3" Height="113" Width="335" Fill="#D8FF8B00" Margin="0,0,12,0">
+                    <Rectangle.OpacityMask>
+                        <ImageBrush ImageSource="PaintDropWhite.png"/>
+                    </Rectangle.OpacityMask>
+                </Rectangle>-->
+
                 <TextBlock x:Name="AMMUNITION_PAINT_DISPLAY" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Text="50/50" FontSize="24" Foreground="Black" Margin="0,0,-70,-30" Height="31.923" Width="68.429" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Grid>
 
@@ -266,7 +285,7 @@
         </Viewbox>
 
         <!--EscapeGrid-->
-        <Grid Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="4" Grid.RowSpan="5" Stretch="Fill">
+        <Grid Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="4" Grid.RowSpan="5">
             <uc:EscapeMenuGUI x:Name="ESC_MENU_GUI" HorizontalAlignment="Center" VerticalAlignment="Center"/>
         </Grid>
        
