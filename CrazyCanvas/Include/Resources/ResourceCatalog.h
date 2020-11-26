@@ -38,6 +38,7 @@ public:
 
 	//Weapon
 	inline static GUID_Lambda WEAPON_MESH_GUID = GUID_NONE;
+	inline static GUID_Lambda WEAPON_FIRST_PERSON_MESH_GUID = GUID_NONE;
 	inline static GUID_Lambda WEAPON_MATERIAL_GUID = GUID_NONE;
 
 	// Weapon Sounds

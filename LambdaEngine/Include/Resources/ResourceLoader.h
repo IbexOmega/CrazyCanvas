@@ -134,10 +134,10 @@ namespace LambdaEngine
 		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
 		static Mesh* LoadMeshFromFile(
-			const String& filepath, 
-			TArray<LoadedMaterial*>* pMaterials, 
-			TArray<LoadedTexture*>* pTextures, 
-			TArray<Animation*>* pAnimations, 
+			const String& filepath,
+			TArray<LoadedMaterial*>* pMaterials,
+			TArray<LoadedTexture*>* pTextures,
+			TArray<Animation*>* pAnimations,
 			int32 assimpFlags);
 
 		/*
@@ -149,17 +149,21 @@ namespace LambdaEngine
 
 		/*
 		* Load a mesh from memory
-		*	pVertices	- An array of vertices
-		*	numVertices	- The vertexcount
-		*	pIndices	- An array of indices
-		*	numIndices	- The Indexcount
+		*	name			- A name given to the mesh resource
+		*	pVertices		- An array of vertices
+		*	numVertices		- The vertexcount
+		*	pIndices		- An array of indices
+		*	numIndices		- The Indexcount
+		*	useMeshletCache	- Enables read/write to files containing generated meshlets
 		* return - a Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
 		static Mesh* LoadMeshFromMemory(
-			const Vertex* pVertices, 
-			uint32 numVertices, 
-			const uint32* pIndices, 
-			uint32 numIndices);
+			const String& name,
+			const Vertex* pVertices,
+			uint32 numVertices,
+			const uint32* pIndices,
+			uint32 numIndices,
+			bool useMeshletCache);
 
 		/*
 		* Load a texture from file
@@ -172,12 +176,12 @@ namespace LambdaEngine
 		* return - an Texture* if the texture was loaded, otherwise nullptr will be returned
 		*/
 		static Texture* LoadTextureArrayFromFile(
-			const String& name, 
-			const String& dir, 
-			const String* pFilenames, 
-			uint32 count, 
-			EFormat format, 
-			bool generateMips, 
+			const String& name,
+			const String& dir,
+			const String* pFilenames,
+			uint32 count,
+			EFormat format,
+			bool generateMips,
 			bool linearFilteringMips);
 
 		/*
@@ -207,12 +211,12 @@ namespace LambdaEngine
 		* return - a valid GUID if the texture was loaded, otherwise returns GUID_NONE
 		*/
 		static Texture* LoadCubeTexturesArrayFromFile(
-			const String& name, 
-			const String& dir, 
-			const String* pFilenames, 
-			uint32 count, 
-			EFormat format, 
-			bool generateMips, 
+			const String& name,
+			const String& dir,
+			const String* pFilenames,
+			uint32 count,
+			EFormat format,
+			bool generateMips,
 			bool linearFilteringMips);
 
 		/*
@@ -228,14 +232,14 @@ namespace LambdaEngine
 		* return - an Texture* if the texture was loaded, otherwise nullptr will be returned
 		*/
 		static Texture* LoadTextureArrayFromMemory(
-			const String& name, 
-			const void* const * ppData, 
-			uint32 arrayCount, 
-			uint32 width, 
-			uint32 height, 
-			EFormat format, 
-			uint32 usageFlags, 
-			bool generateMips, 
+			const String& name,
+			const void* const * ppData,
+			uint32 arrayCount,
+			uint32 width,
+			uint32 height,
+			EFormat format,
+			uint32 usageFlags,
+			bool generateMips,
 			bool linearFilteringMips);
 
 		/*
@@ -247,15 +251,15 @@ namespace LambdaEngine
 		* return - an Shader* if the shader was loaded, otherwise nullptr will be returned
 		*/
 		static Shader* LoadShaderFromFile(
-			const String& filepath, 
-			FShaderStageFlag stage, 
-			EShaderLang lang, 
+			const String& filepath,
+			FShaderStageFlag stage,
+			EShaderLang lang,
 			const String& entryPoint = "main");
 
 		static bool CreateShaderReflection(
-			const String& filepath, 
-			FShaderStageFlag stage, 
-			EShaderLang lang, 
+			const String& filepath,
+			FShaderStageFlag stage,
+			EShaderLang lang,
 			ShaderReflection* pReflection);
 
 		/*
@@ -268,14 +272,14 @@ namespace LambdaEngine
 		* return - an Shader* if the shader was loaded, otherwise nullptr will be returned
 		*/
 		static Shader* LoadShaderFromMemory(
-			const String& source, 
-			const String& name, 
-			FShaderStageFlag stage, 
-			EShaderLang lang, 
+			const String& source,
+			const String& name,
+			FShaderStageFlag stage,
+			EShaderLang lang,
 			const String& entryPoint = "main");
 
 		static GLSLShaderSource LoadShaderSourceFromFile(
-			const String& filepath, 
+			const String& filepath,
 			FShaderStageFlag stage,
 			const String& entryPoint = "main");
 
@@ -313,24 +317,28 @@ namespace LambdaEngine
 		static void LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI);
 		static void LoadAnimation(SceneLoadingContext& context, const aiAnimation* pAnimationAI);
 		static bool LoadSceneWithAssimp(SceneLoadRequest& sceneLoadRequest);
-		
+
 		static void ProcessAssimpNode(
-			SceneLoadingContext& context, 
-			const aiNode* pNode, 
-			const aiScene* pScene, 
+			SceneLoadingContext& context,
+			const aiNode* pNode,
+			const aiScene* pScene,
 			const void* pParentTransform);
 
 		static bool CompileGLSLToSPIRV(
 			const String& filepath,
-			const char* pSource, 
-			FShaderStageFlags stage, 
-			TArray<uint32>* pSourceSPIRV, 
+			const char* pSource,
+			FShaderStageFlags stage,
+			TArray<uint32>* pSourceSPIRV,
 			ShaderReflection* pReflection);
-		
+
 		static bool CreateShaderReflection(
-			glslang::TIntermediate* pIntermediate, 
-			FShaderStageFlags stage, 
+			glslang::TIntermediate* pIntermediate,
+			FShaderStageFlags stage,
 			ShaderReflection* pReflection);
+
+		/*	LoadMeshletsFromCache attempts to load meshlet data from file.
+			If it does not exist, meshlets will be generated and written to file. */
+		static void LoadMeshletsFromCache(const String& name, Mesh* pMesh);
 
 	private:
 		// Cubemap gen
