@@ -19,6 +19,7 @@ namespace LambdaEngine
 	constexpr const char* RENDER_GRAPH_PARTICLE_RENDER_STAGE_NAME	= "RENDER_STAGE_PARTICLE_RENDER";
 	constexpr const char* RENDER_GRAPH_LINE_RENDERER_STAGE_NAME		= "RENDER_STAGE_LINE_RENDERER";
 	constexpr const char* RENDER_GRAPH_MESH_UNWRAP_NAME				= "RENDER_STAGE_MESH_UNWRAP";
+	constexpr const char* RENDER_GRAPH_FIRST_PERSON_WEAPON_STAGE_NAME= "RENDER_STAGE_FIRST_PERSON_WEAPON";
 
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT		= "BACK_BUFFER_TEXTURE";
 
@@ -389,7 +390,6 @@ namespace LambdaEngine
 		uint32	MeshletCount			= 0;
 
 		// Extensions
-		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount!
 		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used.
 
 		DescriptorSet* pDescriptorSet	= nullptr;

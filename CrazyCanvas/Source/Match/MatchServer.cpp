@@ -62,7 +62,7 @@ MatchServer::MatchServer()
 MatchServer::~MatchServer()
 {
 	using namespace LambdaEngine;
-	
+
 	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::UnregisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
 	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
@@ -210,7 +210,7 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 							{
 								MatchServer::KillPlayer(playerEntity, UINT32_MAX, false);
 							}
-							
+
 							ImGui::SameLine();
 
 							if (ImGui::Button("Disconnect"))

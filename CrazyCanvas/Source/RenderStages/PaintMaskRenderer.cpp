@@ -178,12 +178,12 @@ namespace LambdaEngine
 	}
 
 	void PaintMaskRenderer::UpdateTextureResource(
-		const String& resourceName, 
-		const TextureView* const * ppPerImageTextureViews, 
+		const String& resourceName,
+		const TextureView* const * ppPerImageTextureViews,
 		const TextureView* const* ppPerSubImageTextureViews,
 		const Sampler* const* ppPerImageSamplers,
-		uint32 imageCount, 
-		uint32 subImageCount, 
+		uint32 imageCount,
+		uint32 subImageCount,
 		bool backBufferBound)
 	{
 		UNREFERENCED_VARIABLE(ppPerSubImageTextureViews);
@@ -336,21 +336,21 @@ namespace LambdaEngine
 							teamId = static_cast<uint32>((teamId == 0) ? ETeam::BLUE : ETeam::RED);
 						}
 						
-						DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
-						if (extensionGroup)
+						DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+						if (pExtensionGroup)
 						{
 							// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
-							uint32 numExtensions = extensionGroup->ExtensionCount;
+							uint32 numExtensions = pExtensionGroup->ExtensionCount;
 							for (uint32 e = 0; e < numExtensions; e++)
 							{
-								uint32 flag = extensionGroup->pExtensionFlags[e];
+								uint32 flag = pExtensionGroup->pExtensionFlags[e];
 								bool inverted;
 								uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
 								uint32 invertedUInt = uint32(inverted);
 
 								if ((flag & meshPaintFlag) != invertedUInt)
 								{
-									DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+									DrawArgExtensionData& extension = pExtensionGroup->pExtensions[e];
 									TextureView* pTextureView = extension.ppTextureViews[0];
 									Buffer* pReadBackBuffer = extension.ppReadBackBuffers[0];
 									m_RenderTargets.PushBack(
@@ -398,7 +398,7 @@ namespace LambdaEngine
 		}
 
 		CommandList* pCommandList = m_ppRenderCommandLists[modFrameIndex];
-		
+
 		// Delete old resources
 		TArray<TSharedRef<DeviceChild>>& currentFrameDeviceResourcesToDestroy = m_pDeviceResourcesToDestroy[modFrameIndex];
 		if (!currentFrameDeviceResourcesToDestroy.IsEmpty())
@@ -421,7 +421,7 @@ namespace LambdaEngine
 					RenderTarget&	renderTargetDesc	= m_RenderTargets[t];
 					const uint32	drawArgIndex		= renderTargetDesc.DrawArgIndex;
 					const DrawArg&	drawArg				= m_pDrawArgs[drawArgIndex];
-				
+
 					// Check if this rendertarget should be cleared
 					bool shouldClear = false;
 					for (Entity drawArgEntity : drawArg.EntityIDs)
@@ -558,7 +558,7 @@ namespace LambdaEngine
 				// Current limit is 10 draw calls per frame - might change in future if needed
 				if (collisionArray->GetSize() > MAX_PAINT_PER_FRAME)
 				{
-					size = 10; 
+					size = 10;
 					memcpy(pUniformMapping, collisionArray->GetData(), sizeof(UnwrapData) * size);
 
 					// Handle the swaperino
@@ -652,7 +652,7 @@ namespace LambdaEngine
 				}
 
 				pCommandList->BindDescriptorSetGraphics(
-					m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex], 
+					m_VerticesInstanceDescriptorSets[modFrameIndex][drawArgIndex],
 					m_PipelineLayout.Get(), 2);
 
 				if (m_UnwrapDataDescriptorSet)
@@ -690,7 +690,7 @@ namespace LambdaEngine
 
 					pCommandList->GenerateMips(
 						pTexture,
-						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 						afterState,
 						false);
 
@@ -719,7 +719,7 @@ namespace LambdaEngine
 
 						pCommandList->TransitionBarrier(
 							pTexture,
-							FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+							FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
 							FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
 							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
 							FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,

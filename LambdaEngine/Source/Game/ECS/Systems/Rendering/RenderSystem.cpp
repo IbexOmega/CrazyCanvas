@@ -383,7 +383,7 @@ namespace LambdaEngine
 				m_pLightRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-
+				
 				// Particle Renderer & Manager
 				constexpr uint32 MAX_PARTICLE_COUNT = 30000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
@@ -847,7 +847,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderSystem::InitIntegrationLUT()
+bool RenderSystem::InitIntegrationLUT()
 	{
 		if (m_IntegrationLUT)
 		{
@@ -1097,14 +1097,6 @@ namespace LambdaEngine
 
 	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Static Mesh Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -1114,14 +1106,6 @@ namespace LambdaEngine
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Animated Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -1131,14 +1115,6 @@ namespace LambdaEngine
 
 	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Animation Attached Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto& animationAttachedComponent = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
@@ -1151,14 +1127,6 @@ namespace LambdaEngine
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Player Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
@@ -1309,8 +1277,15 @@ namespace LambdaEngine
 		bool isAnimated, 
 		bool forceUniqueResource)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("[RenderSystem]: Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		uint32 extensionGroupIndex = 0;
-		uint32 texturesPerExtensionGroup = 0;
 		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
@@ -1325,7 +1300,9 @@ namespace LambdaEngine
 		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())
 		{
 			pExtensionGroup		= EntityMaskManager::GetExtensionGroup(entity);
-			hasExtensionData	= pExtensionGroup->TotalTextureCount > 0;
+
+			if (pExtensionGroup != nullptr)
+				hasExtensionData	= pExtensionGroup->TotalTextureCount > 0;
 		}
 
 		//Get meshAndInstancesIterator
@@ -1648,21 +1625,21 @@ namespace LambdaEngine
 			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
+		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
+
 		//Add Extension Group
 		if (hasExtensionData)
 		{
 			//Check that this extension group has the same number of total textures as the ones already registered in this MeshEntry
-			if (!meshAndInstancesIt->second.ExtensionGroups.IsEmpty())
+			if (meshAndInstancesIt->second.TexturesPerExtensionGroup > 0)
 			{
-				VALIDATE(meshAndInstancesIt->second.ExtensionGroups[0]->TotalTextureCount == pExtensionGroup->TotalTextureCount);
+				VALIDATE(meshAndInstancesIt->second.TexturesPerExtensionGroup == pExtensionGroup->TotalTextureCount);
 			}
 
-			extensionGroupIndex			= meshAndInstancesIt->second.ExtensionGroups.GetSize() + 1; // + 1 because we have a "Default" Extension at bottom
-			texturesPerExtensionGroup	= pExtensionGroup->TotalTextureCount;
+			extensionGroupIndex										= meshAndInstancesIt->second.ExtensionGroupCount++;
+			meshAndInstancesIt->second.TexturesPerExtensionGroup	= pExtensionGroup->TotalTextureCount;
 
-			meshAndInstancesIt->second.ExtensionGroups.PushBack(pExtensionGroup);
-
-			WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
+			WriteDrawArgExtensionData(meshAndInstancesIt->second);
 		}
 
 		// Update resource for the entity mesh paint textures that is used for ray tracing
@@ -1740,11 +1717,9 @@ namespace LambdaEngine
 		instance.PrevTransform				= transform;
 		instance.MaterialIndex				= materialIndex;
 		instance.ExtensionGroupIndex		= extensionGroupIndex;
-		instance.TexturesPerExtensionGroup	= texturesPerExtensionGroup;
+		instance.TexturesPerExtensionGroup	= meshAndInstancesIt->second.TexturesPerExtensionGroup;
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
-
-		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
@@ -1861,8 +1836,9 @@ namespace LambdaEngine
 			// extensionGroupIndex == 0 means the mesh instance does not have an extension
 			if (extensionGroupIndex != 0)
 			{
-				// -1 because we have one default
 				extensionGroupIndex--;
+
+				meshAndInstancesIt->second.ExtensionGroupCount--;
 
 				// Set the last entity to use the extension group at the previous removed entity position.
 				Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
@@ -1870,16 +1846,7 @@ namespace LambdaEngine
 				Instance& instance = rasterInstances[instanceKey.InstanceIndex];
 				instance.ExtensionGroupIndex = extensionGroupIndex;
 
-				// Remove the group in the list and replace it with the last group.
-				TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
-				uint32 texturesPerExtensionGroup = extensionGroups[0]->ExtensionCount;
-				extensionGroups[extensionGroupIndex] = extensionGroups.GetBack();
-				extensionGroups.PopBack();
-
-				// Remove data from the storage.
-				EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
-
-				WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
+				WriteDrawArgExtensionData(meshAndInstancesIt->second);
 			}
 		}
 
@@ -1958,21 +1925,21 @@ namespace LambdaEngine
 	}
 
 	void RenderSystem::UpdateParticleEmitter(
-		Entity entity, 
-		const PositionComponent& positionComp, 
-		const RotationComponent& rotationComp, 
+		Entity entity,
+		const PositionComponent& positionComp,
+		const RotationComponent& rotationComp,
 		const ParticleEmitterComponent& emitterComp)
 	{
 		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 	}
 
 	void RenderSystem::UpdateDirectionalLight(
-		const glm::vec4& colorIntensity, 
-		const glm::vec3& position, 
-		const glm::quat& direction, 
-		float frustumWidth, 
-		float frustumHeight, 
-		float zNear, 
+		const glm::vec4& colorIntensity,
+		const glm::vec3& position,
+		const glm::quat& direction,
+		float frustumWidth,
+		float frustumHeight,
+		float zNear,
 		float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
@@ -2339,15 +2306,7 @@ namespace LambdaEngine
 				drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
 				drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
 
-				if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
-				{
-					drawArg.ppExtensionGroups	= meshEntryPair.second.ExtensionGroups.GetData();
-					drawArg.HasExtensions		= meshEntryPair.second.HasExtensionData;
-				}
-				else
-				{
-					drawArg.HasExtensions = false;
-				}
+				drawArg.HasExtensions			= meshEntryPair.second.HasExtensionData;
 
 				drawArg.pDescriptorSet				= meshEntryPair.second.pDrawArgDescriptorSet;
 				drawArg.pExtensionDataDescriptorSet	= meshEntryPair.second.pDrawArgDescriptorExtensionsSet;
@@ -2357,7 +2316,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void RenderSystem::WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry)
+	void RenderSystem::WriteDrawArgExtensionData(MeshEntry& meshEntry)
 	{
 		static TArray<TextureView*> extensionTextureViews;
 		static TArray<Sampler*> extensionSamplers;
@@ -2366,22 +2325,27 @@ namespace LambdaEngine
 		extensionSamplers.Clear();
 
 		TextureView* pDefaultExtensionTexture = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
-		for (uint32 t = 0; t < texturesPerExtensionGroup; t++)
+		for (uint32 t = 0; t < meshEntry.TexturesPerExtensionGroup; t++)
 		{
 			extensionTextureViews.PushBack(pDefaultExtensionTexture);
 			extensionSamplers.PushBack(Sampler::GetNearestSampler());
 		}
 
-		for (const DrawArgExtensionGroup* pExtensionGroup : meshEntry.ExtensionGroups)
+		for (Entity entity : meshEntry.EntityIDs)
 		{
-			for (uint32 e = 0; e < pExtensionGroup->ExtensionCount; e++)
-			{
-				const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
+			DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
 
-				for (uint32 t = 0; t < extensionData.TextureCount; t++)
+			if (pExtensionGroup != nullptr)
+			{
+				for (uint32 e = 0; e < pExtensionGroup->ExtensionCount; e++)
 				{
-					extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
-					extensionSamplers.PushBack(extensionData.ppSamplers[t]);
+					const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
+
+					for (uint32 t = 0; t < extensionData.TextureCount; t++)
+					{
+						extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
+						extensionSamplers.PushBack(extensionData.ppSamplers[t]);
+					}
 				}
 			}
 		}
@@ -2619,40 +2583,54 @@ namespace LambdaEngine
 		{
 			uint32 requiredBufferSize = m_MaterialProperties.GetSize() * sizeof(MaterialProperties);
 
-			Buffer* pStagingBuffer = m_ppMaterialParametersStagingBuffers[m_ModFrameIndex];
-
-			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			if (requiredBufferSize > 0)
 			{
-				if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
+				Buffer* pStagingBuffer = m_ppMaterialParametersStagingBuffers[m_ModFrameIndex];
 
-				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Material Properties Staging Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				bufferDesc.SizeInBytes	= requiredBufferSize;
+				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+				{
+					if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
 
-				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-				m_ppMaterialParametersStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+					BufferDesc bufferDesc = {};
+					bufferDesc.DebugName = "Material Properties Staging Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					bufferDesc.SizeInBytes = requiredBufferSize;
+
+					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+					m_ppMaterialParametersStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+				}
+
+				void* pMapped = pStagingBuffer->Map();
+				memcpy(pMapped, m_MaterialProperties.GetData(), requiredBufferSize);
+				pStagingBuffer->Unmap();
+
+				if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+				{
+					if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
+
+					BufferDesc bufferDesc = {};
+					bufferDesc.DebugName = "Material Properties Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					bufferDesc.SizeInBytes = requiredBufferSize;
+
+					m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+				}
+
+				pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 			}
-
-			void* pMapped = pStagingBuffer->Map();
-			memcpy(pMapped, m_MaterialProperties.GetData(), requiredBufferSize);
-			pStagingBuffer->Unmap();
-
-			if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			else if (m_pMaterialParametersBuffer == nullptr)
 			{
-				if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
-
+				//Create Dummy Buffer
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Material Properties Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				bufferDesc.SizeInBytes	= requiredBufferSize;
+				bufferDesc.DebugName = "Material Properties Dummy Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.SizeInBytes = 1;
 
 				m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
-
-			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 
 			m_MaterialsPropertiesBufferDirty = false;
 		}
@@ -3022,35 +3000,38 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			Sampler* pLinearSamplers = Sampler::GetLinearSampler();
+			if (m_AlbedoMaps.GetSize() > 0)
+			{
+				Sampler* pLinearSamplers = Sampler::GetLinearSampler();
 
-			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc albedoMapsUpdateDesc = {};
+				albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
-			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
-			normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc normalMapsUpdateDesc = {};
+				normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
+				normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
-			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
-			combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_CombinedMaterialMaps.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_CombinedMaterialMapViews.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount	= m_CombinedMaterialMaps.GetSize();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
+				ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
+				combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_CombinedMaterialMaps.GetData();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_CombinedMaterialMapViews.GetData();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount	= m_CombinedMaterialMaps.GetSize();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
 
-			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
+			}
 
 			m_MaterialsResourceDirty = false;
 		}

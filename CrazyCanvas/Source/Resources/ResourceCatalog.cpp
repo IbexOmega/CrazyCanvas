@@ -62,6 +62,7 @@ bool ResourceCatalog::Init()
 	//Weapon
 	{
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", WEAPON_MESH_GUID, WEAPON_MATERIAL_GUID);
+		ResourceManager::LoadMeshFromFile("Gun/GunFirstPerson.glb", WEAPON_FIRST_PERSON_MESH_GUID);
 
 		// Soundeffects
 		WEAPON_SOUND_GUNFIRE_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/Shootsound.mp3");

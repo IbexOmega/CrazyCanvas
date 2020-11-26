@@ -149,17 +149,21 @@ namespace LambdaEngine
 
 		/**
 		* Load a mesh from memory
-		* @param pVertices		An array of vertices
-		* @param numVertices	The vertexcount
-		* @param pIndices		An array of indices
-		* @param numIndices		The Indexcount
+		* @param name				Name of the texture
+		* @param pVertices			An array of vertices
+		* @param numVertices		The vertexcount
+		* @param pIndices			An array of indices
+		* @param numIndices			The Indexcount
+		* @param useMeshletCache	Enables read/write to files containing generated meshlets
 		* @return A Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
 		static Mesh* LoadMeshFromMemory(
+			const String& name,
 			const Vertex* pVertices,
 			uint32 numVertices,
 			const uint32* pIndices,
-			uint32 numIndices);
+			uint32 numIndices,
+			bool useMeshletCache);
 
 		/**
 		* Load a texture from file
@@ -331,6 +335,10 @@ namespace LambdaEngine
 			glslang::TIntermediate* pIntermediate,
 			FShaderStageFlags stage,
 			ShaderReflection* pReflection);
+
+		/*	LoadMeshletsFromCache attempts to load meshlet data from file.
+			If it does not exist, meshlets will be generated and written to file. */
+		static void LoadMeshletsFromCache(const String& name, Mesh* pMesh);
 
 	private:
 		// Cubemap gen

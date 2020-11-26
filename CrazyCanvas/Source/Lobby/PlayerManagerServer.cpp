@@ -161,7 +161,7 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 			if (player.m_State != packet.State)
 			{
 				player.m_State = packet.State;
-				
+
 				ServerHelper::SendBroadcast(packet, nullptr, pClient);
 
 				PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
@@ -222,7 +222,7 @@ bool PlayerManagerServer::OnPacketPlayerReadyReceived(const PacketReceivedEvent<
 void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 {
 	bool wasHost = HandlePlayerLeft(pClient->GetUID());
-	
+
 	PacketLeave packet;
 	packet.UID = pClient->GetUID();
 	ServerHelper::SendBroadcast(packet, nullptr, pClient);

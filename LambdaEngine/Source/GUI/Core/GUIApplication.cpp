@@ -64,7 +64,7 @@ namespace LambdaEngine
 		}
 
 		SAFEDELETE(s_pRenderer);
-		
+
 		s_pXAMLProvider->Release();
 		s_pFontProvider->Release();
 		s_pTextureProvider->Release();
@@ -96,8 +96,8 @@ namespace LambdaEngine
 #elif defined(LAMBDA_RELEASE)
 		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
 #endif
-		// Init 26/10
-		Noesis::GUI::Init("IbexOmega", "pafzHzrv8x8dIux79u3WNnpctU8qFestYmp/4JUmJ9C3TcQj");
+		// Init 26/11
+		Noesis::GUI::Init("IbexOmega", "ukOSbAQLkmwv1TwFCEZinEuObNKKI+AKaCgtsw+CiLlyW7f4");
 
 		s_pXAMLProvider		= new NoesisApp::LocalXamlProvider("../Assets/NoesisGUI/Xaml");
 		s_pFontProvider		= new NoesisApp::LocalFontProvider("../Assets/NoesisGUI/Fonts");

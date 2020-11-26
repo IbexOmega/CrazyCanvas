@@ -15,6 +15,7 @@
 
 #include "RenderStages/PlayerRenderer.h"
 #include "RenderStages/PaintMaskRenderer.h"
+#include "RenderStages/FirstPersonWeaponRenderer.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -45,6 +46,8 @@
 #include "GUI/GameOverGUI.h"
 #include "GUI/EscapeMenuGUI.h"
 #include "GUI/PromptGUI.h"
+#include "GUI/KillFeedGUI.h"
+#include "GUI/ScoreBoardGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
@@ -128,6 +131,8 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PaintMaskRenderer());
+	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
+
 	RenderSystem::GetInstance().InitRenderGraphs();
 
 	InitRendererResources();
@@ -204,6 +209,8 @@ bool CrazyCanvas::RegisterGUIComponents()
 	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
+	Noesis::RegisterComponent<KillFeedGUI>();
+	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
 	return true;

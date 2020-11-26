@@ -1,0 +1,186 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#include "../Defines.glsl"
+#include "../Helpers.glsl"
+#include "MCTables.glsl"
+
+// In a grid with the size (n, n, n), threads should have a grid layout of (n-1, n-1, n-1)
+layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+struct STriangle
+{
+	SVertex Vertices[3];
+};
+
+struct SNode
+{
+	// Density is stored in the .w component
+	vec3 Position;
+	float Density;
+	vec3 Gradient;
+};
+
+layout(push_constant) uniform PushConstants
+{
+	vec4 SpherePositions[SPHERES_PER_GRID];
+	uint GridWidth;	// The grid is cubic, i.e. the corner count is GridWidth^3
+} u_PC;
+
+layout(binding = 0, set = 0) restrict readonly buffer Densities
+{
+	float Val[];
+} b_Densities;
+
+layout(binding = 1, set = 0) restrict readonly buffer Gradients
+{
+	vec4 Val[];
+} b_Gradients;
+
+layout(binding = 2, set = 0) restrict writeonly buffer Triangles
+{
+	STriangle Val[];
+} b_Triangles;
+
+/*	DefineNodes finds the positions and densities of the eight corners in the given cell. The position is stored in
+	xyz, whilst density is in the w-component. */
+void DefineNodes(uint threadID, uint gridWidth, out SNode nodes[8])
+{
+	/*	Use thread ID to calculate the cell's rear bottom left corner's position. Offset with 1 in each dimension to
+		avoid the grid's border. */
+	const uint gridWidthInCells = gridWidth - 3; // Do not compute cells at the border of the grid
+	const uint gridWidthInCellsSquared = gridWidthInCells * gridWidthInCells;
+	const uvec3 cellID =
+	{
+		1 + (threadID % gridWidthInCells),
+		1 + ((threadID / gridWidthInCells) % gridWidthInCells),
+		1 + threadID / gridWidthInCellsSquared
+	};
+
+	const uint gridWidthSquared = gridWidth * gridWidth;
+	const uint cornerDensityIdx = cellID.x + cellID.y * gridWidth + cellID.z * gridWidthSquared;
+
+	const uint gradientGridWidth = gridWidth - 2;
+	const uint gradientGridWidthSquared = gradientGridWidth * gradientGridWidth;
+	const uint cornerGradientIdx = (cellID.x - 1) + (cellID.y - 1) * gradientGridWidth + (cellID.z - 1) * gradientGridWidthSquared;
+
+	const float cellWidth = 1.0 / (gridWidth - 1);
+	const vec3 cellPosition = vec3(cellWidth * 0.5) + cellID / float(gridWidth - 1);
+
+	const float cellHalfWidth = cellWidth * 0.5;
+
+	nodes = SNode[8](
+		SNode(
+			cellPosition + vec3(-cellHalfWidth, -cellHalfWidth, -cellHalfWidth) - vec3(0.5),
+			b_Densities.Val[cornerDensityIdx],
+			b_Gradients.Val[cornerGradientIdx].xyz
+		),
+		SNode(
+			cellPosition + vec3(cellHalfWidth, -cellHalfWidth, -cellHalfWidth) - vec3(0.5),
+			b_Densities.Val[cornerDensityIdx + 1],
+			b_Gradients.Val[cornerGradientIdx + 1].xyz
+		),
+		SNode(
+			cellPosition + vec3(cellHalfWidth, -cellHalfWidth, cellHalfWidth) - vec3(0.5),
+			b_Densities.Val[cornerDensityIdx + 1 + gridWidthSquared],
+			b_Gradients.Val[cornerGradientIdx + 1 + gradientGridWidthSquared].xyz
+		),
+		SNode(
+			cellPosition + vec3(-cellHalfWidth, -cellHalfWidth, cellHalfWidth) - vec3(0.5),
+			b_Densities.Val[cornerDensityIdx + gridWidthSquared],
+			b_Gradients.Val[cornerGradientIdx + gradientGridWidthSquared].xyz
+		),
+		SNode(
+			cellPosition + vec3(-cellHalfWidth, cellHalfWidth, -cellHalfWidth) - vec3(0.5),
+			b_Densities.Val[cornerDensityIdx + gridWidth],
+			b_Gradients.Val[cornerGradientIdx + gradientGridWidth].xyz
+		),
+		SNode(
+			cellPosition + vec3(cellHalfWidth, cellHalfWidth, -cellHalfWidth) - vec3(0.5),
+			b_Densities.Val[cornerDensityIdx + 1 + gridWidth],
+			b_Gradients.Val[cornerGradientIdx + 1 + gradientGridWidth].xyz
+		),
+		SNode(
+			cellPosition + vec3(cellHalfWidth, cellHalfWidth, cellHalfWidth) - vec3(0.5),
+			b_Densities.Val[cornerDensityIdx + 1 + gridWidth + gridWidthSquared],
+			b_Gradients.Val[cornerGradientIdx + 1 + gradientGridWidth + gradientGridWidthSquared].xyz
+		),
+		SNode(
+			cellPosition + vec3(-cellHalfWidth, cellHalfWidth, cellHalfWidth) - vec3(0.5),
+			b_Densities.Val[cornerDensityIdx + gridWidth + gridWidthSquared],
+			b_Gradients.Val[cornerGradientIdx + gradientGridWidth + gradientGridWidthSquared].xyz
+		)
+	);
+}
+
+void main()
+{
+	const uint threadID = gl_GlobalInvocationID.x;
+	const uint gridWidth = u_PC.GridWidth;
+
+	const uint gridWidthInCells = gridWidth - 3; // Do not compute cells at the border of the grid
+	if (threadID >= gridWidthInCells * gridWidthInCells * gridWidthInCells)
+	{
+		return;
+	}
+
+	// A node's .w component is its density value
+	SNode nodes[8];
+	DefineNodes(threadID, gridWidth, nodes);
+
+	/*	The 8 first (right-most) bits represent one node each. If the node's density is less than or equal to the iso
+		value, the bit is 1. */
+	uint caseMask = 0;
+	for (uint nodeIdx = 0; nodeIdx < 8; nodeIdx++)
+	{
+		caseMask |= uint(nodes[nodeIdx].Density >= 1.0) << nodeIdx;
+	}
+
+	// If the triangle does not exist, use a default position
+	const vec3 defaultPosition = u_PC.SpherePositions[0].xyz;
+
+	/*	Each cell has 5 triangles at most. The triangles that do not exist have all their vertex positions as
+		(-1, -1, -1). These non-existing triangles are placed inside the center of sphere[0] to hide them. This is
+		motivated by the fact that the amount of vertices cannot vary because of ray tracing, so non-existing triangles
+		can't be omitted. */
+	for (uint triangleNr = 0; triangleNr < MAX_TRIANGLES_PER_CELL; triangleNr++)
+	{
+		STriangle triangle;
+		const uvec3 edgeIndices = g_CaseToEdgeList[caseMask][triangleNr];
+
+		// A 13th edge does not exist, index 12 denotes a non-existing triangle
+		const float triangleExists = float(edgeIndices[0] != 12);
+
+		for (uint edgeNr = 0; edgeNr < 3; edgeNr++)
+		{
+			const SEdge edge = g_Edges[edgeIndices[edgeNr]];
+
+			const SNode nodeA = nodes[edge.CornerIndexA];
+			const SNode nodeB = nodes[edge.CornerIndexB];
+
+			const float interpFactor = (1.0 - nodeA.Density) / (nodeB.Density - nodeA.Density);
+			const vec3 edgeInterpPos = nodeA.Position + interpFactor * (nodeB.Position - nodeA.Position);
+			triangle.Vertices[edgeNr].Position = vec4(mix(defaultPosition, edgeInterpPos, triangleExists), 0.0);
+
+			const vec3 normal = -normalize(nodeA.Gradient + interpFactor * (nodeB.Gradient - nodeA.Gradient));
+			triangle.Vertices[edgeNr].Normal = vec4(normal, 0.0);
+
+			triangle.Vertices[edgeNr].TexCoord = vec4(normal.xy * 0.5 + vec2(0.5), 0.0, 0.0);
+		}
+
+		const vec3 deltaPos1 = triangle.Vertices[1].Position.xyz - triangle.Vertices[0].Position.xyz;
+		const vec3 deltaPos2 = triangle.Vertices[2].Position.xyz - triangle.Vertices[0].Position.xyz;
+
+		/* Calculate tangent for the triangle */
+		const vec2 deltaUV1 = triangle.Vertices[1].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
+		const vec2 deltaUV2 = triangle.Vertices[2].TexCoord.xy - triangle.Vertices[0].TexCoord.xy;
+
+		const vec4 tangent = vec4(normalize(deltaPos1 * deltaUV2.y - deltaPos2 * deltaUV1.y), 0.0);
+		triangle.Vertices[0].Tangent = tangent;
+		triangle.Vertices[1].Tangent = tangent;
+		triangle.Vertices[2].Tangent = tangent;
+
+		b_Triangles.Val[threadID * MAX_TRIANGLES_PER_CELL + triangleNr] = triangle;
+	}
+}

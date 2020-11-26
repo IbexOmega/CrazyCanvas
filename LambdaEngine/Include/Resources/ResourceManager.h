@@ -128,19 +128,21 @@ namespace LambdaEngine
 
 		/**
 		* Load a mesh from memory
-		* @param name			A name given to the mesh resource
-		* @param pVertices		An array of vertices
-		* @param numVertices	The vertexcount
-		* @param pIndices		An array of indices
-		* @param numIndices		The Indexcount
-		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
+		* @param name				Name of the texture
+		* @param pVertices			An array of vertices
+		* @param numVertices		The vertexcount
+		* @param pIndices			An array of indices
+		* @param numIndices			The Indexcount
+		* @param useMeshletCache	Enables read/write to files containing generated meshlets
+		* @return A Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
 		static GUID_Lambda LoadMeshFromMemory(
 			const String& name,
 			const Vertex* pVertices,
 			uint32 numVertices,
 			const uint32* pIndices,
-			uint32 numIndices);
+			uint32 numIndices,
+			bool useMeshletCache = false);
 
 		/**
 		* Load a material from memory

@@ -28,7 +28,11 @@ private:
 
 private:
 	LambdaEngine::IDVector m_CameraEntities;
+	LambdaEngine::IDVector m_FlagSpawnEntities;
+
 	uint8 m_LocalTeamIndex;
+
+	const Player* m_pSpectatedPlayer = nullptr;
 
 	int8 m_SpectatorIndex = 0;
 

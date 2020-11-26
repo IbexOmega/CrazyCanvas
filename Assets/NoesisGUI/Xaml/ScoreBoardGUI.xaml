@@ -1,0 +1,88 @@
+﻿<UserControl x:Class="CrazyCanvas.ScoreBoardGUI"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:noesis="clr-namespace:NoesisGUIExtensions;assembly=Noesis.GUI.Extensions"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:CrazyCanvasNoesisGUI"
+             mc:Ignorable="d" 
+             TextElement.FontFamily="gogono_cocoa_mochi.ttf#Gogono Cocoa Mochi"
+             d:DesignHeight="100" d:DesignWidth="100"
+             x:Name="SCORE_BOARD_UC">
+    
+    <Viewbox Grid.Column="1" Grid.Row="1">
+
+            <Grid x:Name="SCOREBOARD_GRID" Background="#9B101010" MinHeight="800" MinWidth="1600" Visibility="Hidden">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="1*" />
+                </Grid.RowDefinitions>
+
+                <Grid.Resources>
+                </Grid.Resources>
+
+                <StackPanel x:Name="BLUE_TEAM_STACK_PANEL" Grid.Column="0" Margin="30 50 30 50" TextElement.FontSize="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label x:Name="TEAM_1_LABEL" Content="Team 1" Grid.Column="1" Foreground="#05DFD7" FontSize="30" VerticalAlignment="Bottom"/>
+                        <Label Content="K" Grid.Column="2" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="D" Grid.Column="3" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Flags cap." Grid.Column="4" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Flags def." Grid.Column="5" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Ping" Grid.Column="6" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                    </Grid>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="6*" />
+                        </Grid.ColumnDefinitions>
+                        <Separator Grid.Column="1" Background="White" />
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel x:Name="RED_TEAM_STACK_PANEL" Grid.Column="1" Margin="50" TextElement.FontSize="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label x:Name="TEAM_2_LABEL" Content="Team 2" Grid.Column="1" Foreground="#E52C2C" FontSize="30" VerticalAlignment="Bottom"/>
+                        <Label Content="K" Grid.Column="2" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="D" Grid.Column="3" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Flags cap." Grid.Column="4" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Flags def." Grid.Column="5" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                        <Label Content="Ping" Grid.Column="6" Foreground="White" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                    </Grid>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="0.5*" />
+                            <ColumnDefinition Width="6*" />
+                        </Grid.ColumnDefinitions>
+                        <Separator Grid.Column="1" Background="White" />
+                    </Grid>
+                </StackPanel>
+            </Grid>
+            </Viewbox>
+</UserControl>

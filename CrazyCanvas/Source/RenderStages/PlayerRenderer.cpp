@@ -366,8 +366,6 @@ namespace LambdaEngine
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
 				const ComponentArray<WeaponComponent>* pWeaponComponents = pECSCore->GetComponentArray<WeaponComponent>();
 
-				LOG_MESSAGE("JA FIM: %u", m_DrawCount);
-
 				m_PlayerData.Clear();
 				TArray<WeaponData> weapons;
 
@@ -485,24 +483,24 @@ namespace LambdaEngine
 						TextureView* defaultMask = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
 						textureViews.PushBack(defaultMask);
 
-						for (uint32 i = 0; i < drawArg.InstanceCount; i++)
+						for (Entity entity : drawArg.EntityIDs)
 						{
-							DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
+							DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
 
-							if (extensionGroup)
+							if (pExtensionGroup)
 							{
 								// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
-								uint32 numExtensions = extensionGroup->ExtensionCount;
+								uint32 numExtensions = pExtensionGroup->ExtensionCount;
 								for (uint32 e = 0; e < numExtensions; e++)
 								{
-									uint32 flag = extensionGroup->pExtensionFlags[e];
+									uint32 flag = pExtensionGroup->pExtensionFlags[e];
 									bool inverted;
 									uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
 									uint32 invertedUInt = uint32(inverted);
 
 									if ((flag & meshPaintFlag) != invertedUInt)
 									{
-										DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+										DrawArgExtensionData& extension = pExtensionGroup->pExtensions[e];
 										TextureView* pTextureView = extension.ppTextureViews[0];
 										textureViews.PushBack(pTextureView);
 									}

@@ -42,6 +42,7 @@ public:
 	inline static uint16 PLAYER_SCORE				= 0;
 	inline static uint16 PLAYER_STATE				= 0;
 	inline static uint16 PROJECTILE_HIT				= 0;
+	inline static uint16 RESET_PLAYER_TEXTURE		= 0;
 
 public:
 	static IPacketReceivedEvent* GetPacketReceivedEventPointer(uint16 packetType);
