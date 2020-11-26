@@ -574,7 +574,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[FirstPersonWeapon]: Failed to update descriptors for drawArgs");
+				m_DrawCount = 0;
 			}
 		}
 	}
