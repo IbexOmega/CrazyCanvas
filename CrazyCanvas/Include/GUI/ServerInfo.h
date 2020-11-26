@@ -52,7 +52,6 @@ struct ServerInfo
 			LastUpdate	= other.LastUpdate;
 			EndPoint	= other.EndPoint;
 			ServerUID	= other.ServerUID;
-			IsLAN		= other.IsLAN;
 			IsOnline	= other.IsOnline;
 		}
 		return *this;

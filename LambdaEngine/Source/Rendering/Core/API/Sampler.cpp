@@ -11,21 +11,20 @@ namespace LambdaEngine
 	bool Sampler::InitDefaults()
 	{
 		SamplerDesc samplerLinearDesc = {};
-		samplerLinearDesc.DebugName				= "Linear Sampler";
-		samplerLinearDesc.MinFilter				= EFilterType::FILTER_TYPE_LINEAR;
-		samplerLinearDesc.MagFilter				= EFilterType::FILTER_TYPE_LINEAR;
-		samplerLinearDesc.MipmapMode			= EMipmapMode::MIPMAP_MODE_LINEAR;
-		samplerLinearDesc.AddressModeU			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerLinearDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerLinearDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
-		samplerLinearDesc.MipLODBias			= 0.0f;
-		samplerLinearDesc.AnisotropyEnabled		= false;
-		samplerLinearDesc.MaxAnisotropy			= 16;
-		samplerLinearDesc.MinLOD				= 0.0f;
-		samplerLinearDesc.MaxLOD				= 1.0f;
+		samplerLinearDesc.DebugName			= "Linear Sampler";
+		samplerLinearDesc.MinFilter			= EFilterType::FILTER_TYPE_LINEAR;
+		samplerLinearDesc.MagFilter			= EFilterType::FILTER_TYPE_LINEAR;
+		samplerLinearDesc.MipmapMode		= EMipmapMode::MIPMAP_MODE_LINEAR;
+		samplerLinearDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerLinearDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerLinearDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
+		samplerLinearDesc.MipLODBias		= 0.0f;
+		samplerLinearDesc.AnisotropyEnabled	= true;
+		samplerLinearDesc.MaxAnisotropy		= 16;
+		samplerLinearDesc.MinLOD			= 0.0f;
+		samplerLinearDesc.MaxLOD			= FLT_MAX;
 
 		s_pLinearSampler = RenderAPI::GetDevice()->CreateSampler(&samplerLinearDesc);
-
 		if (s_pLinearSampler == nullptr)
 		{
 			return false;
@@ -40,13 +39,12 @@ namespace LambdaEngine
 		samplerNearestDesc.AddressModeV			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerNearestDesc.AddressModeW			= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_REPEAT;
 		samplerNearestDesc.MipLODBias			= 0.0f;
-		samplerNearestDesc.AnisotropyEnabled	= false;
+		samplerNearestDesc.AnisotropyEnabled	= true;
 		samplerNearestDesc.MaxAnisotropy		= 16;
 		samplerNearestDesc.MinLOD				= 0.0f;
-		samplerNearestDesc.MaxLOD				= 1.0f;
+		samplerNearestDesc.MaxLOD				= FLT_MAX;
 
 		s_pNearestSampler = RenderAPI::GetDevice()->CreateSampler(&samplerNearestDesc);
-
 		if (s_pNearestSampler == nullptr)
 		{
 			return false;
