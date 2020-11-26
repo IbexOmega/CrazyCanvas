@@ -1097,14 +1097,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Static Mesh Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -1114,14 +1106,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Animated Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -1131,14 +1115,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Animation Attached Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto& animationAttachedComponent = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
@@ -1151,14 +1127,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Player Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
@@ -1309,8 +1277,15 @@ bool RenderSystem::InitIntegrationLUT()
 		bool isAnimated, 
 		bool forceUniqueResource)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("[RenderSystem]: Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		uint32 extensionGroupIndex = 0;
-		uint32 texturesPerExtensionGroup = 0;
 		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
@@ -1325,7 +1300,9 @@ bool RenderSystem::InitIntegrationLUT()
 		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())
 		{
 			pExtensionGroup		= EntityMaskManager::GetExtensionGroup(entity);
-			hasExtensionData	= pExtensionGroup->TotalTextureCount > 0;
+
+			if (pExtensionGroup != nullptr)
+				hasExtensionData	= pExtensionGroup->TotalTextureCount > 0;
 		}
 
 		//Get meshAndInstancesIterator
@@ -1648,21 +1625,21 @@ bool RenderSystem::InitIntegrationLUT()
 			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
+		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
+
 		//Add Extension Group
 		if (hasExtensionData)
 		{
 			//Check that this extension group has the same number of total textures as the ones already registered in this MeshEntry
-			if (!meshAndInstancesIt->second.ExtensionGroups.IsEmpty())
+			if (meshAndInstancesIt->second.TexturesPerExtensionGroup > 0)
 			{
-				VALIDATE(meshAndInstancesIt->second.ExtensionGroups[0]->TotalTextureCount == pExtensionGroup->TotalTextureCount);
+				VALIDATE(meshAndInstancesIt->second.TexturesPerExtensionGroup == pExtensionGroup->TotalTextureCount);
 			}
 
-			extensionGroupIndex			= meshAndInstancesIt->second.ExtensionGroups.GetSize() + 1; // + 1 because we have a "Default" Extension at bottom
-			texturesPerExtensionGroup	= pExtensionGroup->TotalTextureCount;
+			extensionGroupIndex										= meshAndInstancesIt->second.ExtensionGroupCount++;
+			meshAndInstancesIt->second.TexturesPerExtensionGroup	= pExtensionGroup->TotalTextureCount;
 
-			meshAndInstancesIt->second.ExtensionGroups.PushBack(pExtensionGroup);
-
-			WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
+			WriteDrawArgExtensionData(meshAndInstancesIt->second);
 		}
 
 		// Update resource for the entity mesh paint textures that is used for ray tracing
@@ -1740,11 +1717,9 @@ bool RenderSystem::InitIntegrationLUT()
 		instance.PrevTransform				= transform;
 		instance.MaterialIndex				= materialIndex;
 		instance.ExtensionGroupIndex		= extensionGroupIndex;
-		instance.TexturesPerExtensionGroup	= texturesPerExtensionGroup;
+		instance.TexturesPerExtensionGroup	= meshAndInstancesIt->second.TexturesPerExtensionGroup;
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
-
-		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
@@ -1861,8 +1836,9 @@ bool RenderSystem::InitIntegrationLUT()
 			// extensionGroupIndex == 0 means the mesh instance does not have an extension
 			if (extensionGroupIndex != 0)
 			{
-				// -1 because we have one default
 				extensionGroupIndex--;
+
+				meshAndInstancesIt->second.ExtensionGroupCount--;
 
 				// Set the last entity to use the extension group at the previous removed entity position.
 				Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
@@ -1870,16 +1846,7 @@ bool RenderSystem::InitIntegrationLUT()
 				Instance& instance = rasterInstances[instanceKey.InstanceIndex];
 				instance.ExtensionGroupIndex = extensionGroupIndex;
 
-				// Remove the group in the list and replace it with the last group.
-				TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
-				uint32 texturesPerExtensionGroup = extensionGroups[0]->ExtensionCount;
-				extensionGroups[extensionGroupIndex] = extensionGroups.GetBack();
-				extensionGroups.PopBack();
-
-				// Remove data from the storage.
-				EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
-
-				WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
+				WriteDrawArgExtensionData(meshAndInstancesIt->second);
 			}
 		}
 
@@ -2339,15 +2306,7 @@ bool RenderSystem::InitIntegrationLUT()
 				drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
 				drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
 
-				if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
-				{
-					drawArg.ppExtensionGroups	= meshEntryPair.second.ExtensionGroups.GetData();
-					drawArg.HasExtensions		= meshEntryPair.second.HasExtensionData;
-				}
-				else
-				{
-					drawArg.HasExtensions = false;
-				}
+				drawArg.HasExtensions			= meshEntryPair.second.HasExtensionData;
 
 				drawArg.pDescriptorSet				= meshEntryPair.second.pDrawArgDescriptorSet;
 				drawArg.pExtensionDataDescriptorSet	= meshEntryPair.second.pDrawArgDescriptorExtensionsSet;
@@ -2357,7 +2316,7 @@ bool RenderSystem::InitIntegrationLUT()
 		}
 	}
 
-	void RenderSystem::WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry)
+	void RenderSystem::WriteDrawArgExtensionData(MeshEntry& meshEntry)
 	{
 		static TArray<TextureView*> extensionTextureViews;
 		static TArray<Sampler*> extensionSamplers;
@@ -2366,22 +2325,27 @@ bool RenderSystem::InitIntegrationLUT()
 		extensionSamplers.Clear();
 
 		TextureView* pDefaultExtensionTexture = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
-		for (uint32 t = 0; t < texturesPerExtensionGroup; t++)
+		for (uint32 t = 0; t < meshEntry.TexturesPerExtensionGroup; t++)
 		{
 			extensionTextureViews.PushBack(pDefaultExtensionTexture);
 			extensionSamplers.PushBack(Sampler::GetNearestSampler());
 		}
 
-		for (const DrawArgExtensionGroup* pExtensionGroup : meshEntry.ExtensionGroups)
+		for (Entity entity : meshEntry.EntityIDs)
 		{
-			for (uint32 e = 0; e < pExtensionGroup->ExtensionCount; e++)
-			{
-				const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
+			DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
 
-				for (uint32 t = 0; t < extensionData.TextureCount; t++)
+			if (pExtensionGroup != nullptr)
+			{
+				for (uint32 e = 0; e < pExtensionGroup->ExtensionCount; e++)
 				{
-					extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
-					extensionSamplers.PushBack(extensionData.ppSamplers[t]);
+					const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
+
+					for (uint32 t = 0; t < extensionData.TextureCount; t++)
+					{
+						extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
+						extensionSamplers.PushBack(extensionData.ppSamplers[t]);
+					}
 				}
 			}
 		}

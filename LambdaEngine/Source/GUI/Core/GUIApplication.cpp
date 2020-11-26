@@ -64,7 +64,7 @@ namespace LambdaEngine
 		}
 
 		SAFEDELETE(s_pRenderer);
-		
+
 		s_pXAMLProvider->Release();
 		s_pFontProvider->Release();
 		s_pTextureProvider->Release();

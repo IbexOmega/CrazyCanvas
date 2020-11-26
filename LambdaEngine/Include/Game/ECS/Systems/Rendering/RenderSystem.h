@@ -170,7 +170,8 @@ namespace LambdaEngine
 			Buffer* pMeshlets				= nullptr;
 			uint32	MeshletCount			= 0;
 
-			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
+			uint32	ExtensionGroupCount		= 1;
+			uint32	TexturesPerExtensionGroup = 0;
 			bool	HasExtensionData		= false;
 			uint32	DrawArgsMask			= 0x0;
 
@@ -410,7 +411,7 @@ namespace LambdaEngine
 		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const;
-		void WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry);
+		void WriteDrawArgExtensionData(MeshEntry& meshEntry);
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);

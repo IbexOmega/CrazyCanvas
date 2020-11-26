@@ -187,7 +187,7 @@ bool HealthSystemServer::InitInternal()
 		systemReg.SubscriberRegistration.AdditionalAccesses.PushBack(
 			{ R, ProjectileComponent::Type() }
 		);
-		
+
 		RegisterSystem(TYPE_NAME(HealthSystemServer), systemReg);
 	}
 
@@ -206,12 +206,12 @@ bool HealthSystemServer::OnProjectileHit(const ProjectileHitEvent& projectileHit
 		if (projectileHitEvent.CollisionInfo1.Entity == entity)
 		{
 			const Entity projectileEntity = projectileHitEvent.CollisionInfo0.Entity;
-			
+
 			ECSCore* pECS = ECSCore::GetInstance();
 			const ProjectileComponent& projectileComponent = pECS->GetConstComponent<ProjectileComponent>(projectileEntity);
-			
+
 			m_DeferredHitInfo.PushBack(
-				{ 
+				{
 					projectileHitEvent.CollisionInfo1.Entity,
 					projectileComponent.Owner
 				});

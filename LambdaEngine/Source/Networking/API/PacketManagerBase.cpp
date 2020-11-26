@@ -16,6 +16,7 @@ namespace LambdaEngine
 	uint32 PacketManagerBase::EnqueueSegmentReliable(NetworkSegment* pSegment, IPacketListener* pListener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
+		ASSERT(pSegment != nullptr);
 		uint32 reliableUID = m_Statistics.RegisterReliableSegmentSent();
 		uint32 UID = EnqueueSegment(pSegment, reliableUID);
 		m_SegmentsWaitingForAck.insert({ reliableUID, SegmentInfo{ pSegment, pListener, UINT64_MAX, 0} });
