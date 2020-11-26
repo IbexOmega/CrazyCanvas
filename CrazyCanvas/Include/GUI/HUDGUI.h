@@ -30,6 +30,7 @@
 
 #include "GUI/EscapeMenuGUI.h"
 #include "GUI/KillFeedGUI.h"
+#include "GUI/ScoreBoardGUI.h"
 
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
@@ -52,16 +53,6 @@ struct GameGUIState
 	int32 AmmoCapacity;
 };
 
-enum class EPlayerProperty
-{
-	PLAYER_PROPERTY_NAME,
-	PLAYER_PROPERTY_KILLS,
-	PLAYER_PROPERTY_DEATHS,
-	PLAYER_PROPERTY_FLAGS_CAPTURED,
-	PLAYER_PROPERTY_FLAGS_DEFENDED,
-	PLAYER_PROPERTY_PING,
-};
-
 typedef  std::pair<uint8, const Player*> PlayerPair;
 
 class HUDGUI : public Noesis::Grid
@@ -80,16 +71,10 @@ public:
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
-	void DisplayScoreboardMenu(bool visible);
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
 	void DisplayPrompt(const LambdaEngine::String& promptMessage);
 
-	void AddPlayer(const Player& newPlayer);
-	void RemovePlayer(const Player& player);
-	void UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value);
-	void UpdateAllPlayerProperties(const Player& player);
-	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
-	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, const uint8 killedPlayerTeamIndex);
+	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex);
 	void UpdateKillFeedTimer(LambdaEngine::Timestamp delta);
 
 	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
@@ -98,15 +83,16 @@ public:
 
 	void SetWindowSize(uint32 width, uint32 height);
 
+	ScoreBoardGUI* GetScoreBoard() const;
+
 private:
 	void InitGUI();
+
+	void InitScore();
 
 	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
 	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
 	void SetRenderStagesInactive();
-
-	// Helpers
-	void AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(HUDGUI, Noesis::Grid)
 
@@ -121,28 +107,21 @@ private:
 	Noesis::TextBlock* m_pWaterAmmoText			= nullptr;
 	Noesis::TextBlock* m_pPaintAmmoText			= nullptr;
 
-
 	Noesis::Grid* m_pHUDGrid					= nullptr;
 
 	Noesis::Grid* m_pHitIndicatorGrid			= nullptr;
 	Noesis::Grid* m_pScoreboardGrid				= nullptr;
 
-	Noesis::Grid* m_pRedScoreGrid				= nullptr;
-	Noesis::Grid* m_pBlueScoreGrid				= nullptr;
-
-	Noesis::StackPanel* m_pBlueTeamStackPanel	= nullptr;
-	Noesis::StackPanel* m_pRedTeamStackPanel	= nullptr;
-
+	Noesis::TextBlock* m_pTeam1Score = nullptr;
+	Noesis::TextBlock* m_pTeam2Score = nullptr;
 
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
 
-	bool m_ScoreboardVisible = false;
-
 	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
 
 	KillFeedGUI* m_pKillFeedGUI		= nullptr;
 	EscapeMenuGUI* m_pEscMenuGUI	= nullptr;
-
+	ScoreBoardGUI* m_pScoreBoardGUI = nullptr;
 };
