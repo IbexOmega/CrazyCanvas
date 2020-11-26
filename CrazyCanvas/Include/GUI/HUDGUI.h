@@ -89,7 +89,7 @@ public:
 	void UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value);
 	void UpdateAllPlayerProperties(const Player& player);
 	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
-	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex);
+	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, const uint8 killedPlayerTeamIndex);
 	void UpdateKillFeedTimer(LambdaEngine::Timestamp delta);
 
 	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
