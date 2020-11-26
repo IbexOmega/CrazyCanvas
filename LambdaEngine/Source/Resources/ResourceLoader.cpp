@@ -1539,7 +1539,7 @@ namespace LambdaEngine
 			vertex.PositionXYZPaintBitsW.x = pMeshAI->mVertices[vertexIdx].x;
 			vertex.PositionXYZPaintBitsW.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.PositionXYZPaintBitsW.z = pMeshAI->mVertices[vertexIdx].z;
-			vertex.PositionXYZPaintBitsW.w = 0.0f;
+			vertex.PositionXYZPaintBitsW.w = glm::uintBitsToFloat(0);
 
 			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.PositionXYZPaintBitsW.x));
 			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.PositionXYZPaintBitsW.y));

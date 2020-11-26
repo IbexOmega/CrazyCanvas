@@ -22,7 +22,7 @@ namespace LambdaEngine
 {
 	struct Vertex
 	{
-		alignas(16) glm::vec4 PositionXYZPaintBitsW = { 0.0f, 0.0f, 0.0f, 0.0f };
+		alignas(16) glm::vec4 PositionXYZPaintBitsW = { 0.0f, 0.0f, 0.0f, glm::uintBitsToFloat(0) };
 		alignas(16) glm::vec3 Normal;
 		alignas(16) glm::vec3 Tangent;
 		alignas(16) glm::vec2 TexCoord;

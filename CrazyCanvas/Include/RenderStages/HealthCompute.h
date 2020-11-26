@@ -83,7 +83,6 @@ private:
 
 private:
 	bool m_Initilized			= false;
-	bool m_ResetHealthBuffer	= true;
 	uint32 m_BackBufferCount	= 0;
 
 	LambdaEngine::PipelineContext m_PipelineContext;

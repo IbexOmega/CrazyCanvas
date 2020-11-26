@@ -65,6 +65,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	}
 
 
+
 	// More threadsafe
 	{
 		std::scoped_lock<SpinLock> lock(m_DeferredHitInfoLock);
@@ -92,8 +93,9 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		TArray<uint32> healths = HealthCompute::GetHealths();
 		for (auto health : healths)
 		{
-			LOG_WARNING("Health: %d", health);
+			LOG_WARNING("Health: %u", health);
 		}
+		LOG_WARNING("VertexCount: %u", HealthCompute::GetVertexCount());
 		p = true;
 	}
 	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_G) && p)
@@ -109,7 +111,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<HealthComponent>*		pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
-		ComponentArray<MeshPaintComponent>*		pMeshPaintComponents	= pECS->GetComponentArray<MeshPaintComponent>();
 		ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
 		for (HitInfo& hitInfo : m_HitInfoToProcess)
@@ -119,7 +120,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
 			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
-			MeshPaintComponent& meshPaintComponent			= pMeshPaintComponents->GetData(entity);
 
 			constexpr float32 BIASED_MAX_HEALTH	= 0.15f;
 			constexpr float32 START_HEALTH_F	= float32(START_HEALTH);

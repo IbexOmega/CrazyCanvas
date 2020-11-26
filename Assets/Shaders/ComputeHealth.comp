@@ -44,8 +44,8 @@ layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndi
 } b_PrimitiveIndices;
 
 // SET 0
-layout(binding = 0, set = BUFFER_SET_INDEX) restrict writeonly buffer	PlayerHealths { uint val[10]; }	b_PlayerHealths;
-layout(binding = 1, set = BUFFER_SET_INDEX) uniform						VertexCount { uint val; }		u_VertexCount;
+layout(binding = 0, set = BUFFER_SET_INDEX) restrict writeonly buffer	PlayerHealths { uint Val[10]; }	b_PlayerHealths;
+layout(binding = 1, set = BUFFER_SET_INDEX) uniform						VertexCount { uint Val; }		u_VertexCount;
 
 // Main
 void main()
@@ -53,14 +53,18 @@ void main()
 	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 	uint index = gl_GlobalInvocationID.x;
 
-	// b_PlayerHealths.val[p_EntitySettings.EntityIndex] = u_VertexCount.val + uint(b_Vertices.Val[0].Position.x);
+	// Reset memory
+	if (index == 0)
+		b_PlayerHealths.Val[p_EntitySettings.EntityIndex] = 0;
 
-	if (index < u_VertexCount.val)
+	groupMemoryBarrier();
+
+	if (index < u_VertexCount.Val)
 	{
 		uint healthBits = floatBitsToUint(b_Vertices.Val[index].Position.w);
 		uint value = uint((healthBits & 0xF) > 0);
 
 		// Sorry
-		atomicAdd(b_PlayerHealths.val[p_EntitySettings.EntityIndex], value);
+		atomicAdd(b_PlayerHealths.Val[p_EntitySettings.EntityIndex], value);
 	}
 }

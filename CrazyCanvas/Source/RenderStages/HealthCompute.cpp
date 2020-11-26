@@ -204,22 +204,20 @@ void HealthCompute::Render(
 {
 	using namespace LambdaEngine;
 
-	LOG_WARNING("Health compute called");
+	UNREFERENCED_VARIABLE(backBufferIndex);
+	UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-	if ((sleeping || s_HealthsToCalculate.empty()) && !m_ResetHealthBuffer)
+	if (sleeping || s_HealthsToCalculate.empty())
 		return;
+
+	LOG_WARNING("Health compute called");
 
 	CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 	m_ppComputeCommandAllocators[modFrameIndex]->Reset();
 	pCommandList->Begin(nullptr);
 
 	m_PipelineContext.Bind(pCommandList);
-
-	if (m_ResetHealthBuffer)
-	{
-		ResetHealthBuffer(pCommandList);
-		m_ResetHealthBuffer = false;
-	}
+	// ResetHealthBuffer(pCommandList);
 
 	for (Entity entity : s_HealthsToCalculate)
 	{
@@ -488,6 +486,7 @@ bool HealthCompute::CreateResources()
 		m_ppComputeCommandAllocators[0]->Reset();
 		m_ppComputeCommandLists[0]->Begin(nullptr);
 		m_ppComputeCommandLists[0]->CopyBuffer(stagingBuffer, 0, m_pVertexCountBuffer, 0, sizeof(uint32));
+		ResetHealthBuffer(m_ppComputeCommandLists[0]);
 		m_ppComputeCommandLists[0]->End();
 		RenderAPI::GetComputeQueue()->ExecuteCommandLists(
 			&m_ppComputeCommandLists[0],
@@ -514,7 +513,7 @@ void HealthCompute::ResetHealthBuffer(LambdaEngine::CommandList* pCommandList)
 	using namespace LambdaEngine;
 
 	BufferDesc stagingBufferDesc	= {};
-	stagingBufferDesc.DebugName		= "Health System Server Vertices Count Staging Buffer";
+	stagingBufferDesc.DebugName		= "Health System Server Health Reset Staging Buffer";
 	stagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 	stagingBufferDesc.SizeInBytes	= sizeof(uint32) * MAX_PLAYER_COUNT;
 	stagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_SRC;
