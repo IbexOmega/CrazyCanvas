@@ -29,6 +29,8 @@ namespace LambdaEngine
 		float NearPlane 		= 0.0001f;
 		float FarPlane			= 50.0f;
 		float FOV				= 90.0f;
+		float Width				= 0.0f;
+		float Height			= 0.0f;
 		bool IsActive 			= true;
 	};
 

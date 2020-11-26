@@ -7,7 +7,11 @@
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
 
-layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
+layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors 
+{ 
+	vec4 val[]; 
+} b_PaintMaskColor;
+
 layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 #include "../MeshPaintHelper.glsl"
 
@@ -21,7 +25,15 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
 
-layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
+{
+	SPerFrameBuffer Val;
+} u_PerFrameBuffer;
+
+layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters 
+{ 
+	SMaterialParameters val[];
+} b_MaterialParameters;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
@@ -66,8 +78,13 @@ void main()
 	out_Compact_Normal	= PackNormal(mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation));
 
 	//3
-	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
-	vec2 screenVelocity	= (currentNDC - prevNDC);
-	out_Velocity		= vec2(screenVelocity.x, screenVelocity.y);
+	const vec2 size		= u_PerFrameBuffer.Val.ViewPortSize;
+	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter / size;
+	vec2 currentScreenSpace	= gl_FragCoord.xy;
+	vec2 prevScreenSpace	= ((in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f)) + 0.5f;
+	prevScreenSpace = prevScreenSpace * size;
+	vec2 screenVelocity	= prevScreenSpace - currentScreenSpace;
+	screenVelocity	= screenVelocity - jitter;
+	screenVelocity	= screenVelocity / size;
+	out_Velocity = screenVelocity;
 }

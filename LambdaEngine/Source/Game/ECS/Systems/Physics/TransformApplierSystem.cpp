@@ -76,11 +76,14 @@ namespace LambdaEngine
 			const uint16 height	= window->GetHeight();
 
 			// Generate jitter
-			const uint64 sampleIndex = m_Tick % 8;
-			glm::vec2 jitter = Math::Hammersley2D(sampleIndex, 8);
+			constexpr uint32 SAMPLES = 16;
+			const uint64 sampleIndex = m_Tick % SAMPLES;
+			glm::vec2 jitter = Math::Hammersley2D(sampleIndex, SAMPLES);
 			jitter = (jitter * 2.0f) - 1.0f;
-			cameraComp.Jitter.x = jitter.x / float32(width);
-			cameraComp.Jitter.y = jitter.y / float32(height);
+			cameraComp.Jitter.x = jitter.x;
+			cameraComp.Jitter.y = jitter.y;
+			cameraComp.Width	= float(width);
+			cameraComp.Height	= float(height);
 
 			viewProjComp.View	= glm::lookAt(positionComp.Position, positionComp.Position + GetForward(rotationComp.Quaternion), g_DefaultUp);
 			cameraComp.ViewInv	= glm::inverse(viewProjComp.View);

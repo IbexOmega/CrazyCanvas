@@ -147,7 +147,6 @@ namespace LambdaEngine
 		bool CreateSampler();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pBackBufferAttachmentDesc);
 
-
 	private:
 		TSharedRef<const TextureView>	m_pBackBuffers[BACK_BUFFER_COUNT];
 		TSharedRef<const TextureView>	m_DepthStencilTextureView;
