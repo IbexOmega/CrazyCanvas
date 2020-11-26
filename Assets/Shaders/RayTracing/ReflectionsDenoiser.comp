@@ -105,5 +105,6 @@ void main()
         historyLength / (TEMPORAL_REUSE_MAX_HISTORY_LENGTH + 1.0f));
 #endif
 
+    //imageStore(u_DenoisedReflections, p, vec4(current_FinalColor_Valid.rgb, historyLength));
     imageStore(u_DenoisedReflections, p, mix(vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), validReprojection));
 }

@@ -27,7 +27,7 @@ layout(location = 0) out vec4 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 2) out vec3 out_Compact_Normal;
 layout(location = 3) out vec2 out_Velocity;
-layout(location = 4) out vec4 out_Linear_Z;
+layout(location = 4) out vec2 out_Linear_Z;
 
 void main()
 {
@@ -66,7 +66,6 @@ void main()
 	
 	//4
 	float linearZ 				= in_ClipPosition.z * in_ClipPosition.w;
-	float prevLinearZ			= in_PrevClipPosition.z * in_PrevClipPosition.w;
 	float maxChangeZ			= (max(abs(dFdx(linearZ)), abs(dFdy(linearZ))));
-	out_Linear_Z				= vec4(linearZ, prevLinearZ, maxChangeZ, 0.0f);
+	out_Linear_Z				= vec2(linearZ, maxChangeZ);
 }
