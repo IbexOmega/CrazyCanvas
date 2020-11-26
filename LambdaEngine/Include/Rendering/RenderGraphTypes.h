@@ -389,7 +389,6 @@ namespace LambdaEngine
 		uint32	MeshletCount			= 0;
 
 		// Extensions
-		DrawArgExtensionGroup* const* ppExtensionGroups = nullptr; // This have a size of InstanceCount!
 		bool	HasExtensions			= false;	// Do not create a descriptor set if no data is used.
 
 		DescriptorSet* pDescriptorSet	= nullptr;

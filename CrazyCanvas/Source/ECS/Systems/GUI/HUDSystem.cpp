@@ -282,7 +282,7 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 		}
 		else
 		{
-			String promptText = "You Were Killed By Something";
+			String promptText = "You Were Killed By The Server";
 			HUDSystem::PromptMessage(promptText);
 		}
 	}
@@ -301,12 +301,13 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 {
 	String promptText = " ";
 
-	const Player* pFlagCapturer = PlayerManagerClient::GetPlayer(event.Packet.PlayerUID);
+	const PacketTeamScored& packet = event.Packet;
+	const Player* pFlagCapturer = PlayerManagerClient::GetPlayer(packet.PlayerUID);
 
 	if (pFlagCapturer)
 		promptText = pFlagCapturer->GetName() + " Captured The Flag!";
 	else
-		promptText = "Someone Captured The Flag!";
+		promptText = "Team " + std::to_string(packet.TeamIndex + 1) + " Scored!";
 
 	HUDSystem::PromptMessage(promptText);
 

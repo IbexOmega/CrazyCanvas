@@ -61,7 +61,7 @@ enum class EPlayerProperty
 	PLAYER_PROPERTY_PING,
 };
 
-typedef  std::pair<int16, const Player*> PlayerPair;
+typedef std::pair<int16, const Player*> PlayerPair;
 
 class HUDGUI : public Noesis::Grid
 {

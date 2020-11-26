@@ -3735,16 +3735,15 @@ namespace LambdaEngine
 						// For draw arg extensions
 						if (pDrawArg->HasExtensions)
 						{
-							uint32 numExtensionGroups = pDrawArg->InstanceCount;
-							for (uint32 i = 0; i < numExtensionGroups; i++)
+							for (Entity entity : pDrawArg->EntityIDs)
 							{
-								DrawArgExtensionGroup* extensionGroup = pDrawArg->ppExtensionGroups[i];
-								if (extensionGroup)
+								DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+								if (pExtensionGroup)
 								{
-									uint32 extensionCount = extensionGroup->ExtensionCount;
+									uint32 extensionCount = pExtensionGroup->ExtensionCount;
 									for (uint32 e = 0; e < extensionCount; e++)
 									{
-										DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+										DrawArgExtensionData& extension = pExtensionGroup->pExtensions[e];
 										uint32 numTextures = extension.TextureCount;
 										for (uint32 t = 0; t < numTextures; t++)
 										{
@@ -3848,16 +3847,15 @@ namespace LambdaEngine
 				if (pDrawArg->HasExtensions)
 				{
 					PipelineTextureBarrierDesc initialMaskTexturesTransitionBarrier = drawArgsArgsIt->second.InitialTextureTransitionBarrierTemplate;
-					uint32 numExtensionGroups = pDrawArg->InstanceCount;
-					for (uint32 i = 0; i < numExtensionGroups; i++)
+					for (Entity entity : pDrawArg->EntityIDs)
 					{
-						DrawArgExtensionGroup* extensionGroup = pDrawArg->ppExtensionGroups[i];
-						if (extensionGroup)
+						DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+						if (pExtensionGroup)
 						{
-							uint32 extensionCount = extensionGroup->ExtensionCount;
+							uint32 extensionCount = pExtensionGroup->ExtensionCount;
 							for (uint32 e = 0; e < extensionCount; e++)
 							{
-								DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
+								DrawArgExtensionData& extension = pExtensionGroup->pExtensions[e];
 								uint32 numTextures = extension.TextureCount;
 								for (uint32 t = 0; t < numTextures; t++)
 								{
