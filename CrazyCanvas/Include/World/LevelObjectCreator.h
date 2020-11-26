@@ -42,6 +42,7 @@ enum class ELevelObjectType : uint8
 	LEVEL_OBJECT_TYPE_KILL_PLANE			= 10,
 	LEVEL_OBJECT_TYPE_PLAYER_JAIL			= 11,
 	LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE	= 12,
+	LEVEL_OBJECT_TYPE_PARTICLE_SHOWER		= 13,
 };
 
 /*
@@ -162,6 +163,10 @@ private:
 		const glm::vec3& translation);
 
 	static ELevelObjectType CreateKillPlane(
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+		const glm::vec3& translation);
+	static ELevelObjectType CreateShowerPoint(
 		const LambdaEngine::LevelObjectOnLoad& levelObject,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
