@@ -29,14 +29,12 @@ public:
 
 	void UpdateFeedTimer(LambdaEngine::Timestamp delta);
 
-	void AddToKillFeed(const LambdaEngine::String& feedMessage, uint8 killedPlayerTeamIndex);
+	void AddToKillFeed(const LambdaEngine::String& feedMessage, const uint8 killedPlayerTeamIndex);
 
 private:
 	void RemoveFromKillFeed(Noesis::TextBlock* textblock);
 
 private:
-	//Noesis::Storyboard* m_pKillFeedStoryBoard			= nullptr;
-	//Noesis::DoubleAnimation* m_pKillFeedDoubleAnimation	= nullptr;
 	Noesis::StackPanel* m_pKillFeedStackPanel			= nullptr;
 
 	uint16 m_FeedIndex = 0;
