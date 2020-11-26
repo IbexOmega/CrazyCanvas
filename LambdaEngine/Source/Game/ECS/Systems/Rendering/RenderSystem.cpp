@@ -2628,10 +2628,10 @@ bool RenderSystem::InitIntegrationLUT()
 					if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
 
 					BufferDesc bufferDesc = {};
-					bufferDesc.DebugName	= "Material Properties Staging Buffer";
-					bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-					bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-					bufferDesc.SizeInBytes	= requiredBufferSize;
+					bufferDesc.DebugName = "Material Properties Staging Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					bufferDesc.SizeInBytes = requiredBufferSize;
 
 					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 					m_ppMaterialParametersStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
@@ -2646,26 +2646,27 @@ bool RenderSystem::InitIntegrationLUT()
 					if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
 
 					BufferDesc bufferDesc = {};
-					bufferDesc.DebugName	= "Material Properties Buffer";
-					bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-					bufferDesc.SizeInBytes	= requiredBufferSize;
+					bufferDesc.DebugName = "Material Properties Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					bufferDesc.SizeInBytes = requiredBufferSize;
 
 					m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 				}
+
+				pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 			}
 			else if (m_pMaterialParametersBuffer == nullptr)
 			{
 				//Create Dummy Buffer
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Material Properties Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				bufferDesc.SizeInBytes	= requiredBufferSize;
+				bufferDesc.DebugName = "Material Properties Dummy Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.SizeInBytes = 1;
 
 				m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
-			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 
 			m_MaterialsPropertiesBufferDirty = false;
 		}
