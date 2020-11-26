@@ -53,7 +53,7 @@ struct GameGUIState
 	int32 AmmoCapacity;
 };
 
-typedef std::pair<uint8, const Player*> PlayerPair;
+typedef std::pair<int16, const Player*> PlayerPair;
 
 class HUDGUI : public Noesis::Grid
 {
