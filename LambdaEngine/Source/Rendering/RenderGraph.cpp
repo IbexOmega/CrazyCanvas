@@ -2291,6 +2291,7 @@ namespace LambdaEngine
 
 					if (imGuiRenderStageIt == m_DebugRenderers.End())
 					{
+						
 						ImGuiRendererDesc imguiRendererDesc = {};
 						imguiRendererDesc.BackBufferCount	= m_BackBufferCount;
 						imguiRendererDesc.VertexBufferSize	= MEGA_BYTE(8);

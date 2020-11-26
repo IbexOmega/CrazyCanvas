@@ -2653,20 +2653,19 @@ bool RenderSystem::InitIntegrationLUT()
 
 					m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 				}
-
-				pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 			}
 			else if (m_pMaterialParametersBuffer == nullptr)
 			{
 				//Create Dummy Buffer
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Material Properties Dummy Buffer";
+				bufferDesc.DebugName	= "Material Properties Buffer";
 				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				bufferDesc.SizeInBytes	= 1;
+				bufferDesc.SizeInBytes	= requiredBufferSize;
 
 				m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
+			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 
 			m_MaterialsPropertiesBufferDirty = false;
 		}
