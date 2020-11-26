@@ -3,7 +3,7 @@
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
 
-const float RAY_NORMAL_OFFSET   = 0.1f;
+const float RAY_NORMAL_OFFSET   = 0.05f;
 
 struct SPrimaryPayload
 {
