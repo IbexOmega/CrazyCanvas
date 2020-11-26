@@ -79,17 +79,7 @@ void main()
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
-	//uint serverData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).r);
-	//uint clientData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).g);
 	float shouldPaint 			= float(step(1, packedPaintInfo));
-
-	//uint clientTeam				= (clientData >> 1) & 0x7F;
-	//uint serverTeam				= (serverData >> 1) & 0x7F;
-	//uint clientPainting			= clientData & 0x1;
-	uint team = packedPaintInfo;
-	
-	//if (clientPainting > 0)
-	//	team = clientTeam;
 
 	// Darken back faces like inside of painted legs
 	float backSide = 1.0f - step(0.0f, dot(in_ViewDirection, shadingNormal));
