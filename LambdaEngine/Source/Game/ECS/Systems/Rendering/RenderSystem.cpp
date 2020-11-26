@@ -35,6 +35,7 @@
 #include "Rendering/ParticleCollider.h"
 #include "Rendering/LightProbeRenderer.h"
 #include "Rendering/RT/ASBuilder.h"
+#include "Rendering/BlitStage.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -412,6 +413,14 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
+			//GUI Renderer
+			{
+				m_pBlitStage = DBG_NEW BlitStage();
+				m_pBlitStage->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pBlitStage);
+			}
+
 			// Other Custom Renderers constructed in game
 			if (!m_GameSpecificCustomRenderers.IsEmpty())
 			{
@@ -510,6 +519,7 @@ namespace LambdaEngine
 			}
 		}
 
+		SAFEDELETE(m_pBlitStage);
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pLightProbeRenderer);

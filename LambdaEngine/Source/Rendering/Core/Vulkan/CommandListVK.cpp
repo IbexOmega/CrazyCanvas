@@ -465,7 +465,7 @@ namespace LambdaEngine
 		vkCmdCopyImageToBuffer(m_CmdBuffer, pVkSrc->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, pVkDst->GetBuffer(), 1, &copyRegion);
 	}
 
-	void CommandListVK::BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)
+	void CommandListVK::BlitTexture(const Texture* pSrc, ETextureState srcState, const Texture* pDst, ETextureState dstState, EFilterType filter)
 	{
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
@@ -474,29 +474,126 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(dstState);
 		UNREFERENCED_VARIABLE(filter);
 
-		/*const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
-		TextureVK*			pVkDst	= reinterpret_cast<TextureVK*>(pDst);
+		const TextureDesc& srcTextureDesc = pSrc->GetDesc();
+		const TextureDesc& dstTextureDesc = pDst->GetDesc();
+
+		VALIDATE(srcTextureDesc.ArrayCount == dstTextureDesc.ArrayCount);
+
+		const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
+		const TextureVK*	pVkDst	= reinterpret_cast<const TextureVK*>(pDst);
+
+		VALIDATE(pVkSrc->GetAspectFlags() == pVkDst->GetAspectFlags());
 
 		VkImageLayout		vkSrcLayout = ConvertTextureState(srcState);
 		VkImageLayout		vkDstLayout = ConvertTextureState(dstState);
 		VkFilter			vkFilter	= ConvertFilter(filter);
 
-		/*VkImageSubresourceLayers srcSubresource = {};
-		srcSubresource.aspectMask;
-		srcSubresource.mipLevel;
-		srcSubresource.baseArrayLayer;
-		srcSubresource.layerCount;
-
-		VkImageBlit region = {};
-		region.srcSubresource;
-		region.srcOffsets[2];
-		region.dstSubresource;
-		region.dstOffsets[2];
+		VkImageSubresourceLayers srcSubresource = {};
+		
+		static VkImageBlit region = {};
+		region.srcSubresource.aspectMask		= pVkSrc->GetAspectFlags();
+		region.srcSubresource.mipLevel			= 0;
+		region.srcSubresource.baseArrayLayer	= 0;
+		region.srcSubresource.layerCount		= srcTextureDesc.ArrayCount;
+		region.srcOffsets[1].x					= srcTextureDesc.Width;
+		region.srcOffsets[1].y					= srcTextureDesc.Height;
+		region.srcOffsets[1].z					= 1;
+		region.dstSubresource.aspectMask		= pVkDst->GetAspectFlags();
+		region.dstSubresource.mipLevel			= 0;
+		region.dstSubresource.baseArrayLayer	= 0;
+		region.dstSubresource.layerCount		= dstTextureDesc.ArrayCount;
+		region.dstOffsets[1].x					= dstTextureDesc.Width;
+		region.dstOffsets[1].y					= dstTextureDesc.Height;
+		region.dstOffsets[1].z					= 1;
 
 		// Start by flushing barriers
 		FlushDeferredBarriers();
 
-		vkCmdBlitImage(m_CmdBuffer, pVkSrc->GetImage(), vkSrcLayout, pVkDst->GetImage(), vkDstLayout, 1, &region, vkFilter);*/
+		if (srcState != ETextureState::TEXTURE_STATE_COPY_SRC)
+		{
+			VkImageMemoryBarrier imageBarrier = { };
+			imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			imageBarrier.pNext								= nullptr;
+			imageBarrier.image								= pVkSrc->GetImage();
+			imageBarrier.srcQueueFamilyIndex				= VK_QUEUE_FAMILY_IGNORED;
+			imageBarrier.dstQueueFamilyIndex				= VK_QUEUE_FAMILY_IGNORED;
+			imageBarrier.oldLayout							= vkSrcLayout;
+			imageBarrier.newLayout							= VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+			imageBarrier.subresourceRange.baseMipLevel		= 0;
+			imageBarrier.subresourceRange.levelCount		= VK_REMAINING_MIP_LEVELS;
+			imageBarrier.subresourceRange.baseArrayLayer	= region.srcSubresource.baseArrayLayer;
+			imageBarrier.subresourceRange.layerCount		= region.srcSubresource.layerCount;
+			imageBarrier.subresourceRange.aspectMask		= region.srcSubresource.aspectMask;
+			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
+			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
+
+			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+		}
+
+		if (dstState != ETextureState::TEXTURE_STATE_COPY_SRC)
+		{
+			VkImageMemoryBarrier imageBarrier = { };
+			imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			imageBarrier.pNext								= nullptr;
+			imageBarrier.image								= pVkDst->GetImage();
+			imageBarrier.srcQueueFamilyIndex				= VK_QUEUE_FAMILY_IGNORED;
+			imageBarrier.dstQueueFamilyIndex				= VK_QUEUE_FAMILY_IGNORED;
+			imageBarrier.oldLayout							= vkDstLayout;
+			imageBarrier.newLayout							= VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			imageBarrier.subresourceRange.baseMipLevel		= 0;
+			imageBarrier.subresourceRange.levelCount		= VK_REMAINING_MIP_LEVELS;
+			imageBarrier.subresourceRange.baseArrayLayer	= region.dstSubresource.baseArrayLayer;
+			imageBarrier.subresourceRange.layerCount		= region.dstSubresource.layerCount;
+			imageBarrier.subresourceRange.aspectMask		= region.dstSubresource.aspectMask;
+			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
+			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
+
+			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+		}
+
+		vkCmdBlitImage(m_CmdBuffer, pVkSrc->GetImage(), VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, pVkDst->GetImage(), VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, vkFilter);
+
+		if (srcState != ETextureState::TEXTURE_STATE_COPY_SRC)
+		{
+			VkImageMemoryBarrier imageBarrier = { };
+			imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			imageBarrier.pNext								= nullptr;
+			imageBarrier.image								= pVkSrc->GetImage();
+			imageBarrier.srcQueueFamilyIndex				= VK_QUEUE_FAMILY_IGNORED;
+			imageBarrier.dstQueueFamilyIndex				= VK_QUEUE_FAMILY_IGNORED;
+			imageBarrier.oldLayout							= VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+			imageBarrier.newLayout							= vkSrcLayout;
+			imageBarrier.subresourceRange.baseMipLevel		= 0;
+			imageBarrier.subresourceRange.levelCount		= VK_REMAINING_MIP_LEVELS;
+			imageBarrier.subresourceRange.baseArrayLayer	= region.srcSubresource.baseArrayLayer;
+			imageBarrier.subresourceRange.layerCount		= region.srcSubresource.layerCount;
+			imageBarrier.subresourceRange.aspectMask		= region.srcSubresource.aspectMask;
+			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
+			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
+
+			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+		}
+
+		if (dstState != ETextureState::TEXTURE_STATE_COPY_SRC)
+		{
+			VkImageMemoryBarrier imageBarrier = { };
+			imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			imageBarrier.pNext								= nullptr;
+			imageBarrier.image								= pVkDst->GetImage();
+			imageBarrier.srcQueueFamilyIndex				= VK_QUEUE_FAMILY_IGNORED;
+			imageBarrier.dstQueueFamilyIndex				= VK_QUEUE_FAMILY_IGNORED;
+			imageBarrier.oldLayout							= VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			imageBarrier.newLayout							= vkDstLayout;
+			imageBarrier.subresourceRange.baseMipLevel		= 0;
+			imageBarrier.subresourceRange.levelCount		= VK_REMAINING_MIP_LEVELS;
+			imageBarrier.subresourceRange.baseArrayLayer	= region.dstSubresource.baseArrayLayer;
+			imageBarrier.subresourceRange.layerCount		= region.dstSubresource.layerCount;
+			imageBarrier.subresourceRange.aspectMask		= region.dstSubresource.aspectMask;
+			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
+			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
+
+			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+		}
 	}
 
 	void CommandListVK::TransitionBarrier(

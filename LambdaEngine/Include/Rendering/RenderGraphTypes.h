@@ -19,6 +19,7 @@ namespace LambdaEngine
 	constexpr const char* RENDER_GRAPH_PARTICLE_RENDER_STAGE_NAME	= "RENDER_STAGE_PARTICLE_RENDER";
 	constexpr const char* RENDER_GRAPH_LINE_RENDERER_STAGE_NAME		= "RENDER_STAGE_LINE_RENDERER";
 	constexpr const char* RENDER_GRAPH_MESH_UNWRAP_NAME				= "RENDER_STAGE_MESH_UNWRAP";
+	constexpr const char* BLIT_STAGE								= "BLIT_STAGE";
 
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT		= "BACK_BUFFER_TEXTURE";
 

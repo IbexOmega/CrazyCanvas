@@ -27,6 +27,7 @@ layout(location = 0) out vec4 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 2) out vec3 out_Compact_Normal;
 layout(location = 3) out vec2 out_Velocity;
+layout(location = 4) out vec4 out_Linear_Z;
 
 void main()
 {
@@ -46,9 +47,6 @@ void main()
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
-	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w);
-	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w);
-
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
 	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
@@ -61,6 +59,14 @@ void main()
 	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//3
-	vec2 screenVelocity			= (currentNDC - prevNDC);// + in_CameraJitter;
+	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * vec2(0.5f, -0.5f) + 0.5f;
+	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f) + 0.5f;
+	vec2 screenVelocity			= (currentNDC - prevNDC);
 	out_Velocity				= vec2(screenVelocity);
+	
+	//4
+	float linearZ 				= in_ClipPosition.z * in_ClipPosition.w;
+	float prevLinearZ			= in_PrevClipPosition.z * in_PrevClipPosition.w;
+	float maxChangeZ			= (max(abs(dFdx(linearZ)), abs(dFdy(linearZ))));
+	out_Linear_Z				= vec4(linearZ, prevLinearZ, maxChangeZ, 0.0f);
 }

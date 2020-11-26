@@ -14,18 +14,19 @@ layout(binding = 1,	set = TEXTURE_SET_INDEX) uniform sampler2D u_BRDF_PDF;
 layout(binding = 2,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D u_DenoisedReflections;
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferCompactNormal;
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferVelocity;
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferDepthStencil;
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferLinearZ;
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferPrevLinearZ;
 
-float ValidSample(ivec2 iImageDim, ivec2 reprojCoord, float depth, float reprojDepth, vec3 normal, vec3 reprojNormal)
+float ValidSample(ivec2 iImageDim, ivec2 reprojCoord, float Z, float prevZ, float fwidthZ, vec3 normal, vec3 reprojNormal)
 {
     bool result = true;
 
     // check whether reprojected pixel is inside of the screen
     result = result && (!any(lessThan(reprojCoord, ivec2(0, 0))) && !any(greaterThan(reprojCoord, iImageDim - ivec2(1, 1))));
     // check if deviation of depths is acceptable
-    //result = result && !(abs(depth - reprojDepth) > 0.01f);
+    result = result && !((abs(prevZ - Z) / (fwidthZ + 1e-4f)) > 2.0f);
     // check normals for compatibility
-    result = result && !(distance(normal, reprojNormal) > 0.01f);
+    result = result && !(dot(normal, reprojNormal) < 0.95f);
 
     return float(result);
 }
@@ -45,7 +46,6 @@ void main()
 
     //Sample GBuffer
 	vec3 currentNormal  = UnpackNormal(texelFetch(u_GBufferCompactNormal, p, 0).xyz);
-    float currentDepth  = texelFetch(u_GBufferDepthStencil, p, 0).x;
     vec2 velocity       = texelFetch(u_GBufferVelocity, p, 0).xy;
 
 #if SPATIAL_BRDF_DENOISING_ENABLED 
@@ -60,7 +60,7 @@ void main()
             for (int x = -2; x <= 2; x++)
             {
                 //Id both 0, we are at center
-                if (x + y == 0)
+                if (x == 0 && y == 0)
                 {
                     vec3 weight = orig_brdf_pdf.rgb / orig_brdf_pdf.a;
                     current_FinalColor_Valid.rgb += current_FinalColor_Valid.rgb * weight;
@@ -89,20 +89,21 @@ void main()
     float historyLength = 0.0f;
 
 #if TEMPORAL_REUSE_ENABLED
-    ivec2 reprojP        = p + ivec2(velocity * vec2(BLUR_IMAGE_SIZE));
+    ivec2 reprojP        = p - ivec2(velocity * vec2(BLUR_IMAGE_SIZE));
 
-    vec3 reprojNormal   = UnpackNormal(texelFetch(u_GBufferCompactNormal, reprojP, 0).xyz);
-    float reprojDepth   = texelFetch(u_GBufferDepthStencil, reprojP, 0).x;
+    vec3 reprojNormal       = UnpackNormal(texelFetch(u_GBufferCompactNormal, reprojP, 0).xyz);
+    vec2 current_z_Values   = texelFetch(u_GBufferLinearZ, p, 0).xy;
+    vec2 prev_z_Values      = texelFetch(u_GBufferPrevLinearZ, p, 0).xy;
 
-    float validReprojection = ValidSample(BLUR_IMAGE_SIZE, reprojP, currentDepth, reprojDepth, currentNormal, reprojNormal);
+    float validReprojection = ValidSample(BLUR_IMAGE_SIZE, reprojP, current_z_Values.x, prev_z_Values.x, current_z_Values.y, currentNormal, reprojNormal);
     vec4 prev_FinalColor_HistoryLength = imageLoad(u_DenoisedReflections, reprojP);
 
-	historyLength = validSample * min(prev_FinalColor_HistoryLength.a + 1.0f, TEMPORAL_REUSE_MAX_HISTORY_LENGTH); 
+	historyLength = validReprojection * validSample * min(prev_FinalColor_HistoryLength.a + 1.0f, TEMPORAL_REUSE_MAX_HISTORY_LENGTH); 
 	current_FinalColor_Valid.rgb = mix(
         current_FinalColor_Valid.rgb,
         prev_FinalColor_HistoryLength.rgb,
         historyLength / (TEMPORAL_REUSE_MAX_HISTORY_LENGTH + 1.0f));
 #endif
 
-    imageStore(u_DenoisedReflections, p, vec4(current_FinalColor_Valid.rgb, historyLength));
+    imageStore(u_DenoisedReflections, p, mix(vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), validReprojection));
 }

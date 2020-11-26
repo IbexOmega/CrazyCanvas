@@ -1513,7 +1513,7 @@ namespace LambdaEngine
 						textureDesc.MemoryType			= pResourceDesc->MemoryType;
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
 						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
-						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
+						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags | FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST;
 						textureDesc.Width				= uint32(pResourceDesc->TextureParams.XDimVariable);
 						textureDesc.Height				= uint32(pResourceDesc->TextureParams.YDimVariable);
 						textureDesc.Depth				= 1U;
