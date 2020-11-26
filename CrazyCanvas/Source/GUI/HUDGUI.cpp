@@ -272,9 +272,9 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	pGameOverGUI->DisplayGameOverGrid(true);
 	pGameOverGUI->SetWinningTeam(winningTeamIndex);
 
-	pGameOverGUI->SetMostKillsStats(mostKills.first, mostKills.second->GetName());
-	pGameOverGUI->SetMostDeathsStats(mostDeaths.first, mostDeaths.second->GetName());
-	pGameOverGUI->SetMostFlagsStats(mostFlags.first, mostFlags.second->GetName());
+	pGameOverGUI->SetMostKillsStats((uint8)mostKills.first, mostKills.second->GetName());
+	pGameOverGUI->SetMostDeathsStats((uint8)mostDeaths.first, mostDeaths.second->GetName());
+	pGameOverGUI->SetMostFlagsStats((uint8)mostFlags.first, mostFlags.second->GetName());
 
 	m_pScoreBoardGUI->DisplayScoreboardMenu(true);
 }

@@ -20,6 +20,8 @@
 #include "Rendering/Core/API/Shader.h"
 #include "Rendering/Core/API/Buffer.h"
 
+#include "Rendering/EntityMaskManager.h"
+
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
 
@@ -317,14 +319,14 @@ namespace LambdaEngine
 			
 			if (drawArg.HasExtensions)
 			{
-				for (uint32 groupIndex = 0; groupIndex < drawArg.InstanceCount; groupIndex++)
+				for (Entity entity : drawArg.EntityIDs)
 				{
-					DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[groupIndex];
-					if (extensionGroup)
+					DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
+					if (pExtensionGroup)
 					{
-						for (uint32 extensionIndex = 0; extensionIndex < extensionGroup->ExtensionCount; extensionIndex++)
+						for (uint32 extensionIndex = 0; extensionIndex < pExtensionGroup->ExtensionCount; extensionIndex++)
 						{
-							DrawArgExtensionData& extensionData = extensionGroup->pExtensions[extensionIndex];
+							DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[extensionIndex];
 							for (uint32 textureIndex = 0; textureIndex < extensionData.TextureCount; textureIndex++)
 							{
 								UpdateTextureResource(
