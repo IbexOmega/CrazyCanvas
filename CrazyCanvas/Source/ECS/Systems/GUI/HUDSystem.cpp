@@ -21,6 +21,8 @@
 
 using namespace LambdaEngine;
 
+HUDSystem* HUDSystem::s_pHudsystemInstance = nullptr;
+
 HUDSystem::~HUDSystem()
 {
 	m_HUDGUI.Reset();
@@ -35,10 +37,12 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 	EventQueue::UnregisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &HUDSystem::OnPacketTeamScored);
 }
 
 void HUDSystem::Init()
 {
+	s_pHudsystemInstance = this;
 
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
@@ -102,7 +106,8 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 	EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
-
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &HUDSystem::OnPacketTeamScored);
+	
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
@@ -249,6 +254,7 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
 {
 	m_HUDGUI->UpdateAllPlayerProperties(*event.pPlayer);
+
 	return false;
 }
 
@@ -264,14 +270,45 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
-
 	m_HUDGUI->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
+
+
+	if (pPlayer == PlayerManagerClient::GetPlayerLocal() && pPlayer->IsDead())
+	{
+		if (event.pPlayerKiller)
+		{
+			String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
+			HUDSystem::PromptMessage(promptText);
+		}
+		else
+		{
+			String promptText = "You Were Killed By Something";
+			HUDSystem::PromptMessage(promptText);
+		}
+	}
+
 	return false;
 }
 
 bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
 {
 	m_HUDGUI->UpdateCountdown(event.CountDownTime);
+
+	return false;
+}
+
+bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& event)
+{
+	String promptText = " ";
+
+	const Player* pFlagCapturer = PlayerManagerClient::GetPlayer(event.Packet.PlayerUID);
+
+	if (pFlagCapturer)
+		promptText = pFlagCapturer->GetName() + " Captured The Flag!";
+	else
+		promptText = "Someone Captured The Flag!";
+
+	HUDSystem::PromptMessage(promptText);
 
 	return false;
 }
@@ -378,4 +415,9 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 {
 	m_HUDGUI->SetWindowSize(event.Width, event.Height);
 	return false;
+}
+
+void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage)
+{
+	s_pHudsystemInstance->m_HUDGUI->DisplayPrompt(promtMessage);
 }
