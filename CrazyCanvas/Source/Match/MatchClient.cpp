@@ -295,27 +295,30 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 
 	UNREFERENCED_VARIABLE(event);
 
-	if (PlayerManagerClient::GetPlayerLocal()->IsDead())
+	if (event.pPlayer == PlayerManagerClient::GetPlayerLocal())
 	{
-		if (currentInputLayer == EInputLayer::GUI)
+		if (PlayerManagerClient::GetPlayerLocal()->IsDead())
 		{
-			Input::PopInputMode();
-			Input::PushInputMode(EInputLayer::DEAD);
-			Input::PushInputMode(EInputLayer::GUI);
+			if (currentInputLayer == EInputLayer::GUI)
+			{
+				Input::PopInputMode();
+				Input::PushInputMode(EInputLayer::DEAD);
+				Input::PushInputMode(EInputLayer::GUI);
+			}
+			else
+				Input::PushInputMode(EInputLayer::DEAD);
 		}
 		else
-			Input::PushInputMode(EInputLayer::DEAD);
-	}
-	else
-	{
-		if (currentInputLayer == EInputLayer::GUI)
 		{
-			Input::PopInputMode();
-			Input::PushInputMode(EInputLayer::GAME);
-			Input::PushInputMode(EInputLayer::GUI);
+			if (currentInputLayer == EInputLayer::GUI)
+			{
+				Input::PopInputMode();
+				Input::PushInputMode(EInputLayer::GAME);
+				Input::PushInputMode(EInputLayer::GUI);
+			}
+			else
+				Input::PushInputMode(EInputLayer::GAME);
 		}
-		else
-			Input::PushInputMode(EInputLayer::GAME);
 	}
 
 	return false;
