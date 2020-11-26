@@ -4,7 +4,7 @@
 			"name": "Canvas Map",
 			"modules": [
 				{
-					"filename": "NewMap.glb",
+					"filename": "CanvasMap.glb",
 					"translation": {
 						"x": 0.0,
 						"y": 0.0,
