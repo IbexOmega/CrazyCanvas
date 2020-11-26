@@ -3,6 +3,8 @@
 #include "GUI/GUIHelpers.h"
 #include "Lobby/PlayerManagerClient.h"
 
+#include "Teams/TeamHelper.h"
+
 #include "NoesisPCH.h"
 
 using namespace LambdaEngine;
@@ -34,6 +36,21 @@ void ScoreBoardGUI::InitGUI()
 
 	m_pBlueTeamStackPanel = FrameworkElement::FindName<Noesis::StackPanel>("BLUE_TEAM_STACK_PANEL");
 	m_pRedTeamStackPanel = FrameworkElement::FindName<Noesis::StackPanel>("RED_TEAM_STACK_PANEL");
+
+	Noesis::Ptr<Noesis::SolidColorBrush> pteamBrush1 = *new Noesis::SolidColorBrush();
+	Noesis::Ptr<Noesis::SolidColorBrush> pteamBrush2 = *new Noesis::SolidColorBrush();
+
+	glm::vec3 teamColor1 = TeamHelper::GetTeamColor(0);
+	glm::vec3 teamColor2 = TeamHelper::GetTeamColor(1);
+
+	Noesis::Color Color1(teamColor1.r, teamColor1.g, teamColor1.b);
+	Noesis::Color Color2(teamColor2.r, teamColor2.g, teamColor2.b);
+
+	pteamBrush1->SetColor(Color1);
+	pteamBrush2->SetColor(Color2);
+
+	FrameworkElement::FindName<Noesis::Label>("TEAM_1_LABEL")->SetForeground(pteamBrush1);
+	FrameworkElement::FindName<Noesis::Label>("TEAM_2_LABEL")->SetForeground(pteamBrush2);
 }
 
 
