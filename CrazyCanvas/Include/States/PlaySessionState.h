@@ -2,10 +2,12 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Player/HealthSystem.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Misc/DestructionSystem.h"
 
 #include "Game/State.h"
 
 #include "ECS/Systems/GUI/HUDSystem.h"
+#include "ECS/Systems/Camera/SpectateCameraSystem.h"
 
 #include "Application/API/Events/NetworkEvents.h"
 
@@ -40,6 +42,11 @@ public:
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
 
+	const PacketGameSettings& GetGameSettings() const;
+
+public:
+	static PlaySessionState* GetInstance();
+
 private:
 	bool m_Singleplayer;
 
@@ -47,9 +54,14 @@ private:
 
 	/* Systems */
 	HUDSystem m_HUDSystem;
+	SpectateCameraSystem m_CamSystem;
 	MultiplayerClient m_MultiplayerClient;
+	DestructionSystem m_DestructionSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
+
+private:
+	static PlaySessionState* s_pInstance;
 };

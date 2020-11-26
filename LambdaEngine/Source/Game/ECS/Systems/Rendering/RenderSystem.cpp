@@ -33,12 +33,14 @@
 #include "Rendering/ParticleRenderer.h"
 #include "Rendering/ParticleUpdater.h"
 #include "Rendering/ParticleCollider.h"
+#include "Rendering/LightProbeRenderer.h"
 #include "Rendering/RT/ASBuilder.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
 
 #include "Engine/EngineConfig.h"
+
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 namespace LambdaEngine
@@ -161,6 +163,15 @@ namespace LambdaEngine
 					.OnEntityRemoval = std::bind_front(&RenderSystem::OnPointLightEntityRemoved, this)
 				},
 				{
+					.pSubscriber = &m_GlobalLightProbeEntities,
+					.ComponentAccesses =
+					{
+						{ R, GlobalLightProbeComponent::Type() },
+					},
+					.OnEntityAdded		= std::bind_front(&RenderSystem::OnGlobalLightProbeEntityAdded, this),
+					.OnEntityRemoval	= std::bind_front(&RenderSystem::OnGlobalLightProbeEntityRemoved, this)
+				},
+				{
 					.pSubscriber = &m_CameraEntities,
 					.ComponentAccesses =
 					{
@@ -213,8 +224,8 @@ namespace LambdaEngine
 				return false;
 			}
 
-			m_ppBackBuffers = DBG_NEW Texture * [BACK_BUFFER_COUNT];
-			m_ppBackBufferViews = DBG_NEW TextureView * [BACK_BUFFER_COUNT];
+			m_ppBackBuffers			= DBG_NEW Texture*[BACK_BUFFER_COUNT];
+			m_ppBackBufferViews		= DBG_NEW TextureView * [BACK_BUFFER_COUNT];
 
 			m_FrameIndex++;
 			m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
@@ -225,19 +236,19 @@ namespace LambdaEngine
 			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 			{
 				BufferDesc perFrameCopyBufferDesc = {};
-				perFrameCopyBufferDesc.DebugName		= "Scene Per Frame Staging Buffer " + std::to_string(b);
-				perFrameCopyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				perFrameCopyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				perFrameCopyBufferDesc.SizeInBytes		= sizeof(PerFrameBuffer);
+				perFrameCopyBufferDesc.DebugName	= "Scene Per Frame Staging Buffer " + std::to_string(b);
+				perFrameCopyBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+				perFrameCopyBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
+				perFrameCopyBufferDesc.SizeInBytes	= sizeof(PerFrameBuffer);
 
 				m_ppPerFrameStagingBuffers[b] = RenderAPI::GetDevice()->CreateBuffer(&perFrameCopyBufferDesc);
 			}
 
 			BufferDesc perFrameBufferDesc = {};
-			perFrameBufferDesc.DebugName			= "Scene Per Frame Buffer";
-			perFrameBufferDesc.MemoryType			= EMemoryType::MEMORY_TYPE_GPU;
-			perFrameBufferDesc.Flags				= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-			perFrameBufferDesc.SizeInBytes			= sizeof(PerFrameBuffer);
+			perFrameBufferDesc.DebugName	= "Scene Per Frame Buffer";
+			perFrameBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+			perFrameBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
+			perFrameBufferDesc.SizeInBytes	= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
 		}
@@ -245,7 +256,7 @@ namespace LambdaEngine
 		// Create animation resources
 		{
 			DescriptorHeapDesc descriptorHeap;
-			descriptorHeap.DebugName											= "Animation DescriptorHeao";
+			descriptorHeap.DebugName											= "Animation DescriptorHeap";
 			descriptorHeap.DescriptorSetCount									= 1024;
 			descriptorHeap.DescriptorCount.UnorderedAccessBufferDescriptorCount	= 4;
 
@@ -315,6 +326,7 @@ namespace LambdaEngine
 	bool RenderSystem::InitRenderGraphs()
 	{
 		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
+		const bool isServer = MultiplayerUtils::IsServer();
 
 		//Create RenderGraph
 		{
@@ -323,8 +335,8 @@ namespace LambdaEngine
 			String renderGraphName = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RENDER_GRAPH_NAME);
 			if (renderGraphName != "")
 			{
-				String prefix	= m_RayTracingEnabled	&& !MultiplayerUtils::IsServer() ? "RT_" : "";
-				String postfix	= m_MeshShadersEnabled	&& !MultiplayerUtils::IsServer() ? "_MESH" : "";
+				String prefix	= m_RayTracingEnabled	&& !isServer ? "RT_" : "";
+				String postfix	= m_MeshShadersEnabled	&& !isServer ? "_MESH" : "";
 				size_t pos = renderGraphName.find_first_of(".lrg");
 				if (pos != String::npos)
 				{
@@ -355,16 +367,6 @@ namespace LambdaEngine
 			renderGraphDesc.BackBufferHeight			= pActiveWindow->GetHeight();
 			renderGraphDesc.CustomRenderers				= { };
 
-			// Light Renderer
-			bool isServer = MultiplayerUtils::IsServer();
-			if (!isServer)
-			{
-				m_pLightRenderer = DBG_NEW LightRenderer();
-				m_pLightRenderer->Init();
-
-				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-			}
-
 			// AS Builder
 			if (m_RayTracingEnabled)
 			{
@@ -374,10 +376,16 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
 			}
 
-			// Particle Renderer & Manager
+			// Light Renderer
 			if (!isServer)
 			{
-				constexpr uint32 MAX_PARTICLE_COUNT = 20000U;
+				m_pLightRenderer = DBG_NEW LightRenderer();
+				m_pLightRenderer->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
+
+				// Particle Renderer & Manager
+				constexpr uint32 MAX_PARTICLE_COUNT = 30000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
 
 				m_pParticleRenderer = DBG_NEW ParticleRenderer();
@@ -391,6 +399,11 @@ namespace LambdaEngine
 				m_pParticleCollider = DBG_NEW ParticleCollider();
 				m_pParticleCollider->Init();
 				renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
+
+				// LightProbeRenderer
+				m_pLightProbeRenderer = DBG_NEW LightProbeRenderer();
+				m_pLightProbeRenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
 			}
 
 			//GUI Renderer
@@ -421,16 +434,30 @@ namespace LambdaEngine
 		{
 			for (uint32 v = 0; v < BACK_BUFFER_COUNT; v++)
 			{
-				m_ppBackBuffers[v] = m_SwapChain->GetBuffer(v);
-				m_ppBackBufferViews[v] = m_SwapChain->GetBufferView(v);
+				m_ppBackBuffers[v]		= m_SwapChain->GetBuffer(v);
+				m_ppBackBufferViews[v]	= m_SwapChain->GetBufferView(v);
 			}
 
 			ResourceUpdateDesc resourceUpdateDesc = {};
-			resourceUpdateDesc.ResourceName = RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextures = m_ppBackBuffers;
-			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews = m_ppBackBufferViews;
-
+			resourceUpdateDesc.ResourceName							= RENDER_GRAPH_BACK_BUFFER_ATTACHMENT;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_ppBackBuffers;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_ppBackBufferViews;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+
+			if (!isServer)
+			{
+				// Load Integration LUT
+				if (InitIntegrationLUT())
+				{
+					resourceUpdateDesc.ResourceName							= "INTEGRATION_LUT";
+					resourceUpdateDesc.ExternalTextureUpdate.ppTextures		= m_IntegrationLUT.GetAddressOf();
+					resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_IntegrationLUTView.GetAddressOf();
+					resourceUpdateDesc.ExternalTextureUpdate.TextureCount	= 1;
+					resourceUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetNearestSamplerToBind();
+					resourceUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
+					m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+				}
+			}
 		}
 
 		UpdateBuffers();
@@ -466,6 +493,7 @@ namespace LambdaEngine
 
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);
+		SAFEDELETE(m_pLightProbeRenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
 		SAFEDELETE(m_pParticleCollider);
@@ -488,6 +516,13 @@ namespace LambdaEngine
 		{
 			SAFERELEASE(m_CubeSubImageTextureViews[f]);
 		}
+
+		// Remove lightprobes
+		m_GlobalLightProbe.Release();
+
+		// Integration LUT
+		m_IntegrationLUT.Reset();
+		m_IntegrationLUTView.Reset();
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
 		{
@@ -635,6 +670,28 @@ namespace LambdaEngine
 			UpdateTransform(entity, positionComp, rotationComp, scaleComp, glm::bvec3(true));
 		}
 
+		if (m_GlobalLightProbeNeedsUpdate)
+		{
+			ComponentArray<GlobalLightProbeComponent>* pGlobalLightProbeComponent = pECSCore->GetComponentArray<GlobalLightProbeComponent>();
+			for (Entity entity : m_GlobalLightProbeEntities)
+			{
+				const GlobalLightProbeComponent& lightProbeComp = pGlobalLightProbeComponent->GetConstData(entity);
+				if (m_GlobalLightProbe.DiffuseResolution != lightProbeComp.Data.DiffuseResolution)
+				{
+					m_GlobalLightProbe.DiffuseResolution = lightProbeComp.Data.DiffuseResolution;
+					m_GlobalLightProbeDirty = true;
+				}
+
+				if (m_GlobalLightProbe.SpecularResolution != lightProbeComp.Data.SpecularResolution)
+				{
+					m_GlobalLightProbe.SpecularResolution = lightProbeComp.Data.SpecularResolution;
+					m_GlobalLightProbeDirty = true;
+				}
+			}
+
+			m_GlobalLightProbeNeedsUpdate = false;
+		}
+
 		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
 		for (Entity entity : m_ParticleEmitters)
 		{
@@ -708,24 +765,23 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pLineRenderer);
 		}
 
-		// Light Renderer
-		if (m_RayTracingEnabled)
+		const bool isServer = MultiplayerUtils::IsServer();
+		if (!isServer)
 		{
+			// Light Renderer
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-		}
-
-		// Particles
-		if (m_RayTracingEnabled)
-		{
+			// Particles
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleRenderer);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleUpdater);
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
-		}
+			// LightProbe Renderer
+			renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
 
-		// AS Builder
-		if (m_RayTracingEnabled)
-		{
-			renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+			// AS Builder
+			if (m_RayTracingEnabled)
+			{
+				renderGraphDesc.CustomRenderers.PushBack(m_pASBuilder);
+			}
 		}
 
 		// GUI Renderer
@@ -786,6 +842,222 @@ namespace LambdaEngine
 		{
 			LOG_WARNING("[RenderSystem]: SetPaintMaskColor index out of range, colors unchanged");
 		}
+	}
+
+bool RenderSystem::InitIntegrationLUT()
+	{
+		if (m_IntegrationLUT)
+		{
+			return true;
+		}
+
+		TSharedRef<CommandAllocator> commandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator(
+			"GenIntegrationLUT CommandAllocator",
+			ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+		if (!commandAllocator)
+		{
+			LOG_ERROR("[RenderSystem]: Could not create GenIntegrationLUT CommandAllocator");
+			DEBUGBREAK();
+			return false;
+		}
+
+		CommandListDesc commandListDesc = {};
+		commandListDesc.DebugName		= "GenIntegrationLUT CommandList";
+		commandListDesc.CommandListType	= ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
+		commandListDesc.Flags			= FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
+
+		TSharedRef<CommandList> commandList = RenderAPI::GetDevice()->CreateCommandList(commandAllocator.Get(), &commandListDesc);
+		if (!commandList)
+		{
+			LOG_ERROR("[RenderSystem]: Could not create GenIntegrationLUT CommandList");
+			DEBUGBREAK();
+			return false;
+		}
+
+		DescriptorHeapDesc descriptorHeapDesc;
+		descriptorHeapDesc.DebugName												= "GenIntegrationLUT DescriptorHeap";
+		descriptorHeapDesc.DescriptorSetCount										= 1;
+		descriptorHeapDesc.DescriptorCount.UnorderedAccessTextureDescriptorCount	= 1;
+
+		TSharedRef<DescriptorHeap> descriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
+		if (!descriptorHeap)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT DescriptorHeap");
+			DEBUGBREAK();
+			return false;
+		}
+
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc;
+		descriptorSetLayoutDesc.DescriptorSetLayoutFlags = 0;
+		descriptorSetLayoutDesc.DescriptorBindings =
+		{
+			{ EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE, 1, 0, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER },
+		};
+
+		ConstantRangeDesc constantRange;
+		constantRange.OffsetInBytes		= 0;
+		constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		constantRange.SizeInBytes		= 4;
+
+		PipelineLayoutDesc pipelineLayoutDesc;
+		pipelineLayoutDesc.DebugName		= "GenIntegrationLUT PipelineLayout";
+		pipelineLayoutDesc.ConstantRanges =
+		{
+			constantRange
+		};
+		pipelineLayoutDesc.DescriptorSetLayouts	=
+		{
+			descriptorSetLayoutDesc
+		};
+
+		TSharedRef<PipelineLayout> pipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
+		if (!pipelineLayout)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineLayout");
+			DEBUGBREAK();
+			return false;
+		}
+
+		TSharedRef<DescriptorSet> descriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet(
+		 "GenIntegrationLUT DescriptorSet",
+			pipelineLayout.Get(),
+			0,
+			descriptorHeap.Get());
+		if (!pipelineLayout)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineLayout");
+			DEBUGBREAK();
+			return false;
+		}
+
+		TSharedRef<Shader> shader = ResourceLoader::LoadShaderFromFile(
+			"../Assets/Shaders/Skybox/IntegrationLUTGen.comp",
+			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+			EShaderLang::SHADER_LANG_GLSL,
+			"main");
+		if (!shader)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT Shader");
+			DEBUGBREAK();
+			return false;
+		}
+
+		ComputePipelineStateDesc pipelineDesc;
+		pipelineDesc.DebugName			= "GenIntegrationLUT PipelineState";
+		pipelineDesc.pPipelineLayout	= pipelineLayout.Get();
+		pipelineDesc.Shader.pShader		= shader.Get();
+
+		TSharedRef<PipelineState> pipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
+		if (!pipelineState)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineState");
+			DEBUGBREAK();
+			return false;
+		}
+
+		// Create textureresources
+		constexpr uint32 INTEGRATION_LUT_SIZE = 512;
+
+		TextureDesc textureDesc;
+		textureDesc.DebugName	= "IntegrationLUT";
+		textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+		textureDesc.ArrayCount	= 1;
+		textureDesc.Depth		= 1;
+		textureDesc.Flags		=
+			FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
+			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+		textureDesc.Width		= INTEGRATION_LUT_SIZE;
+		textureDesc.Height		= INTEGRATION_LUT_SIZE;
+		textureDesc.Format		= EFormat::FORMAT_R16G16_SFLOAT;
+		textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+		textureDesc.Miplevels	= 1;
+		textureDesc.SampleCount = 1;
+
+		m_IntegrationLUT = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+		if (!m_IntegrationLUT)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create IntegrationLUT");
+			DEBUGBREAK();
+			return false;
+		}
+
+		TextureViewDesc textureViewDesc;
+		textureViewDesc.DebugName	= "IntegrationLUT View";
+		textureViewDesc.ArrayCount	= 1;
+		textureViewDesc.Format		= textureDesc.Format;
+		textureViewDesc.ArrayIndex	= 0;
+		textureViewDesc.Flags		=
+			FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
+			FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+		textureViewDesc.Miplevel		= 0;
+		textureViewDesc.MiplevelCount	= 1;
+		textureViewDesc.pTexture		= m_IntegrationLUT.Get();
+		textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+
+		m_IntegrationLUTView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+		if (!m_IntegrationLUTView)
+		{
+			LOG_ERROR("[RenderSystem] Failed to create IntegrationLUT View");
+			DEBUGBREAK();
+			return false;
+		}
+
+		descriptorSet->WriteTextureDescriptors(
+			m_IntegrationLUTView.GetAddressOf(),
+			Sampler::GetNearestSamplerToBind(),
+			ETextureState::TEXTURE_STATE_GENERAL,
+			0, 1,
+			EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_TEXTURE,
+			false);
+
+		commandAllocator->Reset();
+		commandList->Begin(nullptr);
+
+		commandList->TransitionBarrier(
+			m_IntegrationLUT.Get(),
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			0,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+			ETextureState::TEXTURE_STATE_UNKNOWN,
+			ETextureState::TEXTURE_STATE_GENERAL);
+
+		const uint32 size = INTEGRATION_LUT_SIZE;
+		commandList->SetConstantRange(
+			pipelineLayout.Get(),
+			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+			&size, 4, 0);
+
+		commandList->BindDescriptorSetCompute(descriptorSet.Get(), pipelineLayout.Get(), 0);
+
+		commandList->BindComputePipeline(pipelineState.Get());
+
+		commandList->Dispatch(size, size, 1);
+
+		commandList->TransitionBarrier(
+			m_IntegrationLUT.Get(),
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+			FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			0,
+			ETextureState::TEXTURE_STATE_GENERAL,
+			ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+		commandList->End();
+
+		if (!RenderAPI::GetComputeQueue()->ExecuteCommandLists(
+			commandList.GetAddressOf(), 1,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			nullptr, 0, nullptr, 0))
+		{
+			LOG_ERROR("[RenderSystem] Failed to execute commandlist");
+			DEBUGBREAK();
+			return false;
+		}
+
+		RenderAPI::GetComputeQueue()->Flush();
+
+		return true;
 	}
 
 	glm::mat4 RenderSystem::CreateEntityTransform(Entity entity, const glm::bvec3& rotationalAxes)
@@ -1279,6 +1551,10 @@ namespace LambdaEngine
 
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		m_RenderableEntities.erase(entity);
+#endif
+
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
@@ -1547,6 +1823,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("Static Mesh Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -1556,6 +1840,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("Animated Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -1565,6 +1857,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("Animation Attached Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto& animationAttachedComponent = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
@@ -1577,6 +1877,14 @@ namespace LambdaEngine
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("[RenderSystem]: Player Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
@@ -1638,11 +1946,10 @@ namespace LambdaEngine
 	void RenderSystem::OnPointLightEntityAdded(Entity entity)
 	{
 		const ECSCore* pECSCore = ECSCore::GetInstance();
+		const auto& pointLight	= pECSCore->GetConstComponent<PointLightComponent>(entity);
+		const auto& position	= pECSCore->GetConstComponent<PositionComponent>(entity);
 
-		const auto& pointLight = pECSCore->GetConstComponent<PointLightComponent>(entity);
-		const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
-
-		uint32 pointLightIndex = m_PointLights.GetSize();
+		const uint32 pointLightIndex = m_PointLights.GetSize();
 		m_EntityToPointLight[entity] = pointLightIndex;
 		m_PointLightToEntity[pointLightIndex] = entity;
 
@@ -1655,7 +1962,7 @@ namespace LambdaEngine
 		else
 		{
 			// Check for free texture index instead of creating new index
-			uint32 textureIndex = m_FreeTextureIndices.GetBack();
+			const uint32 textureIndex = m_FreeTextureIndices.GetBack();
 			m_FreeTextureIndices.PopBack();
 
 			m_PointLights.GetBack().TextureIndex = textureIndex;
@@ -1667,15 +1974,15 @@ namespace LambdaEngine
 		if (m_PointLights.IsEmpty())
 			return;
 
-		uint32 lastIndex = m_PointLights.GetSize() - 1U;
-		uint32 lastEntity = m_PointLightToEntity[lastIndex];
-		uint32 currentIndex = m_EntityToPointLight[entity];
+		const uint32 lastIndex		= m_PointLights.GetSize() - 1U;
+		const uint32 lastEntity		= m_PointLightToEntity[lastIndex];
+		const uint32 currentIndex	= m_EntityToPointLight[entity];
 
-		uint32 freeTexIndex = m_PointLights[currentIndex].TextureIndex;
+		const uint32 freeTexIndex	= m_PointLights[currentIndex].TextureIndex;
 		m_PointLights[currentIndex] = m_PointLights[lastIndex];
 
-		m_EntityToPointLight[lastEntity] = currentIndex;
-		m_PointLightToEntity[currentIndex] = lastEntity;
+		m_EntityToPointLight[lastEntity]	= currentIndex;
+		m_PointLightToEntity[currentIndex]	= lastEntity;
 
 		m_PointLightToEntity.erase(lastIndex);
 		m_EntityToPointLight.erase(entity);
@@ -1703,17 +2010,40 @@ namespace LambdaEngine
 		m_LightsBufferDirty = true;
 	}
 
+	void RenderSystem::OnGlobalLightProbeEntityAdded(Entity entity)
+	{
+		UNREFERENCED_VARIABLE(entity);
+		m_GlobalLightProbeNeedsUpdate = true;
+	}
+
+	void RenderSystem::OnGlobalLightProbeEntityRemoved(Entity entity)
+	{
+		UNREFERENCED_VARIABLE(entity);
+		m_GlobalLightProbeNeedsUpdate = true;
+	}
+
 	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
 	{
 		m_ParticleManager.OnEmitterEntityRemoved(entity);
 	}
 
-	void RenderSystem::UpdateParticleEmitter(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp)
+	void RenderSystem::UpdateParticleEmitter(
+		Entity entity,
+		const PositionComponent& positionComp,
+		const RotationComponent& rotationComp,
+		const ParticleEmitterComponent& emitterComp)
 	{
 		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 	}
 
-	void RenderSystem::UpdateDirectionalLight(const glm::vec4& colorIntensity, const glm::vec3& position, const glm::quat& direction, float frustumWidth, float frustumHeight, float zNear, float zFar)
+	void RenderSystem::UpdateDirectionalLight(
+		const glm::vec4& colorIntensity,
+		const glm::vec3& position,
+		const glm::quat& direction,
+		float frustumWidth,
+		float frustumHeight,
+		float zNear,
+		float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
 		m_LightBufferData.DirL_Direction = -GetForward(direction);
@@ -1724,6 +2054,154 @@ namespace LambdaEngine
 
 		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsBufferDirty = true;
+	}
+
+	void RenderSystem::UpdateLightProbeResources(CommandList* pCommandList)
+	{
+		const uint64 modFrameIndex = GetModFrameIndex();
+		if (m_GlobalLightProbeDirty)
+		{
+			// Update diffuse
+			if (m_GlobalLightProbe.Diffuse)
+			{
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(m_GlobalLightProbe.Diffuse.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(m_GlobalLightProbe.DiffuseView.GetAndAddRef());
+			}
+
+			{
+				TextureDesc textureDesc;
+				textureDesc.DebugName	= "LightProbe Diffuse";
+				textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+				textureDesc.ArrayCount	= 6;
+				textureDesc.Depth		= 1;
+				textureDesc.Flags		=
+					FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE	|
+					FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS	|
+					FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+				textureDesc.Width		= m_GlobalLightProbe.DiffuseResolution;
+				textureDesc.Height		= m_GlobalLightProbe.DiffuseResolution;
+				textureDesc.Format		= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+				textureDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+				textureDesc.Miplevels	= 1;
+				textureDesc.SampleCount	= 1;
+
+				m_GlobalLightProbe.Diffuse = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+				if (!m_GlobalLightProbe.Diffuse)
+				{
+					LOG_WARNING("[RenderSystem] Failed to create diffuse lightprobe");
+				}
+
+				pCommandList->TransitionBarrier(
+					m_GlobalLightProbe.Diffuse.Get(),
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+					0,
+					FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+					ETextureState::TEXTURE_STATE_UNKNOWN,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+				TextureViewDesc textureViewDesc;
+				textureViewDesc.DebugName	= "LightProbe Diffuse View";
+				textureViewDesc.ArrayCount	= 6;
+				textureViewDesc.Format		= textureDesc.Format;
+				textureViewDesc.ArrayIndex	= 0;
+				textureViewDesc.Flags		=
+					FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
+					FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+				textureViewDesc.Miplevel		= 0;
+				textureViewDesc.MiplevelCount	= 1;
+				textureViewDesc.pTexture		= m_GlobalLightProbe.Diffuse.Get();
+				textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+
+				m_GlobalLightProbe.DiffuseView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+				if (!m_GlobalLightProbe.DiffuseView)
+				{
+					LOG_WARNING("[RenderSystem] Failed to create Diffuse lightprobe View");
+				}
+			}
+
+			// Update specular
+			if (m_GlobalLightProbe.Specular)
+			{
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(m_GlobalLightProbe.Specular.GetAndAddRef());
+				m_ResourcesToRemove[modFrameIndex].EmplaceBack(m_GlobalLightProbe.SpecularView.GetAndAddRef());
+			}
+
+			{
+				const uint32 mipLevels = std::max<uint32>(uint32(std::log2(m_GlobalLightProbe.SpecularResolution)), 1u);
+
+				TextureDesc textureDesc;
+				textureDesc.DebugName	= "LightProbe Specular";
+				textureDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
+				textureDesc.ArrayCount	= 6;
+				textureDesc.Depth		= 1;
+				textureDesc.Flags		=
+					FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE	|
+					FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS	|
+					FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+				textureDesc.Width			= m_GlobalLightProbe.SpecularResolution;
+				textureDesc.Height			= m_GlobalLightProbe.SpecularResolution;
+				textureDesc.Format			= EFormat::FORMAT_R16G16B16A16_SFLOAT;
+				textureDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
+				textureDesc.Miplevels		= mipLevels;
+				textureDesc.SampleCount		= 1;
+
+				m_GlobalLightProbe.Specular = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+				if (!m_GlobalLightProbe.Specular)
+				{
+					LOG_WARNING("[RenderSystem] Failed to create Specular lightprobe");
+				}
+
+				pCommandList->TransitionBarrier(
+					m_GlobalLightProbe.Specular.Get(),
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
+					0,
+					FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+					ETextureState::TEXTURE_STATE_UNKNOWN,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
+
+				TextureViewDesc textureViewDesc;
+				textureViewDesc.DebugName	= "LightProbe Specular View";
+				textureViewDesc.ArrayCount	= 6;
+				textureViewDesc.ArrayIndex	= 0;
+				textureViewDesc.Flags =
+					FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+				textureViewDesc.Miplevel		= 0;
+				textureViewDesc.MiplevelCount	= mipLevels;
+				textureViewDesc.Format			= textureDesc.Format;
+				textureViewDesc.pTexture		= m_GlobalLightProbe.Specular.Get();
+				textureViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
+
+				m_GlobalLightProbe.SpecularView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+				if (!m_GlobalLightProbe.SpecularView)
+				{
+					LOG_WARNING("[RenderSystem] Failed to create specular lightprobe view");
+				}
+
+				for (uint32 i = 0; i < mipLevels; i++)
+				{
+					textureViewDesc.DebugName = "LightProbe Specular View Write[" + std::to_string(i) + "]";
+					textureViewDesc.Flags =
+						FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+					textureViewDesc.Miplevel		= i;
+					textureViewDesc.MiplevelCount	= 1;
+
+					TSharedRef<TextureView> view = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+					if (!view)
+					{
+						LOG_WARNING("[RenderSystem] Failed to create '%s'", textureViewDesc.DebugName.c_str());
+					}
+					else
+					{
+						m_GlobalLightProbe.SpecularWriteViews.EmplaceBack(view);
+						m_GlobalLightProbe.RawSpecularWriteViews.EmplaceBack(view.Get());
+					}
+				}
+
+				pCommandList->FlushDeferredBarriers();
+			}
+		}
 	}
 
 	void RenderSystem::UpdatePointLight(Entity entity, const glm::vec3& position, const glm::vec4& colorIntensity, float nearPlane, float farPlane)
@@ -1780,8 +2258,8 @@ namespace LambdaEngine
 			}
 
 			LightUpdateData lightTextureUpdate = {};
-			lightTextureUpdate.PointLightIndex = index;
-			lightTextureUpdate.TextureIndex = m_PointLights[index].TextureIndex;
+			lightTextureUpdate.PointLightIndex	= index;
+			lightTextureUpdate.TextureIndex		= m_PointLights[index].TextureIndex;
 			m_PointLightTextureUpdateQueue.PushBack(lightTextureUpdate);
 
 			m_PointLightsDirty = true;
@@ -1974,6 +2452,11 @@ namespace LambdaEngine
 			UpdatePointLightTextureResource(pGraphicsCommandList);
 		}
 
+		// Update Global LightProbe resources
+		{
+			UpdateLightProbeResources(pComputeCommandList);
+		}
+
 		// Update Paint Mask Color Data
 		{
 			UpdatePaintMaskColorBuffer(pGraphicsCommandList);
@@ -2157,40 +2640,54 @@ namespace LambdaEngine
 		{
 			uint32 requiredBufferSize = m_MaterialProperties.GetSize() * sizeof(MaterialProperties);
 
-			Buffer* pStagingBuffer = m_ppMaterialParametersStagingBuffers[m_ModFrameIndex];
-
-			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			if (requiredBufferSize > 0)
 			{
-				if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
+				Buffer* pStagingBuffer = m_ppMaterialParametersStagingBuffers[m_ModFrameIndex];
 
-				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Material Properties Staging Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				bufferDesc.SizeInBytes	= requiredBufferSize;
+				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+				{
+					if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
 
-				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-				m_ppMaterialParametersStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+					BufferDesc bufferDesc = {};
+					bufferDesc.DebugName = "Material Properties Staging Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					bufferDesc.SizeInBytes = requiredBufferSize;
+
+					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+					m_ppMaterialParametersStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+				}
+
+				void* pMapped = pStagingBuffer->Map();
+				memcpy(pMapped, m_MaterialProperties.GetData(), requiredBufferSize);
+				pStagingBuffer->Unmap();
+
+				if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+				{
+					if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
+
+					BufferDesc bufferDesc = {};
+					bufferDesc.DebugName = "Material Properties Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					bufferDesc.SizeInBytes = requiredBufferSize;
+
+					m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+				}
+
+				pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 			}
-
-			void* pMapped = pStagingBuffer->Map();
-			memcpy(pMapped, m_MaterialProperties.GetData(), requiredBufferSize);
-			pStagingBuffer->Unmap();
-
-			if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			else if (m_pMaterialParametersBuffer == nullptr)
 			{
-				if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
-
+				//Create Dummy Buffer
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Material Properties Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				bufferDesc.SizeInBytes	= requiredBufferSize;
+				bufferDesc.DebugName = "Material Properties Dummy Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.SizeInBytes = 1;
 
 				m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
-
-			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 
 			m_MaterialsPropertiesBufferDirty = false;
 		}
@@ -2525,6 +3022,31 @@ namespace LambdaEngine
 			m_ParticleManager.UpdateResources(m_pRenderGraph);
 		}
 
+		// Update global light probe
+		if (m_GlobalLightProbeDirty)
+		{
+			ResourceUpdateDesc globalSpecularProbeUpdateDesc = {};
+			globalSpecularProbeUpdateDesc.ResourceName							= "GLOBAL_SPECULAR_PROBE";
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppTextures		= m_GlobalLightProbe.Specular.GetAddressOf();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_GlobalLightProbe.SpecularView.GetAddressOf();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews			= m_GlobalLightProbe.RawSpecularWriteViews.GetData();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.PerImageSubImageTextureViewCount	= m_GlobalLightProbe.RawSpecularWriteViews.GetSize();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.TextureCount	= 1;
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetLinearSamplerToBind();
+			globalSpecularProbeUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
+			m_pRenderGraph->UpdateResource(&globalSpecularProbeUpdateDesc);
+
+			ResourceUpdateDesc globalDiffuseProbeMapsUpdateDesc = {};
+			globalDiffuseProbeMapsUpdateDesc.ResourceName							= "GLOBAL_DIFFUSE_PROBE";
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_GlobalLightProbe.Diffuse.GetAddressOf();
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_GlobalLightProbe.DiffuseView.GetAddressOf();
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= 1;
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= Sampler::GetLinearSamplerToBind();
+			globalDiffuseProbeMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+			m_pRenderGraph->UpdateResource(&globalDiffuseProbeMapsUpdateDesc);
+
+			m_GlobalLightProbeDirty = false;
+		}
 
 		if (m_MaterialsResourceDirty)
 		{
@@ -2535,37 +3057,88 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			Sampler* pLinearSamplers = Sampler::GetLinearSampler();
+			if (m_AlbedoMaps.GetSize() > 0)
+			{
+				Sampler* pLinearSamplers = Sampler::GetLinearSampler();
 
-			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc albedoMapsUpdateDesc = {};
+				albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
-			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
-			normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc normalMapsUpdateDesc = {};
+				normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
+				normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
-			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
-			combinedMaterialMapsUpdateDesc.ResourceName								= SCENE_COMBINED_MATERIAL_MAPS;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures			= m_CombinedMaterialMaps.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews		= m_CombinedMaterialMapViews.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers			= &pLinearSamplers;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_CombinedMaterialMaps.GetSize();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
+				combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_CombinedMaterialMaps.GetData();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_CombinedMaterialMapViews.GetData();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount	= m_CombinedMaterialMaps.GetSize();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
 
-			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
+			}
 
 			m_MaterialsResourceDirty = false;
 		}
 	}
+
+#ifdef RENDER_SYSTEM_DEBUG
+	void RenderSystem::CheckWhereEntityAlreadyRegistered(Entity entity)
+	{
+		bool foundEntity = false;
+
+		for (Entity e : m_StaticMeshEntities)
+		{
+			if (entity == e)
+			{
+				foundEntity = true;
+				LOG_ERROR("[RenderSystem]: Previously was Static Mesh Entity", entity);
+			}
+		}
+
+		for (Entity e : m_AnimatedEntities)
+		{
+			if (entity == e)
+			{
+				foundEntity = true;
+				LOG_ERROR("[RenderSystem]: Previously was Animated Entity", entity);
+			}
+		}
+
+		for (Entity e : m_AnimationAttachedEntities)
+		{
+			if (entity == e)
+			{
+				foundEntity = true;
+				LOG_ERROR("[RenderSystem]: Previously was Animation Attached Entity", entity);
+			}
+		}
+
+		for (Entity e : m_LocalPlayerEntities)
+		{
+			if (entity == e)
+			{
+				foundEntity = true;
+				LOG_ERROR("[RenderSystem]: Previously was Local Player Entity", entity);
+			}
+		}
+
+		if (!foundEntity)
+		{
+			LOG_ERROR("[RenderSystem]: This really isn't good...", entity);
+		}
+	}
+#endif
 }

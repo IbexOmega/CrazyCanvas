@@ -21,9 +21,9 @@ namespace LambdaEngine
 	public:
 		DECL_ABSTRACT_CLASS_NO_DEFAULT(PacketTransceiverBase);
 
-		int32 Transmit(SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& endPoint, NetworkStatistics* pStatistics);
+		uint32 Transmit(SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& packets, std::set<uint32>& reliableUIDsSent, const IPEndPoint& endPoint, NetworkStatistics* pStatistics);
 		bool ReceiveBegin(IPEndPoint& sender);
-		bool ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& packets, TArray<uint32>& newAcks, NetworkStatistics* pStatistics);
+		bool ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& packets, TSet<uint32>& newAcks, NetworkStatistics* pStatistics);
 
 		virtual void SetSocket(ISocket* pSocket) = 0;
 
@@ -32,7 +32,7 @@ namespace LambdaEngine
 	protected:
 		virtual bool TransmitData(const uint8* pBuffer, uint32 bytesToSend, int32& bytesSent, const IPEndPoint& endPoint) = 0;
 		virtual bool ReceiveData(uint8* pBuffer, uint32 size, int32& bytesReceived, IPEndPoint& endPoint) = 0;
-		virtual void OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics) = 0;
+		virtual void OnReceiveEnd(PacketTranscoder::Header* pHeader, TSet<uint32>& newAcks, NetworkStatistics* pStatistics) = 0;
 
 	private:
 		static bool ValidateHeaderSalt(PacketTranscoder::Header* header, NetworkStatistics* pStatistics);

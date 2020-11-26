@@ -36,7 +36,9 @@ layout(binding = 0, set = 3) restrict readonly buffer Atlases
 
 layout(location = 0) out vec2 out_TexCoords;
 layout(location = 1) out flat uint out_AtlasIndex;
-layout(location = 2) out vec4 in_EmitterColor;
+layout(location = 2) out vec4 out_EmitterColor;
+layout(location = 3) out vec3 out_WorldPos;
+layout(location = 4) out mat3 out_TBN;
 
 void main()
 {
@@ -46,7 +48,7 @@ void main()
 	SPerFrameBuffer frameBuffer = u_PerFrameBuffer.PerFrameBuffer;
 	SAtlasData 		atlasData 	= b_Atlases.Val[emitter.AtlasIndex];
 	out_AtlasIndex = emitter.AtlasIndex;
-	in_EmitterColor = emitter.Color;
+	out_EmitterColor = emitter.Color;
 
 	// Hardcoded for now
 	vec2 uv = (vertex.Position.xy + 1.f) * 0.5f;
@@ -57,9 +59,13 @@ void main()
 
 	vec3 camRightWorldSpace = vec3(frameBuffer.View[0][0], frameBuffer.View[1][0], frameBuffer.View[2][0]);
 	vec3 camUpWorldSpace 	= vec3(frameBuffer.View[0][1], frameBuffer.View[1][1], frameBuffer.View[2][1]);
+	vec3 camForwardWorldSpace 	= vec3(frameBuffer.View[0][2], frameBuffer.View[1][2], frameBuffer.View[2][2]);
 
 	vec3 vPosition = camUpWorldSpace * vertex.Position.y + camRightWorldSpace * vertex.Position.x;
-	vPosition *= mix(particle.EndRadius, particle.BeginRadius, particle.CurrentLife / emitter.LifeTime);
+	vPosition *= mix(particle.EndRadius, particle.BeginRadius, max(particle.CurrentLife / emitter.LifeTime, 0.0));
 
-	gl_Position = frameBuffer.Projection * frameBuffer.View * particle.Transform * vec4(vPosition, 1.0);
+	out_TBN = mat3(camRightWorldSpace, camUpWorldSpace, camForwardWorldSpace);
+	out_WorldPos = (particle.Transform * vec4(vPosition, 1.0)).xyz;
+
+	gl_Position = frameBuffer.Projection * frameBuffer.View * vec4(out_WorldPos, 1.0);
 }

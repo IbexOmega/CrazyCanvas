@@ -11,110 +11,110 @@ layout(location = 0) rayPayloadEXT SPrimaryPayload s_PrimaryPayload;
 
 void GenerateCameraRay(in vec2 d, out vec3 origin, out vec3 direction)
 {
-    SPerFrameBuffer perFrameBuffer = u_PerFrameBuffer.val;
-    origin      = (perFrameBuffer.ViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
-    vec4 target = perFrameBuffer.ProjectionInv * vec4(d.x, d.y, 1.0f, 1.0f);
-    direction   = (perFrameBuffer.ViewInv * vec4(normalize(target.xyz), 0.0f)).xyz;
+	SPerFrameBuffer perFrameBuffer = u_PerFrameBuffer.val;
+	origin      = (perFrameBuffer.ViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
+	vec4 target = perFrameBuffer.ProjectionInv * vec4(d.x, d.y, 1.0f, 1.0f);
+	direction   = (perFrameBuffer.ViewInv * vec4(normalize(target.xyz), 0.0f)).xyz;
 }
 
 void main()
 {
-    //Calculate Screen Coords
+	//Calculate Screen Coords
 	const ivec2 pixelCoords = ivec2(gl_LaunchIDEXT.xy);
 	const vec2 pixelCenter  = vec2(pixelCoords) + vec2(0.5f);
 	vec2 screenTexCoord     = (pixelCenter / vec2(gl_LaunchSizeEXT.xy));
 
-    //Sample required
-    vec4 aoRoughMetalValid  = texelFetch(u_GBufferAORoughMetalValid, pixelCoords, 0);
-    float roughness         = aoRoughMetalValid.g;
-    float valid             = aoRoughMetalValid.a;
+	//Sample required
+	vec4 aoRoughMetalValid  = texelFetch(u_GBufferAORoughMetalValid, pixelCoords, 0);
+	float roughness         = aoRoughMetalValid.g;
+	float valid             = aoRoughMetalValid.a;
 
-    if (valid < 1.0f || roughness > 0.0f)
-        return;
+	if (valid < 1.0f || roughness > 0.0f)
+		return;
 
-    //Setup convenience variables
-    SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
+	//Setup convenience variables
+	SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
 
-    //Calculate World Position
-    float sampledDepth      = texelFetch(u_GBufferDepthStencil, pixelCoords, 0).r;
-    SPositions positions    = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+	//Calculate World Position
+	float sampledDepth      = texelFetch(u_GBufferDepthStencil, pixelCoords, 0).r;
+	SPositions positions    = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
 
-    //Sample GBuffer
-    vec3 normal             = UnpackNormal(texelFetch(u_GBufferCompactNormal, pixelCoords, 0).xyz);
+	//Sample GBuffer
+	vec3 normal             = UnpackNormal(texelFetch(u_GBufferCompactNormal, pixelCoords, 0).xyz);
 
-    //Initialize required parameters for first bounce
-    s_PrimaryPayload.HitPosition	= positions.WorldPos;
-    s_PrimaryPayload.Normal		    = normal;
-    s_PrimaryPayload.Roughness		= roughness;
-    s_PrimaryPayload.Distance       = 1.0f;
+	//Initialize required parameters for first bounce
+	s_PrimaryPayload.HitPosition	= positions.WorldPos;
+	s_PrimaryPayload.Normal		    = normal;
+	s_PrimaryPayload.Roughness		= roughness;
+	s_PrimaryPayload.Distance       = 1.0f;
 
-    //Calculate a mirror reflection direction
-    SRayDirections rayDirections = CalculateRayDirections(s_PrimaryPayload.HitPosition, normal, perFrameBuffer.CameraPosition.xyz);
-    vec3 reflDir = rayDirections.ReflDir;
+	//Calculate a mirror reflection direction
+	SRayDirections rayDirections = CalculateRayDirections(s_PrimaryPayload.HitPosition, normal, perFrameBuffer.CameraPosition.xyz);
+	vec3 reflDir = rayDirections.ReflDir;
 
-    const uint MAX_BOUNCES = 8;
-    bool shadeOutput     = false;
+	const uint MAX_BOUNCES = 8;
+	bool shadeOutput     = false;
 
-    const uint 		rayFlags           	= gl_RayFlagsNoneEXT;//gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
-    const uint 		cullMask           	= 0xFF;
-    const uint 		sbtRecordOffset    	= 0;
-    const uint 		sbtRecordStride    	= 0;
-    const uint 		missIndex          	= 0;
-    const float 	Tmin              	= 0.001f;
-    const float 	Tmax              	= 10000.0f;
-    const int 		payload       		= 0;
+	const uint 		rayFlags           	= gl_RayFlagsNoneEXT;//gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+	const uint 		cullMask           	= 0xFF;
+	const uint 		sbtRecordOffset    	= 0;
+	const uint 		sbtRecordStride    	= 0;
+	const uint 		missIndex          	= 0;
+	const float 	Tmin              	= 0.001f;
+	const float 	Tmax              	= 10000.0f;
+	const int 		payload       		= 0;
 
-    uint b = 0;
+	uint b = 0;
 
-    for (; b < MAX_BOUNCES; b++)
-    {
-        shadeOutput = true;
-        
-        //Setup Ray Tracing Parameters
-        vec3 origin    = s_PrimaryPayload.HitPosition + s_PrimaryPayload.Normal * RAY_NORMAL_OFFSET;
-        vec3 direction = reflDir;
+	for (; b < MAX_BOUNCES; b++)
+	{
+		shadeOutput = true;
+		
+		//Setup Ray Tracing Parameters
+		vec3 origin    = s_PrimaryPayload.HitPosition + s_PrimaryPayload.Normal * RAY_NORMAL_OFFSET;
+		vec3 direction = reflDir;
 
-        //Send Ray
-        traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
+		//Send Ray
+		traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
 
-        //Break if we missed geometry (we don't want to reflect of the skybox)
-        if (s_PrimaryPayload.Distance < EPSILON)
-        {
-            shadeOutput = false;
-            break;
-        }
+		//Break if we missed geometry (we don't want to reflect of the skybox)
+		if (s_PrimaryPayload.Distance < EPSILON)
+		{
+			shadeOutput = false;
+			break;
+		}
 
-        if (s_PrimaryPayload.Roughness > 0.0f)
-        {
-            break;
-        }
+		if (s_PrimaryPayload.Roughness > 0.0f)
+		{
+			break;
+		}
 
-        reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
-    }
+		reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
+	}
 
-    //We don't want to shade if we reached max bounces, our fake energy loss will make the color black anyway
-    if (b == MAX_BOUNCES)
-    {
-        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(0.0f));
-    }
-    else if (shadeOutput)
-    {
-        SLightsBuffer lightBuffer = b_LightsBuffer.val;
+	//We don't want to shade if we reached max bounces, our fake energy loss will make the color black anyway
+	if (b == MAX_BOUNCES)
+	{
+		imageStore(u_IntermediateOutputImage, pixelCoords, vec4(0.0f));
+	}
+	else if (shadeOutput)
+	{
+		SLightsBuffer lightBuffer = b_LightsBuffer.val;
 
-        //Fake energy loss on mirror bounce
-        float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
+		//Fake energy loss on mirror bounce
+		float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
 
-        vec3 albedo     = s_PrimaryPayload.Albedo;
-        float ao		= s_PrimaryPayload.AO;
+		vec3 albedo		= s_PrimaryPayload.Albedo;
+		float ao		= s_PrimaryPayload.AO;
 		float roughness	= max(0.05f, s_PrimaryPayload.Roughness);
 		float metallic	= s_PrimaryPayload.Metallic;
 
 		vec3 worldPos 		= s_PrimaryPayload.HitPosition;
 		vec3 normal 		= s_PrimaryPayload.Normal;
-		vec3 viewDir	    = -reflDir;
+		vec3 viewDir		= -reflDir;
 		float viewDistance	= s_PrimaryPayload.Distance;
 
-        float NdotV = max(dot(normal, viewDir), 0.0f);
+		float NdotV = max(dot(normal, viewDir), 0.0f);
 
 		vec3 Lo = vec3(0.0f);
 		vec3 F0 = vec3(0.04f);
@@ -123,15 +123,15 @@ void main()
 
 		// Directional Light
 		{
-			vec3 lightDir       = normalize(lightBuffer.DirL_Direction);
-			vec3 halfwayDir     = normalize(viewDir + lightDir);
+			vec3 lightDir	= normalize(lightBuffer.DirL_Direction);
+			vec3 halfwayDir	= normalize(viewDir + lightDir);
 
-            float NdotL = max(dot(normal, lightDir), 0.0f);
+			float NdotL = max(dot(normal, lightDir), 0.0f);
 
-			vec4 fragPosLight 		 = lightBuffer.DirL_ProjView * vec4(worldPos, 1.0f);
-            float inShadow 			= DirShadowDepthTest(fragPosLight, normal, lightBuffer.DirL_Direction, u_DirLShadowMap);
-			vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance    = outgoingRadiance * (1.0 - inShadow);
+			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(worldPos, 1.0f);
+			float inShadow 			= DirShadowDepthTest(fragPosLight, normal, lightBuffer.DirL_Direction, u_DirLShadowMap);
+			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
+			vec3 incomingRadiance	= outgoingRadiance * (1.0 - inShadow);
 
 			float NDF   = Distribution(normal, halfwayDir, roughness);
 			float G     = Geometry(normal, viewDir, lightDir, roughness);
@@ -156,20 +156,20 @@ void main()
 
 			vec3 lightDelta = (light.Position - worldPos);
 			float lightDistance = length(lightDelta);
-            
-			vec3 lightDir = normalize(lightDelta);
-			vec3 halfwayDir = normalize(viewDir + lightDir);
 			
-            float NdotL = max(dot(normal, lightDir), 0.0f);
+			vec3 lightDir	= normalize(lightDelta);
+			vec3 halfwayDir	= normalize(viewDir + lightDir);
+			
+			float NdotL = max(dot(normal, lightDir), 0.0f);
 
 			float inShadow 			= PointShadowDepthTest(worldPos, light.Position, viewDistance, normal, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
-			float attenuation   	= 1.0f / (lightDistance * lightDistance);
-			vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
-			vec3 incomingRadiance    = outgoingRadiance * attenuation * (1.0f - inShadow);
+			float attenuation		= 1.0f / (lightDistance * lightDistance);
+			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
+			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - inShadow);
 		
-			float NDF   = Distribution(normal, halfwayDir, roughness);
-			float G     = Geometry(normal, viewDir, lightDir, roughness);
-			vec3 F      = Fresnel(F0, max(dot(viewDir, halfwayDir), 0.0f));
+			float NDF	= Distribution(normal, halfwayDir, roughness);
+			float G		= Geometry(normal, viewDir, lightDir, roughness);
+			vec3 F		= Fresnel(F0, max(dot(viewDir, halfwayDir), 0.0f));
 
 			vec3 nominator      = NDF * G * F;
 			float denominator   = 4.0f * NdotV * NdotL;
@@ -183,22 +183,37 @@ void main()
 			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
 		}
 		
-		vec3 ambient    = 0.03f * albedo * ao;
-		vec3 colorHDR   = bounceDarkening * (ambient + Lo);
+		float dotNV	= max(dot(normal, viewDir), 0.0f);
+		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
+		vec3 Ks_IBL	= F_IBL;
+		vec3 Kd_IBL	= 1.0f - Ks_IBL;
+		Kd_IBL		*= 1.0f - metallic;
+	
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, normal).rgb;
+		vec3 IBL_Diffuse	= irradiance * albedo * Kd_IBL;
+	
+		const int numberOfMips	= textureQueryLevels(u_GlobalSpecularProbe);
+		vec3 reflection			= reflect(-viewDir, normal);
+		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, reflection, roughness * float(numberOfMips)).rgb;
+		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
+		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
+	
+		vec3 ambient	= (IBL_Diffuse + IBL_Specular) * ao;
+		vec3 colorHDR	= bounceDarkening * (ambient + Lo);
 
-        float luminance = CalculateLuminance(colorHDR);
+		float luminance = CalculateLuminance(colorHDR);
 
-        //Reinhard Tone-Mapping
-        vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
+		//Reinhard Tone-Mapping
+		vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
 
-        //Gamma Correction
-        vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+		//Gamma Correction
+		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
 
-        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
-    }
-    else
-    {
-        float luminance = CalculateLuminance(s_PrimaryPayload.Albedo);
+		imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
+	}
+	else
+	{
+		float luminance = CalculateLuminance(s_PrimaryPayload.Albedo);
 
 		//Reinhard Tone-Mapping
 		vec3 colorLDR = s_PrimaryPayload.Albedo / (s_PrimaryPayload.Albedo + vec3(1.0f));
@@ -206,6 +221,6 @@ void main()
 		//Gamma Correction
 		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
 
-        imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
-    }
+		imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
+	}
 }

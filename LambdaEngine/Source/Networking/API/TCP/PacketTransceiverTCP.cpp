@@ -59,14 +59,14 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void PacketTransceiverTCP::OnReceiveEnd(PacketTranscoder::Header* pHeader, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
+	void PacketTransceiverTCP::OnReceiveEnd(PacketTranscoder::Header* pHeader, TSet<uint32>& newAcks, NetworkStatistics* pStatistics)
 	{
 		pStatistics->SetLastReceivedSequenceNr(pHeader->Sequence);
 
 		// this Loop makes sure that we Ack all packets recieved and not just the last recieved packet
 		for (uint32 i = pStatistics->GetLastReceivedAckNr() + 1; i <= pHeader->Ack; i++)
 		{
-			newAcks.PushBack(i);
+			newAcks.insert(i);
 		}
 
 		pStatistics->SetLastReceivedAckNr(pHeader->Ack);

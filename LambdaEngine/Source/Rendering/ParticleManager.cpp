@@ -184,6 +184,25 @@ namespace LambdaEngine
 				m_EmitterTransformData[id] = glm::translate(positionComp.Position) * glm::toMat4(rotationComp.Quaternion);
 				m_DirtyTransformBuffer = true;
 
+				ParticleEmitterInstance& emitterInstance = m_Emitters[id];
+				UpdateEmitterInstanceData(emitterInstance, positionComp, rotationComp, emitterComp);
+
+				if (emitterComp.Dirty)
+				{
+					// Update Emitter data
+					SEmitter emitterData = {};
+					emitterData.Color = emitterInstance.Color;
+					emitterData.LifeTime = emitterInstance.LifeTime;
+					emitterData.Radius = emitterInstance.BeginRadius;
+					emitterData.AnimationCount = emitterInstance.AnimationCount;
+					emitterData.FirstAnimationIndex = emitterInstance.FirstAnimationIndex;
+					emitterData.Gravity = emitterInstance.Gravity;
+					emitterData.OneTime = emitterInstance.OneTime;
+
+					m_EmitterData[id] = emitterData;
+					m_DirtyEmitterBuffer = true;
+				}
+
 				return;
 			}
 			else
@@ -214,12 +233,31 @@ namespace LambdaEngine
 
 	void ParticleManager::OnEmitterEntityRemoved(Entity entity)
 	{
-		// Remove emitter instance if EmitterComponent is active
+		// Deregister repeat emitter and change it to a onetime emitter
 		if (m_RepeatEmitters.find(entity) != m_RepeatEmitters.end())
 		{
 			// Remove emitter
-			EmitterID id = m_EntityToEmitterID[entity];
-			DeactivateEmitterInstance(id);
+			EmitterID removeIndex = m_EntityToEmitterID[entity];
+
+			// Removed tracking of repeat emitter since the emitter now will become a entity free emitter
+			if (m_EmitterIDToEntity.find(removeIndex) != m_EmitterIDToEntity.end())
+			{
+				Entity removedEntity = m_EmitterIDToEntity[removeIndex];
+
+				m_EntityToEmitterID.erase(removedEntity);
+				m_EmitterIDToEntity.erase(removeIndex);
+
+				m_RepeatEmitters.erase(removedEntity);
+			}
+
+			// Change emitter to a onetime emitter
+			ParticleEmitterInstance& emitterInstance = m_Emitters[removeIndex];
+			emitterInstance.OneTime = true;
+
+			m_EmitterData[removeIndex].OneTime = true;
+
+			m_DirtyEmitterBuffer = true;
+			//DeactivateEmitterInstance(id);
 		}
 	}
 
@@ -288,7 +326,7 @@ namespace LambdaEngine
 
 		emitterInstance.AtlasGUID = emitterComp.AtlasGUID;
 		emitterInstance.AnimationCount = emitterComp.AnimationCount;
-		emitterInstance.TileIndex = emitterComp.TileIndex;
+		emitterInstance.RandomStartIndex = emitterComp.RandomStartIndex;
 		emitterInstance.FirstAnimationIndex = emitterComp.FirstAnimationIndex;
 
 		emitterInstance.Color = emitterComp.Color;
@@ -300,17 +338,6 @@ namespace LambdaEngine
 
 	void ParticleManager::ReplaceRemovedEmitterWithLast(uint32 removeIndex)
 	{
-		// If removed emitter is a repeat emitter
-		if (m_EmitterIDToEntity.find(removeIndex) != m_EmitterIDToEntity.end())
-		{
-			Entity removedEntity = m_EmitterIDToEntity[removeIndex];
-
-			m_EntityToEmitterID.erase(removedEntity);
-			m_EmitterIDToEntity.erase(removeIndex);
-
-			m_RepeatEmitters.erase(removedEntity);
-		}
-
 		EmitterID lastIndex = m_Emitters.GetSize() - 1U;
 		if (m_EmitterIDToEntity.find(lastIndex) != m_EmitterIDToEntity.end())
 		{
@@ -321,9 +348,11 @@ namespace LambdaEngine
 			m_EmitterIDToEntity[removeIndex] = lastEntity;
 		}
 
+		// Replace last emitter with removed emitter
 		auto& lastEmitter = m_Emitters.GetBack();
 		m_Emitters[removeIndex] = lastEmitter;
 		m_Emitters.PopBack();
+
 	}
 
 	void ParticleManager::UpdateAliveParticles()
@@ -378,12 +407,12 @@ namespace LambdaEngine
 			particle.EndRadius = emitterInstance.EndRadius;
 			particle.Acceleration = direction * (emitterInstance.Acceleration * (1.0f - emitterInstance.AccelerationRandomness) + emitterInstance.Acceleration * Random::Float32(0.f, emitterInstance.AccelerationRandomness));
 			particle.StartAcceleration = particle.Acceleration;
-			particle.TileIndex = emitterInstance.TileIndex;
+			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
 			particle.WasCreated = true;
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
 			particle.Bounciness = emitterInstance.Bounciness;
 
-			particle.CurrentLife = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
+			particle.CurrentLife = emitterInstance.LifeTime + floor((1.f - emitterInstance.Explosive) * i) * emitterInstance.SpawnDelay;
 
 			uint32 particleIndex = UINT32_MAX;
 			if (particleOffset + i < particleCount)
@@ -458,7 +487,7 @@ namespace LambdaEngine
 			particle.EndRadius = emitterInstance.EndRadius;
 			particle.Acceleration = glm::vec3(0.f);
 			particle.StartAcceleration = particle.Acceleration;
-			particle.TileIndex = emitterInstance.TileIndex;
+			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
 			particle.WasCreated = true;
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
 			particle.Bounciness = emitterInstance.Bounciness;
@@ -721,7 +750,7 @@ namespace LambdaEngine
 
 			// Update alive particles buffer
 			UpdateAliveParticles();
-
+			
 			m_DirtyTransformBuffer = true;
 			m_DirtyEmitterBuffer = true;
 			m_DirtyIndirectBuffer = true;

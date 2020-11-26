@@ -15,6 +15,7 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
 
+
 #include "Match/Match.h"
 
 using namespace LambdaEngine;
@@ -47,9 +48,11 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 	float addedPitch = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
 	float addedYaw = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
-	if (m_MouseEnabled && Input::GetCurrentInputmode() == EInputLayer::GAME)
+	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+
+	if (m_MouseEnabled && (currentInputLayer == EInputLayer::GAME || currentInputLayer  == EInputLayer::DEAD))
 	{
-		const MouseState& mouseState = Input::GetMouseState(EInputLayer::GAME);
+		const MouseState& mouseState = Input::GetMouseState(currentInputLayer == EInputLayer::GAME ? EInputLayer::GAME : EInputLayer::DEAD);
 
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const int32 halfWidth		= int32(0.5f * float32(window->GetWidth()));
@@ -66,7 +69,7 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 		CommonApplication::Get()->SetMousePosition(halfWidth, halfHeight);
 	}
 
-	if (glm::abs(addedPitch) > 0.0f || glm::abs(addedYaw) > 0.0f)
+	if ((glm::abs(addedPitch) > 0.0f || glm::abs(addedYaw) > 0.0f) && CommonApplication::Get()->GetMainWindow()->IsActiveWindow())
 	{
 		ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 		RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);

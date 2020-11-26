@@ -5,6 +5,8 @@
 
 #include "Time/API/Timestamp.h"
 
+#include "Threading/API/SpinLock.h"
+
 class Match
 {
 public:
@@ -19,7 +21,7 @@ public:
 	static void StartMatch();
 	static void BeginLoading();
 
-	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity);
+	static void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity);
 
 	static void Tick(LambdaEngine::Timestamp deltaTime);
 	static void FixedTick(LambdaEngine::Timestamp deltaTime);
@@ -36,4 +38,5 @@ public:
 
 private:
 	inline static MatchBase* s_pMatchInstance = nullptr;
+	inline static LambdaEngine::SpinLock m_Lock;
 };

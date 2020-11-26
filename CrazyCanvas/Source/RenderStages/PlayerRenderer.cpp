@@ -366,8 +366,6 @@ namespace LambdaEngine
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
 				const ComponentArray<WeaponComponent>* pWeaponComponents = pECSCore->GetComponentArray<WeaponComponent>();
 
-				LOG_MESSAGE("JA FIM: %u", m_DrawCount);
-
 				m_PlayerData.Clear();
 				TArray<WeaponData> weapons;
 

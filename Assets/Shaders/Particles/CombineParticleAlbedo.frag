@@ -16,8 +16,5 @@ void main()
 {
 	vec3 particlePixel = texture(u_ParticleImage, in_TexCoord).xyz;
 
-	if (dot(particlePixel, particlePixel) <= EPSILON)
-		discard;
-
 	out_IntermediateImage.xyz = particlePixel.xyz;
 }
