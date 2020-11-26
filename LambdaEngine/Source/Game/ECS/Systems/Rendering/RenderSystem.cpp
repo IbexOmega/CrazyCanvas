@@ -2279,13 +2279,17 @@ namespace LambdaEngine
 	{
 		m_PerFrameData.CamData.PrevView			= m_PerFrameData.CamData.View;
 		m_PerFrameData.CamData.PrevProjection	= m_PerFrameData.CamData.Projection;
+		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
 		m_PerFrameData.CamData.View				= viewProjComp.View;
 		m_PerFrameData.CamData.Projection		= viewProjComp.Projection;
+
+		glm::mat4 offset = glm::translate(glm::vec3(camComp.Jitter, 0.0f));
+		m_PerFrameData.CamData.Projection		= offset * m_PerFrameData.CamData.Projection;
+
 		m_PerFrameData.CamData.ViewInv			= camComp.ViewInv;
-		m_PerFrameData.CamData.ProjectionInv	= camComp.ProjectionInv;
+		m_PerFrameData.CamData.ProjectionInv	= glm::inverse(m_PerFrameData.CamData.Projection);
 		m_PerFrameData.CamData.Position			= glm::vec4(position, 0.f);
 		m_PerFrameData.CamData.Up				= glm::vec4(GetUp(rotation), 0.f);
-		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
 	}
 
 	void RenderSystem::DeleteDeviceResource(DeviceChild* pDeviceResource)
@@ -2404,6 +2408,9 @@ namespace LambdaEngine
 
 	void RenderSystem::UpdateBuffers()
 	{
+		static uint64 frameIndex = 0;
+		frameIndex++;
+
 		CommandList* pGraphicsCommandList	= m_pRenderGraph->AcquireGraphicsCopyCommandList();
 		CommandList* pComputeCommandList	= m_pRenderGraph->AcquireComputeCopyCommandList();
 
@@ -2414,7 +2421,7 @@ namespace LambdaEngine
 
 		//Update Per Frame Data
 		{
-			m_PerFrameData.FrameIndex = 0;
+			m_PerFrameData.FrameIndex = frameIndex;
 			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
 
 			UpdatePerFrameBuffer(pGraphicsCommandList);

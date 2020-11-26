@@ -24,14 +24,6 @@ layout(location = 6) out vec4		out_ClipPosition[];
 layout(location = 7) out vec4		out_PrevClipPosition[];
 layout(location = 8) out flat uint 	out_ExtensionIndex[];
 
-// Constant data
-const vec3 POSITIONS[3] = 
-{
-	vec3(-1.0f, 1.0f, 0.0f),
-	vec3( 0.0f, -1.0f, 0.0f),
-	vec3( 1.0f, 1.0f, 0.0f),
-};
-
 // Uniforms
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 {
@@ -98,6 +90,8 @@ void main()
 	mat4 projection	= u_PerFrameBuffer.Val.Projection;
 	mat4 view		= u_PerFrameBuffer.Val.View;
 	mat4 transform	= instance.Transform;
+	mat4 prevProjection	= u_PerFrameBuffer.Val.PrevProjection;
+	mat4 prevView		= u_PerFrameBuffer.Val.PrevView;
 	
 	// Per vertex
 	for (uint vert = threadID; vert < meshlet.VertCount; vert += NUM_THREADS)
@@ -119,10 +113,12 @@ void main()
 		out_TexCoord[vert]		= texcoord;
 		
 		vec4 clipPosition = projection * view * worldPosition;
-		out_ClipPosition[vert]		= clipPosition;
-		out_PrevClipPosition[vert]	= clipPosition;
+		out_ClipPosition[vert]	= clipPosition;
 
-		out_ExtensionIndex[vert]	=  instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
+		vec4 prevClipPosition = prevProjection * prevView * worldPosition;
+		out_PrevClipPosition[vert]	= prevClipPosition;
+
+		out_ExtensionIndex[vert]	= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
 
 		// Position
 		gl_MeshVerticesNV[vert].gl_Position = clipPosition;

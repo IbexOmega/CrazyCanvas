@@ -50,8 +50,8 @@ void main()
 	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex);
 
 	//0
-	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	out_Albedo					= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
+	vec3 storedAlbedo	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+	out_Albedo			= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
 
 	//1
 	vec3 storedMaterial			= vec3(
@@ -61,13 +61,13 @@ void main()
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//2
-	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
-	shadingNormal				= normalize(TBN * normalize(shadingNormal));
-	out_Compact_Normal			= PackNormal(mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation));
+	vec3 shadingNormal	= normalize((sampledNormal * 2.0f) - 1.0f);
+	shadingNormal		= normalize(TBN * normalize(shadingNormal));
+	out_Compact_Normal	= PackNormal(mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation));
 
 	//3
-	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
-	vec2 screenVelocity			= (prevNDC - currentNDC);
-	out_Velocity				= vec2(screenVelocity);
+	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
+	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
+	vec2 screenVelocity	= (currentNDC - prevNDC);
+	out_Velocity		= vec2(screenVelocity.x, screenVelocity.y);
 }

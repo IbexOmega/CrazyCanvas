@@ -45,6 +45,7 @@ namespace LambdaEngine
 	void TransformApplierSystem::Tick(Timestamp deltaTime)
 	{
 		const float32 dt = (float32)deltaTime.AsSeconds();
+		m_Tick++;
 
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<PositionComponent>* pPositionComponents				= pECS->GetComponentArray<PositionComponent>();
@@ -71,12 +72,18 @@ namespace LambdaEngine
 			ViewProjectionMatricesComponent& viewProjComp = pViewProjectionComponents->GetData(entity);
 
 			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-			const uint16 width = window->GetWidth();
-			const uint16 height = window->GetHeight();
-			cameraComp.Jitter = glm::vec2((Random::Float32() - 0.5f) / (float)width, (Random::Float32() - 0.5f) / (float)height);
+			const uint16 width	= window->GetWidth();
+			const uint16 height	= window->GetHeight();
 
-			viewProjComp.View = glm::lookAt(positionComp.Position, positionComp.Position + GetForward(rotationComp.Quaternion), g_DefaultUp);
-			cameraComp.ViewInv = glm::inverse(viewProjComp.View);
+			// Generate jitter
+			const uint64 sampleIndex = m_Tick % 8;
+			glm::vec2 jitter = Math::Hammersley2D(sampleIndex, 8);
+			jitter = (jitter * 2.0f) - 1.0f;
+			cameraComp.Jitter.x = jitter.x / float32(width);
+			cameraComp.Jitter.y = jitter.y / float32(height);
+
+			viewProjComp.View	= glm::lookAt(positionComp.Position, positionComp.Position + GetForward(rotationComp.Quaternion), g_DefaultUp);
+			cameraComp.ViewInv	= glm::inverse(viewProjComp.View);
 			cameraComp.ProjectionInv = glm::inverse(viewProjComp.Projection);
 		}
 	}
