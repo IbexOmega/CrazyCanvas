@@ -207,6 +207,8 @@ void HUDSystem::FixedTick(Timestamp delta)
 		m_HUDGUI->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
 	}
+
+	m_HUDGUI->UpdateKillFeedTimer(delta);
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -272,6 +274,12 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 	const Player* pPlayer = event.pPlayer;
 	m_HUDGUI->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
 
+
+	if(pPlayer->IsDead())
+		if(event.pPlayerKiller)
+			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), event.pPlayerKiller->GetName(), event.pPlayer->GetTeam());
+		else
+			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), "Server", event.pPlayer->GetTeam());
 
 	if (pPlayer == PlayerManagerClient::GetPlayerLocal() && pPlayer->IsDead())
 	{
