@@ -1,5 +1,4 @@
 #include "World/LevelObjectCreator.h"
-#include "World/ParticleShower.h"
 #include "World/Level.h"
 
 #include "Audio/AudioAPI.h"
