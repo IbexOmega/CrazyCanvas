@@ -200,8 +200,8 @@ namespace LambdaEngine
 			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			stagingBufferDesc.SizeInBytes = sizeof(Vertex) * pMesh->Vertices.GetSize();
 
-			m_pVertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-			succeded = m_pVertexStagingBuffer != nullptr;
+			m_VertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+			succeded = m_VertexStagingBuffer != nullptr;
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = "FirstPersonWeapon Vertex Data Buffer";
@@ -209,8 +209,8 @@ namespace LambdaEngine
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
 			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
 
-			m_pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_pVertexBuffer != nullptr;
+			m_VertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			succeded = m_VertexBuffer != nullptr;
 		}
 
 		// Weapon Index Buffer
@@ -221,8 +221,8 @@ namespace LambdaEngine
 			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			stagingBufferDesc.SizeInBytes = sizeof(MeshIndexType) * pMesh->Indices.GetSize();
 
-			m_pIndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-			succeded = m_pIndexStagingBuffer != nullptr;
+			m_IndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+			succeded = m_IndexStagingBuffer != nullptr;
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = "FirstPersonWeapon Index Data Buffer";
@@ -230,8 +230,8 @@ namespace LambdaEngine
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
 			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
 
-			m_pIndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_pIndexBuffer != nullptr;
+			m_IndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			succeded = m_IndexBuffer != nullptr;
 		}
 
 		// Weapon Data Buffer
@@ -242,11 +242,11 @@ namespace LambdaEngine
 			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			stagingBufferDesc.SizeInBytes = sizeof(SWeaponBuffer);
 
-			m_pWeaponStagingBuffers.Resize(m_BackBufferCount);
-			for (uint32 b = 0; b < m_pWeaponStagingBuffers.GetSize(); b++)
+			m_WeaponStagingBuffers.Resize(m_BackBufferCount);
+			for (uint32 b = 0; b < m_WeaponStagingBuffers.GetSize(); b++)
 			{
-				m_pWeaponStagingBuffers[b] = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-				succeded = m_pWeaponStagingBuffers[b] != nullptr;
+				m_WeaponStagingBuffers[b] = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+				succeded = m_WeaponStagingBuffers[b] != nullptr;
 			}
 
 			BufferDesc bufferDesc = {};
@@ -255,8 +255,8 @@ namespace LambdaEngine
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
 			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
 
-			m_pWeaponBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_pWeaponBuffer != nullptr;
+			m_WeaponBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			succeded = m_WeaponBuffer != nullptr;
 		}
 
 		return succeded;
@@ -273,9 +273,9 @@ namespace LambdaEngine
 		{
 			constexpr DescriptorSetIndex setIndex = 0U;
 
-			Buffer* ppBuffers = m_pWeaponBuffer.Get();
+			Buffer* ppBuffers = m_WeaponBuffer.Get();
 			uint64 pOffsets = 0;
-			uint64 pSizes = m_pWeaponBuffer->GetDesc().SizeInBytes;
+			uint64 pSizes = m_WeaponBuffer->GetDesc().SizeInBytes;
 
 			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet0 != nullptr)
@@ -470,9 +470,9 @@ namespace LambdaEngine
 								m_WorldPos = pPositionComponents->GetConstData(m_Entity).Position;
 
 								// Set Vertex and Instance buffer for rendering
-								Buffer* ppBuffers[2] = { m_pVertexBuffer.Get(), m_pDrawArgs[d].pInstanceBuffer };
+								Buffer* ppBuffers[2] = { m_VertexBuffer.Get(), m_pDrawArgs[d].pInstanceBuffer };
 								uint64 pOffsets[2] = { 0, 0 };
-								uint64 pSizes[2] = { m_pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
+								uint64 pSizes[2] = { m_VertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
 
 								m_DescriptorSetList2[d]->WriteBufferDescriptors(
 									ppBuffers,
@@ -651,7 +651,7 @@ namespace LambdaEngine
 
 		// Draw Weapon
 		const DrawArg& drawArg = m_pDrawArgs[0];
-		pCommandList->BindIndexBuffer(m_pIndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT32);
+		pCommandList->BindIndexBuffer(m_IndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT32);
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[0].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[0].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
 		pCommandList->DrawIndexInstanced(m_IndicesCount, drawArg.InstanceCount, 0, 0, 0);
@@ -667,11 +667,11 @@ namespace LambdaEngine
 			data.Model = glm::scale(data.Model, glm::vec3(1.2f, 1.2f, 1.2f));
 			data.PlayerPos = pPositionComponents->GetConstData(m_Entity).Position;
 
-			Buffer* pStagingBuffer = m_pWeaponStagingBuffers[modFrameIndex].Get();
+			Buffer* pStagingBuffer = m_WeaponStagingBuffers[modFrameIndex].Get();
 			byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());
 			memcpy(pMapping, &data, sizeof(data));
 			pStagingBuffer->Unmap();
-			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pWeaponBuffer.Get(), 0, sizeof(SWeaponBuffer));
+			pCommandList->CopyBuffer(pStagingBuffer, 0, m_WeaponBuffer.Get(), 0, sizeof(SWeaponBuffer));
 		}
 	}
 
@@ -683,20 +683,20 @@ namespace LambdaEngine
 		const TArray<Vertex>& vertices = pMesh->Vertices;
 		const uint32 verticesSize = sizeof(Vertex) * vertices.GetSize();
 
-		byte* pMapping = reinterpret_cast<byte*>(m_pVertexStagingBuffer->Map());
+		byte* pMapping = reinterpret_cast<byte*>(m_VertexStagingBuffer->Map());
 		memcpy(pMapping, vertices.GetData(), verticesSize);
-		m_pVertexStagingBuffer->Unmap();
-		pCommandList->CopyBuffer(m_pVertexStagingBuffer.Get(), 0, m_pVertexBuffer.Get(), 0, verticesSize);
+		m_VertexStagingBuffer->Unmap();
+		pCommandList->CopyBuffer(m_VertexStagingBuffer.Get(), 0, m_VertexBuffer.Get(), 0, verticesSize);
 	
 		// Copy indices
 		const TArray<MeshIndexType>& indices = pMesh->Indices;
 		m_IndicesCount = indices.GetSize();
 		const uint32 indicesSize = sizeof(MeshIndexType) * m_IndicesCount;
 
-		pMapping = reinterpret_cast<byte*>(m_pIndexStagingBuffer->Map());
+		pMapping = reinterpret_cast<byte*>(m_IndexStagingBuffer->Map());
 		memcpy(pMapping, indices.GetData(), indicesSize);
-		m_pIndexStagingBuffer->Unmap();
-		pCommandList->CopyBuffer(m_pIndexStagingBuffer.Get(), 0, m_pIndexBuffer.Get(), 0, indicesSize);
+		m_IndexStagingBuffer->Unmap();
+		pCommandList->CopyBuffer(m_IndexStagingBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indicesSize);
 
 		// Copy Per FrameBuffer
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();

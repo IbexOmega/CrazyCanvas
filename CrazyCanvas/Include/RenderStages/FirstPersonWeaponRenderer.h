@@ -96,20 +96,20 @@ namespace LambdaEngine {
 
 		TSharedRef<RenderPass>					m_RenderPass = nullptr;
 
-		TSharedRef<Buffer>						m_FrameCopyBuffer;
-		TSharedRef<Buffer>						m_FrameBuffer;
+		TSharedRef<Buffer>						m_FrameCopyBuffer = nullptr;
+		TSharedRef<Buffer>						m_FrameBuffer = nullptr;
 		// First Person Weapon Vertex and Index Buffer
 		Entity									m_Entity;
 		glm::vec3								m_WorldPos = glm::vec3(0);
-		TSharedRef<Buffer>						m_pVertexBuffer = nullptr;
-		TSharedRef<Buffer>						m_pVertexStagingBuffer = nullptr;
+		TSharedRef<Buffer>						m_VertexBuffer = nullptr;
+		TSharedRef<Buffer>						m_VertexStagingBuffer = nullptr;
 
 		uint32									m_IndicesCount = 0;
-		TSharedRef<Buffer>						m_pIndexBuffer = nullptr;
-		TSharedRef<Buffer>						m_pIndexStagingBuffer = nullptr;
+		TSharedRef<Buffer>						m_IndexBuffer = nullptr;
+		TSharedRef<Buffer>						m_IndexStagingBuffer = nullptr;
 
-		TSharedRef<Buffer>						m_pWeaponBuffer = nullptr;
-		TArray<TSharedRef<Buffer>>				m_pWeaponStagingBuffers;
+		TSharedRef<Buffer>						m_WeaponBuffer = nullptr;
+		TArray<TSharedRef<Buffer>>				m_WeaponStagingBuffers;
 
 		// Needed for transparent rendering
 		uint64									m_PipelineStateIDFrontCull = 0;
