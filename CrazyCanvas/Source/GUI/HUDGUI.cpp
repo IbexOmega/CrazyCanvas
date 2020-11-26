@@ -393,7 +393,7 @@ void HUDGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
 	}
 }
 
-void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex)
+void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, const uint8 killedPlayerTeamIndex)
 {
 	LambdaEngine::String feedText = killer + " Killed " + killed;
 
