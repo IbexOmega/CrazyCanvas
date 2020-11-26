@@ -140,67 +140,67 @@ namespace LambdaEngine
 
 		if (!CreateFence())
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Fence", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Fence", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateDescriptorHeap())
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Descriptor Heap", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Descriptor Heap", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateCopyCommandLists())
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Copy Command Lists", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Copy Command Lists", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateProfiler(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions.GetSize()))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Profiler", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Profiler", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateResources(pDesc->pRenderGraphStructureDesc->ResourceDescriptions))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateRenderStages(
-			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, 
-			pDesc->pRenderGraphStructureDesc->ShaderConstants, 
-			pDesc->CustomRenderers, 
+			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions,
+			pDesc->pRenderGraphStructureDesc->ShaderConstants,
+			pDesc->CustomRenderers,
 			requiredDrawArgMasks))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateSynchronizationStages(
-			pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, 
+			pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions,
 			requiredDrawArgMasks))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreatePipelineStages(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateDrawArgConfiguration())
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Draw Arg Configuration", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to Draw Arg Configuration", pDesc->Name.c_str());
 			return false;
 		}
-		
+
 		if (!CustomRenderStagesPostInit())
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
 			return false;
 		}
 
@@ -257,47 +257,47 @@ namespace LambdaEngine
 
 		if (!CreateProfiler(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions.GetSize()))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Profiler", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Profiler", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateResources(pDesc->pRenderGraphStructureDesc->ResourceDescriptions))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Resources", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateRenderStages(
-			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, 
-			pDesc->pRenderGraphStructureDesc->ShaderConstants, 
-			pDesc->CustomRenderers, 
+			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions,
+			pDesc->pRenderGraphStructureDesc->ShaderConstants,
+			pDesc->CustomRenderers,
 			requiredDrawArgMasks))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateSynchronizationStages(pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, requiredDrawArgMasks))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreatePipelineStages(pDesc->pRenderGraphStructureDesc->PipelineStageDescriptions))
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to create Pipeline Stages", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CreateDrawArgConfiguration())
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Draw Arg Configuration", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to Draw Arg Configuration", pDesc->Name.c_str());
 			return false;
 		}
 
 		if (!CustomRenderStagesPostInit())
 		{
-			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
+			LOG_ERROR("Render Graph \"%s\" failed to Post Init Custom Renderers", pDesc->Name.c_str());
 			return false;
 		}
 
@@ -339,14 +339,14 @@ namespace LambdaEngine
 				case ERenderGraphResourceType::ACCELERATION_STRUCTURE:	UpdateResourceAccelerationStructure(pResource, pDesc);	break;
 				default:
 				{
-					LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph has unsupported Type", pDesc->ResourceName.c_str());
+					LOG_WARNING("Resource \"%s\" in Render Graph has unsupported Type", pDesc->ResourceName.c_str());
 					return;
 				}
 			}
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph could not be found in Resource Map", pDesc->ResourceName.c_str());
+			LOG_WARNING("Resource \"%s\" in Render Graph could not be found in Resource Map", pDesc->ResourceName.c_str());
 			return;
 		}
 	}
@@ -373,17 +373,17 @@ namespace LambdaEngine
 				}
 				else
 				{
-					LOG_ERROR("[RenderGraph]: Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+					LOG_ERROR("Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
 				}
 			}
 			else
 			{
-				LOG_WARNING("[RenderGraph]: Render Stage \"%s\" in Render Graph could not be found in Render Stage Map", pDesc->RenderStageName.c_str());
+				LOG_WARNING("Render Stage \"%s\" in Render Graph could not be found in Render Stage Map", pDesc->RenderStageName.c_str());
 			}
 		}
 		else
 		{
-			LOG_ERROR("[RenderGraph]: PushConstantsUpdate::pData can not be nullptr!");
+			LOG_ERROR("PushConstantsUpdate::pData can not be nullptr!");
 		}
 	}
 
@@ -430,7 +430,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: UpdateRenderStageParameters failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
+			LOG_WARNING("UpdateRenderStageParameters failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
 			return;
 		}
 	}
@@ -460,14 +460,14 @@ namespace LambdaEngine
 				}
 				default:
 				{
-					LOG_WARNING("[RenderGraph]: UpdateResourceDimensions failed, resource \"%s\" has an unsupported type", resourceName.c_str());
+					LOG_WARNING("UpdateResourceDimensions failed, resource \"%s\" has an unsupported type", resourceName.c_str());
 					break;
 				}
 			}
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: UpdateResourceDimensions failed, resource with name \"%s\" could not be found", resourceName.c_str());
+			LOG_WARNING("UpdateResourceDimensions failed, resource with name \"%s\" could not be found", resourceName.c_str());
 			return;
 		}
 	}
@@ -486,13 +486,13 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_WARNING("[RenderGraph]: TriggerRenderStage failed, render stage with name \"%s\" does not have TRIGGERED as trigger type", renderStageName.c_str());
+				LOG_WARNING("TriggerRenderStage failed, render stage with name \"%s\" does not have TRIGGERED as trigger type", renderStageName.c_str());
 				return;
 			}
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: TriggerRenderStage failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
+			LOG_WARNING("TriggerRenderStage failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
 			return;
 		}
 	}
@@ -508,7 +508,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: SetRenderStageSleeping failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
+			LOG_WARNING("SetRenderStageSleeping failed, render stage with name \"%s\" could not be found", renderStageName.c_str());
 			return;
 		}
 	}
@@ -747,7 +747,7 @@ namespace LambdaEngine
 					RenderStage* pRenderStage = pResourceBinding->pRenderStage;
 
 					auto drawArgsMaskToArgsIt = pResource->DrawArgs.FullMaskToArgs.find(pRenderStage->DrawArgsMaskDesc.FullMask);
-					
+
 					if (drawArgsMaskToArgsIt->second.IsDirty)
 					{
 						if (pRenderStage->UsesCustomRenderer)
@@ -1287,7 +1287,7 @@ namespace LambdaEngine
 
 		if (s_pMaterialFence == nullptr)
 		{
-			LOG_ERROR("[RenderGraph]: Could not create RenderGraph fence");
+			LOG_ERROR("Could not create RenderGraph fence");
 			return false;
 		}
 
@@ -1584,7 +1584,7 @@ namespace LambdaEngine
 				}
 				else
 				{
-					LOG_ERROR("[RenderGraph]: Unsupported resource type for internal resource \"%s\"", newResource.Name.c_str());
+					LOG_ERROR("Unsupported resource type for internal resource \"%s\"", newResource.Name.c_str());
 					return false;
 				}
 			}
@@ -1736,9 +1736,9 @@ namespace LambdaEngine
 	}
 
 	bool RenderGraph::CreateRenderStages(
-		const TArray<RenderStageDesc>& renderStages, 
-		const THashTable<String, RenderGraphShaderConstants>& shaderConstants, 
-		const TArray<CustomRenderer*>& customRenderers, 
+		const TArray<RenderStageDesc>& renderStages,
+		const THashTable<String, RenderGraphShaderConstants>& shaderConstants,
+		const TArray<CustomRenderer*>& customRenderers,
 		TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
@@ -1854,7 +1854,7 @@ namespace LambdaEngine
 
 				if (resourceIt == m_ResourceMap.end())
 				{
-					LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying Resource", pResourceStateDesc->ResourceName.c_str());
+					LOG_ERROR("Resource State with name \"%s\" has no accompanying Resource", pResourceStateDesc->ResourceName.c_str());
 					return false;
 				}
 
@@ -1897,13 +1897,13 @@ namespace LambdaEngine
 					{
 						if (pRenderStage->pDrawArgsResource != nullptr)
 						{
-							LOG_ERROR("[RenderGraph]: Multiple Draw Buffer Bindings are currently not supported for a single RenderStage, %s", pRenderStage->Name.c_str());
+							LOG_ERROR("Multiple Draw Buffer Bindings are currently not supported for a single RenderStage, %s", pRenderStage->Name.c_str());
 							return false;
 						}
 
 						if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS || pRenderStageDesc->Graphics.DrawType != ERenderStageDrawType::SCENE_INSTANCES)
 						{
-							LOG_ERROR("[RenderGraph]: Unfortunately, only GRAPHICS Render Stages with Draw Type SCENE_INSTANCES is allowed to have a resource of binding type DRAW_BUFFERS");
+							LOG_ERROR("Unfortunately, only GRAPHICS Render Stages with Draw Type SCENE_INSTANCES is allowed to have a resource of binding type DRAW_BUFFERS");
 							return false;
 						}
 
@@ -1969,7 +1969,7 @@ namespace LambdaEngine
 
 					if (descriptorType == EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 					{
-						LOG_ERROR("[RenderGraph]: Descriptor Type for Resource State with name \"%s\" could not be found", pResourceStateDesc->ResourceName.c_str());
+						LOG_ERROR("Descriptor Type for Resource State with name \"%s\" could not be found", pResourceStateDesc->ResourceName.c_str());
 						return false;
 					}
 
@@ -2091,7 +2091,7 @@ namespace LambdaEngine
 
 							if (resourceUpdateDescIt == m_InternalResourceUpdateDescriptions.end())
 							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
+								LOG_ERROR("Resource State with name \"%s\" has no accompanying InternalResourceUpdateDesc", pResourceStateDesc->ResourceName.c_str());
 								return false;
 							}
 
@@ -2122,7 +2122,7 @@ namespace LambdaEngine
 
 							if (renderPassAttachmentsWidth != xDimVariable)
 							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d",
+								LOG_ERROR("Resource State with name \"%s\" is bound as Attachment but does not share the same width %d, as previous attachments %d",
 									pResourceStateDesc->ResourceName.c_str(),
 									xDimVariable,
 									renderPassAttachmentsWidth);
@@ -2131,7 +2131,7 @@ namespace LambdaEngine
 
 							if (renderPassAttachmentsHeight != yDimVariable)
 							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
+								LOG_ERROR("Resource State with name \"%s\" is bound as Attachment but does not share the same height %d, as previous attachments %d",
 									pResourceStateDesc->ResourceName.c_str(),
 									yDimVariable,
 									renderPassAttachmentsHeight);
@@ -2140,7 +2140,7 @@ namespace LambdaEngine
 
 							if (renderPassAttachmentDimensionTypeX != xDimType)
 							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+								LOG_ERROR("Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
 									pResourceStateDesc->ResourceName.c_str(),
 									RenderGraphDimensionTypeToString(xDimType),
 									RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeX));
@@ -2149,7 +2149,7 @@ namespace LambdaEngine
 
 							if (renderPassAttachmentDimensionTypeY != yDimType)
 							{
-								LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
+								LOG_ERROR("Resource State with name \"%s\" is bound as Attachment but does not share the same XDimType %s, as previous attachments %s",
 									pResourceStateDesc->ResourceName.c_str(),
 									RenderGraphDimensionTypeToString(yDimType),
 									RenderGraphDimensionTypeToString(renderPassAttachmentDimensionTypeY));
@@ -2173,7 +2173,7 @@ namespace LambdaEngine
 					}
 					else if (executionCountFromResource > 1 && executionCountFromResource != renderStageExecutionCount)
 					{
-						LOG_ERROR("[RenderGraph]: Resource %s is used as RenderPass Attachment and requires execution count %d, but execution count for this RenderStage has been set to %d from another resource",
+						LOG_ERROR("Resource %s is used as RenderPass Attachment and requires execution count %d, but execution count for this RenderStage has been set to %d from another resource",
 							pResource->Name.c_str(),
 							executionCountFromResource,
 							renderStageExecutionCount);
@@ -2320,7 +2320,7 @@ namespace LambdaEngine
 
 					if (customRendererIt == customRenderers.end())
 					{
-						LOG_ERROR("[RenderGraph]: Custom Renderer %s could not be found among Custom Renderers", pRenderStage->Name.c_str());
+						LOG_ERROR("Custom Renderer %s could not be found among Custom Renderers", pRenderStage->Name.c_str());
 						pRenderStage->TriggerType = ERenderStageExecutionTrigger::DISABLED;
 					}
 					else
@@ -2361,7 +2361,7 @@ namespace LambdaEngine
 
 						if (resourceIt == m_ResourceMap.end())
 						{
-							LOG_ERROR("[RenderGraph]: Resource State with name \"%s\" has no accompanying Resource", pResourceStateDesc->ResourceName.c_str());
+							LOG_ERROR("Resource State with name \"%s\" has no accompanying Resource", pResourceStateDesc->ResourceName.c_str());
 							return false;
 						}
 
@@ -2435,7 +2435,7 @@ namespace LambdaEngine
 					{
 						if (pRenderStage->pDrawArgsResource == nullptr)
 						{
-							LOG_ERROR("[RenderGraph]: A RenderStage of DrawType SCENE_INSTANCES and SCENE_INSTANCES_MESH_SHADER must have a binding of typ SCENE_DRAW_BUFFERS");
+							LOG_ERROR("A RenderStage of DrawType SCENE_INSTANCES and SCENE_INSTANCES_MESH_SHADER must have a binding of typ SCENE_DRAW_BUFFERS");
 							return false;
 						}
 					}
@@ -2444,19 +2444,19 @@ namespace LambdaEngine
 					{
 						if (pRenderStage->DrawArgsMaskDesc.IncludeMask == 0x0)
 						{
-							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a non-zero DrawArgsIncludeMask set to that binding");
+							LOG_ERROR("A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a non-zero DrawArgsIncludeMask set to that binding");
 							return false;
 						}
 
 						if (pRenderStage->DrawArgsMaskDesc.ExcludeMask == UINT32_MAX)
 						{
-							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a DrawArgsExcludeMask not set to 0xFFFFFFFF set to that binding");
+							LOG_ERROR("A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a DrawArgsExcludeMask not set to 0xFFFFFFFF set to that binding");
 							return false;
 						}
 
 						if ((pRenderStage->DrawArgsMaskDesc.IncludeMask& pRenderStage->DrawArgsMaskDesc.ExcludeMask) > 0)
 						{
-							LOG_ERROR("[RenderGraph]: A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a DrawArgsIncludeMask and a DrawArgsExcludeMask that do not overlap set to that binding");
+							LOG_ERROR("A RenderStage which has a binding of type SCENE_DRAW_BUFFERS should have a DrawArgsIncludeMask and a DrawArgsExcludeMask that do not overlap set to that binding");
 							return false;
 						}
 
@@ -2674,7 +2674,7 @@ namespace LambdaEngine
 				{
 					if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 					{
-						LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", renderStageIndex);
+						LOG_ERROR("There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", renderStageIndex);
 						return false;
 					}
 
@@ -2698,7 +2698,7 @@ namespace LambdaEngine
 				{
 					if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS)
 					{
-						LOG_ERROR("[RenderGraph]: There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", renderStageIndex);
+						LOG_ERROR("There are resources that a RenderPass should be linked to, but Render Stage %u is not a Graphics Pipeline State", renderStageIndex);
 						return false;
 					}
 
@@ -2780,7 +2780,7 @@ namespace LambdaEngine
 
 				if (it == m_ResourceMap.end())
 				{
-					LOG_ERROR("[RenderGraph]: Resource found in Synchronization Stage but not in Resource Map \"%s\"", pResourceSynchronizationDesc->ResourceName.c_str());
+					LOG_ERROR("Resource found in Synchronization Stage but not in Resource Map \"%s\"", pResourceSynchronizationDesc->ResourceName.c_str());
 					return false;
 				}
 
@@ -2803,7 +2803,7 @@ namespace LambdaEngine
 					}
 					else
 					{
-						LOG_ERROR("[RenderGraph]: Render Stage found in Synchronization but not in Render Stage Map \"%s\"", pResourceSynchronizationDesc->PrevRenderStage.c_str());
+						LOG_ERROR("Render Stage found in Synchronization but not in Render Stage Map \"%s\"", pResourceSynchronizationDesc->PrevRenderStage.c_str());
 						return false;
 					}
 				}
@@ -2814,7 +2814,7 @@ namespace LambdaEngine
 
 				if (nextRenderStageIt == m_RenderStageMap.end())
 				{
-					LOG_ERROR("[RenderGraph]: Render Stage found in Synchronization but not in Render Stage Map \"%s\"", pResourceSynchronizationDesc->NextRenderStage.c_str());
+					LOG_ERROR("Render Stage found in Synchronization but not in Render Stage Map \"%s\"", pResourceSynchronizationDesc->NextRenderStage.c_str());
 					return false;
 				}
 
@@ -2832,7 +2832,7 @@ namespace LambdaEngine
 				}
 				else if (pSynchronizationStage->ExecutionQueue != prevQueue)
 				{
-					LOG_ERROR("[RenderGraph]: SynchronizationStage \"%s\" contains synchronizations that have different Previous Queues");
+					LOG_ERROR("SynchronizationStage \"%s\" contains synchronizations that have different Previous Queues");
 					return false;
 				}
 
@@ -2889,7 +2889,7 @@ namespace LambdaEngine
 						//Back Buffer Bound textures are not allowed to be Unbounded Arrays
 						if (pResource->BackBufferBound)
 						{
-							LOG_ERROR("[RenderGraph]: Resource \"%s\" found to be Back Buffer Bound and Unbounded, this is currently not allowed!", pResource->Name.c_str());
+							LOG_ERROR("Resource \"%s\" found to be Back Buffer Bound and Unbounded, this is currently not allowed!", pResource->Name.c_str());
 							return false;
 						}
 
@@ -3336,14 +3336,14 @@ namespace LambdaEngine
 				}
 				default:
 				{
-					LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph has unsupported Type", desc.ResourceName.c_str());
+					LOG_WARNING("Resource \"%s\" in Render Graph has unsupported Type", desc.ResourceName.c_str());
 					return;
 				}
 			}
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph could not be found in Resource Map", desc.ResourceName.c_str());
+			LOG_WARNING("Resource \"%s\" in Render Graph could not be found in Resource Map", desc.ResourceName.c_str());
 			return;
 		}
 	}
@@ -3492,7 +3492,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[RenderGraph]: UpdateResourceTexture called for resource with invalid OwnershipType");
+				LOG_ERROR("UpdateResourceTexture called for resource with invalid OwnershipType");
 				return;
 			}
 
@@ -3504,7 +3504,7 @@ namespace LambdaEngine
 				{
 					if (textureDesc.ArrayCount != pResource->SubResourceCount * 6)
 					{
-						LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u and type TextureCube but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
+						LOG_ERROR("UpdateResourceTexture for resource of array type with length %u and type TextureCube but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
 						return;
 					}
 				}
@@ -3512,7 +3512,7 @@ namespace LambdaEngine
 				{
 					if (textureDesc.ArrayCount != pResource->SubResourceCount)
 					{
-						LOG_ERROR("[RenderGraph]: UpdateResourceTexture for resource of array type with length %u and type Texture2D but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
+						LOG_ERROR("UpdateResourceTexture for resource of array type with length %u and type Texture2D but ArrayCount was %u", pResource->SubResourceCount, textureDesc.ArrayCount);
 						return;
 					}
 				}
@@ -3954,7 +3954,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderGraph]: Update DrawArgs called for unused IncludeDrawArgsMask %08x & ExcludeDrawArgsMask %08x", pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.IncludeMask, pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.ExcludeMask);
+			LOG_WARNING("Update DrawArgs called for unused IncludeDrawArgsMask %08x & ExcludeDrawArgsMask %08x", pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.IncludeMask, pDesc->ExternalDrawArgsUpdate.DrawArgsMaskDesc.ExcludeMask);
 		}
 	}
 
@@ -3992,7 +3992,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[RenderGraph]: UpdateResourceBuffer called for Resource with unknown OwnershipType, \"%s\"", pResource->Name.c_str());
+				LOG_ERROR("UpdateResourceBuffer called for Resource with unknown OwnershipType, \"%s\"", pResource->Name.c_str());
 				return;
 			}
 
@@ -4122,7 +4122,7 @@ namespace LambdaEngine
 			}
 			default:
 			{
-				LOG_WARNING("[RenderGraph]: Resource \"%s\" in Render Graph has unsupported Type for relative dimensions", pResourceUpdateDesc->ResourceName.c_str());
+				LOG_WARNING("Resource \"%s\" in Render Graph has unsupported Type for relative dimensions", pResourceUpdateDesc->ResourceName.c_str());
 				return;
 			}
 		}

@@ -25,7 +25,7 @@ namespace LambdaEngine
 		}
 		else if (!(severity & FMOD_DEBUG_LEVEL_LOG))
 		{
-			D_LOG_INFO("[FMOD_DEBUG]: [%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			LOG_DEBUG("[FMOD_DEBUG]: [%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
 		}
 
 		return FMOD_OK;
@@ -33,20 +33,20 @@ namespace LambdaEngine
 
 	AudioDeviceFMOD::AudioDeviceFMOD()
 	{
-		
+
 	}
 
 	AudioDeviceFMOD::~AudioDeviceFMOD()
-	{		
+	{
 		if (pSystem != nullptr)
 		{
 			if (FMOD_System_Release(pSystem) != FMOD_OK)
 			{
-				LOG_ERROR("[AudioDeviceFMOD]: FMOD System could not be released for %s", m_pName);
+				LOG_ERROR("FMOD System could not be released for %s", m_pName);
 			}
 			else
 			{
-				D_LOG_MESSAGE("[AudioDeviceFMOD]: FMOD System released successfully for %s", m_pName);
+				LOG_DEBUG("FMOD System released successfully for %s", m_pName);
 			}
 
 			pSystem = nullptr;
@@ -67,14 +67,14 @@ namespace LambdaEngine
 
 			if (FMOD_Debug_Initialize(debugLevel, debugMode, DebugCallback, nullptr) != FMOD_OK)
 			{
-				LOG_WARNING("[AudioDeviceFMOD]: FMOD Debug Mode could not be initialized");
+				LOG_WARNING("FMOD Debug Mode could not be initialized");
 				return false;
 			}
 		}
 
 		if (FMOD_System_Create(&pSystem) != FMOD_OK)
 		{
-			LOG_ERROR("[AudioDeviceFMOD]: FMOD System could not be created for %s", m_pName);
+			LOG_ERROR("FMOD System could not be created for %s", m_pName);
 			return false;
 		}
 
@@ -83,13 +83,13 @@ namespace LambdaEngine
 
 		if (FMOD_System_Init(pSystem, numChannels, initFlags, nullptr) != FMOD_OK)
 		{
-			LOG_ERROR("[AudioDeviceFMOD]: FMOD System could not be initialized for %s", m_pName);
+			LOG_ERROR("FMOD System could not be initialized for %s", m_pName);
 			return false;
 		}
 
 		if (FMOD_System_SetGeometrySettings(pSystem, pDesc->MaxWorldSize) != FMOD_OK)
 		{
-			LOG_ERROR("[AudioDeviceFMOD]: FMOD Geometry Settings could not be set for %s", m_pName);
+			LOG_ERROR("FMOD Geometry Settings could not be set for %s", m_pName);
 			return false;
 		}
 
@@ -97,11 +97,11 @@ namespace LambdaEngine
 		float dopparScale = 1.0f, distanceFactor = 0.5f, rolloffScale = 1.0f;
 		if (FMOD_System_Set3DSettings(pSystem, dopparScale, distanceFactor, rolloffScale) != FMOD_OK)
 		{
-			LOG_ERROR("[AudioDeviceFMOD]: FMOD 3D Settings could not be set for %s", m_pName);
+			LOG_ERROR("FMOD 3D Settings could not be set for %s", m_pName);
 			return false;
 		}
 
-		D_LOG_MESSAGE("[AudioDeviceFMOD]: Successfully initialized %s!", m_pName);
+		LOG_DEBUG("Successfully initialized %s!", m_pName);
 
 		return true;
 	}
@@ -131,7 +131,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_WARNING("[AudioDeviceFMOD]: Audio Listener could not be created, max amount reached for %s!", m_pName);
+				LOG_WARNING("Audio Listener could not be created, max amount reached for %s!", m_pName);
 				return UINT32_MAX;
 			}
 		}

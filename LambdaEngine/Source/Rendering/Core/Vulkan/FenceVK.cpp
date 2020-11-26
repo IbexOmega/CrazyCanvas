@@ -8,7 +8,7 @@
 
 #define FENCE_LOG_STATE_ENABLE  0
 #if FENCE_LOG_STATE_ENABLE
-	#define FENCE_LOG_STATE(...) D_LOG_INFO(__VA_ARGS__)
+	#define FENCE_LOG_STATE(...) LOG_DEBUG(__VA_ARGS__)
 #else
 	#define FENCE_LOG_STATE(...)
 #endif
@@ -19,7 +19,7 @@ namespace LambdaEngine
 		: TDeviceChild(pDevice)
 	{
 	}
-	
+
 	FenceVK::~FenceVK()
 	{
 		for (VkSemaphore& semaphore : m_Semaphores)
@@ -30,7 +30,7 @@ namespace LambdaEngine
 				semaphore = VK_NULL_HANDLE;
 			}
 		}
-		
+
 		for (VkFence& fence : m_Fences)
 		{
 			if (fence != VK_NULL_HANDLE)
@@ -40,23 +40,23 @@ namespace LambdaEngine
 			}
 		}
 	}
-	
+
 	bool FenceVK::Init(const FenceDesc* pDesc)
 	{
 		VkSemaphoreCreateInfo semaphoreInfo = { };
 		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 		semaphoreInfo.pNext = nullptr;
 		semaphoreInfo.flags = 0;
-		
+
 		VkFenceCreateInfo fenceInfo = {};
 		fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fenceInfo.pNext = nullptr;
 		fenceInfo.flags = 0;
-		
+
 		constexpr uint32 PRIMITIVE_START_COUNT = 4;
 		m_Fences.Resize(PRIMITIVE_START_COUNT);
 		m_Semaphores.Resize(PRIMITIVE_START_COUNT);
-		
+
 		for (uint32 i = 0; i < PRIMITIVE_START_COUNT; i++)
 		{
 			VkSemaphore semaphore = VK_NULL_HANDLE;
@@ -70,7 +70,7 @@ namespace LambdaEngine
 			{
 				m_Semaphores[i] = semaphore;
 			}
-			
+
 			VkFence fence = VK_NULL_HANDLE;
 			result = vkCreateFence(m_pDevice->Device, &fenceInfo, nullptr, &fence);
 			if (result != VK_SUCCESS)
@@ -83,31 +83,31 @@ namespace LambdaEngine
 				m_Fences[i] = fence;
 			}
 		}
-		
-		D_LOG_MESSAGE("[FenceVK]: Created Fence");
-		
+
+		LOG_DEBUG("[FenceVK]: Created Fence");
+
 		m_Desc = *pDesc;
 		SetName(m_Desc.DebugName);
-		
+
 		m_LastCompletedValue = m_Desc.InitalValue;
-		
+
 		return true;
 	}
-	
+
 	void FenceVK::SetName(const String& debugName)
 	{
 		VALIDATE(!m_Fences.IsEmpty());
 		VALIDATE(!m_Semaphores.IsEmpty());
-			
+
 		m_Desc.DebugName = debugName;
-		
+
 		String name;
 		for (uint32 i = 0; i < m_Fences.GetSize(); i++)
 		{
 			name = m_Desc.DebugName + ":Fence[" + std::to_string(i) + "]";
 			m_pDevice->SetVulkanObjectName(name.c_str(), reinterpret_cast<uint64>(m_Fences[i]), VK_OBJECT_TYPE_FENCE);
 		}
-			
+
 		for (uint32 i = 0; i < m_Semaphores.GetSize(); i++)
 		{
 			name = m_Desc.DebugName + ":Semaphore[" + std::to_string(i) + "]";
@@ -127,17 +127,17 @@ namespace LambdaEngine
 				}
 			}
 		}
-		
+
 		return VK_NULL_HANDLE;
 	}
 
 	VkSemaphore FenceVK::WaitGPU(uint64 waitValue, VkQueue queue) const
 	{
 		FENCE_LOG_STATE("[FenceVK]: GPU wait. waitValue=%llu", waitValue);
-		
+
 		// Wait for semaphores that were waited on during CPU - wait, this is to enable reuse of them
 		FlushWaitSemaphores(queue);
-		
+
 		VkSemaphore waitSemaphore   = VK_NULL_HANDLE;
 		for (TArray<FenceValueVk>::Iterator it = m_PendingValues.Begin(); it != m_PendingValues.End();)
 		{
@@ -154,7 +154,7 @@ namespace LambdaEngine
 			else
 			{
 				VALIDATE(it->SemaphoreState == ESemaphoreState::SEMAPHORE_STATE_WAITING);
-				
+
 				VkResult result = vkGetFenceStatus(m_pDevice->Device, it->Fence);
 				if (result == VK_NOT_READY)
 				{
@@ -162,7 +162,7 @@ namespace LambdaEngine
 					result = vkWaitForFences(m_pDevice->Device, 1, &it->Fence, true, UINT64_MAX);
 					FENCE_LOG_STATE("[FenceVK]: GPU wait. Waited For fence=%p", it->Fence);
 				}
-				
+
 				if (result == VK_SUCCESS)
 				{
 					// Fence should be finished here
@@ -171,29 +171,29 @@ namespace LambdaEngine
 						m_LastCompletedValue = it->Value;
 						FENCE_LOG_STATE("[FenceVK]: GPU wait. Fence Finished. LastCompletedValue=%llu", m_LastCompletedValue);
 					}
-				 
+
 					// Make sure we can reuse this fence and semaphore
 					DisposeFence(it->Fence);
 					DisposeSemaphore(it->Semaphore);
-					
+
 					it = m_PendingValues.Erase(m_PendingValues.Begin());
 					continue;
 				}
 			}
-			
+
 			it++;
 		}
-		
+
 		return waitSemaphore;
 	}
 
 	VkSemaphore FenceVK::SignalGPU(uint64 signalValue, VkQueue queue)
 	{
 		FENCE_LOG_STATE("[FenceVK]: GPU Reset. signalValue=%llu", signalValue);
-		
+
 		// Wait for semaphores that were waited on during CPU - wait, this is to enable reuse of them
 		FlushWaitSemaphores(queue);
-		
+
 		// We only move forward
 		if (m_LastCompletedValue < signalValue)
 		{
@@ -202,7 +202,7 @@ namespace LambdaEngine
 			fenceValue.Semaphore        = QuerySemaphore();
 			fenceValue.SemaphoreState   = ESemaphoreState::SEMAPHORE_STATE_SIGNALED;
 			fenceValue.Value            = signalValue;
-			
+
 			m_PendingValues.PushBack(fenceValue);
 			return fenceValue.Semaphore;
 		}
@@ -211,11 +211,11 @@ namespace LambdaEngine
 			return VK_NULL_HANDLE;
 		}
 	}
-	
+
 	void FenceVK::Wait(uint64 waitValue, uint64 timeOut) const
 	{
 		FENCE_LOG_STATE("[FenceVK]: CPU Wait. waitValue=%llu, timeOut=%llu", waitValue, timeOut);
-		
+
 		while (!m_PendingValues.IsEmpty())
 		{
 			FenceValueVk& fenceValue = m_PendingValues.GetFront();
@@ -223,29 +223,29 @@ namespace LambdaEngine
 			{
 				break;
 			}
-			
+
 			VkResult result = vkGetFenceStatus(m_pDevice->Device, fenceValue.Fence);
 			if (result == VK_NOT_READY)
 			{
 				// Fence is not signaled so wait for this value to finish
 				result = vkWaitForFences(m_pDevice->Device, 1, &fenceValue.Fence, true, timeOut);
-				
+
 				FENCE_LOG_STATE("[FenceVK]: CPU wait. Waited For fence=%p", fenceValue.Fence);
 			}
-			
+
 			if (result != VK_TIMEOUT)
 			{
 				// Fence should be finished here
 				if (waitValue > m_LastCompletedValue)
 				{
 					m_LastCompletedValue = fenceValue.Value;
-					
+
 					FENCE_LOG_STATE("[FenceVK]: CPU wait. Fence Finished. LastCompletedValue=%llu", m_LastCompletedValue);
 				}
-			 
+
 				// Make sure we can reuse this fence
 				DisposeFence(fenceValue.Fence);
-				
+
 				// If semaphore state is waiting it must be complete by now
 				if (fenceValue.SemaphoreState == ESemaphoreState::SEMAPHORE_STATE_WAITING)
 				{
@@ -256,12 +256,12 @@ namespace LambdaEngine
 					VALIDATE(fenceValue.SemaphoreState == ESemaphoreState::SEMAPHORE_STATE_SIGNALED);
 					AddWaitSemaphore(fenceValue.Semaphore, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT);
 				}
-				
+
 				m_PendingValues.Erase(m_PendingValues.Begin());
 			}
 		}
 	}
-	
+
 	void FenceVK::Reset(uint64 resetValue)
 	{
 		VALIDATE(resetValue > m_LastCompletedValue);
@@ -283,7 +283,7 @@ namespace LambdaEngine
 			fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 			fenceInfo.pNext = nullptr;
 			fenceInfo.flags = 0;
-			
+
 			VkResult result = vkCreateFence(m_pDevice->Device, &fenceInfo, nullptr, &fence);
 			if (result != VK_SUCCESS)
 			{
@@ -292,7 +292,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				D_LOG_WARNING("[FenceVK]: New fence created");
+				LOG_DEBUG("[FenceVK]: New fence created");
 				return fence;
 			}
 		}
@@ -313,7 +313,7 @@ namespace LambdaEngine
 			semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 			semaphoreInfo.pNext = nullptr;
 			semaphoreInfo.flags = 0;
-			
+
 			VkResult result = vkCreateSemaphore(m_pDevice->Device, &semaphoreInfo, nullptr, &semaphore);
 			if (result != VK_SUCCESS)
 			{
@@ -322,7 +322,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				D_LOG_WARNING("[FenceVK]: New semaphore created");
+				LOG_DEBUG("[FenceVK]: New semaphore created");
 				return semaphore;
 			}
 		}
@@ -332,9 +332,9 @@ namespace LambdaEngine
 	{
 		VALIDATE(fence != VK_NULL_HANDLE);
 		VALIDATE(FenceCanReset(fence));
-		
+
 		FENCE_LOG_STATE("[FenceVK]: DisposeFence: fence=%p", fence);
-		
+
 		VkResult result = vkResetFences(m_pDevice->Device, 1, &fence);
 		if (result != VK_SUCCESS)
 		{
@@ -355,7 +355,7 @@ namespace LambdaEngine
 	void FenceVK::AddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage) const
 	{
 		VALIDATE(semaphore != VK_NULL_HANDLE);
-		
+
 		m_WaitSemaphores.PushBack(semaphore);
 		m_WaitStages.PushBack(waitStage);
 	}
@@ -363,12 +363,12 @@ namespace LambdaEngine
 	void FenceVK::FlushWaitSemaphores(VkQueue queue) const
 	{
 		VALIDATE(queue != VK_NULL_HANDLE);
-		
+
 		// Wait for semaphores for values that were removed during CPU-wait
 		if (!m_WaitSemaphores.IsEmpty())
 		{
 			FENCE_LOG_STATE("[FenceVK]: Flushing waitsemaphores");
-			
+
 			VkSubmitInfo submitInfo = { };
 			submitInfo.sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			submitInfo.pNext                = nullptr;
@@ -389,7 +389,7 @@ namespace LambdaEngine
 			{
 				// Append semaphores to the pool
 				m_Semaphores.Insert(m_Semaphores.End(), m_WaitSemaphores.Begin(), m_WaitSemaphores.End());
-				
+
 				// Clear
 				m_WaitSemaphores.Clear();
 				m_WaitStages.Clear();

@@ -644,7 +644,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			D_LOG_MESSAGE("[Win32Application]: Registered Raw Input devices");
+			LOG_DEBUG("[Win32Application]: Registered Raw Input devices");
 			return true;
 		}
 	}
@@ -669,7 +669,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			D_LOG_MESSAGE("[Win32Application]: Unregistered Raw Input devices");
+			LOG_DEBUG("[Win32Application]: Unregistered Raw Input devices");
 			return true;
 		}
 	}

@@ -10,7 +10,7 @@ namespace LambdaEngine
 		: TDeviceChild(pDevice)
 	{
 	}
-	
+
 	CommandAllocatorVK::~CommandAllocatorVK()
 	{
 		if (m_CommandPool != VK_NULL_HANDLE)
@@ -19,7 +19,7 @@ namespace LambdaEngine
 			m_CommandPool = VK_NULL_HANDLE;
 		}
 	}
-	
+
 	bool CommandAllocatorVK::Init(const String& debugname, ECommandQueueType queueType)
 	{
 		VkCommandPoolCreateInfo createInfo = {};
@@ -33,11 +33,11 @@ namespace LambdaEngine
 		{
 			if (!debugname.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[CommandAllocatorVK]: Failed to create commandpool \"%s\"", debugname.c_str());
+				LOG_VULKAN_ERROR(result, "Failed to create commandpool \"%s\"", debugname.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[CommandAllocatorVK]: Failed to create commandpool");
+				LOG_VULKAN_ERROR(result, "Failed to create commandpool");
 			}
 
 			return false;
@@ -47,12 +47,12 @@ namespace LambdaEngine
 			m_Type = queueType;
 			if (!debugname.empty())
 			{
-				LOG_MESSAGE("[CommandAllocatorVK]: Created commandpool \"%s\"", debugname.c_str());
+				LOG_MESSAGE("Created commandpool \"%s\"", debugname.c_str());
 				SetName(debugname);
 			}
 			else
 			{
-				LOG_MESSAGE("[CommandAllocatorVK]: Created commandpool");
+				LOG_MESSAGE("Created commandpool");
 			}
 
 			return true;
@@ -62,7 +62,7 @@ namespace LambdaEngine
 	VkCommandBuffer CommandAllocatorVK::AllocateCommandBuffer(VkCommandBufferLevel level)
 	{
 		VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-		
+
 		VkCommandBufferAllocateInfo allocateInfo = { };
 		allocateInfo.sType					= VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 		allocateInfo.pNext					= nullptr;
@@ -73,7 +73,7 @@ namespace LambdaEngine
 		VkResult result = vkAllocateCommandBuffers(m_pDevice->Device, &allocateInfo, &commandBuffer);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[CommandAllocatorVK]: Failed to allocate commandbuffer");
+			LOG_VULKAN_ERROR(result, "Failed to allocate commandbuffer");
 			return VK_NULL_HANDLE;
 		}
 		else
@@ -86,14 +86,14 @@ namespace LambdaEngine
 	{
 		vkFreeCommandBuffers(m_pDevice->Device, m_CommandPool, 1, &commandBuffer);
 	}
-	
+
 	bool CommandAllocatorVK::Reset()
 	{
 		VkResult result = vkResetCommandPool(m_pDevice->Device, m_CommandPool, 0);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[CommandAllocatorVK]: Failed to reset commandpool");
-			return false; 
+			LOG_VULKAN_ERROR(result, "Failed to reset commandpool");
+			return false;
 		}
 
 		return true;

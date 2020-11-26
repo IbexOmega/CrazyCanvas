@@ -135,7 +135,7 @@ bool LevelObjectCreator::Init()
 }
 
 LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
-	const LambdaEngine::LoadedDirectionalLight& directionalLight, 
+	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -156,7 +156,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::quatLookAt({directionalLight.Direction}, g_DefaultUp) });
 		pECS->AddComponent<DirectionalLightComponent>(entity, directionalLightComponent);
 
-		D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
+		LOG_DEBUG("[LevelObjectCreator]: Created Directional Light");
 	}
 
 	return entity;
@@ -181,7 +181,7 @@ LambdaEngine::Entity LevelObjectCreator::CreatePointLight(const LambdaEngine::Lo
 		pECS->AddComponent<PositionComponent>(entity, { true, (pointLight.Position + translation) });
 		pECS->AddComponent<PointLightComponent>(entity, pointLightComponent);
 
-		D_LOG_INFO("[LevelObjectCreator]: Created Point Light");
+		LOG_DEBUG("[LevelObjectCreator]: Created Point Light");
 	}
 
 	return entity;
@@ -209,7 +209,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	{
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<RayTracedComponent>(entity, 
+		pECS->AddComponent<RayTracedComponent>(entity,
 			RayTracedComponent
 			{
 				.HitMask = 0xFF
@@ -289,18 +289,16 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 					for (std::tuple<String, bool, Entity>& childEntityTuple : childEntities)
 					{
 						const String&	childTag		= std::get<0>(childEntityTuple);
-						bool			childAttached	= std::get<1>(childEntityTuple);
 						Entity			childEntity		= std::get<2>(childEntityTuple);
 
 						childComponent.AddChild(childTag, childEntity, true);
-						pECS->AddComponent<ParentComponent>(childEntity, ParentComponent{ .Parent = parentEntity, .Attached = childAttached, .DeleteParentOnRemoval = true });
 					}
 
 					pECS->AddComponent<ChildComponent>(parentEntity, childComponent);
 				}
 			}
 		}
-		
+
 		return success;
 	}
 	else
@@ -350,7 +348,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 					.HitMask = 0xFF
 				});
 		}
-		
+
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 		const CollisionCreateInfo collisionCreateInfo =
 		{
@@ -377,7 +375,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
+	LOG_DEBUG("Created Player Spawn with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
@@ -430,7 +428,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Jail with EntityID %u", entity);
+	LOG_DEBUG("Created Player Jail with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_JAIL;
 }
 
@@ -456,13 +454,13 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Flag Spawn with EntityID %u", entity);
+	LOG_DEBUG("Created Flag Spawn with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -522,13 +520,13 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Base with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
+	LOG_DEBUG("Created Base with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
 ELevelObjectType LevelObjectCreator::CreateKillPlane(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -561,7 +559,7 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Kill Plane with EntityID %u", entity);
+	LOG_DEBUG("Created Kill Plane with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_KILL_PLANE;
 }
 
@@ -703,7 +701,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	createdEntities.PushBack(flagEntity);
 
-	D_LOG_INFO("Created Flag with EntityID %u and NetworkID %u", flagEntity, networkUID);
+	LOG_DEBUG("Created Flag with EntityID %u and NetworkID %u", flagEntity, networkUID);
 	return true;
 }
 
@@ -798,7 +796,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	GUID_Lambda playerMaterialGUID;
 
-	// Server/Client 
+	// Server/Client
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
@@ -1047,8 +1045,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 	PlayerManagerBase::SetPlayerEntity(pPlayer, playerEntity);
 
-	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
-	D_LOG_INFO("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
+	LOG_DEBUG("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
+	LOG_DEBUG("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
 
 	return true;
 }
@@ -1129,7 +1127,7 @@ bool LevelObjectCreator::CreateProjectile(
 			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
 			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 		}
-		
+
 		// Create particles
 		ParticleEmitterComponent emitterComponent = ParticleEmitterComponent{
 				.Active = true,
@@ -1166,7 +1164,7 @@ bool LevelObjectCreator::CreateProjectile(
 			emitterComponent.SpawnDelay = 0.1f;
 			emitterComponent.Velocity = 6.0f;
 			emitterComponent.Angle = 45.0f;
-			
+
 			const Entity particleEntity = pECS->CreateEntity();
 			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + projectileOffset });
 			pECS->AddComponent<ScaleComponent>(particleEntity, { true, glm::vec3(0.7f) });

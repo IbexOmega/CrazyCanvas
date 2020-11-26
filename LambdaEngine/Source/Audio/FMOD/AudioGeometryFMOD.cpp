@@ -79,7 +79,7 @@ namespace LambdaEngine
 			}
 		}
 
-		D_LOG_MESSAGE("[AudioGeometryFMOD]: Successfully initialized %s!", m_pName);
+		LOG_DEBUG("[AudioGeometryFMOD]: Successfully initialized %s!", m_pName);
 
 		return true;
 	}

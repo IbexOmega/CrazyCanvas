@@ -99,7 +99,7 @@ namespace LambdaEngine
 			{
 				shaderGroupCreateInfo.intersectionShader = VK_SHADER_UNUSED_NV;
 			}
-	
+
 			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
 		}
 		m_HitShaderCount = pDesc->HitGroupShaders.GetSize();
@@ -157,11 +157,11 @@ namespace LambdaEngine
 		SetName(pDesc->DebugName);
 		if (!pDesc->DebugName.empty())
 		{
-			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline for %s", pDesc->DebugName.c_str());
+			LOG_DEBUG("[RayTracingPipelineStateVK]: Created Pipeline for %s", pDesc->DebugName.c_str());
 		}
 		else
 		{
-			D_LOG_MESSAGE("[RayTracingPipelineStateVK]: Created Pipeline");
+			LOG_DEBUG("[RayTracingPipelineStateVK]: Created Pipeline");
 		}
 
 		return true;

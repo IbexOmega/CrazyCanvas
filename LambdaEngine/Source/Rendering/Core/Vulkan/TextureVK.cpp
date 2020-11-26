@@ -86,12 +86,12 @@ namespace LambdaEngine
 		VkResult result = vkCreateImage(m_pDevice->Device, &info, nullptr, &m_Image);
 		if (result != VK_SUCCESS)
 		{
-			LOG_ERROR("[TextureVK]: Failed to create texture");
+			LOG_ERROR("Failed to create texture");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
+			LOG_DEBUG("Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 
 			m_AspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 			if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL)
@@ -119,7 +119,7 @@ namespace LambdaEngine
 		int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, memoryProperties);
 		if (!m_pDevice->AllocateTextureMemory(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
 		{
-			LOG_ERROR("[TextureVK]: Failed to allocate memory");
+			LOG_ERROR("Failed to allocate memory");
 			return false;
 		}
 
@@ -137,17 +137,17 @@ namespace LambdaEngine
 	{
 		VALIDATE(image != VK_NULL_HANDLE);
 		VALIDATE(pDesc != nullptr);
-		
+
 		InternalRelease();
 
 		m_Image = image;
 		m_Desc = *pDesc;
-		
+
 		SetName(m_Desc.DebugName);
-		
-		D_LOG_MESSAGE("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
+
+		LOG_DEBUG("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 	}
-	
+
 	void TextureVK::InternalRelease()
 	{
 		if (m_Allocation.Memory != VK_NULL_HANDLE)

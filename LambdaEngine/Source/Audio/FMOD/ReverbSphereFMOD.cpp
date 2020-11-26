@@ -40,7 +40,7 @@ namespace LambdaEngine
 
 		Set3DAttributes(pDesc->Position, pDesc->MinDistance, pDesc->MaxDistance);
 
-		D_LOG_MESSAGE("[ReverbSphereFMOD]: Successfully initialized %s!", m_pName);
+		LOG_DEBUG("[ReverbSphereFMOD]: Successfully initialized %s!", m_pName);
 
 		return true;
 	}

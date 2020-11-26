@@ -33,7 +33,7 @@ namespace LambdaEngine
 
 		// Make sure that the index is valid
 		VALIDATE(queueFamilyIndex < queuePropertyCount);
-		
+
 		uint32 queueCount = properties[queueFamilyIndex].queueCount;
 		if (index >= properties[queueFamilyIndex].queueCount)
 		{
@@ -44,8 +44,8 @@ namespace LambdaEngine
 		{
 			vkGetDeviceQueue(m_pDevice->Device, queueFamilyIndex, index, &m_Queue);
 			SetName(debugName);
-			
-			D_LOG_MESSAGE("[CommandQueueVK]: Created commandqueue from queuefamily=%u with index=%u", queueFamilyIndex, index);
+
+			LOG_DEBUG("[CommandQueueVK]: Created commandqueue from queuefamily=%u with index=%u", queueFamilyIndex, index);
 
 			m_Type = m_pDevice->GetCommandQueueTypeFromQueueIndex(queueFamilyIndex);
 
@@ -59,7 +59,7 @@ namespace LambdaEngine
 	{
 		std::scoped_lock<SpinLock> lock(m_SpinLock);
 		InternalAddWaitSemaphore(semaphore, waitStage);
-		
+
 	}
 
 	void CommandQueueVK::AddSignalSemaphore(VkSemaphore semaphore)
@@ -71,7 +71,7 @@ namespace LambdaEngine
 	void CommandQueueVK::InternalAddWaitSemaphore(VkSemaphore semaphore, VkPipelineStageFlags waitStage)
 	{
 		VALIDATE(semaphore != VK_NULL_HANDLE);
-		
+
 		m_WaitSemaphores.PushBack(semaphore);
 		m_WaitStages.PushBack(waitStage);
 	}
@@ -88,9 +88,9 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_SpinLock);
 		InternalFlushBarriers();
 	}
-	
+
 	bool CommandQueueVK::ExecuteCommandLists(const CommandList* const* ppCommandLists, uint32 numCommandLists, FPipelineStageFlags waitStage, const Fence* pWaitFence, uint64 waitValue, Fence* pSignalFence, uint64 signalValue)
-	{	
+	{
 		{
 			// If we pass the "assertion", lock and execute commandbuffers
 			std::scoped_lock<SpinLock> lock(m_SpinLock);
@@ -111,14 +111,14 @@ namespace LambdaEngine
 			submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			submitInfo.pCommandBuffers		= m_CommandBuffersToSubmit.GetData();
 			submitInfo.commandBufferCount	= numCommandLists;
-			
+
 			// Check if we are using FenceTimelineVK
 			VkFence submitFence = VK_NULL_HANDLE;
 			if (m_pDevice->UseTimelineFences())
 			{
 				// Perform empty submit on queue for wait on the semaphore
 				InternalFlushBarriers();
-				
+
 				const FenceTimelineVK*	pWaitFenceVk	= reinterpret_cast<const FenceTimelineVK*>(pWaitFence);
 				FenceTimelineVK*		pSignalFenceVk	= reinterpret_cast<FenceTimelineVK*>(pSignalFence);
 
@@ -153,7 +153,7 @@ namespace LambdaEngine
 				fenceSubmitInfo.pSignalSemaphoreValues		= signalValues;
 				fenceSubmitInfo.waitSemaphoreValueCount		= waitValueCount;
 				fenceSubmitInfo.pWaitSemaphoreValues		= waitValues;
-				
+
 				submitInfo.pNext				= reinterpret_cast<const void*>(&fenceSubmitInfo);
 				submitInfo.waitSemaphoreCount	= waitValueCount;
 				submitInfo.pWaitSemaphores		= &waitSemaphoreVk;
@@ -163,7 +163,7 @@ namespace LambdaEngine
 			{
 				const FenceVK*	pWaitFenceVk	= reinterpret_cast<const FenceVK*>(pWaitFence);
 				FenceVK*		pSignalFenceVk	= reinterpret_cast<FenceVK*>(pSignalFence);
-				
+
 				if (pSignalFenceVk)
 				{
 					VkSemaphore signalSemaphore = pSignalFenceVk->SignalGPU(signalValue, m_Queue);
@@ -173,33 +173,33 @@ namespace LambdaEngine
 						submitFence = pSignalFenceVk->GetSignalFence(signalValue);
 					}
 				}
-				
+
 				if (pWaitFenceVk)
 				{
 					VkSemaphore				waitSemaphore	= pWaitFenceVk->WaitGPU(waitValue, m_Queue);
 					VkPipelineStageFlagBits	waitStageVk		= ConvertPipelineStage(waitStage);
-					
+
 					if (waitSemaphore != VK_NULL_HANDLE)
 					{
 						InternalAddWaitSemaphore(waitSemaphore, waitStageVk);
 					}
 				}
-				
+
 				VALIDATE(m_WaitSemaphores.GetSize() == m_WaitStages.GetSize());
-				
+
 				submitInfo.pNext				= nullptr;
 				submitInfo.waitSemaphoreCount	= static_cast<uint32>(m_WaitSemaphores.GetSize());
 				submitInfo.pWaitSemaphores		= m_WaitSemaphores.GetData();
 				submitInfo.pWaitDstStageMask	= m_WaitStages.GetData();
-				
+
 				m_WaitSemaphores.Clear();
 				m_WaitStages.Clear();
 			}
-			
+
 			// Setup common signal semaphores
 			submitInfo.signalSemaphoreCount	= static_cast<uint32>(m_SignalSemaphores.GetSize());
 			submitInfo.pSignalSemaphores	= m_SignalSemaphores.GetData();
-			
+
 			VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, submitFence);
 			if (result != VK_SUCCESS)
 			{
@@ -213,11 +213,11 @@ namespace LambdaEngine
 			}
 		}
 	}
-	
+
 	void CommandQueueVK::Flush()
 	{
 		std::scoped_lock<SpinLock> lock(m_SpinLock);
-		
+
 		// Flush all pending barriers (Semaphores) and then wait for queue to become idle
 		InternalFlushBarriers();
 		vkQueueWaitIdle(m_Queue);
@@ -233,7 +233,7 @@ namespace LambdaEngine
 		if (!m_WaitSemaphores.IsEmpty())
 		{
 			VALIDATE(m_WaitSemaphores.GetSize() == m_WaitStages.GetSize());
-			
+
 			VkSubmitInfo submitInfo = { };
 			submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
 			submitInfo.pNext				= nullptr;
@@ -257,7 +257,7 @@ namespace LambdaEngine
 
 				m_SignalSemaphores.Clear();
 			}
-			
+
 			return result;
 		}
 		else
@@ -265,11 +265,11 @@ namespace LambdaEngine
 			return VK_SUCCESS;
 		}
 	}
-	
+
 	void CommandQueueVK::SetName(const String& debugName)
 	{
 		std::scoped_lock<SpinLock> lock(m_SpinLock);
-		
+
 		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_Queue), VK_OBJECT_TYPE_QUEUE);
 		m_DebugName = debugName;
 	}

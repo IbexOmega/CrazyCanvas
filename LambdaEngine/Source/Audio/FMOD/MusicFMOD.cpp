@@ -67,7 +67,7 @@ namespace LambdaEngine
 
 		if (FMOD_Channel_SetVolume(m_pChannel, volume) != FMOD_OK)
 		{
-			D_LOG_WARNING("[MusicFMOD]: Volume could not be set for %s", m_Name.c_str());
+			LOG_DEBUG("[MusicFMOD]: Volume could not be set for %s", m_Name.c_str());
 		}
 	}
 
@@ -77,7 +77,7 @@ namespace LambdaEngine
 
 		if (FMOD_Channel_SetPitch(m_pChannel, pitch) != FMOD_OK)
 		{
-			D_LOG_WARNING("[MusicFMOD]: Pitch could not be set for %s", m_Name.c_str());
+			LOG_DEBUG("[MusicFMOD]: Pitch could not be set for %s", m_Name.c_str());
 		}
 	}
 }

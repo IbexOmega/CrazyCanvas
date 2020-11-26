@@ -188,7 +188,7 @@ namespace LambdaEngine
 		m_InlineRayTracingEnabled = RenderSystem::GetInstance().IsInlineRayTracingEnabled();
 		if (!m_InlineRayTracingEnabled)
 		{
-			D_LOG_INFO("[ParticleCollider] Ray query is disabled, disable particle collisions.");
+			LOG_DEBUG("[ParticleCollider] Ray query is disabled, disable particle collisions.");
 		}
 
 		if (m_InlineRayTracingEnabled)

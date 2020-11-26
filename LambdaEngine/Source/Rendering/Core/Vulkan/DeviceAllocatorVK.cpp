@@ -385,7 +385,7 @@ namespace LambdaEngine
 				{
 					if ((pIterator->Offset + pIterator->TotalSizeInBytes) > (pIterator->pNext->Offset))
 					{
-						D_LOG_WARNING("[DeviceMemoryPageVK]: Overlap found");
+						LOG_DEBUG("[DeviceMemoryPageVK]: Overlap found");
 						return false;
 					}
 				}
@@ -410,7 +410,7 @@ namespace LambdaEngine
 				pIterator = pIterator->pNext;
 			}
 
-			/* When we have reached the tail we start going backwards and check so 
+			/* When we have reached the tail we start going backwards and check so
 			that the order in the array is the same as when we traversed forward*/
 			while (pTail != nullptr)
 			{

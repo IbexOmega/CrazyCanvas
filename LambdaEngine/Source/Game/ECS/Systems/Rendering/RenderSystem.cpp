@@ -251,7 +251,7 @@ namespace LambdaEngine
 			perFrameBufferDesc.SizeInBytes	= sizeof(PerFrameBuffer);
 
 			m_pPerFrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&perFrameBufferDesc);
-		} 
+		}
 
 		// Create animation resources
 		{
@@ -323,7 +323,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	bool RenderSystem::InitRenderGraphs() 
+	bool RenderSystem::InitRenderGraphs()
 	{
 		Window* pActiveWindow = CommonApplication::Get()->GetActiveWindow().Get();
 		const bool isServer = MultiplayerUtils::IsServer();
@@ -353,7 +353,7 @@ namespace LambdaEngine
 			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER)))
 			{
 
-				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
+				LOG_ERROR("Failed to Load RenderGraph, loading Default...");
 
 				renderGraphStructure = {};
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER));
@@ -428,7 +428,7 @@ namespace LambdaEngine
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
 			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
 			{
-				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
+				LOG_ERROR("Failed to initialize RenderGraph");
 				return false;
 			}
 		}
@@ -815,7 +815,7 @@ namespace LambdaEngine
 	{
 		if (!pCustomRenderer)
 		{
-			LOG_WARNING("[RenderSystem]: AddCustomRenderer failed - CustomRenderer not constructed");
+			LOG_WARNING("AddCustomRenderer failed - CustomRenderer not constructed");
 			return;
 		}
 		m_GameSpecificCustomRenderers.PushBack(pCustomRenderer);
@@ -829,7 +829,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderSystem]: SetRenderStageSleeping failed - Rendergraph not initilised");
+			LOG_WARNING("SetRenderStageSleeping failed - Rendergraph not initilised");
 		}
 
 	}
@@ -843,7 +843,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderSystem]: SetPaintMaskColor index out of range, colors unchanged");
+			LOG_WARNING("SetPaintMaskColor index out of range, colors unchanged");
 		}
 	}
 
@@ -855,11 +855,11 @@ namespace LambdaEngine
 		}
 
 		TSharedRef<CommandAllocator> commandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator(
-			"GenIntegrationLUT CommandAllocator", 
+			"GenIntegrationLUT CommandAllocator",
 			ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 		if (!commandAllocator)
 		{
-			LOG_ERROR("[RenderSystem]: Could not create GenIntegrationLUT CommandAllocator");
+			LOG_ERROR("Could not create GenIntegrationLUT CommandAllocator");
 			DEBUGBREAK();
 			return false;
 		}
@@ -872,7 +872,7 @@ namespace LambdaEngine
 		TSharedRef<CommandList> commandList = RenderAPI::GetDevice()->CreateCommandList(commandAllocator.Get(), &commandListDesc);
 		if (!commandList)
 		{
-			LOG_ERROR("[RenderSystem]: Could not create GenIntegrationLUT CommandList");
+			LOG_ERROR("Could not create GenIntegrationLUT CommandList");
 			DEBUGBREAK();
 			return false;
 		}
@@ -885,7 +885,7 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap> descriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
 		if (!descriptorHeap)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT DescriptorHeap");
+			LOG_ERROR("Failed to create GenIntegrationLUT DescriptorHeap");
 			DEBUGBREAK();
 			return false;
 		}
@@ -908,15 +908,15 @@ namespace LambdaEngine
 		{
 			constantRange
 		};
-		pipelineLayoutDesc.DescriptorSetLayouts	= 
-		{ 
-			descriptorSetLayoutDesc 
+		pipelineLayoutDesc.DescriptorSetLayouts	=
+		{
+			descriptorSetLayoutDesc
 		};
 
 		TSharedRef<PipelineLayout> pipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 		if (!pipelineLayout)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineLayout");
+			LOG_ERROR("Failed to create GenIntegrationLUT PipelineLayout");
 			DEBUGBREAK();
 			return false;
 		}
@@ -928,19 +928,19 @@ namespace LambdaEngine
 			descriptorHeap.Get());
 		if (!pipelineLayout)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineLayout");
+			LOG_ERROR("Failed to create GenIntegrationLUT PipelineLayout");
 			DEBUGBREAK();
 			return false;
 		}
 
 		TSharedRef<Shader> shader = ResourceLoader::LoadShaderFromFile(
-			"../Assets/Shaders/Skybox/IntegrationLUTGen.comp", 
+			"../Assets/Shaders/Skybox/IntegrationLUTGen.comp",
 			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
 			EShaderLang::SHADER_LANG_GLSL,
 			"main");
 		if (!shader)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT Shader");
+			LOG_ERROR("Failed to create GenIntegrationLUT Shader");
 			DEBUGBREAK();
 			return false;
 		}
@@ -953,7 +953,7 @@ namespace LambdaEngine
 		TSharedRef<PipelineState> pipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
 		if (!pipelineState)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineState");
+			LOG_ERROR("Failed to create GenIntegrationLUT PipelineState");
 			DEBUGBREAK();
 			return false;
 		}
@@ -979,7 +979,7 @@ namespace LambdaEngine
 		m_IntegrationLUT = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 		if (!m_IntegrationLUT)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create IntegrationLUT");
+			LOG_ERROR("Failed to create IntegrationLUT");
 			DEBUGBREAK();
 			return false;
 		}
@@ -1000,7 +1000,7 @@ namespace LambdaEngine
 		m_IntegrationLUTView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 		if (!m_IntegrationLUTView)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create IntegrationLUT View");
+			LOG_ERROR("Failed to create IntegrationLUT View");
 			DEBUGBREAK();
 			return false;
 		}
@@ -1015,7 +1015,7 @@ namespace LambdaEngine
 
 		commandAllocator->Reset();
 		commandList->Begin(nullptr);
-		
+
 		commandList->TransitionBarrier(
 			m_IntegrationLUT.Get(),
 			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
@@ -1027,12 +1027,12 @@ namespace LambdaEngine
 
 		const uint32 size = INTEGRATION_LUT_SIZE;
 		commandList->SetConstantRange(
-			pipelineLayout.Get(), 
-			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
+			pipelineLayout.Get(),
+			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
 			&size, 4, 0);
 
 		commandList->BindDescriptorSetCompute(descriptorSet.Get(), pipelineLayout.Get(), 0);
-		
+
 		commandList->BindComputePipeline(pipelineState.Get());
 
 		commandList->Dispatch(size, size, 1);
@@ -1053,7 +1053,7 @@ namespace LambdaEngine
 			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
 			nullptr, 0, nullptr, 0))
 		{
-			LOG_ERROR("[RenderSystem] Failed to execute commandlist");
+			LOG_ERROR("Failed to execute commandlist");
 			DEBUGBREAK();
 			return false;
 		}
@@ -1100,7 +1100,7 @@ namespace LambdaEngine
 #ifdef RENDER_SYSTEM_DEBUG
 		if (!m_RenderableEntities.insert(entity).second)
 		{
-			LOG_ERROR("[RenderSystem]: Static Mesh Renderable Entity added without being removed %u", entity);
+			LOG_ERROR("Static Mesh Renderable Entity added without being removed %u", entity);
 			CheckWhereEntityAlreadyRegistered(entity);
 		}
 #endif
@@ -1117,7 +1117,7 @@ namespace LambdaEngine
 #ifdef RENDER_SYSTEM_DEBUG
 		if (!m_RenderableEntities.insert(entity).second)
 		{
-			LOG_ERROR("[RenderSystem]: Animated Renderable Entity added without being removed %u", entity);
+			LOG_ERROR("Animated Renderable Entity added without being removed %u", entity);
 			CheckWhereEntityAlreadyRegistered(entity);
 		}
 #endif
@@ -1134,7 +1134,7 @@ namespace LambdaEngine
 #ifdef RENDER_SYSTEM_DEBUG
 		if (!m_RenderableEntities.insert(entity).second)
 		{
-			LOG_ERROR("[RenderSystem]: Animation Attached Renderable Entity added without being removed %u", entity);
+			LOG_ERROR("Animation Attached Renderable Entity added without being removed %u", entity);
 			CheckWhereEntityAlreadyRegistered(entity);
 		}
 #endif
@@ -1154,7 +1154,7 @@ namespace LambdaEngine
 #ifdef RENDER_SYSTEM_DEBUG
 		if (!m_RenderableEntities.insert(entity).second)
 		{
-			LOG_ERROR("[RenderSystem]: Player Renderable Entity added without being removed %u", entity);
+			LOG_ERROR("Player Renderable Entity added without being removed %u", entity);
 			CheckWhereEntityAlreadyRegistered(entity);
 		}
 #endif
@@ -1171,10 +1171,10 @@ namespace LambdaEngine
 
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
 		AddRenderableEntity(
-			entity, 
-			meshComp.MeshGUID, 
-			meshComp.MaterialGUID, 
-			transform, 
+			entity,
+			meshComp.MeshGUID,
+			meshComp.MaterialGUID,
+			transform,
 			pAnimationComponents->HasComponent(entity),
 			forceUniqueResources);
 	}
@@ -1300,13 +1300,13 @@ namespace LambdaEngine
 	{
 		m_ParticleManager.OnEmitterEntityRemoved(entity);
 	}
-	
+
 	void RenderSystem::AddRenderableEntity(
-		Entity entity, 
-		GUID_Lambda meshGUID, 
-		GUID_Lambda materialGUID, 
-		const glm::mat4& transform, 
-		bool isAnimated, 
+		Entity entity,
+		GUID_Lambda meshGUID,
+		GUID_Lambda materialGUID,
+		const glm::mat4& transform,
+		bool isAnimated,
 		bool forceUniqueResource)
 	{
 		uint32 extensionGroupIndex = 0;
@@ -1767,14 +1767,14 @@ namespace LambdaEngine
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to remove entity which does not exist");
+			LOG_ERROR("Tried to remove entity which does not exist");
 			return;
 		}
 
 		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
 		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to remove entity which has no MeshAndInstancesMap entry");
+			LOG_ERROR("Tried to remove entity which has no MeshAndInstancesMap entry");
 			return;
 		}
 
@@ -1808,7 +1808,7 @@ namespace LambdaEngine
 
 			// Remove ASInstance
 			m_pASBuilder->RemoveInstance(asInstanceIndex);
-			
+
 			//Swap Removed with Back
 			meshAndInstancesIt->second.ASInstanceIndices[instanceIndex] = meshAndInstancesIt->second.ASInstanceIndices.GetBack();
 			meshAndInstancesIt->second.ASInstanceIndices.PopBack();
@@ -1958,21 +1958,21 @@ namespace LambdaEngine
 	}
 
 	void RenderSystem::UpdateParticleEmitter(
-		Entity entity, 
-		const PositionComponent& positionComp, 
-		const RotationComponent& rotationComp, 
+		Entity entity,
+		const PositionComponent& positionComp,
+		const RotationComponent& rotationComp,
 		const ParticleEmitterComponent& emitterComp)
 	{
 		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 	}
 
 	void RenderSystem::UpdateDirectionalLight(
-		const glm::vec4& colorIntensity, 
-		const glm::vec3& position, 
-		const glm::quat& direction, 
-		float frustumWidth, 
-		float frustumHeight, 
-		float zNear, 
+		const glm::vec4& colorIntensity,
+		const glm::vec3& position,
+		const glm::quat& direction,
+		float frustumWidth,
+		float frustumHeight,
+		float zNear,
 		float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
@@ -2018,14 +2018,14 @@ namespace LambdaEngine
 				m_GlobalLightProbe.Diffuse = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 				if (!m_GlobalLightProbe.Diffuse)
 				{
-					LOG_WARNING("[RenderSystem] Failed to create diffuse lightprobe");
+					LOG_WARNING("Failed to create diffuse lightprobe");
 				}
 
 				pCommandList->TransitionBarrier(
 					m_GlobalLightProbe.Diffuse.Get(),
 					FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
 					FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
-					0, 
+					0,
 					FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
 					ETextureState::TEXTURE_STATE_UNKNOWN,
 					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
@@ -2046,7 +2046,7 @@ namespace LambdaEngine
 				m_GlobalLightProbe.DiffuseView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 				if (!m_GlobalLightProbe.DiffuseView)
 				{
-					LOG_WARNING("[RenderSystem] Failed to create Diffuse lightprobe View");
+					LOG_WARNING("Failed to create Diffuse lightprobe View");
 				}
 			}
 
@@ -2079,7 +2079,7 @@ namespace LambdaEngine
 				m_GlobalLightProbe.Specular = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 				if (!m_GlobalLightProbe.Specular)
 				{
-					LOG_WARNING("[RenderSystem] Failed to create Specular lightprobe");
+					LOG_WARNING("Failed to create Specular lightprobe");
 				}
 
 				pCommandList->TransitionBarrier(
@@ -2106,7 +2106,7 @@ namespace LambdaEngine
 				m_GlobalLightProbe.SpecularView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 				if (!m_GlobalLightProbe.SpecularView)
 				{
-					LOG_WARNING("[RenderSystem] Failed to create specular lightprobe view");
+					LOG_WARNING("Failed to create specular lightprobe view");
 				}
 
 				for (uint32 i = 0; i < mipLevels; i++)
@@ -2120,7 +2120,7 @@ namespace LambdaEngine
 					TSharedRef<TextureView> view = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 					if (!view)
 					{
-						LOG_WARNING("[RenderSystem] Failed to create '%s'", textureViewDesc.DebugName.c_str());
+						LOG_WARNING("Failed to create '%s'", textureViewDesc.DebugName.c_str());
 					}
 					else
 					{
@@ -2252,14 +2252,14 @@ namespace LambdaEngine
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which is not registered");
+			LOG_ERROR("Tried to update transform of an entity which is not registered");
 			return;
 		}
 
 		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
 		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which has no MeshAndInstancesMap entry");
+			LOG_ERROR("Tried to update transform of an entity which has no MeshAndInstancesMap entry");
 			return;
 		}
 
@@ -3066,7 +3066,7 @@ namespace LambdaEngine
 			if (entity == e)
 			{
 				foundEntity = true;
-				LOG_ERROR("[RenderSystem]: Previously was Static Mesh Entity", entity);
+				LOG_ERROR("Previously was Static Mesh Entity", entity);
 			}
 		}
 
@@ -3075,7 +3075,7 @@ namespace LambdaEngine
 			if (entity == e)
 			{
 				foundEntity = true;
-				LOG_ERROR("[RenderSystem]: Previously was Animated Entity", entity);
+				LOG_ERROR("Previously was Animated Entity", entity);
 			}
 		}
 
@@ -3084,7 +3084,7 @@ namespace LambdaEngine
 			if (entity == e)
 			{
 				foundEntity = true;
-				LOG_ERROR("[RenderSystem]: Previously was Animation Attached Entity", entity);
+				LOG_ERROR("Previously was Animation Attached Entity", entity);
 			}
 		}
 
@@ -3093,13 +3093,13 @@ namespace LambdaEngine
 			if (entity == e)
 			{
 				foundEntity = true;
-				LOG_ERROR("[RenderSystem]: Previously was Local Player Entity", entity);
+				LOG_ERROR("Previously was Local Player Entity", entity);
 			}
 		}
 
 		if (!foundEntity)
 		{
-			LOG_ERROR("[RenderSystem]: This really isn't good...", entity);
+			LOG_ERROR("This really isn't good...", entity);
 		}
 	}
 #endif
