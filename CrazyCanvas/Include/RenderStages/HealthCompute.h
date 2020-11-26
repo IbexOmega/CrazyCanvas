@@ -68,8 +68,10 @@ public:
 	};
 
 public:
-	static LambdaEngine::TArray<uint32>& GetHealths();
+	static const LambdaEngine::TArray<uint32>& GetHealths();
 	static void QueueHealthCalculation(LambdaEngine::Entity entity);
+	static uint32 GetVertexCount();
+	static uint32 GetEntityHealth(LambdaEngine::Entity entity);
 
 private:
 	bool CreatePipelineLayout();
@@ -77,10 +79,11 @@ private:
 	bool CreateShaders();
 	bool CreateCommandLists();
 	bool CreateResources();
+	void ResetHealthBuffer(LambdaEngine::CommandList* pCommandList);
 
 private:
 	bool m_Initilized			= false;
-	uint32 m_VertexCount		= 0;
+	bool m_ResetHealthBuffer	= true;
 	uint32 m_BackBufferCount	= 0;
 
 	LambdaEngine::PipelineContext m_PipelineContext;
@@ -99,4 +102,5 @@ private:
 private:
 	static LambdaEngine::TArray<uint32> s_Healths;
 	static LambdaEngine::TSet<LambdaEngine::Entity> s_HealthsToCalculate;
+	static uint32 s_VertexCount;
 };

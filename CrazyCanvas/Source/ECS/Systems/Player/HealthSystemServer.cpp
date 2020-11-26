@@ -103,88 +103,86 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 
 	// Update health
-	// if (!m_HitInfoToProcess.IsEmpty())
-	// {
-	// 	// Transfer health data
-	// 	uint32* data = reinterpret_cast<uint32*>(m_CopyBuffer->Map());
-	// 	memcpy(m_PlayerHealths, data, sizeof(uint32) * 10);
-	// 	m_CopyBuffer->Unmap();
+	if (!m_HitInfoToProcess.IsEmpty())
+	{
+		const TArray<uint32> playerHealths = HealthCompute::GetHealths();
 
-	// 	ECSCore* pECS = ECSCore::GetInstance();
-	// 	ComponentArray<HealthComponent>*		pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
-	// 	ComponentArray<MeshPaintComponent>*		pMeshPaintComponents	= pECS->GetComponentArray<MeshPaintComponent>();
-	// 	ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
+		ECSCore* pECS = ECSCore::GetInstance();
+		ComponentArray<HealthComponent>*		pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
+		ComponentArray<MeshPaintComponent>*		pMeshPaintComponents	= pECS->GetComponentArray<MeshPaintComponent>();
+		ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
-	// 	for (HitInfo& hitInfo : m_HitInfoToProcess)
-	// 	{
-	// 		const Entity entity				= hitInfo.Player;
-	// 		const Entity projectileOwner	= hitInfo.ProjectileOwner;
+		for (HitInfo& hitInfo : m_HitInfoToProcess)
+		{
+			const Entity entity				= hitInfo.Player;
+			const Entity projectileOwner	= hitInfo.ProjectileOwner;
 
-	// 		HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
-	// 		PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
-	// 		MeshPaintComponent& meshPaintComponent			= pMeshPaintComponents->GetData(entity);
+			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
+			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
+			MeshPaintComponent& meshPaintComponent			= pMeshPaintComponents->GetData(entity);
 
-	// 		constexpr float32 BIASED_MAX_HEALTH	= 0.15f;
-	// 		constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
+			constexpr float32 BIASED_MAX_HEALTH	= 0.15f;
+			constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
 
-	// 		// Update health
-	// 		const float32	paintedHealth	= float32(paintedPixels) / float32(m_VertexCount);
-	// 		const int32		oldHealth		= healthComponent.CurrentHealth;
-	// 		healthComponent.CurrentHealth	= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
+			// Update health
+			const uint32	paintedVerticies	= HealthCompute::GetEntityHealth(entity);
+			const float32	paintedHealth		= float32(paintedVerticies) / float32(HealthCompute::GetVertexCount());
+			const int32		oldHealth			= healthComponent.CurrentHealth;
+			healthComponent.CurrentHealth		= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
 
-	// 		LOG_INFO("HIT REGISTERED: oldHealth=%d currentHealth=%d", oldHealth, healthComponent.CurrentHealth);
+			LOG_INFO("HIT REGISTERED: oldHealth=%d currentHealth=%d", oldHealth, healthComponent.CurrentHealth);
 
-	// 		// Check if health changed
-	// 		if (oldHealth != healthComponent.CurrentHealth)
-	// 		{
-	// 			LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedPixels=%u MAX_PIXELS=%.4f",
-	// 				healthComponent.CurrentHealth,
-	// 				paintedHealth,
-	// 				paintedPixels,
-	// 				MAX_PIXELS);
+			// Check if health changed
+			if (oldHealth != healthComponent.CurrentHealth)
+			{
+				LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedVerticies=%u VertexCount=%u",
+					healthComponent.CurrentHealth,
+					paintedHealth,
+					paintedVerticies,
+					HealthCompute::GetVertexCount());
 
-	// 			bool killed = false;
-	// 			if (healthComponent.CurrentHealth <= 0)
-	// 			{
-	// 				MatchServer::KillPlayer(entity, projectileOwner);
-	// 				killed = true;
+				bool killed = false;
+				if (healthComponent.CurrentHealth <= 0)
+				{
+					MatchServer::KillPlayer(entity, projectileOwner);
+					killed = true;
 
-	// 				LOG_INFO("PLAYER DIED");
-	// 			}
+					LOG_INFO("PLAYER DIED");
+				}
 
-	// 			PacketHealthChanged packet = {};
-	// 			packet.CurrentHealth = healthComponent.CurrentHealth;
-	// 			packets.SendPacket(packet);
-	// 		}
-	// 	}
+				PacketHealthChanged packet = {};
+				packet.CurrentHealth = healthComponent.CurrentHealth;
+				packets.SendPacket(packet);
+			}
+		}
 
-	// 	m_HitInfoToProcess.Clear();
-	// }
+		m_HitInfoToProcess.Clear();
+	}
 
-	// // Reset healthcomponents
-	// if (!m_ResetsToProcess.IsEmpty())
-	// {
-	// 	ECSCore* pECS = ECSCore::GetInstance();
-	// 	ComponentArray<HealthComponent>*						pHealthComponents			= pECS->GetComponentArray<HealthComponent>();
-	// 	ComponentArray<PacketComponent<PacketHealthChanged>>*	pHealthChangedComponents	= pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
+	// Reset healthcomponents
+	if (!m_ResetsToProcess.IsEmpty())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		ComponentArray<HealthComponent>*						pHealthComponents			= pECS->GetComponentArray<HealthComponent>();
+		ComponentArray<PacketComponent<PacketHealthChanged>>*	pHealthChangedComponents	= pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
-	// 	for (Entity entity : m_ResetsToProcess)
-	// 	{
-	// 		// Reset texture
-	// 		MeshPaintHandler::ResetServer(entity);
+		for (Entity entity : m_ResetsToProcess)
+		{
+			// Reset texture
+			MeshPaintHandler::ResetServer(entity);
 
-	// 		// Reset health and send to client
-	// 		HealthComponent& healthComponent	= pHealthComponents->GetData(entity);
-	// 		healthComponent.CurrentHealth		= START_HEALTH;
+			// Reset health and send to client
+			HealthComponent& healthComponent	= pHealthComponents->GetData(entity);
+			healthComponent.CurrentHealth		= START_HEALTH;
 
-	// 		PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
-	// 		PacketHealthChanged packet = {};
-	// 		packet.CurrentHealth = healthComponent.CurrentHealth;
-	// 		packets.SendPacket(packet);
-	// 	}
+			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
+			PacketHealthChanged packet = {};
+			packet.CurrentHealth = healthComponent.CurrentHealth;
+			packets.SendPacket(packet);
+		}
 
-	// 	m_ResetsToProcess.Clear();
-	// }
+		m_ResetsToProcess.Clear();
+	}
 }
 
 bool HealthSystemServer::InitInternal()
@@ -236,6 +234,8 @@ bool HealthSystemServer::OnProjectileHit(const ProjectileHitEvent& projectileHit
 					projectileHitEvent.CollisionInfo1.Entity,
 					projectileComponent.Owner
 				});
+
+			HealthCompute::QueueHealthCalculation(entity);
 
 			break;
 		}

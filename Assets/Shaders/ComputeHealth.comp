@@ -9,7 +9,7 @@
 #include "Helpers.glsl"
 
 #define WORK_GROUP_INVOCATIONS 32
-layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = WORK_GROUP_INVOCATIONS, local_size_z = 1) in;
+layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1) in;
 
 layout(push_constant) uniform EntitySettings
 {
@@ -50,8 +50,17 @@ layout(binding = 1, set = BUFFER_SET_INDEX) uniform						VertexCount { uint val;
 // Main
 void main()
 {
-	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x + gl_NumWorkGroups.y * gl_WorkGroupSize.y;
-	uint indexOffset = gl_GlobalInvocationID.x;
+	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	uint index = gl_GlobalInvocationID.x;
 
-	b_PlayerHealths.val[p_EntitySettings.EntityIndex] = u_VertexCount.val + uint(b_Vertices.Val[0].Position.x);
+	// b_PlayerHealths.val[p_EntitySettings.EntityIndex] = u_VertexCount.val + uint(b_Vertices.Val[0].Position.x);
+
+	if (index < u_VertexCount.val)
+	{
+		uint healthBits = floatBitsToUint(b_Vertices.Val[index].Position.w);
+		uint value = uint((healthBits & 0xF) > 0);
+
+		// Sorry
+		atomicAdd(b_PlayerHealths.val[p_EntitySettings.EntityIndex], value);
+	}
 }

@@ -17,8 +17,11 @@
 
 #include "Game/PlayerIndexHelper.h"
 
+#define MAX_PLAYER_COUNT 10
+
 LambdaEngine::TArray<uint32> HealthCompute::s_Healths;
 LambdaEngine::TSet<LambdaEngine::Entity> HealthCompute::s_HealthsToCalculate;
+uint32 HealthCompute::s_VertexCount = 0;
 
 HealthCompute::HealthCompute()
 {
@@ -54,9 +57,9 @@ bool HealthCompute::Init()
 	TArray<GUID_Lambda> temp;
 	ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", player, temp);
 	Mesh* pMesh = ResourceManager::GetMesh(player);
-	m_VertexCount = pMesh->Vertices.GetSize();
+	s_VertexCount = pMesh->Vertices.GetSize();
 
-	s_Healths.Resize(10);
+	s_Healths.Resize(MAX_PLAYER_COUNT);
 
 	if (!CreatePipelineLayout())
 	{
@@ -120,7 +123,7 @@ void HealthCompute::Update(
 
 	// Transfer current health data
 	uint32* data = reinterpret_cast<uint32*>(m_pCopyBuffer->Map());
-	memcpy(s_Healths.GetData(), data, sizeof(uint32) * 10);
+	memcpy(s_Healths.GetData(), data, sizeof(uint32) * MAX_PLAYER_COUNT);
 	m_pCopyBuffer->Unmap();
 }
 
@@ -188,30 +191,6 @@ void HealthCompute::UpdateDrawArgsResource(
 			{
 				m_DrawArgsDescriptorSets[i] = pDrawArgs[i].pDescriptorSet;
 			}
-			// constexpr uint32 setIndex = 1U;
-			// constexpr uint32 setBinding = 0U;
-
-			// LOG_WARNING("Vertex count: %d", m_VertexCount);
-			// TArray<uint64> sizes(count);
-			// TArray<uint64> offsets(count);
-			// TArray<Buffer*> buffers(count);
-			// for (uint32 i = 0; i < count; i++)
-			// {
-			// 	sizes[i] = pDrawArgs[i].pVertexBuffer->GetDesc().SizeInBytes;
-			// 	offsets[i] = 0;
-			// 	buffers[i] = pDrawArgs[i].pVertexBuffer;
-			// 	LOG_WARNING("Size[%d]: %d\nOffset[%d]: %d", i, sizes[i], i, offsets[i]);
-			// }
-
-			// SDescriptorBufferUpdateDesc descriptorUpdateDesc = {};
-			// descriptorUpdateDesc.ppBuffers = buffers.GetData();
-			// descriptorUpdateDesc.pOffsets = offsets.GetData();
-			// descriptorUpdateDesc.pSizes = sizes.GetData();
-			// descriptorUpdateDesc.FirstBinding = setBinding;
-			// descriptorUpdateDesc.DescriptorCount = count;
-			// descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-
-			// m_PipelineContext.UpdateDescriptorSet("[HealthCompute] Health Compute Descriptor Set 1 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 		}
 	}
 }
@@ -227,7 +206,7 @@ void HealthCompute::Render(
 
 	LOG_WARNING("Health compute called");
 
-	if (sleeping || s_HealthsToCalculate.empty())
+	if ((sleeping || s_HealthsToCalculate.empty()) && !m_ResetHealthBuffer)
 		return;
 
 	CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
@@ -235,6 +214,12 @@ void HealthCompute::Render(
 	pCommandList->Begin(nullptr);
 
 	m_PipelineContext.Bind(pCommandList);
+
+	if (m_ResetHealthBuffer)
+	{
+		ResetHealthBuffer(pCommandList);
+		m_ResetHealthBuffer = false;
+	}
 
 	for (Entity entity : s_HealthsToCalculate)
 	{
@@ -246,18 +231,18 @@ void HealthCompute::Render(
 		m_PipelineContext.BindConstantRange(pCommandList, (void*)(&index), sizeof(uint32), 0);
 
 		constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
-		const uint32 workGroup = uint32(std::ceilf(float(m_VertexCount) / float(WORK_GROUP_INVOCATIONS)));
+		const uint32 workGroup = uint32(std::ceilf(float(s_VertexCount) / float(WORK_GROUP_INVOCATIONS)));
 		pCommandList->Dispatch(workGroup, 1U, 1U);
 	}
 	s_HealthsToCalculate.clear();
 
-	pCommandList->CopyBuffer(m_pHealthBuffer, 0, m_pCopyBuffer, 0, sizeof(uint32) * 10);
+	pCommandList->CopyBuffer(m_pHealthBuffer, 0, m_pCopyBuffer, 0, sizeof(uint32) * MAX_PLAYER_COUNT);
 
 	pCommandList->End();
 	(*ppFirstExecutionStage) = pCommandList;
 }
 
-LambdaEngine::TArray<uint32>& HealthCompute::GetHealths()
+const LambdaEngine::TArray<uint32>& HealthCompute::GetHealths()
 {
 	return s_Healths;
 }
@@ -266,6 +251,18 @@ void HealthCompute::QueueHealthCalculation(LambdaEngine::Entity entity)
 {
 	s_HealthsToCalculate.insert(entity);
 }
+
+uint32 HealthCompute::GetVertexCount()
+{
+	return s_VertexCount;
+}
+
+uint32 HealthCompute::GetEntityHealth(LambdaEngine::Entity entity)
+{
+	uint32 index = LambdaEngine::PlayerIndexHelper::GetPlayerIndex(entity);
+	return index != UINT32_MAX ? s_Healths[index] : index;
+}
+
 
 bool HealthCompute::CreatePipelineLayout()
 {
@@ -423,14 +420,14 @@ bool HealthCompute::CreateResources()
 	BufferDesc healthBufferDesc		= {};
 	healthBufferDesc.DebugName		= "Health System Server Health Buffer";
 	healthBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-	healthBufferDesc.SizeInBytes	= sizeof(uint32) * 10;
-	healthBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_SRC;
+	healthBufferDesc.SizeInBytes	= sizeof(uint32) * MAX_PLAYER_COUNT;
+	healthBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST;
 	m_pHealthBuffer					= RenderAPI::GetDevice()->CreateBuffer(&healthBufferDesc);
 
 	BufferDesc copyBufferDesc		= {};
 	copyBufferDesc.DebugName		= "Health System Server Health Buffer";
 	copyBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-	copyBufferDesc.SizeInBytes		= sizeof(uint32) * 10;
+	copyBufferDesc.SizeInBytes		= sizeof(uint32) * MAX_PLAYER_COUNT;
 	copyBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
 	m_pCopyBuffer					= RenderAPI::GetDevice()->CreateBuffer(&copyBufferDesc);
 
@@ -482,10 +479,10 @@ bool HealthCompute::CreateResources()
 		TArray<GUID_Lambda> temp;
 		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", player, temp);
 		Mesh* pMesh = ResourceManager::GetMesh(player);
-		m_VertexCount = pMesh->Vertices.GetSize();
+		s_VertexCount = pMesh->Vertices.GetSize();
 
 		uint32* data = reinterpret_cast<uint32*>(stagingBuffer->Map());
-		memcpy(data, &m_VertexCount, sizeof(uint32));
+		memcpy(data, &s_VertexCount, sizeof(uint32));
 		stagingBuffer->Unmap();
 
 		m_ppComputeCommandAllocators[0]->Reset();
@@ -510,4 +507,22 @@ bool HealthCompute::CreateResources()
 	SAFERELEASE(pCopyFence);
 
 	return true;
+}
+
+void HealthCompute::ResetHealthBuffer(LambdaEngine::CommandList* pCommandList)
+{
+	using namespace LambdaEngine;
+
+	BufferDesc stagingBufferDesc	= {};
+	stagingBufferDesc.DebugName		= "Health System Server Vertices Count Staging Buffer";
+	stagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+	stagingBufferDesc.SizeInBytes	= sizeof(uint32) * MAX_PLAYER_COUNT;
+	stagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_SRC;
+	Buffer* stagingBuffer			= RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+
+	uint32* data = reinterpret_cast<uint32*>(stagingBuffer->Map());
+	ZERO_MEMORY(data, sizeof(uint32) * MAX_PLAYER_COUNT);
+	stagingBuffer->Unmap();
+
+	pCommandList->CopyBuffer(stagingBuffer, 0, m_pHealthBuffer, 0, sizeof(uint32) * MAX_PLAYER_COUNT);
 }
