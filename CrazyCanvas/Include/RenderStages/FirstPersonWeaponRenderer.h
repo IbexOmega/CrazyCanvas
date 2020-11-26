@@ -119,8 +119,8 @@ namespace LambdaEngine {
 		TSharedRef<DescriptorHeap>				m_DescriptorHeap = nullptr;
 
 		// start: Not sure about this part
-		TSharedRef<DescriptorSet>				m_DescriptorSet0;	// always one buffer with different offset
-		TSharedRef<DescriptorSet>				m_DescriptorSet1;	// always one buffer with different offset
+		TSharedRef<DescriptorSet>				m_DescriptorSet0 = nullptr;	// always one buffer with different offset
+		TSharedRef<DescriptorSet>				m_DescriptorSet1 = nullptr;	// always one buffer with different offset
 		TArray<TSharedRef<DescriptorSet>>		m_DescriptorSetList2; // Needs to switch buffer
 		TArray<TSharedRef<DescriptorSet>>		m_DescriptorSetList3; // Needs to switch buffer
 		// end
@@ -129,9 +129,9 @@ namespace LambdaEngine {
 		uint32									m_BackBufferCount = 0;
 
 
-		TSharedRef<Texture>						m_DepthStencilTexture;
-		TSharedRef<const TextureView>			m_DepthStencil;
-		TSharedRef<const TextureView>			m_IntermediateOutputImage;
+		TSharedRef<Texture>						m_DepthStencilTexture = nullptr;
+		TSharedRef<const TextureView>			m_DepthStencil = nullptr;
+		TSharedRef<const TextureView>			m_IntermediateOutputImage = nullptr;
 
 		bool									m_DirtyUniformBuffers = true;
 
