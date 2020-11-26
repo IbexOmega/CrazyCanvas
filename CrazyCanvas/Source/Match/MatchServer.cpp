@@ -653,7 +653,6 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 {
 	using namespace LambdaEngine;
 
-
 	const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
 	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
 	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
