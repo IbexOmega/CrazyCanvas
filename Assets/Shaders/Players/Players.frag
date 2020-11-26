@@ -97,7 +97,7 @@ void main()
 
 	// Only render team members and paint on enemy players
 	uint enemy = p_TeamIndex.Index;
-	bool isPainted = (shouldPaint > 0.5f);
+	bool isPainted = (shouldPaint > 0.5f) && (paintDescription.Interpolation > 0.001f);
 	if(enemy != 0 && !isPainted)
 		discard;
 

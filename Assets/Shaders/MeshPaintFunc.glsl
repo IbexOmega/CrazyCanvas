@@ -54,11 +54,8 @@ void GetVec4ToPackedPaintInfoAndDistance(in vec3 pos, in vec4 v, in float dist, 
 {
     float isFullPaint = max(v.x, max(v.y, max(v.z, v.w)));
     float n1 = snoise(pos * 10.0f) * 0.4f;
-    vec4 noiseV4 = v * (1.f-dist);
-    float a = noiseV4.x + noiseV4.y + noiseV4.z + noiseV4.w;
-    float b = step(0.5f, a);
     float c = (1.f-dist);
-    vec4 vec4PaintInfo = clamp(vec4(v.x + n1*v.x*c, v.y - n1*v.y*c, v.z, v.w), 0.f, 1.f);
+    vec4 vec4PaintInfo = clamp(vec4(v.x + n1*v.x*c, v.y - n1*v.y*c, v.z, v.w), 0.f, 1.f)*c;
     packedPaintInfo = Vec4ToPackedPaintInfo(vec4PaintInfo);
     outDist = dist;
 }
