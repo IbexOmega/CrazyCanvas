@@ -7,6 +7,11 @@
 
 namespace LambdaEngine
 {
+	struct ClientSystemDesc : public ClientDesc
+	{
+		String Name;
+	};
+
 	class ClientSystem : protected IClientHandler, protected INetworkDiscoveryClient
 	{
 		friend class EngineLoop;
@@ -37,7 +42,7 @@ namespace LambdaEngine
 		bool OnDisconnectedEvent(const ClientDisconnectedEvent& event);
 
 	private:
-		ClientSystem(const String& name);
+		ClientSystem(ClientSystemDesc& desc);
 
 	public:
 		static ClientSystem& GetInstance()
@@ -45,10 +50,10 @@ namespace LambdaEngine
 			return *s_pInstance;
 		}
 
-		static void Init(const String& name)
+		static void Init(ClientSystemDesc& desc)
 		{
 			if (!s_pInstance)
-				s_pInstance = DBG_NEW ClientSystem(name);
+				s_pInstance = DBG_NEW ClientSystem(desc);
 		}
 
 	private:

@@ -5,6 +5,8 @@
 #include "Networking/API/ServerBase.h"
 #include "Networking/API/ClientBase.h"
 
+#include "Networking/API/NetworkDebugger.h"
+
 #include "Networking/API/UDP/ISocketUDP.h"
 
 namespace LambdaEngine
@@ -12,6 +14,7 @@ namespace LambdaEngine
 	bool NetworkUtils::Init()
 	{
 		IPAddress::InitStatic();
+		NetworkDebugger::Init();
 		return true;
 	}
 

@@ -34,6 +34,7 @@ namespace LambdaEngine
 						{RW, VelocityComponent::Type()},
 						{NDA, PositionComponent::Type()},
 						{RW, RotationComponent::Type()},
+						{R, StepParentComponent::Type()},
 					},
 				},
 				{
@@ -70,6 +71,7 @@ namespace LambdaEngine
 		const ComponentArray<FreeCameraComponent>*			pFreeCameraComponents		= pECSCore->GetComponentArray<FreeCameraComponent>();
 		const ComponentArray<FPSControllerComponent>*		pFPSCameraComponents		= pECSCore->GetComponentArray<FPSControllerComponent>();
 		const ComponentArray<ParentComponent>*				pParentComponents			= pECSCore->GetComponentArray<ParentComponent>();
+		const ComponentArray<StepParentComponent>*		pStepParentComponents	= pECSCore->GetComponentArray<StepParentComponent>();
 		const ComponentArray<OffsetComponent>*				pOffsetComponents			= pECSCore->GetComponentArray<OffsetComponent>();
 		ComponentArray<PositionComponent>*					pPositionComponents			= pECSCore->GetComponentArray<PositionComponent>();
 		ComponentArray<RotationComponent>*					pRotationComponents			= pECSCore->GetComponentArray<RotationComponent>();
@@ -82,6 +84,7 @@ namespace LambdaEngine
 		for (Entity entity : m_AttachedCameraEntities)
 		{
 			const ParentComponent&		parentComp			= pParentComponents->GetConstData(entity);
+			const StepParentComponent&	stepParentComp		= pStepParentComponents->GetConstData(entity);
 			CameraComponent&			cameraComp			= pCameraComponents->GetData(entity);
 
 			if (cameraComp.FOV != m_MainFOV)
@@ -99,7 +102,7 @@ namespace LambdaEngine
 			if (parentComp.Attached)
 			{
 				const PositionComponent&	parentPositionComp	= pPositionComponents->GetConstData(parentComp.Parent);
-				const RotationComponent&	parentRotationComp	= pRotationComponents->GetConstData(parentComp.Parent);
+				const RotationComponent&	parentRotationComp	= pRotationComponents->GetConstData(stepParentComp.Owner);
 				const OffsetComponent&		cameraOffsetComp	= pOffsetComponents->GetConstData(entity);
 				PositionComponent&			cameraPositionComp	= pPositionComponents->GetData(entity);
 				RotationComponent&			cameraRotationComp	= pRotationComponents->GetData(entity);
