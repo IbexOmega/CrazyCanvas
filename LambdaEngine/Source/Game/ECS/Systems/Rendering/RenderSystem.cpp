@@ -601,8 +601,8 @@ namespace LambdaEngine
 			{
 				UpdateDirectionalLight(
 					dirLight.ColorIntensity,
-					position.Position,
-					rotation.Quaternion,
+					glm::vec3(0.f, 0.f, position.Position.z),
+					dirLight.Rotation,
 					dirLight.FrustumWidth,
 					dirLight.FrustumHeight,
 					dirLight.FrustumZNear,
@@ -1982,7 +1982,6 @@ bool RenderSystem::InitIntegrationLUT()
 		glm::mat4 lightProj = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
 		m_LightBufferData.DirL_ProjViews = lightProj * lightView;
 
-		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsBufferDirty = true;
 	}
 

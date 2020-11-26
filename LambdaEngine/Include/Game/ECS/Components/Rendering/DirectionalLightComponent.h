@@ -7,9 +7,10 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT_WITH_DIRTY_FLAG(DirectionalLightComponent);
 		glm::vec4	ColorIntensity	= glm::vec4(1.0f, 1.0f, 1.0f, 15.f);
-		float		FrustumWidth	= 20.0f;
-		float		FrustumHeight	= 20.0f;
-		float		FrustumZNear	= -80.0f;
-		float		FrustumZFar		= 10.0f;
+		glm::quat	Rotation		= glm::identity<glm::quat>();
+		float		FrustumWidth	= 45.0f;
+		float		FrustumHeight	= 45.0f;
+		float		FrustumZNear	= -65.0f;
+		float		FrustumZFar		= 15.0f;
 	};
 }
