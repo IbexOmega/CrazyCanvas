@@ -383,7 +383,7 @@ namespace LambdaEngine
 				m_pLightRenderer->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightRenderer);
-
+				
 				// Particle Renderer & Manager
 				constexpr uint32 MAX_PARTICLE_COUNT = 30000U;
 				m_ParticleManager.Init(MAX_PARTICLE_COUNT, m_pASBuilder);
@@ -847,7 +847,7 @@ namespace LambdaEngine
 		}
 	}
 
-	bool RenderSystem::InitIntegrationLUT()
+bool RenderSystem::InitIntegrationLUT()
 	{
 		if (m_IntegrationLUT)
 		{
@@ -1958,21 +1958,21 @@ namespace LambdaEngine
 	}
 
 	void RenderSystem::UpdateParticleEmitter(
-		Entity entity, 
-		const PositionComponent& positionComp, 
-		const RotationComponent& rotationComp, 
+		Entity entity,
+		const PositionComponent& positionComp,
+		const RotationComponent& rotationComp,
 		const ParticleEmitterComponent& emitterComp)
 	{
 		m_ParticleManager.UpdateParticleEmitter(entity, positionComp, rotationComp, emitterComp);
 	}
 
 	void RenderSystem::UpdateDirectionalLight(
-		const glm::vec4& colorIntensity, 
-		const glm::vec3& position, 
-		const glm::quat& direction, 
-		float frustumWidth, 
-		float frustumHeight, 
-		float zNear, 
+		const glm::vec4& colorIntensity,
+		const glm::vec3& position,
+		const glm::quat& direction,
+		float frustumWidth,
+		float frustumHeight,
+		float zNear,
 		float zFar)
 	{
 		m_LightBufferData.DirL_ColorIntensity	= colorIntensity;
@@ -2619,40 +2619,54 @@ namespace LambdaEngine
 		{
 			uint32 requiredBufferSize = m_MaterialProperties.GetSize() * sizeof(MaterialProperties);
 
-			Buffer* pStagingBuffer = m_ppMaterialParametersStagingBuffers[m_ModFrameIndex];
-
-			if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			if (requiredBufferSize > 0)
 			{
-				if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
+				Buffer* pStagingBuffer = m_ppMaterialParametersStagingBuffers[m_ModFrameIndex];
 
-				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Material Properties Staging Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_SRC;
-				bufferDesc.SizeInBytes	= requiredBufferSize;
+				if (pStagingBuffer == nullptr || pStagingBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+				{
+					if (pStagingBuffer != nullptr) DeleteDeviceResource(pStagingBuffer);
 
-				pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-				m_ppMaterialParametersStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+					BufferDesc bufferDesc = {};
+					bufferDesc.DebugName = "Material Properties Staging Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+					bufferDesc.SizeInBytes = requiredBufferSize;
+
+					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+					m_ppMaterialParametersStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
+				}
+
+				void* pMapped = pStagingBuffer->Map();
+				memcpy(pMapped, m_MaterialProperties.GetData(), requiredBufferSize);
+				pStagingBuffer->Unmap();
+
+				if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+				{
+					if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
+
+					BufferDesc bufferDesc = {};
+					bufferDesc.DebugName = "Material Properties Buffer";
+					bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+					bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+					bufferDesc.SizeInBytes = requiredBufferSize;
+
+					m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+				}
+
+				pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 			}
-
-			void* pMapped = pStagingBuffer->Map();
-			memcpy(pMapped, m_MaterialProperties.GetData(), requiredBufferSize);
-			pStagingBuffer->Unmap();
-
-			if (m_pMaterialParametersBuffer == nullptr || m_pMaterialParametersBuffer->GetDesc().SizeInBytes < requiredBufferSize)
+			else if (m_pMaterialParametersBuffer == nullptr)
 			{
-				if (m_pMaterialParametersBuffer != nullptr) DeleteDeviceResource(m_pMaterialParametersBuffer);
-
+				//Create Dummy Buffer
 				BufferDesc bufferDesc = {};
-				bufferDesc.DebugName	= "Material Properties Buffer";
-				bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-				bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
-				bufferDesc.SizeInBytes	= requiredBufferSize;
+				bufferDesc.DebugName = "Material Properties Dummy Buffer";
+				bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+				bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+				bufferDesc.SizeInBytes = 1;
 
 				m_pMaterialParametersBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 			}
-
-			pCommandList->CopyBuffer(pStagingBuffer, 0, m_pMaterialParametersBuffer, 0, requiredBufferSize);
 
 			m_MaterialsPropertiesBufferDirty = false;
 		}
@@ -3022,35 +3036,38 @@ namespace LambdaEngine
 
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 
-			Sampler* pLinearSamplers = Sampler::GetLinearSampler();
+			if (m_AlbedoMaps.GetSize() > 0)
+			{
+				Sampler* pLinearSamplers = Sampler::GetLinearSampler();
 
-			ResourceUpdateDesc albedoMapsUpdateDesc = {};
-			albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
-			albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc albedoMapsUpdateDesc = {};
+				albedoMapsUpdateDesc.ResourceName							= SCENE_ALBEDO_MAPS;
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_AlbedoMaps.GetData();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_AlbedoMapViews.GetData();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				albedoMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_AlbedoMaps.GetSize();
+				albedoMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
-			ResourceUpdateDesc normalMapsUpdateDesc = {};
-			normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
-			normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
-			normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
+				ResourceUpdateDesc normalMapsUpdateDesc = {};
+				normalMapsUpdateDesc.ResourceName							= SCENE_NORMAL_MAPS;
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_NormalMaps.GetData();
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_NormalMapViews.GetData();
+				normalMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				normalMapsUpdateDesc.ExternalTextureUpdate.TextureCount		= m_NormalMapViews.GetSize();
+				normalMapsUpdateDesc.ExternalTextureUpdate.SamplerCount		= 1;
 
-			ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
-			combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_CombinedMaterialMaps.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_CombinedMaterialMapViews.GetData();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount	= m_CombinedMaterialMaps.GetSize();
-			combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
+				ResourceUpdateDesc combinedMaterialMapsUpdateDesc = {};
+				combinedMaterialMapsUpdateDesc.ResourceName							= SCENE_COMBINED_MATERIAL_MAPS;
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextures		= m_CombinedMaterialMaps.GetData();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppTextureViews	= m_CombinedMaterialMapViews.GetData();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.ppSamplers		= &pLinearSamplers;
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.TextureCount	= m_CombinedMaterialMaps.GetSize();
+				combinedMaterialMapsUpdateDesc.ExternalTextureUpdate.SamplerCount	= 1;
 
-			m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
-			m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&albedoMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&normalMapsUpdateDesc);
+				m_pRenderGraph->UpdateResource(&combinedMaterialMapsUpdateDesc);
+			}
 
 			m_MaterialsResourceDirty = false;
 		}

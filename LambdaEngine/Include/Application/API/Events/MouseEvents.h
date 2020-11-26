@@ -2,6 +2,7 @@
 #include "Event.h"
 
 #include "Input/API/InputCodes.h"
+#include "Input/API/InputState.h"
 
 namespace LambdaEngine
 {

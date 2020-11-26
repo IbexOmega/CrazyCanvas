@@ -11,6 +11,10 @@
 
 #include "Resources/ResourceCatalog.h"
 
+#include "Application/API/CommonApplication.h"
+#include "World/Player/PlayerActionSystem.h"
+#include "Input/API/Input.h"
+
 MainMenuState::~MainMenuState()
 {
 	using namespace LambdaEngine;
@@ -22,6 +26,10 @@ MainMenuState::~MainMenuState()
 void MainMenuState::Init()
 {
 	using namespace LambdaEngine;
+
+	CommonApplication::Get()->SetMouseVisibility(true);
+	PlayerActionSystem::SetMouseEnabled(false);
+	Input::PushInputMode(EInputLayer::GUI);
 
 	DisablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();

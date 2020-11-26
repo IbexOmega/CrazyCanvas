@@ -5,6 +5,8 @@
 
 #include "Time/API/Timestamp.h"
 
+#include "Threading/API/SpinLock.h"
+
 class Match
 {
 public:
@@ -36,4 +38,5 @@ public:
 
 private:
 	inline static MatchBase* s_pMatchInstance = nullptr;
+	inline static LambdaEngine::SpinLock m_Lock;
 };

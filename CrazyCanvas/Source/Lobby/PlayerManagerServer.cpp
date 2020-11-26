@@ -1,5 +1,7 @@
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Networking/API/NetworkDebugger.h"
+
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Multiplayer/ServerHelper.h"
@@ -60,7 +62,7 @@ void PlayerManagerServer::FixedTick(Timestamp deltaTime)
 			Player* pPlayer = GetPlayerNoConst(pClient->GetUID());
 			if (pPlayer)
 			{
-				pPlayer->m_Ping = (uint16)pClient->GetStatistics()->GetPing().AsMilliSeconds();
+				pPlayer->m_Ping = (uint16)pClient->GetStatistics()->GetPing();
 				PacketPlayerPing packet;
 				packet.Ping = pPlayer->m_Ping;
 				packet.UID	= pPlayer->m_UID;
@@ -125,6 +127,8 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 	{
 		SetPlayerHost(pPlayer);
 	}
+
+	NetworkDebugger::RegisterClientName(pClient, pPlayer->GetName());
 
 	return true;
 }
@@ -233,6 +237,23 @@ bool PlayerManagerServer::HasPlayerAuthority(const IClient* pClient)
 {
 	const Player* pPlayer = GetPlayer(pClient);
 	return pPlayer != nullptr && pPlayer->IsHost();
+}
+
+void PlayerManagerServer::SetPlayerState(const Player* pPlayer, EGameState state)
+{
+	if (pPlayer->m_State != state)
+	{
+		Player* pPl = const_cast<Player*>(pPlayer);
+		pPl->m_State = state;
+
+		PacketPlayerState packet;
+		packet.UID		= pPl->m_UID;
+		packet.State	= pPl->m_State;
+		ServerHelper::SendBroadcast(packet);
+
+		PlayerStateUpdatedEvent event(pPlayer);
+		EventQueue::SendEventImmediate(event);
+	}
 }
 
 void PlayerManagerServer::SetPlayerAlive(const Player* pPlayer, bool alive, const Player* pPlayerKiller)

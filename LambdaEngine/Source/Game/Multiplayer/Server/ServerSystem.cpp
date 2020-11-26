@@ -16,28 +16,17 @@ namespace LambdaEngine
 {
 	ServerSystem* ServerSystem::s_pInstance = nullptr;
 
-	ServerSystem::ServerSystem(const String& name) :
+	ServerSystem::ServerSystem(ServerSystemDesc& desc) :
 		m_NetworkEntities(),
 		m_pServer(nullptr),
-		m_Name(name)
+		m_Name(desc.Name)
 	{
 		MultiplayerUtils::Init(true);
 
-		const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
-
-		ServerDesc desc = {};
-		desc.Handler				= this;
-		desc.MaxRetries				= 25;
-		desc.ResendRTTMultiplier	= 5.0f;
-		desc.MaxClients				= 10;
-		desc.PoolSize				= 8192;
-		desc.Protocol				= EProtocolParser::FromString(protocol);
-		desc.PingInterval			= Timestamp::Seconds(1);
-		desc.PingTimeout			= Timestamp::Seconds(10);
-		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+		desc.Handler = this;
 
 		m_pServer = NetworkUtils::CreateServer(desc);
-		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.5f);
+		//((ServerUDP*)m_pServer)->SetSimulateReceivingPacketLoss(0.1f);
 	}
 
 	ServerSystem::~ServerSystem()

@@ -11,6 +11,8 @@
 
 #include "GUI/HUDGUI.h"
 
+#include "Multiplayer/Packet/PacketTeamScored.h"
+
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
@@ -41,10 +43,16 @@ public:
 
 private:
 	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);
+	bool OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& event);
 	bool OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity);
 	bool RemoveProjectedEntity(LambdaEngine::Entity projectedEntity);
 
+public:
+
+	static void PromptMessage(const LambdaEngine::String& promtMessage);
+
 private:
+
 	LambdaEngine::IDVector m_PlayerEntities;
 	LambdaEngine::IDVector m_ForeignPlayerEntities;
 	LambdaEngine::IDVector m_WeaponEntities;
@@ -62,4 +70,7 @@ private:
 	LambdaEngine::TArray<bool> m_EnemyHitEventsToProcess;
 	
 	uint8 m_LocalTeamIndex = UINT8_MAX;
+
+private:
+	static HUDSystem* s_pHudsystemInstance;
 };
