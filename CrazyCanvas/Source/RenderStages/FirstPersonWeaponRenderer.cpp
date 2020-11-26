@@ -659,8 +659,9 @@ namespace LambdaEngine
 
 	void FirstPersonWeaponRenderer::UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex)
 	{
-		if (m_Entity != MAXUINT32) {
-			const ComponentArray<PositionComponent>* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+		const ComponentArray<PositionComponent>* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+		
+		if (m_Entity != MAXUINT32 && pPositionComponents->HasComponent(m_Entity)) {
 			SWeaponBuffer data = {};
 
 			data.Model = glm::translate(glm::vec3(-0.5f, -0.4f, -0.5f));
