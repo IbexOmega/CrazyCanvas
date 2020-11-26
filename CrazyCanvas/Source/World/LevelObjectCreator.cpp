@@ -26,8 +26,11 @@
 
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Match/ShowerSystemBase.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/Components/Match/FlagComponent.h"
+#include "ECS/Components/Match/ShowerComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
@@ -52,6 +55,7 @@
 #include "Multiplayer/Packet/PacketFlagEdited.h"
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 #include "Multiplayer/Packet/PacketWeaponFired.h"
+#include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -122,6 +126,17 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateKillPlane;
 		}
+
+		//Shower
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_PARTICLE_SHOWER_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
+		}
 	}
 
 	//Register Create Special Object by Type Functions
@@ -135,7 +150,7 @@ bool LevelObjectCreator::Init()
 }
 
 LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
-	const LambdaEngine::LoadedDirectionalLight& directionalLight, 
+	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -209,7 +224,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	{
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<RayTracedComponent>(entity, 
+		pECS->AddComponent<RayTracedComponent>(entity,
 			RayTracedComponent
 			{
 				.HitMask = 0xFF
@@ -300,7 +315,7 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 				}
 			}
 		}
-		
+
 		return success;
 	}
 	else
@@ -350,7 +365,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 					.HitMask = 0xFF
 				});
 		}
-		
+
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 		const CollisionCreateInfo collisionCreateInfo =
 		{
@@ -461,8 +476,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -527,8 +542,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 }
 
 ELevelObjectType LevelObjectCreator::CreateKillPlane(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -563,6 +578,69 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 
 	D_LOG_INFO("Created Kill Plane with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_KILL_PLANE;
+}
+
+ELevelObjectType LevelObjectCreator::CreateShowerPoint(
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	const PositionComponent& positionComponent	= pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	const ScaleComponent& scaleComponent		= pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	const RotationComponent& rotationComponent	= pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 20,
+				.EmitterShape = EEmitterShape::CONE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 1.0f,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
+			}
+		);
+	}
+	else
+	{
+		const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
+		const CollisionCreateInfo collisionCreateInfo =
+		{
+			.Entity		= entity,
+			.Position	= positionComponent,
+			.Scale		= scaleComponent,
+			.Rotation	= rotationComponent,
+			.Shapes =
+			{
+				{
+					/* Shape Type */		EShapeType::TRIGGER,
+					/* GeometryType */		EGeometryType::BOX,
+					/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
+					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
+					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					/* EntityID*/			entity,
+					/* CallbackFunction*/	&ShowerSystemBase::PlayerShowerCollision
+				}
+			},
+		};
+
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+		const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
+	}
+
+	createdEntities.PushBack(entity);
+	D_LOG_INFO("Created Particle Shower with EntityID %u", entity);
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_PARTICLE_SHOWER;
 }
 
 bool LevelObjectCreator::CreateFlag(
@@ -758,6 +836,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.CollisionMask	= (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER |
 						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		.EntityID		= playerEntity
 	};
@@ -798,7 +877,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	GUID_Lambda playerMaterialGUID;
 
-	// Server/Client 
+	// Server/Client
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
@@ -1029,6 +1108,10 @@ bool LevelObjectCreator::CreatePlayer(
 		playerMaterialGUID = TeamHelper::GetMyTeamPlayerMaterialGUID();
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
+
+		const Timestamp	showerCooldown = Timestamp::Seconds(5.0f);
+		const ShowerComponent showerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
+		pECS->AddComponent<ShowerComponent>(playerEntity, showerComponent);
 	}
 
 	pECS->AddComponent<MeshComponent>(playerEntity,
@@ -1041,7 +1124,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
-
+	pECS->AddComponent<PacketComponent<PacketResetPlayerTexture>>(playerEntity, {});
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 
 	PlayerManagerBase::SetPlayerEntity(pPlayer, playerEntity);
@@ -1128,7 +1211,7 @@ bool LevelObjectCreator::CreateProjectile(
 			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
 			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 		}
-		
+
 		// Create particles
 		ParticleEmitterComponent emitterComponent = ParticleEmitterComponent{
 				.Active = true,
@@ -1165,7 +1248,7 @@ bool LevelObjectCreator::CreateProjectile(
 			emitterComponent.SpawnDelay = 0.1f;
 			emitterComponent.Velocity = 6.0f;
 			emitterComponent.Angle = 45.0f;
-			
+
 			const Entity particleEntity = pECS->CreateEntity();
 			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + projectileOffset });
 			pECS->AddComponent<ScaleComponent>(particleEntity, { true, glm::vec3(0.7f) });

@@ -5,6 +5,7 @@
 #include "World/Player/Client/PlayerForeignSystem.h"
 
 #include "ECS/Systems/Match/ClientFlagSystem.h"
+#include "ECS/Systems/Match/ClientShowerSystem.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Multiplayer/Client/NetworkPositionSystem.h"
 #include "ECS/Systems/Multiplayer/Client/ReplayManagerSystem.h"
@@ -25,8 +26,10 @@ private:
 	ReplayManagerSystem m_ReplaySystem;
 	PlayerLocalSystem m_PlayerLocal;
 	PlayerForeignSystem m_PlayerForeignSystem;
-	
+
 	NetworkPositionSystem m_NetworkPositionSystem;
 
 	ClientFlagSystem* m_pFlagSystem = nullptr;
+
+	ClientShowerSystem* m_pShowerSystem = nullptr;
 };
