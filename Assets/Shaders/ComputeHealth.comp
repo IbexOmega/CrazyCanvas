@@ -1,0 +1,70 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#define NO_TEXTURES
+
+#include "Defines.glsl"
+#include "Helpers.glsl"
+
+#define WORK_GROUP_INVOCATIONS 32
+layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1) in;
+
+layout(push_constant) uniform EntitySettings
+{
+	layout(offset = 0) uint EntityIndex;
+} p_EntitySettings;
+
+// SET 1
+// Vertex data
+layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices
+{
+	SVertex Val[];
+} b_Vertices;
+
+layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances
+{
+	SInstance Val[];
+} b_Instances;
+
+layout(binding = 2, set = DRAW_SET_INDEX) restrict readonly buffer Meshlets
+{
+	SMeshlet Val[];
+} b_Meshlets;
+
+layout(binding = 3, set = DRAW_SET_INDEX) restrict readonly buffer UniqueIndices
+{
+	uint Val[];
+} b_UniqueIndices;
+
+layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndices
+{
+	uint Val[];
+} b_PrimitiveIndices;
+
+// SET 0
+layout(binding = 0, set = BUFFER_SET_INDEX) restrict writeonly buffer	PlayerHealths { uint Val[10]; }	b_PlayerHealths;
+layout(binding = 1, set = BUFFER_SET_INDEX) uniform						VertexCount { uint Val; }		u_VertexCount;
+
+// Main
+void main()
+{
+	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	uint index = gl_GlobalInvocationID.x;
+
+	// Reset memory
+	if (index == 0)
+		b_PlayerHealths.Val[p_EntitySettings.EntityIndex] = 0;
+
+	groupMemoryBarrier();
+
+	if (index < u_VertexCount.Val)
+	{
+		uint healthBits = floatBitsToUint(b_Vertices.Val[index].Position.w);
+		uint value = uint((healthBits & 0xF) > 0);
+
+		// Sorry
+		atomicAdd(b_PlayerHealths.Val[p_EntitySettings.EntityIndex], value);
+	}
+}

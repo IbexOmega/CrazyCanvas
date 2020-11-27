@@ -14,6 +14,7 @@
 
 #include "RenderStages/PlayerRenderer.h"
 #include "RenderStages/MeshPaintUpdater.h"
+#include "RenderStages/HealthCompute.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -30,6 +31,7 @@
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -95,8 +97,18 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	PacketType::Init();
 	PacketTranscoderSystem::GetInstance().Init();
 
-	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
 	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW MeshPaintUpdater());
+
+	if (stateStr == "server")
+	{
+		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW HealthCompute());
+	}
+	else
+	{
+		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
+	}
+
+
 	RenderSystem::GetInstance().InitRenderGraphs();
 
 	LoadRendererResources();
@@ -227,7 +239,13 @@ bool CrazyCanvas::BindComponentTypeMasks()
 {
 	using namespace LambdaEngine;
 
-	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0x10
+	// NOTE: Previous implementation had a comment that said the bitmask was 0xF, even though
+	// the value that is being set is 0x10. This seems to be assumed on other places but doesn't seem to cause
+	// any notable errors, but might have to be looked at later.
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false, 0x10);	// Bit = 0x10
+
+	// Used to calculate health on the server for players only
+	EntityMaskManager::BindTypeToExtensionDesc(HealthComponent::Type(),	{ 0 }, false, 0x20);	// Bit = 0x20
 
 	EntityMaskManager::Finalize();
 

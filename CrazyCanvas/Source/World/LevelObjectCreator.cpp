@@ -1035,6 +1035,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<ChildComponent>(playerEntity, playerChildComp);
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
+	EntityMaskManager::AddExtensionToEntity(playerEntity, HealthComponent::Type(), nullptr);
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });

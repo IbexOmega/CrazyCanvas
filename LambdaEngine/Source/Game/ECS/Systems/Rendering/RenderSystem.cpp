@@ -41,6 +41,7 @@
 
 #include "Engine/EngineConfig.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/PlayerIndexHelper.h"
 
 namespace LambdaEngine
 {
@@ -848,6 +849,8 @@ namespace LambdaEngine
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 
+		PlayerIndexHelper::AddPlayerEntity(entity);
+
 		bool forceUniqueResources = false;
 		if (MultiplayerUtils::IsServer())
 		{
@@ -1002,8 +1005,9 @@ namespace LambdaEngine
 		if (pTeamComponents->HasComponent(entity))
 		{
 			LOG_WARNING("[RenderSystem] TODO: Change TeamComponent to use 0 as \"No Team\"! For now just add 1 to the team index before sending it to shaders");
-			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex+1);
-			LOG_WARNING("[Mesh] Team index: %d", teamIndex);
+			// TODO: Fix team index
+			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex);
+			teamIndex = (teamIndex == 0) ? 2 : 1;
 		}
 
 		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())

@@ -17,9 +17,16 @@
 
 #include "Lobby/PlayerManagerServer.h"
 
-#include "Rendering/Core/API/Buffer.h"
+#include "Resources/ResourceManager.h"
+
+#include "RenderStages/HealthCompute.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Rendering/RenderGraph.h"
 
 #include <mutex>
+
+// TEMP REMOVE
+#include "Input/API/Input.h"
 
 /*
 * HealthSystemServer
@@ -36,6 +43,26 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(deltaTime);
+
+	if (!m_HitInfoToProcess.IsEmpty())
+	{
+		RenderSystem::GetInstance().GetRenderGraph()->TriggerRenderStage("COMPUTE_HEALTH");
+	}
+
+	// TEMP REMOVE
+	static bool pressed = false;
+	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_F) && !pressed)
+	{
+		for (Entity entity : m_HealthEntities)
+			HealthCompute::QueueHealthCalculation(entity);
+		pressed = true;
+	}
+	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_F) && pressed)
+	{
+		pressed = false;
+	}
+
+
 
 	// More threadsafe
 	{
@@ -57,12 +84,31 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		}
 	}
 
+	// TEMP REMOVE
+	static bool p = false;
+	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_G) && !p)
+	{
+		TArray<uint32> healths = HealthCompute::GetHealths();
+		for (auto health : healths)
+		{
+			LOG_WARNING("Health: %u", health);
+		}
+		LOG_WARNING("VertexCount: %u", HealthCompute::GetVertexCount());
+		p = true;
+	}
+	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_G) && p)
+	{
+		p = false;
+	}
+
+
 	// Update health
 	if (!m_HitInfoToProcess.IsEmpty())
 	{
+		const TArray<uint32> playerHealths = HealthCompute::GetHealths();
+
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<HealthComponent>*		pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
-		ComponentArray<MeshPaintComponent>*		pMeshPaintComponents	= pECS->GetComponentArray<MeshPaintComponent>();
 		ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
 		for (HitInfo& hitInfo : m_HitInfoToProcess)
@@ -72,58 +118,26 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
 			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
-			MeshPaintComponent& meshPaintComponent			= pMeshPaintComponents->GetData(entity);
-
-			// Check painted pixels
-			Buffer* pBuffer = meshPaintComponent.pReadBackBuffer;
-
-			struct Pixel
-			{
-				byte Red;
-				byte Green;
-			};
-
-			Pixel* pPaintMask = reinterpret_cast<Pixel*>(pBuffer->Map());
-			VALIDATE(pPaintMask != nullptr);
-
-			constexpr uint32 SIZE_Y = 32;
-			constexpr uint32 SIZE_X = SIZE_Y;
-
-			uint32 paintedPixels = 0;
-			for (uint32 y = 0; y < SIZE_Y; y++)
-			{
-				for (uint32 x = 0; x < SIZE_X; x++)
-				{
-					const byte mask = pPaintMask[(y * SIZE_X) + x].Red;
-					const bool isPainted = IS_MASK_PAINTED(mask);
-					if (isPainted)
-					{
-						paintedPixels++;
-					}
-				}
-			}
-
-			pBuffer->Unmap();
 
 			constexpr float32 BIASED_MAX_HEALTH	= 0.15f;
-			constexpr float32 MAX_PIXELS		= float32(SIZE_Y * SIZE_X * BIASED_MAX_HEALTH);
 			constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
 
 			// Update health
-			const float32	paintedHealth	= float32(paintedPixels) / float32(MAX_PIXELS);
-			const int32		oldHealth		= healthComponent.CurrentHealth;
-			healthComponent.CurrentHealth	= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
+			const uint32	paintedVerticies	= HealthCompute::GetEntityHealth(entity);
+			const float32	paintedHealth		= float32(paintedVerticies) / float32(HealthCompute::GetVertexCount());
+			const int32		oldHealth			= healthComponent.CurrentHealth;
+			healthComponent.CurrentHealth		= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
 
 			LOG_INFO("HIT REGISTERED: oldHealth=%d currentHealth=%d", oldHealth, healthComponent.CurrentHealth);
 
 			// Check if health changed
 			if (oldHealth != healthComponent.CurrentHealth)
 			{
-				LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedPixels=%u MAX_PIXELS=%.4f",
+				LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedVerticies=%u VertexCount=%u",
 					healthComponent.CurrentHealth,
 					paintedHealth,
-					paintedPixels,
-					MAX_PIXELS);
+					paintedVerticies,
+					HealthCompute::GetVertexCount());
 
 				bool killed = false;
 				if (healthComponent.CurrentHealth <= 0)
@@ -194,6 +208,7 @@ bool HealthSystemServer::InitInternal()
 	}
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HealthSystemServer::OnProjectileHit);
+
 	return true;
 }
 
@@ -217,6 +232,8 @@ bool HealthSystemServer::OnProjectileHit(const ProjectileHitEvent& projectileHit
 					projectileHitEvent.CollisionInfo1.Entity,
 					projectileComponent.Owner
 				});
+
+			HealthCompute::QueueHealthCalculation(entity);
 
 			break;
 		}
