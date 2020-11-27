@@ -152,6 +152,11 @@ void LobbyGUI::UpdatePlayerPing(const Player& player)
 	{
 		pPingLabel->SetContent(std::to_string(player.GetPing()).c_str());
 	}
+
+	if (PlayerManagerClient::GetPlayerLocal() == &player)
+	{
+		UpdatePlayersLabel();
+	}
 }
 
 void LobbyGUI::UpdatePlayerHost(const Player& player)
