@@ -35,7 +35,7 @@ namespace LambdaEngine
 		TArray<DeviceChild*> removedDeviceChildren;
 		if (!Build(pCommandList, removedDeviceChildren, pDesc))
 		{
-			LOG_ERROR("[SBTVK]: Failed to build SBT");
+			LOG_ERROR("Failed to build SBT");
 			return false;
 		}
 
@@ -46,11 +46,11 @@ namespace LambdaEngine
 
 		if (!pDesc->DebugName.empty())
 		{
-			LOG_DEBUG("[SBTVK]: Created SBT %s", pDesc->DebugName.c_str());
+			LOG_DEBUG("Created SBT %s", pDesc->DebugName.c_str());
 		}
 		else
 		{
-			LOG_DEBUG("[SBTVK]: Created SBT");
+			LOG_DEBUG("Created SBT");
 		}
 
 		return true;
@@ -131,11 +131,11 @@ namespace LambdaEngine
 		{
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed");
+				LOG_VULKAN_ERROR(result, "vkGetRayTracingShaderGroupHandlesKHR failed");
 			}
 
 			return false;

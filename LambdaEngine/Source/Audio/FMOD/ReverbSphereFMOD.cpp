@@ -17,7 +17,7 @@ namespace LambdaEngine
 		{
 			if (FMOD_Reverb3D_Release(m_pReverb) != FMOD_OK)
 			{
-				LOG_WARNING("[ReverbSphereFMOD]: FMOD Reverb could not be released for %s", m_pName);
+				LOG_WARNING("FMOD Reverb could not be released for %s", m_pName);
 			}
 
 			m_pReverb = nullptr;
@@ -32,7 +32,7 @@ namespace LambdaEngine
 
 		if (FMOD_System_CreateReverb3D(m_pAudioDevice->pSystem, &m_pReverb) != FMOD_OK)
 		{
-			LOG_WARNING("[ReverbSphereFMOD]: Reverb %s could not be created!", m_pName);
+			LOG_WARNING("Reverb %s could not be created!", m_pName);
 			return false;
 		}
 
@@ -40,7 +40,7 @@ namespace LambdaEngine
 
 		Set3DAttributes(pDesc->Position, pDesc->MinDistance, pDesc->MaxDistance);
 
-		LOG_DEBUG("[ReverbSphereFMOD]: Successfully initialized %s!", m_pName);
+		LOG_DEBUG("Successfully initialized %s!", m_pName);
 
 		return true;
 	}

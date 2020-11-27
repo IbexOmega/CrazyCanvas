@@ -358,7 +358,7 @@ void SandboxState::Init()
 	//	pECS->AddComponent<RotationComponent>(m_DirLight, { true, glm::quatLookAt(glm::normalize(glm::vec3(0.5f, -1.0f, 0.5f)), g_DefaultUp) });
 	//	pECS->AddComponent<DirectionalLightComponent>(m_DirLight, directionalLightComponent);
 
-	//	LOG_DEBUG("[LevelObjectCreator]: Created Directional Light");
+	//	LOG_DEBUG("Created Directional Light");
 	//}
 
 	//Preload some resources

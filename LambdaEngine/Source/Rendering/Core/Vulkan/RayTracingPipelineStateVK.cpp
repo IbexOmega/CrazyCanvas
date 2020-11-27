@@ -33,19 +33,19 @@ namespace LambdaEngine
 
 		if (pDesc->RaygenShader.pShader == nullptr)
 		{
-			LOG_ERROR("[RayTracingPipelineStateVK]: pRaygenShader cannot be nullptr!");
+			LOG_ERROR("pRaygenShader cannot be nullptr!");
 			return false;
 		}
 
 		if (pDesc->HitGroupShaders.IsEmpty())
 		{
-			LOG_ERROR("[RayTracingPipelineStateVK]: ClosestHitShaderCount cannot be zero!");
+			LOG_ERROR("ClosestHitShaderCount cannot be zero!");
 			return false;
 		}
 
 		if (pDesc->MissShaders.IsEmpty())
 		{
-			LOG_ERROR("[RayTracingPipelineStateVK]: MissShaderCount cannot be zero!");
+			LOG_ERROR("MissShaderCount cannot be zero!");
 			return false;
 		}
 
@@ -144,11 +144,11 @@ namespace LambdaEngine
 		{
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed for \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "vkCreateRayTracingPipelinesKHR failed for \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkCreateRayTracingPipelinesKHR failed");
+				LOG_VULKAN_ERROR(result, "vkCreateRayTracingPipelinesKHR failed");
 			}
 
 			return false;
@@ -157,11 +157,11 @@ namespace LambdaEngine
 		SetName(pDesc->DebugName);
 		if (!pDesc->DebugName.empty())
 		{
-			LOG_DEBUG("[RayTracingPipelineStateVK]: Created Pipeline for %s", pDesc->DebugName.c_str());
+			LOG_DEBUG("Created Pipeline for %s", pDesc->DebugName.c_str());
 		}
 		else
 		{
-			LOG_DEBUG("[RayTracingPipelineStateVK]: Created Pipeline");
+			LOG_DEBUG("Created Pipeline");
 		}
 
 		return true;

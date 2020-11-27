@@ -17,15 +17,15 @@ namespace LambdaEngine
 	{
 		if (severity & FMOD_DEBUG_LEVEL_WARNING)
 		{
-			LOG_WARNING("[FMOD_DEBUG]: [%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			LOG_WARNING("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
 		}
 		else if (severity & FMOD_DEBUG_LEVEL_ERROR)
 		{
-			LOG_ERROR("[FMOD_DEBUG]: [%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			LOG_ERROR("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
 		}
 		else if (!(severity & FMOD_DEBUG_LEVEL_LOG))
 		{
-			LOG_DEBUG("[FMOD_DEBUG]: [%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			LOG_DEBUG("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
 		}
 
 		return FMOD_OK;

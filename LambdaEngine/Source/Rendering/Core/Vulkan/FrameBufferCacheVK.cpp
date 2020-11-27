@@ -107,12 +107,12 @@ namespace LambdaEngine
 		VkResult result = vkCreateFramebuffer(m_pDevice->Device, &createInfo, nullptr, &frameBuffer);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[FrameBufferCacheVK]: Failed to create framebuffer");
+			LOG_VULKAN_ERROR(result, "Failed to create framebuffer");
 			return VK_NULL_HANDLE;
 		}
 		else
 		{
-			//LOG_DEBUG("[FrameBufferCacheVK]: Created framebuffer [0]:%p [1]:%p [2]:%p [3]:%p [4]:%p [5]:%p [6]:%p [7]:%p [Depth]:%p [Pass]:%p", key.ColorAttachmentsViews[0], key.ColorAttachmentsViews[1], key.ColorAttachmentsViews[2], key.ColorAttachmentsViews[3], key.ColorAttachmentsViews[4], key.ColorAttachmentsViews[5], key.ColorAttachmentsViews[6], key.ColorAttachmentsViews[7], key.DepthStencilView, key.RenderPass);
+			//LOG_DEBUG("Created framebuffer [0]:%p [1]:%p [2]:%p [3]:%p [4]:%p [5]:%p [6]:%p [7]:%p [Depth]:%p [Pass]:%p", key.ColorAttachmentsViews[0], key.ColorAttachmentsViews[1], key.ColorAttachmentsViews[2], key.ColorAttachmentsViews[3], key.ColorAttachmentsViews[4], key.ColorAttachmentsViews[5], key.ColorAttachmentsViews[6], key.ColorAttachmentsViews[7], key.DepthStencilView, key.RenderPass);
 
 			m_FrameBufferMap.insert(FrameBufferMapEntry(key, frameBuffer));
 			return frameBuffer;

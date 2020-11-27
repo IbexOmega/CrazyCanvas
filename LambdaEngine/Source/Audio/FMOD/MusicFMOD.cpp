@@ -31,13 +31,13 @@ namespace LambdaEngine
 
 		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, pDesc->Filepath.c_str(), mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
 		{
-			LOG_WARNING("[MusicFMOD]: Music \"%s\" could not be initialized", pDesc->Filepath.c_str());
+			LOG_WARNING("Music \"%s\" could not be initialized", pDesc->Filepath.c_str());
 			return false;
 		}
 
 		if (FMOD_System_PlaySound(m_pAudioDevice->pSystem, m_pHandle, nullptr, true, &m_pChannel) != FMOD_OK)
 		{
-			LOG_WARNING("[MusicFMOD]: Music \"%s\" could not be played", pDesc->Filepath.c_str());
+			LOG_WARNING("Music \"%s\" could not be played", pDesc->Filepath.c_str());
 			return false;
 		}
 
@@ -67,7 +67,7 @@ namespace LambdaEngine
 
 		if (FMOD_Channel_SetVolume(m_pChannel, volume) != FMOD_OK)
 		{
-			LOG_DEBUG("[MusicFMOD]: Volume could not be set for %s", m_Name.c_str());
+			LOG_DEBUG("Volume could not be set for %s", m_Name.c_str());
 		}
 	}
 
@@ -77,7 +77,7 @@ namespace LambdaEngine
 
 		if (FMOD_Channel_SetPitch(m_pChannel, pitch) != FMOD_OK)
 		{
-			LOG_DEBUG("[MusicFMOD]: Pitch could not be set for %s", m_Name.c_str());
+			LOG_DEBUG("Pitch could not be set for %s", m_Name.c_str());
 		}
 	}
 }

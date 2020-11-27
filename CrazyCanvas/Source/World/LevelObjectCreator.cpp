@@ -156,7 +156,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::quatLookAt({directionalLight.Direction}, g_DefaultUp) });
 		pECS->AddComponent<DirectionalLightComponent>(entity, directionalLightComponent);
 
-		LOG_DEBUG("[LevelObjectCreator]: Created Directional Light");
+		LOG_DEBUG("Created Directional Light");
 	}
 
 	return entity;
@@ -181,7 +181,7 @@ LambdaEngine::Entity LevelObjectCreator::CreatePointLight(const LambdaEngine::Lo
 		pECS->AddComponent<PositionComponent>(entity, { true, (pointLight.Position + translation) });
 		pECS->AddComponent<PointLightComponent>(entity, pointLightComponent);
 
-		LOG_DEBUG("[LevelObjectCreator]: Created Point Light");
+		LOG_DEBUG("Created Point Light");
 	}
 
 	return entity;
@@ -253,7 +253,7 @@ ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", levelObject.Name.c_str(), levelObject.Prefix.c_str());
+		LOG_ERROR("Failed to create special object %s with prefix %s, no create function could be found", levelObject.Name.c_str(), levelObject.Prefix.c_str());
 		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
 	}
 }
@@ -303,7 +303,7 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object, no create function could be found");
+		LOG_ERROR("Failed to create special object, no create function could be found");
 		return false;
 	}
 }
@@ -317,7 +317,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	if (levelObject.BoundingBoxes.GetSize() > 1 )
 	{
-		LOG_WARNING("[LevelObjectCreator]: Player Spawn can currently not be created with more than one mesh, using the first mesh...");
+		LOG_WARNING("Player Spawn can currently not be created with more than one mesh, using the first mesh...");
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -331,7 +331,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Player Spawn, defaulting to 0...");
+		LOG_ERROR("Team Index not found for Player Spawn, defaulting to 0...");
 		teamComponent.TeamIndex = 0;
 	}
 
@@ -385,7 +385,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 	if (levelObject.BoundingBoxes.GetSize() > 1)
 	{
-		LOG_WARNING("[LevelObjectCreator]: Player Jail can currently not be created with more than one mesh, using the first mesh...");
+		LOG_WARNING("Player Jail can currently not be created with more than one mesh, using the first mesh...");
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -470,7 +470,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	if (levelObject.BoundingBoxes.GetSize() > 1)
 	{
-		LOG_WARNING("[LevelObjectCreator]: Bases can currently not be created with more than one Bounding Box, using the first Bounding Box...");
+		LOG_WARNING("Bases can currently not be created with more than one Bounding Box, using the first Bounding Box...");
 	}
 
 	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
@@ -486,7 +486,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Flag Delivery Point, defaulting to 0...");
+		LOG_ERROR("Team Index not found for Flag Delivery Point, defaulting to 0...");
 		teamComponent.TeamIndex = 0;
 	}
 
@@ -973,7 +973,7 @@ bool LevelObjectCreator::CreatePlayer(
 			if (pPlayerDesc->pCameraDesc == nullptr)
 			{
 				pECS->RemoveEntity(playerEntity);
-				LOG_ERROR("[LevelObjectCreator]: Local Player must have a camera description");
+				LOG_ERROR("Local Player must have a camera description");
 				return false;
 			}
 

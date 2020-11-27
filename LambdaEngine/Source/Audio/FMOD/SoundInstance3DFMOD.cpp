@@ -29,7 +29,7 @@ namespace LambdaEngine
 
 		if (pDesc->pSoundEffect == nullptr)
 		{
-			LOG_WARNING("[SoundInstance3DFMOD]: Init failed for %s, pSoundEffect can't be nullptr", m_pName);
+			LOG_WARNING("Init failed for %s, pSoundEffect can't be nullptr", m_pName);
 			return false;
 		}
 
@@ -90,7 +90,7 @@ namespace LambdaEngine
 
 			if (FMOD_Channel_Set3DAttributes(m_pChannel, &fmodPosition, nullptr) != FMOD_OK)
 			{
-				LOG_DEBUG("[SoundInstance3DFMOD]: 3D Attributes could not be set for %s", m_pName);
+				LOG_DEBUG("3D Attributes could not be set for %s", m_pName);
 			}
 		}
 	}
@@ -103,7 +103,7 @@ namespace LambdaEngine
 		{
 			if (FMOD_Channel_SetVolume(m_pChannel, volume) != FMOD_OK)
 			{
-				LOG_DEBUG("[SoundInstance3DFMOD]: Volume could not be set for %s", m_pName);
+				LOG_DEBUG("Volume could not be set for %s", m_pName);
 			}
 		}
 	}
@@ -116,7 +116,7 @@ namespace LambdaEngine
 		{
 			if (FMOD_Channel_SetPitch(m_pChannel, pitch) != FMOD_OK)
 			{
-				LOG_DEBUG("[SoundInstance3DFMOD]: Pitch could not be set for %s", m_pName);
+				LOG_DEBUG("Pitch could not be set for %s", m_pName);
 			}
 		}
 	}

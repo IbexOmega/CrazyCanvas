@@ -126,7 +126,7 @@ namespace LambdaEngine
 		result = vkBindImageMemory(m_pDevice->Device, m_Image, m_Allocation.Memory, m_Allocation.Offset);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[TextureVK]: Failed to bind memory");
+			LOG_VULKAN_ERROR(result, "Failed to bind memory");
 			return false;
 		}
 
@@ -145,7 +145,7 @@ namespace LambdaEngine
 
 		SetName(m_Desc.DebugName);
 
-		LOG_DEBUG("[TextureVK]: Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
+		LOG_DEBUG("Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 	}
 
 	void TextureVK::InternalRelease()

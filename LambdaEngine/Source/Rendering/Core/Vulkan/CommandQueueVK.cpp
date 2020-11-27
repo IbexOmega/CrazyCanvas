@@ -37,7 +37,7 @@ namespace LambdaEngine
 		uint32 queueCount = properties[queueFamilyIndex].queueCount;
 		if (index >= properties[queueFamilyIndex].queueCount)
 		{
-			LOG_ERROR("[CommandQueueVK]: index=%u exceeds the queueCount=%u for queueFamily=%u", index, queueCount, queueFamilyIndex);
+			LOG_ERROR("index=%u exceeds the queueCount=%u for queueFamily=%u", index, queueCount, queueFamilyIndex);
 			return false;
 		}
 		else
@@ -45,7 +45,7 @@ namespace LambdaEngine
 			vkGetDeviceQueue(m_pDevice->Device, queueFamilyIndex, index, &m_Queue);
 			SetName(debugName);
 
-			LOG_DEBUG("[CommandQueueVK]: Created commandqueue from queuefamily=%u with index=%u", queueFamilyIndex, index);
+			LOG_DEBUG("Created commandqueue from queuefamily=%u with index=%u", queueFamilyIndex, index);
 
 			m_Type = m_pDevice->GetCommandQueueTypeFromQueueIndex(queueFamilyIndex);
 
@@ -203,7 +203,7 @@ namespace LambdaEngine
 			VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, submitFence);
 			if (result != VK_SUCCESS)
 			{
-				LOG_VULKAN_ERROR(result, "[CommandQueueVK]: Executing commandlists failed");
+				LOG_VULKAN_ERROR(result, "Executing commandlists failed");
 				return false;
 			}
 			else
@@ -248,7 +248,7 @@ namespace LambdaEngine
 			VkResult result = vkQueueSubmit(m_Queue, 1, &submitInfo, VK_NULL_HANDLE);
 			if (result != VK_SUCCESS)
 			{
-				LOG_VULKAN_ERROR(result, "[CommandQueueVK]: Submit failed");
+				LOG_VULKAN_ERROR(result, "Submit failed");
 			}
 			else
 			{

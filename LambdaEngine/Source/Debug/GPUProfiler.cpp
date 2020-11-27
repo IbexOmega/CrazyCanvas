@@ -325,7 +325,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_DEBUG("[GPUProfiler]: Failed to get available results with %d number of timestamps", timestampCount);
+			LOG_DEBUG("Failed to get available results with %d number of timestamps", timestampCount);
 		}
 #endif
 	}

@@ -32,7 +32,7 @@ namespace LambdaEngine
 		soundCreateInfo.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 		if (FMOD_System_CreateSound(m_pAudioDevice->pSystem, pDesc->Filepath.c_str(), mode, &soundCreateInfo, &m_pHandle) != FMOD_OK)
 		{
-			LOG_ERROR("[Sound]: Sound \"%s\" could not be initialized", m_Name.c_str());
+			LOG_ERROR("Sound \"%s\" could not be initialized", m_Name.c_str());
 			return false;
 		}
 

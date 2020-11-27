@@ -143,7 +143,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_DEBUG("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
@@ -161,7 +161,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_DEBUG("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
@@ -179,7 +179,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_DEBUG("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
