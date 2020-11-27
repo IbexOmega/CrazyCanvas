@@ -176,6 +176,7 @@ namespace LambdaEngine
 	bool LambdaEngine::MeshPaintUpdater::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
+		m_ResourcesToRemove.Resize(m_BackBufferCount);
 
 		if (!CreatePipelineLayout())
 		{
@@ -292,6 +293,12 @@ namespace LambdaEngine
 			constexpr uint32 setBinding = 0U;
 
 			m_VertexCountList.Clear();
+
+			// Remove previous draw args
+			for (TSharedRef<DescriptorSet> desc : m_DrawArgDescriptorSets)
+			{
+				m_ResourcesToRemove[m_CurrentFrameIndex].PushBack(desc.GetAndAddRef());
+			}
 			m_DrawArgDescriptorSets.Clear();
 
 			for (uint32 d = 0; d < count; d++)
@@ -322,6 +329,14 @@ namespace LambdaEngine
 
 		if (m_VertexCountList.IsEmpty())
 			return;
+
+		m_CurrentFrameIndex = modFrameIndex;
+
+		// Remove old resources
+		TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_CurrentFrameIndex];
+		for (DeviceChild* resource : resourcesToRemove)
+			resource->Release();
+		resourcesToRemove.Clear();
 
 		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
