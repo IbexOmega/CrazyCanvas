@@ -55,8 +55,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	{
 		for (Entity entity : m_HealthEntities)
 			HealthCompute::QueueHealthCalculation(entity);
-
-		RenderSystem::GetInstance().GetRenderGraph()->TriggerRenderStage("COMPUTE_HEALTH");
 		pressed = true;
 	}
 	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_F) && pressed)

@@ -207,7 +207,7 @@ void HealthCompute::Render(
 	UNREFERENCED_VARIABLE(backBufferIndex);
 	UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-	if (sleeping || s_HealthsToCalculate.empty())
+	if (s_HealthsToCalculate.empty())
 		return;
 
 	LOG_WARNING("Health compute called");
