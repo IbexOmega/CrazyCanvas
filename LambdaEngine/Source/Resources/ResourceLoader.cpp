@@ -543,10 +543,12 @@ namespace LambdaEngine
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(
+		const String& name,
 		const Vertex* pVertices,
 		uint32 numVertices,
 		const uint32* pIndices,
-		uint32 numIndices)
+		uint32 numIndices,
+		bool useMeshletCache)
 	{
 		Mesh* pMesh = DBG_NEW Mesh();
 		pMesh->Vertices.Resize(numVertices);
@@ -555,7 +557,15 @@ namespace LambdaEngine
 		pMesh->Indices.Resize(numVertices);
 		memcpy(pMesh->Indices.GetData(), pIndices, sizeof(uint32) * numIndices);
 
-		MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+		if (useMeshletCache)
+		{
+			LoadMeshletsFromCache(name, pMesh);
+		}
+		else
+		{
+			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+		}
+
 		return pMesh;
 	}
 
@@ -1740,7 +1750,7 @@ namespace LambdaEngine
 			auto it = pSkeleton->JointMap.find(joint.Name);
 			if (it != pSkeleton->JointMap.end())
 			{
-				LOG_ERROR("[ResourceLoader] Multiple bones with the same name");
+				LOG_ERROR("Multiple bones with the same name");
 				return;
 			}
 			else
@@ -2477,5 +2487,36 @@ namespace LambdaEngine
 		pReflection->NumUniforms			= glslangReflection.getNumUniforms();
 
 		return true;
+	}
+
+	void ResourceLoader::LoadMeshletsFromCache(const String& name, Mesh* pMesh)
+	{
+		const String meshletCachePath = MESHLET_CACHE_DIR + name;
+
+		std::fstream file;
+		file.open(meshletCachePath, std::fstream::in | std::fstream::binary);
+
+		// If file doesn't exist, create it. Otherwise, load meshlets from file to memory.
+		if (!file)
+		{
+			file.open(meshletCachePath, std::fstream::out | std::fstream::binary);
+
+			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+			file.write((const char*)pMesh->Meshlets.GetData(), pMesh->Meshlets.GetSize() * sizeof(Meshlet));
+		}
+		else
+		{
+			file.ignore(std::numeric_limits<std::streamsize>::max());
+
+			const std::streamsize fileSize = file.gcount();
+
+			file.clear();
+			file.seekg(0, std::fstream::beg);
+
+			pMesh->Meshlets.Resize(uint32(fileSize / sizeof(Meshlet)));
+			file.read((char*)pMesh->Meshlets.GetData(), fileSize);
+		}
+
+		file.close();
 	}
 }

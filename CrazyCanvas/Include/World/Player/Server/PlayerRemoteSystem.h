@@ -19,6 +19,8 @@ public:
 
 private:
 	virtual void Tick(LambdaEngine::Timestamp deltaTime) override final { UNREFERENCED_VARIABLE(deltaTime); };
+	
+	void OnEntityRemoved(LambdaEngine::Entity entity);
 
 private:
 	LambdaEngine::IDVector m_Entities;

@@ -4,7 +4,7 @@
 #include "Threading/API/SpinLock.h"
 
 /*
-* HealthSystemServer 
+* HealthSystemServer
 */
 
 class HealthSystemServer : public HealthSystem

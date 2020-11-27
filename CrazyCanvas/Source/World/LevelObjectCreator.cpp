@@ -26,8 +26,11 @@
 
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Match/ShowerSystemBase.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/Components/Match/FlagComponent.h"
+#include "ECS/Components/Match/ShowerComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
@@ -52,6 +55,7 @@
 #include "Multiplayer/Packet/PacketFlagEdited.h"
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 #include "Multiplayer/Packet/PacketWeaponFired.h"
+#include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
 #include "Physics/CollisionGroups.h"
 
@@ -121,6 +125,17 @@ bool LevelObjectCreator::Init()
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateKillPlane;
+		}
+
+		//Shower
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_PARTICLE_SHOWER_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
 		}
 	}
 
@@ -563,6 +578,69 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_KILL_PLANE;
 }
 
+ELevelObjectType LevelObjectCreator::CreateShowerPoint(
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	const PositionComponent& positionComponent	= pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	const ScaleComponent& scaleComponent		= pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	const RotationComponent& rotationComponent	= pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 20,
+				.EmitterShape = EEmitterShape::CONE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 1.0f,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 16,
+				.Color = glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
+			}
+		);
+	}
+	else
+	{
+		const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
+		const CollisionCreateInfo collisionCreateInfo =
+		{
+			.Entity		= entity,
+			.Position	= positionComponent,
+			.Scale		= scaleComponent,
+			.Rotation	= rotationComponent,
+			.Shapes =
+			{
+				{
+					/* Shape Type */		EShapeType::TRIGGER,
+					/* GeometryType */		EGeometryType::BOX,
+					/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
+					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
+					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					/* EntityID*/			entity,
+					/* CallbackFunction*/	&ShowerSystemBase::PlayerShowerCollision
+				}
+			},
+		};
+
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+		const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
+	}
+
+	createdEntities.PushBack(entity);
+	LOG_DEBUG("Created Particle Shower with EntityID %u", entity);
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_PARTICLE_SHOWER;
+}
+
 bool LevelObjectCreator::CreateFlag(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
@@ -756,6 +834,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.CollisionMask	= (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER |
 						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		.EntityID		= playerEntity
 	};
@@ -1019,7 +1098,6 @@ bool LevelObjectCreator::CreatePlayer(
 				.FOV		= pPlayerDesc->pCameraDesc->FOVDegrees
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
-			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
 		}
 	}
@@ -1028,6 +1106,10 @@ bool LevelObjectCreator::CreatePlayer(
 		playerMaterialGUID = TeamHelper::GetMyTeamPlayerMaterialGUID();
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
+
+		const Timestamp	showerCooldown = Timestamp::Seconds(5.0f);
+		const ShowerComponent showerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
+		pECS->AddComponent<ShowerComponent>(playerEntity, showerComponent);
 	}
 
 	pECS->AddComponent<MeshComponent>(playerEntity,
@@ -1040,7 +1122,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
-
+	pECS->AddComponent<PacketComponent<PacketResetPlayerTexture>>(playerEntity, {});
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 
 	PlayerManagerBase::SetPlayerEntity(pPlayer, playerEntity);
