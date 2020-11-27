@@ -38,5 +38,5 @@ void main()
 		}
 	}
 	finalSample /= totalWeight;
-	out_Color = finalSample;
+	out_Color = finalSample;//texture(u_HistoryBuffer, texcoord);
 }
