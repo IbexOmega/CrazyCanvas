@@ -2271,6 +2271,8 @@ namespace LambdaEngine
 					LoadVertices(pMesh, pMeshAI);
 					LoadIndices(pMesh, pMeshAI);
 
+					// TODO: Tessellate mesh here.
+
 					if (context.pMaterials)
 					{
 						LoadMaterial(context, pScene, pMeshAI);
