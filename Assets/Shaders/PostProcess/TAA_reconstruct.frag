@@ -21,8 +21,9 @@ const float KERNEL[9] =
 void main()
 {
 	// Get Size
-	const vec2 texcoord = in_TexCoord;
-	const vec2 size = vec2(textureSize(u_HistoryBuffer, 0));
+	const vec2 texcoord		= in_TexCoord;
+	const vec2 size			= vec2(textureSize(u_HistoryBuffer, 0));
+	const vec2 pixelSize	= 1.0f / size;
 
 	// Reconstrutcion filter
 	vec4 finalSample = vec4(0.0f);
@@ -31,8 +32,8 @@ void main()
 	{
 		for (int y = -1; y <= 1; y++)
 		{
-			vec2 offset		= vec2(x, y) / size;
-			float weight	= KERNEL[y * 3 + x];
+			const vec2	offset = vec2(x, y) / size;
+			const float weight = KERNEL[y * 3 + x];
 			finalSample	+= texture(u_HistoryBuffer, texcoord + offset) * weight;
 			totalWeight += weight;
 		}

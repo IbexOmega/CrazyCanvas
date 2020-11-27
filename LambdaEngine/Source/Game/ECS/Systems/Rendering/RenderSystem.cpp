@@ -2279,14 +2279,16 @@ namespace LambdaEngine
 	{
 		m_PerFrameData.CamData.PrevView			= m_PerFrameData.CamData.View;
 		m_PerFrameData.CamData.PrevProjection	= m_PerFrameData.CamData.Projection;
-		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
+		m_PerFrameData.CamData.JitterDiff		= (camComp.Jitter - camComp.PrevJitter) * 0.5f;
 		m_PerFrameData.CamData.View				= viewProjComp.View;
 		m_PerFrameData.CamData.Projection		= viewProjComp.Projection;
 		m_PerFrameData.CamData.ViewPortSize		= glm::vec2(camComp.Width, camComp.Height);
 
-		const glm::vec2 scaledJitter = camComp.Jitter / m_PerFrameData.CamData.ViewPortSize;
-		glm::mat4 offset = glm::translate(glm::vec3(scaledJitter, 0.0f));
-		m_PerFrameData.CamData.Projection		= offset * m_PerFrameData.CamData.Projection;
+		glm::vec2 clipSpaceJitter = camComp.Jitter / m_PerFrameData.CamData.ViewPortSize;
+		clipSpaceJitter.y = -clipSpaceJitter.y;
+
+		const glm::mat4 offset = glm::translate(glm::vec3(clipSpaceJitter, 0.0f));
+		m_PerFrameData.CamData.Projection = offset * m_PerFrameData.CamData.Projection;
 
 		m_PerFrameData.CamData.ViewInv			= camComp.ViewInv;
 		m_PerFrameData.CamData.ProjectionInv	= glm::inverse(m_PerFrameData.CamData.Projection);

@@ -213,7 +213,7 @@ namespace LambdaEngine
 			glm::vec4 Position			= glm::vec4(0.0f);
 			glm::vec4 Right				= glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
 			glm::vec4 Up				= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec2 Jitter			= glm::vec2(0.0f);
+			glm::vec2 JitterDiff		= glm::vec2(0.0f);
 			glm::vec2 ViewPortSize		= glm::vec2(0.0f);
 		};
 

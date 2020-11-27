@@ -80,14 +80,11 @@ vec2 FrontMostNeigbourTexCoord(vec2 texCoord)
 
 void main()
 {
-	// Get Size
-	const vec2 size = u_PerFrameBuffer.Val.ViewPortSize;
-	
 	// This frame's data
-	vec2 texcoord = gl_FragCoord.xy0;
-	const vec2 pixelSize = 1.0f / size;
-	vec2 texUV	= texcoord * pixelSize;
-	vec3 currentSample	= texture(u_IntermediateOutput, texUV).rgb;
+	const vec2 size			= u_PerFrameBuffer.Val.ViewPortSize;
+	const vec2 pixelSize	= 1.0f / size;
+	const vec2 texcoord		= in_TexCoord;
+	vec3 currentSample	= texture(u_IntermediateOutput, texcoord).rgb;
 
 	float avgWeight = 0.0f;
 	vec3 avg = vec3(0.0f);
@@ -98,7 +95,7 @@ void main()
 		for (int y = -1; y <= 1; y++)
 		{
 			vec2 offset = pixelSize * vec2(float(x), float(y));
-			vec3 samp = texture(u_IntermediateOutput, texUV + offset).rgb;
+			vec3 samp = texture(u_IntermediateOutput, texcoord + offset).rgb;
 			minSample = min(samp, minSample);
 			maxSample = max(samp, maxSample);
 
@@ -109,14 +106,10 @@ void main()
 	avg = avg / avgWeight;
 
 	// Read HistoryBuffer
-	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter;
-	vec2 bestTexCoord	= FrontMostNeigbourTexCoord(texUV);
-	vec2 velocity = texture(u_Velocity, bestTexCoord).xy;
-	velocity = velocity * size;
-	
+	vec2 bestTexCoord	= FrontMostNeigbourTexCoord(texcoord);
+	vec2 velocity		= texture(u_Velocity, bestTexCoord).xy;
 	vec2 prevTexcoord	= texcoord - velocity;
-	vec2 prevTexcoordUV = prevTexcoord / size;
-	vec3 previousSample	= texture(u_HistoryBuffer, prevTexcoordUV).rgb;
+	vec3 previousSample	= texture(u_HistoryBuffer, prevTexcoord).rgb;
 	previousSample		= ClipAABB(minSample, maxSample, previousSample, avg);
 
 	// Calculate result with weights (Luminance filtering)
@@ -137,5 +130,6 @@ void main()
 	vec3 outColor = (currentSample * currentWeight + previousSample * prevWeight) / (currentWeight + prevWeight);
 	
 	// Store history and output
+	//out_Color = vec4(vec3(velocity * 1000.0, 0.0f), 1.0f);
 	out_Color = vec4(outColor, 1.0f);
 }

@@ -269,9 +269,9 @@
                 "y_dim_var": 1.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
-                "sampler_type": "LINEAR",
-                "sampler_address_mode": "REPEAT",
-                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
+                "sampler_type": "NEAREST",
+                "sampler_address_mode": "CLAMP_TO_BORDER",
+                "sampler_border_color": "BORDER_COLOR_INT_OPAQUE_WHITE",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -595,8 +595,8 @@
                 "sample_count": 1,
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
-                "sampler_address_mode": "CLAMP_TO_EDGE",
-                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
+                "sampler_address_mode": "CLAMP_TO_BORDER",
+                "sampler_border_color": "BORDER_COLOR_INT_OPAQUE_WHITE",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         },
@@ -621,7 +621,7 @@
                 "miplevel_count": 1,
                 "sampler_type": "NEAREST",
                 "sampler_address_mode": "CLAMP_TO_EDGE",
-                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
+                "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_WHITE",
                 "memory_type": "MEMORY_TYPE_GPU"
             }
         }

@@ -79,10 +79,13 @@ void main()
 
 	//3
 	const vec2 size		= u_PerFrameBuffer.Val.ViewPortSize;
-	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter / size;
+	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter;
+	
 	vec2 currentScreenSpace	= gl_FragCoord.xy;
-	vec2 prevScreenSpace	= ((in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, 0.5f)) + 0.5f;
-	prevScreenSpace		= prevScreenSpace * size;
+	
+	vec2 prevScreenSpace = ((in_PrevClipPosition.xy / in_PrevClipPosition.z) * vec2(0.5f, -0.5f)) + 0.5f;
+	prevScreenSpace = prevScreenSpace * size;
+
 	vec2 screenVelocity	= currentScreenSpace - prevScreenSpace;
 	screenVelocity	= screenVelocity - jitter;
 	screenVelocity	= screenVelocity / size;

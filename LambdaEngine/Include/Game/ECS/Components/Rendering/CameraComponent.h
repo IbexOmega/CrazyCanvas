@@ -23,9 +23,10 @@ namespace LambdaEngine
 	struct CameraComponent
 	{
 		DECL_COMPONENT(CameraComponent);
-		glm::vec2 Jitter 		= glm::vec2(0.f);
-		glm::mat4 ProjectionInv = glm::mat4(1.f);
-		glm::mat4 ViewInv 		= glm::mat4(1.f);
+		glm::vec2 Jitter 		= glm::vec2(0.0f);
+		glm::vec2 PrevJitter	= glm::vec2(0.0f);
+		glm::mat4 ProjectionInv = glm::mat4(1.0f);
+		glm::mat4 ViewInv 		= glm::mat4(1.0f);
 		float NearPlane 		= 0.0001f;
 		float FarPlane			= 50.0f;
 		float FOV				= 90.0f;
