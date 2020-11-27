@@ -83,6 +83,8 @@ void LobbyState::Init()
 
 	m_LobbyGUI->InitGUI();
 
+	ChatManager::Clear();
+
 	if (!m_IsReplayLobby)
 	{
 		PlayerManagerClient::Reset();

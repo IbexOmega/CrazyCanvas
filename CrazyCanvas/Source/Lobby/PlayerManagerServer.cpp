@@ -231,6 +231,23 @@ void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 	{
 		SetPlayerHost(&(s_Players.begin()->second));
 	}
+
+	if (s_Players.size() < 2)
+		return;
+
+	TArray<const Player*> pPlayersTeam0;
+	TArray<const Player*> pPlayersTeam1;
+	GetPlayersOfTeam(pPlayersTeam0, 0);
+	GetPlayersOfTeam(pPlayersTeam1, 1);
+	int32 delta = pPlayersTeam0.GetSize() - pPlayersTeam1.GetSize();
+	if (glm::abs(delta) >= 2)
+	{
+		Player* pPlayer = &(s_Players.begin()->second);
+		pPlayer->m_Team = delta > 0 ? 1 : 0;
+		PacketPlayerScore packetPlayerScore;
+		FillPacketPlayerScore(&packetPlayerScore, pPlayer);
+		ServerHelper::SendBroadcast(packetPlayerScore, nullptr, pClient);
+	}
 }
 
 bool PlayerManagerServer::HasPlayerAuthority(const IClient* pClient)

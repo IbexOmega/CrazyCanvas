@@ -38,6 +38,8 @@
 
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Chat/ChatManager.h"
+
 #include <windows.h>
 #include <Lmcons.h>
 
@@ -238,6 +240,7 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	EServerState state = event.State;
 	if (state == SERVER_STATE_LOBBY)
 	{
+		ChatManager::Clear();
 		Match::ResetMatch();
 
 		const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();

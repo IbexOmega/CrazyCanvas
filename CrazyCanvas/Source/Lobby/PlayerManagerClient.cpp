@@ -254,18 +254,14 @@ bool PlayerManagerClient::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 
 bool PlayerManagerClient::OnPacketPlayerReadyReceived(const PacketReceivedEvent<PacketPlayerReady>& event)
 {
-	LOG_ERROR("OnPacketPlayerReadyReceived");
-
 	const PacketPlayerReady& packet = event.Packet;
 
 	Player* pPlayer = GetPlayerNoConst(packet.UID);
 
 	if (pPlayer)
 	{
-		LOG_ERROR("OnPacketPlayerReadyReceived(%s) : %s", pPlayer->GetName().c_str(), packet.IsReady ? "True" : "False");
 		if (pPlayer->m_IsReady != packet.IsReady)
 		{
-			LOG_ERROR("pPlayer->m_IsReady = packet.IsReady");
 			pPlayer->m_IsReady = packet.IsReady;
 
 			PlayerReadyUpdatedEvent playerReadyUpdatedEvent(pPlayer);
