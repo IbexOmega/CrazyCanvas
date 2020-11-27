@@ -2,6 +2,7 @@
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Match/ShowerComponent.h"
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
+#include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
 ShowerSystemBase::~ShowerSystemBase()
 {
@@ -24,6 +25,7 @@ bool ShowerSystemBase::Init()
 				.ComponentAccesses =
 				{
 					{ NDA, PlayerBaseComponent::Type() },
+					{ RW, PacketComponent<PacketResetPlayerTexture>::Type() },
 				}
 			}
 		};

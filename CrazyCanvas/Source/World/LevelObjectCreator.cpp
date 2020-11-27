@@ -599,13 +599,25 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 	{
 		pECS->AddComponent<ParticleEmitterComponent>(entity,
 			ParticleEmitterComponent{
-				.ParticleCount = 20,
+				.Active = true,
+				.OneTime = false,
+				.Explosive = 0.5f,
+				.SpawnDelay = 0.05f,
+				.ParticleCount = 512,
 				.EmitterShape = EEmitterShape::CONE,
-				.Velocity = 1.0f,
-				.Acceleration = 0.0f,
-				.BeginRadius = 1.0f,
-				.AnimationCount = 4,
-				.FirstAnimationIndex = 16,
+				.Angle = 45.f,
+				.VelocityRandomness = 0.5f,
+				.Velocity = 2.0,
+				.Acceleration = 0.0,
+				.Gravity = -7.f,
+				.LifeTime = 1.2f,
+				.RadiusRandomness = 0.5f,
+				.BeginRadius = 0.2f,
+				.FrictionFactor = 0.f,
+				.Bounciness = 0.f,
+				.RandomStartIndex = true,
+				.AnimationCount = 1,
+				.FirstAnimationIndex = 6,
 				.Color = glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
 			}
 		);
