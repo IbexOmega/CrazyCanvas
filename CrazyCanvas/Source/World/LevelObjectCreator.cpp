@@ -1033,9 +1033,9 @@ bool LevelObjectCreator::CreatePlayer(
 			{
 				.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
 				.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
-				.FrustumWidth	= 40.0f,
-				.FrustumHeight	= 40.0f,
-				.FrustumZNear	= -50.0f,
+				.FrustumWidth	= 25.0f,
+				.FrustumHeight	= 15.0f,
+				.FrustumZNear	= -60.0f,
 				.FrustumZFar	= 10.0f
 			};
 
