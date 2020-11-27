@@ -36,7 +36,8 @@ LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
 	m_IsReplayLobby(false),
 	m_GameSettings()
 {
-	strcpy(m_GameSettings.ServerName, (name + "'s server").c_str());
+	LambdaEngine::String defaultName = name.length() + 9 > (MAX_NAME_LENGTH - 1) ? name : (name + "'s server");
+	strcpy(m_GameSettings.ServerName, defaultName.c_str());
 }
 
 LobbyState::~LobbyState()

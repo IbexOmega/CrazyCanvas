@@ -107,7 +107,7 @@ void LobbyGUI::AddPlayer(const Player& player)
 	RegisterName(uid + "_checkmark", image);
 	Style* pStyle = FrameworkElement::FindResource<Style>("CheckmarkImageStyle");
 	image->SetStyle(pStyle);
-	image->SetVisibility(Visibility::Visibility_Hidden);
+	image->SetVisibility(Visibility::Visibility_Collapsed);
 	playerGrid->GetChildren()->Add(image);
 
 	pPanel->GetChildren()->Add(playerGrid);
@@ -193,11 +193,14 @@ void LobbyGUI::UpdatePlayerReady(const Player& player)
 {
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
+	LOG_ERROR("UpdatePlayerReady(%s) : %s", player.GetName().c_str(), player.IsReady() ? "True" : "False");
+
 	// Checkmark styling is currently broken
 	Image* pImage = FrameworkElement::FindName<Image>((uid + "_checkmark").c_str());
 	if (pImage)
 	{
-		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Hidden);
+		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Collapsed);
+		LOG_ERROR("UpdatePlayerReady(%s) : Image", player.GetName().c_str());
 	}
 }
 
