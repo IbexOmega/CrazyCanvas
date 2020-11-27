@@ -104,7 +104,7 @@ class LevelObjectCreator
 		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>&);
 
 	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.8f;
-	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.2f;
+	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.325f;
 
 public:
 	DECL_STATIC_CLASS(LevelObjectCreator);
