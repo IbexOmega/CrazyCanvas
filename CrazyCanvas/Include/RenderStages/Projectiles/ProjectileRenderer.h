@@ -60,7 +60,7 @@ public:
 
 	FORCEINLINE const LambdaEngine::String& GetName() const override final
 	{
-		static const LambdaEngine::String name = LambdaEngine::RENDER_GRAPH_PROJECTILES_NAME;
+		static const LambdaEngine::String name = "RENDER_STAGE_PROJECTILES";
 		return name;
 	}
 

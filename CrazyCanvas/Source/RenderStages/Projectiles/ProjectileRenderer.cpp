@@ -194,7 +194,7 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 	UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 	UNREFERENCED_VARIABLE(sleeping);
 
-	if (!m_MarchingCubesGrids.Empty())
+	if (!sleeping && !m_MarchingCubesGrids.Empty())
 	{
 		RenderSystem& renderSystem = RenderSystem::GetInstance();
 		ECSCore* pECS = ECSCore::GetInstance();
@@ -419,7 +419,7 @@ bool ProjectileRenderer::CreateCommonMesh()
 		indices[i] = vertexCount - 1 - i;
 	}
 
-	constexpr const bool useMeshletCache = true;
+	constexpr const bool useMeshletCache = false;
 	m_MarchingCubesMesh = ResourceManager::LoadMeshFromMemory("Marching Cubes Common Mesh", vertices.get(), vertexCount, indices, vertexCount, useMeshletCache);
 	return m_MarchingCubesMesh != GUID_NONE;
 }
