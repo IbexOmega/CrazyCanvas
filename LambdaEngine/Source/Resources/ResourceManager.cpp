@@ -1323,7 +1323,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadMesh(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto meshIt = s_Meshes.find(guid);
@@ -1392,7 +1392,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadMaterial(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto materialIt = s_Materials.find(guid);
@@ -1460,7 +1460,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadAnimation(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto animationIt = s_Animations.find(guid);
@@ -1509,7 +1509,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadTexture(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto textureIt = s_Textures.find(guid);
@@ -1567,7 +1567,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadShader(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto shaderIt = s_Shaders.find(guid);
@@ -1616,7 +1616,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadSoundEffect3D(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto soundEffectIt = s_SoundEffects3D.find(guid);
@@ -1665,7 +1665,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadSoundEffect2D(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto soundEffectIt = s_SoundEffects2D.find(guid);
@@ -1714,7 +1714,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadMusic(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto musicIt = s_Music.find(guid);
@@ -1763,7 +1763,7 @@ namespace LambdaEngine
 	bool ResourceManager::DecrementTextureMaterialRef(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto textureRefIt = s_TextureMaterialRefs.find(guid);

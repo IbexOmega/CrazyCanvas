@@ -16,6 +16,7 @@ bool TeamHelper::Init()
 	{
 		MaterialProperties myTeamMaterialProperties = {};
 		myTeamMaterialProperties.Albedo = glm::vec4(0.85f, 0.85f, 0.85f, 1.0f);
+		myTeamMaterialProperties.Roughness = 0.7f;
 
 		s_MyTeamPlayerMaterialGUID = ResourceManager::LoadMaterialFromMemory(
 			"My Team Material",
@@ -77,6 +78,7 @@ void TeamHelper::SetTeamColor(uint8 teamIndex, const glm::vec3& color)
 
 	MaterialProperties materialProperties = {};
 	materialProperties.Albedo = glm::vec4(color, 1.0f);
+	materialProperties.Roughness = 0.5f;
 
 	s_TeamColorMaterialGUIDs[teamIndex] = ResourceManager::LoadMaterialFromMemory(
 		"Team " + std::to_string(teamIndex) + " Color Material",
@@ -87,6 +89,7 @@ void TeamHelper::SetTeamColor(uint8 teamIndex, const glm::vec3& color)
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		materialProperties);
 
+	materialProperties.Roughness = 1.0f;
 	s_TeamPlayerMaterialGUIDs[teamIndex] = ResourceManager::LoadMaterialFromMemory(
 		"Team " + std::to_string(teamIndex) + " Player Material",
 		s_PlayerTextureGUID,

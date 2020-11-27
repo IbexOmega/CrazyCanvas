@@ -43,6 +43,7 @@ enum class ELevelObjectType : uint8
 	LEVEL_OBJECT_TYPE_PLAYER_JAIL			= 11,
 	LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE	= 12,
 	LEVEL_OBJECT_TYPE_PARTICLE_SHOWER		= 13,
+	LEVEL_OBJECT_TYPE_TEAM_INDICATOR		= 14,
 };
 
 /*
@@ -142,6 +143,11 @@ public:
 	}
 
 private:
+	static ELevelObjectType CreateTeamIndicator(
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+		const glm::vec3& translation);
+
 	static ELevelObjectType CreatePlayerSpawn(
 		const LambdaEngine::LevelObjectOnLoad& levelObject,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,

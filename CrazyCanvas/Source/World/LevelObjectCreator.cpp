@@ -137,6 +137,17 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
 		}
+
+		//Team Indicator
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_INDICATOR_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateTeamIndicator;
+		}
 	}
 
 	//Register Create Special Object by Type Functions
@@ -328,6 +339,33 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 		LOG_ERROR("[LevelObjectCreator]: Failed to create special object, no create function could be found");
 		return false;
 	}
+}
+
+ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	TeamComponent teamComponent = {};
+
+	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
+	{
+		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Team Indicator, defaulting to 0...");
+		teamComponent.TeamIndex = 0;
+	}
+	 
+	// Modify material of mesh component to represent team color
+	GUID_Lambda teamMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(teamComponent.TeamIndex);
+	TArray<MeshComponent> meshComponents = levelObject.MeshComponents;
+	createdEntities.Reserve(meshComponents.GetSize());
+
+	for (auto& meshComp : meshComponents)
+	{
+		meshComp.MaterialGUID = teamMaterialGUID;
+		Entity entity = CreateStaticGeometry(meshComp, translation);
+		createdEntities.PushBack(entity);
+	}
+
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_TEAM_INDICATOR;
 }
 
 ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
