@@ -2,6 +2,10 @@
 
 #include "NoesisPCH.h"
 
+#include "Math/Math.h"
+#include "Teams/TeamHelper.h"
+#include "Log/Log.h"
+
 PromptGUI::PromptGUI()
 {
 	Noesis::GUI::LoadComponent(this, "PromptGUI.xaml");
@@ -20,8 +24,25 @@ bool PromptGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent,
 	return false;
 }
 
-void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage)
+void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const uint8 teamIndex)
 {
+	//ToDo: Create new TextBlock
+
+	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
+
+	if (teamIndex != UINT8_MAX)
+	{
+		glm::vec3 promptColor = TeamHelper::GetTeamColor(teamIndex);
+		Noesis::Color color(promptColor.r, promptColor.g, promptColor.b);
+
+		pBrush->SetColor(color);
+	}
+	else
+		pBrush->SetColor(Noesis::Color::Red());
+
+
+	m_pPromptTextblock->SetForeground(pBrush);
+
 	m_pPromptTextblock->SetText(promptMessage.c_str());
 	m_pPromptVisibilityStoryboard->Begin();
 	m_pPromptStoryboard->Begin();

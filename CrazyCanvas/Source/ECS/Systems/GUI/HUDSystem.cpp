@@ -281,18 +281,25 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 		else
 			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), "Server", event.pPlayer->GetTeam());
 
-	if (pPlayer == PlayerManagerClient::GetPlayerLocal() && pPlayer->IsDead())
+	if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 	{
-		if (event.pPlayerKiller)
+		if (pPlayer->IsDead())
 		{
-			String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
-			HUDSystem::PromptMessage(promptText);
+			m_HUDGUI->ShowHUD(false);
+
+			if (event.pPlayerKiller)
+			{
+				String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
+				HUDSystem::PromptMessage(promptText);
+			}
+			else
+			{
+				String promptText = "You Were Killed By The Server";
+				HUDSystem::PromptMessage(promptText);
+			}
 		}
 		else
-		{
-			String promptText = "You Were Killed By The Server";
-			HUDSystem::PromptMessage(promptText);
-		}
+			m_HUDGUI->ShowHUD(true);
 	}
 
 	return false;
@@ -317,7 +324,7 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 	else
 		promptText = "Team " + std::to_string(packet.TeamIndex + 1) + " Scored!";
 
-	HUDSystem::PromptMessage(promptText);
+	HUDSystem::PromptMessage(promptText, packet.TeamIndex);
 
 	return false;
 }
@@ -423,7 +430,7 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 	return false;
 }
 
-void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage)
+void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, const uint8 teamIndex)
 {
-	s_pHudsystemInstance->m_HUDGUI->DisplayPrompt(promtMessage);
+	s_pHudsystemInstance->m_HUDGUI->DisplayPrompt(promtMessage, teamIndex);
 }

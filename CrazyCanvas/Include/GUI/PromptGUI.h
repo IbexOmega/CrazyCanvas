@@ -16,7 +16,7 @@ public:
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
-	void DisplayPrompt(const LambdaEngine::String& promptMessage);
+	void DisplayPrompt(const LambdaEngine::String& promptMessage, const uint8 teamIndex);
 
 private:
 	Noesis::Storyboard* m_pPromptStoryboard				= nullptr;

@@ -49,7 +49,7 @@ private:
 
 public:
 
-	static void PromptMessage(const LambdaEngine::String& promtMessage);
+	static void PromptMessage(const LambdaEngine::String& promtMessage, const uint8 teamIndex = UINT8_MAX);
 
 private:
 

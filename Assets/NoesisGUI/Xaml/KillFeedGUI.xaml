@@ -13,6 +13,15 @@
         <Storyboard x:Key="KillFeedStoryBoard" >
             <DoubleAnimation x:Name="KillFeedAnimation" Duration="0:0:8" From="1" To="0" StoryBoard.TargetName="FEED" StoryBoard.TargetProperty="(TextBlock.ForeGround).(SolidColorBrush.Opacity)"/>
         </Storyboard>
+
+        <Style TargetType="TextBlock"
+             x:Key="KillFeedTextStyle"
+             BasedOn="{StaticResource {x:Type TextBlock}}">
+        <Setter Property="FontSize" Value="23" />
+        <Setter Property="noesis:Text.Stroke" Value="Black" />
+        <Setter Property="noesis:Text.StrokeThickness" Value="2.5" />
+      </Style>
+
     </UserControl.Resources>
     
     <ScrollViewer VerticalScrollBarVisibility="Hidden" HorizontalContentAlignment="Stretch" Background="#00000000">

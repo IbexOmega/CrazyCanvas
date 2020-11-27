@@ -211,7 +211,7 @@ void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngi
 {
 	LambdaEngine::String feedText = killer + " Killed " + killed;
 
-	m_pKillFeedGUI->AddToKillFeed(feedText, killedPlayerTeamIndex);
+	m_pKillFeedGUI->AddToKillFeed(killed, killer, killedPlayerTeamIndex);
 }
 
 void HUDGUI::UpdateKillFeedTimer(LambdaEngine::Timestamp delta)
@@ -257,6 +257,14 @@ void HUDGUI::SetWindowSize(uint32 width, uint32 height)
 	m_WindowSize = glm::vec2(width, height);
 }
 
+void HUDGUI::ShowHUD(const bool isVisible)
+{
+	if(isVisible)
+		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
+	else
+		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
+}
+
 ScoreBoardGUI* HUDGUI::GetScoreBoard() const
 {
 	return m_pScoreBoardGUI;
@@ -278,10 +286,10 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	m_pScoreBoardGUI->DisplayScoreboardMenu(true);
 }
 
-void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage)
+void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const uint8 teamIndex)
 {
 	PromptGUI* pCountdownGUI = FindName<PromptGUI>("PROMPT");
-	pCountdownGUI->DisplayPrompt(promptMessage);
+	pCountdownGUI->DisplayPrompt(promptMessage, teamIndex);
 }
 
 void HUDGUI::InitGUI()

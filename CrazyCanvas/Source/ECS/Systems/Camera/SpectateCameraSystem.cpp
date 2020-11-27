@@ -122,6 +122,7 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 					cameraOffsetComponent.Offset *= 2;
 					SpectatePlayer();
 				}
+				m_InSpectateView = true;
 			}
 		}
 		else if (m_pSpectatedPlayer == event.pPlayer)
