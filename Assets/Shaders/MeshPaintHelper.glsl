@@ -1,7 +1,7 @@
 #ifndef MESHPAINTHELPER_SHADER
 #define MESHPAINTHELPER_SHADER
 
-#define PAINT_NOISE_SCALE			5.0f
+#define PAINT_NOISE_SCALE			2.0f
 #define PAINT_DELTA_NOISE			0.0003f
 #define PAINT_BUMPINESS	        	15.0f
 #define PAINT_BORDER_DELTA_NOISE	0.0005f
@@ -52,8 +52,8 @@ SPaintSample SamplePaint(in vec3 position, in uint packedPaintInfo, in float pai
 
 SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangent, in vec3 bitangent, in uint packedPaintInfo, in float dist)
 {
-	float f = 10.f;
-	float a = 0.4f;
+	float f = PAINT_FREQ;
+	float a = PAINT_AMPL;
 	float paintNoise = GetPaintNoise(f, a, position, dist);
 	float paint = 1.f - smoothstep(PAINT_THRESHOLD, 0.5f, paintNoise);
 	float b = GetPaintBorder(paintNoise);

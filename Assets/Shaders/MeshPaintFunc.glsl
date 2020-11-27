@@ -2,6 +2,8 @@
 #define MESH_PAINT_FUNC_SHADER
 
 #define PAINT_THRESHOLD			0.4f
+#define PAINT_FREQ              5.0f
+#define PAINT_AMPL              0.4f
 
 #include "Noise.glsl"
 
@@ -53,7 +55,7 @@ uint Vec4ToPackedPaintInfo(in vec4 v)
 void GetVec4ToPackedPaintInfoAndDistance(in vec3 pos, in vec4 v, in float dist, out uint packedPaintInfo, out float outDist)
 {
     float isFullPaint = max(v.x, max(v.y, max(v.z, v.w)));
-    float n1 = snoise(pos * 10.0f) * 0.4f;
+    float n1 = snoise(pos * PAINT_FREQ) * PAINT_AMPL;
     float c = (1.f-dist);
     vec4 vec4PaintInfo = clamp(vec4(v.x + n1*v.x*c, v.y - n1*v.y*c, v.z, v.w), 0.f, 1.f)*c;
     packedPaintInfo = Vec4ToPackedPaintInfo(vec4PaintInfo);
