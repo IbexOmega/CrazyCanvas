@@ -102,6 +102,7 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 			{
 				for (Entity cameraEntity : m_CameraEntities)
 				{
+					RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", false);
 					ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
 
@@ -117,6 +118,7 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 			{
 				for (Entity cameraEntity : m_CameraEntities)
 				{
+					RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", true);
 					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
 
 					cameraOffsetComponent.Offset *= 2;
