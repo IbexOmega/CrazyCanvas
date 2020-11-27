@@ -74,6 +74,6 @@ void main()
 
 	//4
 	float linearZ 				= in_ClipPosition.z * in_ClipPosition.w;
-	float maxChangeZ			= (max(abs(dFdx(linearZ)), abs(dFdy(linearZ))));
+	float maxChangeZ			= (max(abs(dFdxFine(linearZ)), abs(dFdyFine(linearZ)))); //fwidthFine(linearZ);
 	out_Linear_Z				= vec2(linearZ, maxChangeZ);
 }

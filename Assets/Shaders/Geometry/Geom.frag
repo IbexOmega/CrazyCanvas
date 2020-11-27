@@ -59,13 +59,13 @@ void main()
 	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//3
-	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * vec2(0.5f, -0.5f) + 0.5f;
-	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f) + 0.5f;
+	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * vec2(0.5f, -0.5f);
+	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f);
 	vec2 screenVelocity			= (currentNDC - prevNDC);
 	out_Velocity				= vec2(screenVelocity);
 	
 	//4
 	float linearZ 				= in_ClipPosition.z * in_ClipPosition.w;
-	float maxChangeZ			= (max(abs(dFdx(linearZ)), abs(dFdy(linearZ))));
+	float maxChangeZ			= (max(abs(dFdx(linearZ)), abs(dFdy(linearZ)))); //fwidthFine(linearZ);
 	out_Linear_Z				= vec2(linearZ, maxChangeZ);
 }

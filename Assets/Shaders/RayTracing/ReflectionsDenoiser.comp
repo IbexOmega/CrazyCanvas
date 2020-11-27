@@ -11,7 +11,7 @@ layout (local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
 
 layout(binding = 0,	set = TEXTURE_SET_INDEX) uniform sampler2D u_Reflections;
 layout(binding = 1,	set = TEXTURE_SET_INDEX) uniform sampler2D u_BRDF_PDF;
-layout(binding = 2,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D u_DenoisedReflections;
+layout(binding = 2,	set = TEXTURE_SET_INDEX, rgba16f) volatile coherent restrict uniform image2D u_DenoisedReflections;
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferCompactNormal;
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferVelocity;
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferLinearZ;
@@ -43,8 +43,6 @@ void main()
 
     vec4 current_Radiance_Valid = texelFetch(u_Reflections, p, 0);
     float validSample = current_Radiance_Valid.a;
-    vec3 minRadiance = current_Radiance_Valid.rgb;
-    vec3 maxRadiance = current_Radiance_Valid.rgb;
 
     //Sample GBuffer
 	vec3 currentNormal  = UnpackNormal(texelFetch(u_GBufferCompactNormal, p, 0).xyz);
@@ -52,6 +50,9 @@ void main()
 
 #if SPATIAL_BRDF_DENOISING_ENABLED 
     vec3 weightSum = vec3(0.0f);
+
+    vec3 minRadiance = current_Radiance_Valid.rgb;
+    vec3 maxRadiance = current_Radiance_Valid.rgb;
 
     const int kernelRadius = 2;
 
@@ -92,12 +93,16 @@ void main()
 
         current_Radiance_Valid.rgb /= max(weightSum, vec3(1.0f));
     }
+#else
+    vec3 minRadiance = vec3(0.0f);
+    vec3 maxRadiance = vec3(1.0f / 0.0f);
 #endif
     
     float historyLength = 0.0f;
 
 #if TEMPORAL_REUSE_ENABLED
-    ivec2 reprojP        = p - ivec2(velocity * vec2(BLUR_IMAGE_SIZE));
+    vec2 reprojLoc          = vec2(p) - velocity * vec2(BLUR_IMAGE_SIZE);
+    ivec2 reprojP           = ivec2(reprojLoc);
 
     vec3 reprojNormal       = UnpackNormal(texelFetch(u_GBufferCompactNormal, reprojP, 0).xyz);
     vec2 current_z_Values   = texelFetch(u_GBufferLinearZ, p, 0).xy;
@@ -105,17 +110,18 @@ void main()
 
     float validReprojection = ValidSample(BLUR_IMAGE_SIZE, reprojP, current_z_Values.x, prev_z_Values.x, current_z_Values.y, currentNormal, reprojNormal);
     vec4 prev_Radiance_HistoryLength = imageLoad(u_DenoisedReflections, reprojP);
+    prev_Radiance_HistoryLength.rgb = clamp(prev_Radiance_HistoryLength.rgb, minRadiance, maxRadiance);
 
-	historyLength = validReprojection * validSample * min(prev_Radiance_HistoryLength.a + 1.0f, TEMPORAL_REUSE_MAX_HISTORY_LENGTH); 
+	historyLength = validSample * min(prev_Radiance_HistoryLength.a + 1.0f, TEMPORAL_REUSE_MAX_HISTORY_LENGTH); 
 	current_Radiance_Valid.rgb = mix(
         current_Radiance_Valid.rgb,
         prev_Radiance_HistoryLength.rgb,
         historyLength / (TEMPORAL_REUSE_MAX_HISTORY_LENGTH + 1.0f));
 
-    current_Radiance_Valid.rgb = clamp(current_Radiance_Valid.rgb, minRadiance, maxRadiance);
 #endif
 
-    imageStore(u_DenoisedReflections, p, vec4(current_Radiance_Valid.rgb, historyLength));
+    //imageStore(u_DenoisedReflections, p, vec4(current_Radiance_Valid.rgb, historyLength));
+    imageStore(u_DenoisedReflections, p, vec4(vec2(p) - reprojLoc, 0.0f, 1.0f));
     //imageStore(u_DenoisedReflections, p, vec4(mix(vec3(1.0f, 0.0f, 0.0f), current_Radiance_Valid.rgb, validReprojection), historyLength));
     //imageStore(u_DenoisedReflections, p, mix(vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), validReprojection));
 }

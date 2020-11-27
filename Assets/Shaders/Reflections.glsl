@@ -2,7 +2,7 @@
 
 #if GLOSSY_REFLECTIONS_ENABLED
     //Settings
-    #define SPATIAL_BRDF_DENOISING_ENABLED      1
+    #define SPATIAL_BRDF_DENOISING_ENABLED      0
     #define TEMPORAL_REUSE_ENABLED              1
 
     //Constants
