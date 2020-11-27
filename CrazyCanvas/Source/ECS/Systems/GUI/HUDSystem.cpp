@@ -115,7 +115,7 @@ void HUDSystem::Init()
 	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 	for (auto& player : players)
 	{
-		m_HUDGUI->AddPlayer(player.second);
+		m_HUDGUI->GetScoreBoard()->AddPlayer(player.second);
 	}
 
 	GUIApplication::SetView(m_View);
@@ -199,14 +199,16 @@ void HUDSystem::FixedTick(Timestamp delta)
 	static bool activeButtonChanged = false;
 	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
-		m_HUDGUI->DisplayScoreboardMenu(true);
+		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
 	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
-		m_HUDGUI->DisplayScoreboardMenu(false);
+		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
 	}
+
+	m_HUDGUI->UpdateKillFeedTimer(delta);
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -253,14 +255,14 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 
 bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
 {
-	m_HUDGUI->UpdateAllPlayerProperties(*event.pPlayer);
+	m_HUDGUI->GetScoreBoard()->UpdateAllPlayerProperties(*event.pPlayer);
 
 	return false;
 }
 
 bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 {
-	m_HUDGUI->UpdatePlayerProperty(
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerProperty(
 		event.pPlayer->GetUID(),
 		EPlayerProperty::PLAYER_PROPERTY_PING,
 		std::to_string(event.pPlayer->GetPing()));
@@ -270,8 +272,14 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
-	m_HUDGUI->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
 
+
+	if(pPlayer->IsDead())
+		if(event.pPlayerKiller)
+			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), event.pPlayerKiller->GetName(), event.pPlayer->GetTeam());
+		else
+			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), "Server", event.pPlayer->GetTeam());
 
 	if (pPlayer == PlayerManagerClient::GetPlayerLocal() && pPlayer->IsDead())
 	{
@@ -282,7 +290,7 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 		}
 		else
 		{
-			String promptText = "You Were Killed By Something";
+			String promptText = "You Were Killed By The Server";
 			HUDSystem::PromptMessage(promptText);
 		}
 	}
@@ -301,12 +309,13 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 {
 	String promptText = " ";
 
-	const Player* pFlagCapturer = PlayerManagerClient::GetPlayer(event.Packet.PlayerUID);
+	const PacketTeamScored& packet = event.Packet;
+	const Player* pFlagCapturer = PlayerManagerClient::GetPlayer(packet.PlayerUID);
 
 	if (pFlagCapturer)
 		promptText = pFlagCapturer->GetName() + " Captured The Flag!";
 	else
-		promptText = "Someone Captured The Flag!";
+		promptText = "Team " + std::to_string(packet.TeamIndex + 1) + " Scored!";
 
 	HUDSystem::PromptMessage(promptText);
 
@@ -380,29 +389,28 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
-	Input::PushInputMode(EInputLayer::GUI);
 
 	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
 
-	PlayerPair mostKills((uint8)0, nullptr);
-	PlayerPair mostFlags((uint8)0, nullptr);
-	PlayerPair mostDeaths((uint8)0, nullptr);
+	PlayerPair mostKills((int16)-1, nullptr);
+	PlayerPair mostFlags((int16)-1, nullptr);
+	PlayerPair mostDeaths((int16)-1, nullptr);
 
 	for (auto& pair : playerMap)
 	{
 		const Player* pPlayer = &pair.second;
 
-		uint8 kills = pPlayer->GetKills();
-		uint8 deaths = pPlayer->GetDeaths();
-		uint8 flags = pPlayer->GetFlagsCaptured();
+		int16 kills = pPlayer->GetKills();
+		int16 deaths = pPlayer->GetDeaths();
+		int16 flags = pPlayer->GetFlagsCaptured();
 
-		if (kills >= mostKills.first)
+		if (kills > mostKills.first || (kills == mostKills.first && mostKills.second->GetUID() < pPlayer->GetUID()))
 			mostKills = std::make_pair(kills, pPlayer);
 
-		if (deaths >= mostDeaths.first)
+		if (deaths > mostDeaths.first || (deaths == mostDeaths.first && mostDeaths.second->GetUID() < pPlayer->GetUID()))
 			mostDeaths = std::make_pair(deaths, pPlayer);
 
-		if (flags >= mostFlags.first)
+		if (flags > mostFlags.first || (flags == mostFlags.first && mostFlags.second->GetUID() < pPlayer->GetUID()))
 			mostFlags = std::make_pair(flags, pPlayer);
 	}
 

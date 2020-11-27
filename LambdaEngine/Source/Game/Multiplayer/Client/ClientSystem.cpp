@@ -58,7 +58,7 @@ namespace LambdaEngine
 		NetworkDiscovery::DisableClient();
 		return true;
 	}
-	
+
 	ClientBase* ClientSystem::GetClient()
 	{
 		return m_pClient;
