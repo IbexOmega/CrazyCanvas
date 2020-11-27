@@ -71,7 +71,6 @@ namespace LambdaEngine {
 		bool CreateCommandLists();
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc);
 		bool CreatePipelineState();
-		bool TextureInit();
 		bool CreateBuffers();
 		void RenderCull(CommandList* pCommandList, uint64& pipelineId);
 
@@ -129,7 +128,6 @@ namespace LambdaEngine {
 		uint32									m_BackBufferCount = 0;
 
 
-		TSharedRef<Texture>						m_DepthStencilTexture = nullptr;
 		TSharedRef<const TextureView>			m_DepthStencil = nullptr;
 		TSharedRef<const TextureView>			m_IntermediateOutputImage = nullptr;
 

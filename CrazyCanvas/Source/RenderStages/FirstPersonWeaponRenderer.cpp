@@ -98,12 +98,6 @@ namespace LambdaEngine
 				return false;
 			}
 
-			if (!TextureInit())
-			{
-				LOG_ERROR("[FirstPersonWeapoRenderer]: Failed to create textures for depth buffer.");
-				return false;
-			}
-
 			if (!CreateCommandLists())
 			{
 				LOG_ERROR("[FirstPersonWeapoRenderer]: Failed to create render command lists");
@@ -126,43 +120,6 @@ namespace LambdaEngine
 		}
 
 		return true;
-	}
-
-	bool FirstPersonWeaponRenderer::TextureInit()
-	{
-		TextureDesc tDesc
-		{
-			.DebugName = "FirstPersonWeapon Depth Texture",
-			.MemoryType = EMemoryType::MEMORY_TYPE_GPU,
-			.Format = EFormat::FORMAT_D24_UNORM_S8_UINT,
-			.Type = ETextureType::TEXTURE_TYPE_2D,
-			.Flags = FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL,
-			.Width = CommonApplication::Get()->GetMainWindow()->GetWidth(),
-			.Height = CommonApplication::Get()->GetMainWindow()->GetHeight(),
-			.Depth = 1,
-			.ArrayCount = 1,
-			.Miplevels = 1,
-			.SampleCount = 1
-		};
-
-		m_DepthStencilTexture = RenderAPI::GetDevice()->CreateTexture(&tDesc);
-
-		TextureViewDesc tvDesc
-		{
-			.DebugName = "FirstPersonWeapon Depth Texture View",
-			.pTexture = m_DepthStencilTexture.Get(),
-			.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL,
-			.Format = tDesc.Format,
-			.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D,
-			.MiplevelCount = 1,
-			.ArrayCount = 1,
-			.Miplevel = 0,
-			.ArrayIndex = 0
-		};
-
-		m_DepthStencil = RenderAPI::GetDevice()->CreateTextureView(&tvDesc);
-
-		return m_DepthStencilTexture.Get() != nullptr && m_DepthStencil.Get() != nullptr;
 	}
 
 	bool FirstPersonWeaponRenderer::CreateBuffers()
@@ -311,9 +268,11 @@ namespace LambdaEngine
 		{
 			m_IntermediateOutputImage = MakeSharedRef(ppPerImageTextureViews[0]);
 		}
-
-		// Writing textures to DescriptorSets
-		if (resourceName == SCENE_ALBEDO_MAPS)
+		else if (resourceName == "FIRST_PERSON_WEAPON_DEPTH_STENCIL")
+		{
+			m_DepthStencil = MakeSharedRef(ppPerImageTextureViews[0]);
+		}
+		else if (resourceName == SCENE_ALBEDO_MAPS) // Writing textures to DescriptorSets
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
 
@@ -574,7 +533,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[FirstPersonWeapon]: Failed to update descriptors for drawArgs");
+				m_DrawCount = 0;
 			}
 		}
 	}
