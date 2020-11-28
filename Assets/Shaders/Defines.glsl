@@ -90,7 +90,7 @@ struct SInstance
 	uint TexturesPerExtensionGroup;
 	uint MeshletCount;
 	uint TeamIndex;
-	uint Padding0;
+	uint PlayerIndex;
 	uint Padding1;
 	uint Padding2;
 };

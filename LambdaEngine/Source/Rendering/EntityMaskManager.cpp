@@ -14,9 +14,9 @@ namespace LambdaEngine
 	{
 		if (!s_Finalized)
 		{
-			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 1 }, false);	// Bit = 0x2
-			BindTypeToExtensionDesc(PlayerLocalComponent::Type(),	{ 0 }, true);	// Bit = 0x4
-			BindTypeToExtensionDesc(PlayerRelatedComponent::Type(),	{ 0 }, false);	// Bit = 0x8
+			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 1 }, false,	0x2);	// Bit = 0x2
+			BindTypeToExtensionDesc(PlayerLocalComponent::Type(),	{ 0 }, true,	0x4);	// Bit = 0x4
+			BindTypeToExtensionDesc(PlayerRelatedComponent::Type(),	{ 0 }, false,	0x8);	// Bit = 0x8
 		}
 
 		return true;
@@ -124,27 +124,10 @@ namespace LambdaEngine
 			return it->second.Flag;
 		}
 
-		if (!s_Finalized)
-		{
-			// Generate a mask for this component type. Mask 0 is used as an error code.
-			static uint32 s_BitCounter = 0;
-			uint32 flag = BIT(++s_BitCounter);
+		LOG_WARNING("[EntityMaskManager]: New flag required for Component type %s but EntityMaskManager is already intialized, returning default mask %x", pType->GetName(), s_DefaultMask);
+		LOG_WARNING("[EntityMaskManager]: Generate a flag using BindTypeToExtensionDesc().");
+		return s_DefaultMask;
 
-			//Set bit on other ComponentTypes
-			s_ComponentTypeToMaskMap[pType] = { .Flag = flag, .Inverted = inverted };
-
-			if (inverted)
-			{
-				s_DefaultMask |= flag;
-			}
-
-			return flag;
-		}
-		else
-		{
-			LOG_WARNING("[EntityMaskManager]: New flag required for Component type %s but EntityMaskManager is already intialized, returning default mask %x", pType->GetName(), s_DefaultMask);
-			return s_DefaultMask;
-		}
 	}
 
 	const DrawArgExtensionDesc& EntityMaskManager::GetExtensionDescFromExtensionFlag(uint32 flag)
@@ -153,14 +136,19 @@ namespace LambdaEngine
 		return s_ExtensionMaskToExtensionDescMap[flag];
 	}
 
-	void EntityMaskManager::BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType)
+	void EntityMaskManager::BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType, uint32 bitmask)
 	{
-		uint32 extensionFlag = GetExtensionFlag(pType, invertOnNewComponentType);
+		// uint32 extensionFlag = GetExtensionFlag(pType, invertOnNewComponentType);
+		s_ComponentTypeToMaskMap[pType] = { .Flag = bitmask, .Inverted = invertOnNewComponentType };
+		if (invertOnNewComponentType)
+		{
+			s_DefaultMask |= bitmask;
+		}
 
 		// Set extension description for later use
-		auto eIt = s_ExtensionMaskToExtensionDescMap.find(extensionFlag);
+		auto eIt = s_ExtensionMaskToExtensionDescMap.find(bitmask);
 		if (eIt == s_ExtensionMaskToExtensionDescMap.end())
-			s_ExtensionMaskToExtensionDescMap[extensionFlag] = extensionDesc;
+			s_ExtensionMaskToExtensionDescMap[bitmask] = extensionDesc;
 	}
 
 	void EntityMaskManager::CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc)
