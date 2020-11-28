@@ -28,6 +28,8 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 
+#include "Resources/MeshTessellator.h"
+
 #include <cstdio>
 
 #include <assimp/Importer.hpp>
@@ -418,7 +420,8 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponents,
 			.pMaterials					= &materials,
 			.pTextures					= &textures,
-			.AnimationsOnly 			= false
+			.AnimationsOnly 			= false,
+			.ShouldTessellate			= true
 		};
 
 		return LoadSceneWithAssimp(loadRequest);
@@ -452,7 +455,8 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponent,
 			.pMaterials					= pMaterials,
 			.pTextures					= pTextures,
-			.AnimationsOnly 			= false
+			.AnimationsOnly 			= false,
+			.ShouldTessellate			= true
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -519,7 +523,8 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponent,
 			.pMaterials					= nullptr,
 			.pTextures					= nullptr,
-			.AnimationsOnly				= true
+			.AnimationsOnly				= true,
+			.ShouldTessellate			= false
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -2105,7 +2110,8 @@ namespace LambdaEngine
 			.MeshComponents				= sceneLoadRequest.MeshComponents,
 			.pAnimations				= sceneLoadRequest.pAnimations,
 			.pMaterials					= sceneLoadRequest.pMaterials,
-			.pTextures					= sceneLoadRequest.pTextures
+			.pTextures					= sceneLoadRequest.pTextures,
+			.ShouldTessellate			= sceneLoadRequest.ShouldTessellate
 		};
 
 		// Metadata
@@ -2271,7 +2277,10 @@ namespace LambdaEngine
 					LoadVertices(pMesh, pMeshAI);
 					LoadIndices(pMesh, pMeshAI);
 
-					// TODO: Tessellate mesh here.
+					/*if (context.ShouldTessellate && pMeshAI->mNumBones == 0)
+					{
+						MeshTessellator::GetInstance().Tessellate(pMesh);
+					}*/
 
 					if (context.pMaterials)
 					{

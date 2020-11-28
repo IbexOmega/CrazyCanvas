@@ -22,6 +22,7 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in vec4		in_PaintInfo4;
 layout(location = 9) in float 		in_PaintDist;
+layout(location = 10) in vec3 		in_VertDist;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
 
@@ -75,4 +76,9 @@ void main()
 	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 	vec2 screenVelocity			= (prevNDC - currentNDC);
 	out_Velocity				= vec2(screenVelocity);
+
+	// Wireframe
+	float border = 1.f-min(in_VertDist.x, min(in_VertDist.y, in_VertDist.z));
+	border = step(0.995f, border);
+	out_Albedo = mix(out_Albedo, vec3(1.f, 1.f, 0.f), border);
 }

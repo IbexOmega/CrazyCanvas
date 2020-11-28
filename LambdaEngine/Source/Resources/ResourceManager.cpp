@@ -20,6 +20,8 @@
 
 #include "Containers/TUniquePtr.h"
 
+#include "Resources/MeshTessellator.h"
+
 #include <assimp/postprocess.h>
 
 #include <utility>
@@ -107,6 +109,8 @@ namespace LambdaEngine
 		InitMaterialCreation();
 		InitDefaultResources();
 
+		//MeshTessellator::GetInstance().Init();
+
 		EventQueue::RegisterEventHandler<ShaderRecompileEvent>(&OnShaderRecompileEvent);
 
 		return true;
@@ -117,6 +121,8 @@ namespace LambdaEngine
 		EventQueue::UnregisterEventHandler<ShaderRecompileEvent>(&OnShaderRecompileEvent);
 
 		ReleaseMaterialCreation();
+
+		//MeshTessellator::GetInstance().Release();
 
 		SAFEDELETE_ALL(s_Meshes);
 		SAFEDELETE_ALL(s_Materials);
