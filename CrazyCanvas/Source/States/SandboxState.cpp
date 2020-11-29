@@ -112,7 +112,7 @@ void SandboxState::Init()
 
 	/*{
 		GUID_Lambda characterMeshGUID;
-		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
+		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID, false);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -145,7 +145,7 @@ void SandboxState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		GUID_Lambda robotMeshGUID;
-		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", robotMeshGUID, animations);
+		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", robotMeshGUID, animations, false);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
@@ -393,7 +393,7 @@ void SandboxState::Init()
 	{
 		GUID_Lambda meshGUID;
 		TArray<GUID_Lambda> animations;
-		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations, false);
 	}
 
 

@@ -432,7 +432,8 @@ namespace LambdaEngine
 		TArray<LoadedMaterial*>* pMaterials, 
 		TArray<LoadedTexture*>* pTextures, 
 		TArray<Animation*>* pAnimations, 
-		int32 assimpFlags)
+		int32 assimpFlags, 
+		bool shouldTessellate)
 	{
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
@@ -456,7 +457,7 @@ namespace LambdaEngine
 			.pMaterials					= pMaterials,
 			.pTextures					= pTextures,
 			.AnimationsOnly 			= false,
-			.ShouldTessellate			= true
+			.ShouldTessellate			= shouldTessellate
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -2277,10 +2278,10 @@ namespace LambdaEngine
 					LoadVertices(pMesh, pMeshAI);
 					LoadIndices(pMesh, pMeshAI);
 
-					/*if (context.ShouldTessellate && pMeshAI->mNumBones == 0)
+					if (context.ShouldTessellate && pMeshAI->mNumBones == 0)
 					{
 						MeshTessellator::GetInstance().Tessellate(pMesh);
-					}*/
+					}
 
 					if (context.pMaterials)
 					{

@@ -140,7 +140,8 @@ namespace LambdaEngine
 			TArray<LoadedMaterial*>* pMaterials, 
 			TArray<LoadedTexture*>* pTextures, 
 			TArray<Animation*>* pAnimations, 
-			int32 assimpFlags);
+			int32 assimpFlags, 
+			bool shouldTessellate);
 
 		/*
 		* Load a mesh from file

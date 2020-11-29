@@ -55,7 +55,7 @@ bool HealthCompute::Init()
 
 	GUID_Lambda player = 0;
 	TArray<GUID_Lambda> temp;
-	ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", player, temp);
+	ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", player, temp, false);
 	Mesh* pMesh = ResourceManager::GetMesh(player);
 	s_VertexCount = pMesh->Vertices.GetSize();
 
@@ -475,7 +475,7 @@ bool HealthCompute::CreateResources()
 		//		 not create it again.
 		GUID_Lambda player = 0;
 		TArray<GUID_Lambda> temp;
-		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", player, temp);
+		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", player, temp, false);
 		Mesh* pMesh = ResourceManager::GetMesh(player);
 		s_VertexCount = pMesh->Vertices.GetSize();
 

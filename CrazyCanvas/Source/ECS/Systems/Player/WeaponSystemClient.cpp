@@ -185,7 +185,7 @@ bool WeaponSystemClient::InitInternal()
 		projectileMaterialProperties.Roughness = 0.5f;
 
 		GUID_Lambda projectileMeshGUID;
-		ResourceManager::LoadMeshFromFile("sphere.obj", projectileMeshGUID);
+		ResourceManager::LoadMeshFromFile("sphere.obj", projectileMeshGUID, false);
 		if (projectileMeshGUID == GUID_NONE)
 		{
 			return false;

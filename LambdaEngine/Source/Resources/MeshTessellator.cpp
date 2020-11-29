@@ -130,6 +130,21 @@ namespace LambdaEngine
 		m_pPipelineLayout->Release();
 		m_pCommandList->Release();
 		m_pCommandAllocator->Release();
+		m_pFence->Release();
+
+		// Release buffers
+		m_pInIndicesBuffer->Release();
+		m_pInIndicesStagingBuffer->Release();
+		m_pInVertexBuffer->Release();
+		m_pInVertexStagingBuffer->Release();
+
+		m_pOutIndicesBuffer->Release();
+		m_pOutIndicesFirstStagingBuffer->Release();
+		m_pOutIndicesSecondStagingBuffer->Release();
+
+		m_pOutVertexBuffer->Release();
+		m_pOutVertexFirstStagingBuffer->Release();
+		m_pOutVertexSecondStagingBuffer->Release();
 	}
 
 	void MeshTessellator::Tessellate(Mesh* pMesh)
@@ -183,6 +198,8 @@ namespace LambdaEngine
 				FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN,
 				nullptr, 0,
 				m_pFence, signalValue);
+
+			m_pFence->Wait(signalValue, UINT64_MAX);
 		}
 
 		LOG_WARNING("Done");
@@ -225,6 +242,21 @@ namespace LambdaEngine
 			uint32 workGroupX = uint32(std::ceilf(float(pushConstantData.triangleCount) / float(WORK_GROUP_INVOCATIONS)));
 			m_pCommandList->Dispatch(workGroupX, 1U, 1U);
 
+			static constexpr const PipelineMemoryBarrierDesc MEMORY_BARRIER
+			{
+				.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE,
+				.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			};
+
+			m_pCommandList->PipelineMemoryBarriers(
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+				&MEMORY_BARRIER,
+				1);
+
+			m_pCommandList->CopyBuffer(m_pOutIndicesBuffer, 0, m_pOutIndicesSecondStagingBuffer, 0, newIndicesMaxSize);
+			m_pCommandList->CopyBuffer(m_pOutVertexBuffer, 0, m_pOutVertexSecondStagingBuffer, 0, newVerticesMaxSize);
+
 			m_pCommandList->End();
 
 			signalValue++;
@@ -243,14 +275,14 @@ namespace LambdaEngine
 		LOG_WARNING("Copy over new data...");
 		// TODO: Compact this! Check for elements which are UINT32_MAX, they should be removed!
 		void* pMapped = m_pOutIndicesSecondStagingBuffer->Map();
-		pMesh->Indices.Resize(newIndicesMaxSize);
-		memcpy(pMapped, pMesh->Indices.GetData(), newIndicesMaxSize);
+		pMesh->Indices.Resize(newIndicesMaxSize/sizeof(MeshIndexType));
+		memcpy(pMesh->Indices.GetData(), pMapped, newIndicesMaxSize);
 		m_pOutIndicesSecondStagingBuffer->Unmap();
 
 		// TODO: Compact this and merge by distance! If merging, change the index too!
 		pMapped = m_pOutVertexSecondStagingBuffer->Map();
-		pMesh->Vertices.Resize(newVerticesMaxSize);
-		memcpy(pMapped, pMesh->Vertices.GetData(), newVerticesMaxSize);
+		pMesh->Vertices.Resize(newVerticesMaxSize/sizeof(Vertex));
+		memcpy(pMesh->Vertices.GetData(), pMapped, newVerticesMaxSize);
 		m_pOutVertexSecondStagingBuffer->Unmap();
 		LOG_WARNING("Done");
 		LOG_WARNING("Tessellation Complete");
@@ -284,7 +316,7 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = name;
 			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			bufferDesc.SizeInBytes = size;
 
 			(*inBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
@@ -321,7 +353,7 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = name;
 			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			bufferDesc.SizeInBytes = size;
 
 			(*outBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);

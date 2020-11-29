@@ -131,12 +131,12 @@ bool LevelObjectCreator::Init()
 	{
 		//Flag
 		{
-			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagCommonMaterialGUID);
+			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagCommonMaterialGUID, false);
 		}
 
 		//Player
 		{
-			ResourceManager::LoadMeshFromFile("Player/Idle.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs);
+			ResourceManager::LoadMeshFromFile("Player/Idle.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs, false);
 
 #ifdef USE_ALL_ANIMATIONS
 			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
@@ -152,7 +152,7 @@ bool LevelObjectCreator::Init()
 
 		//Weapon
 		{
-			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMeshGUID, s_WeaponMaterialGUID);
+			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMeshGUID, s_WeaponMaterialGUID, false);
 		}
 	}
 
