@@ -87,11 +87,12 @@ void main()
 	// Get data
 	SMeshlet	meshlet		= b_Meshlets.Val[meshletID];
 	SInstance	instance	= b_Instances.Val[instanceID];
-	mat4 projection	= u_PerFrameBuffer.Val.Projection;
-	mat4 view		= u_PerFrameBuffer.Val.View;
-	mat4 transform	= instance.Transform;
+	mat4 projection		= u_PerFrameBuffer.Val.Projection;
+	mat4 view			= u_PerFrameBuffer.Val.View;
 	mat4 prevProjection	= u_PerFrameBuffer.Val.PrevProjection;
 	mat4 prevView		= u_PerFrameBuffer.Val.PrevView;
+	mat4 transform		= instance.Transform;
+	mat4 prevTransform	= instance.PrevTransform;
 	
 	// Per vertex
 	for (uint vert = threadID; vert < meshlet.VertCount; vert += NUM_THREADS)
@@ -115,7 +116,8 @@ void main()
 		vec4 clipPosition = projection * view * worldPosition;
 		out_ClipPosition[vert]	= clipPosition;
 
-		vec4 prevClipPosition = prevProjection * prevView * worldPosition;
+		vec4 prevWorldPosition	= prevTransform * vec4(vertex.Position.xyz, 1.0f);
+		vec4 prevClipPosition	= prevProjection * prevView * prevWorldPosition;
 		out_PrevClipPosition[vert]	= prevClipPosition;
 
 		out_ExtensionIndex[vert]	= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;

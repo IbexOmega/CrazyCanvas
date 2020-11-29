@@ -89,5 +89,5 @@ void main()
 	vec2 screenVelocity	= currentScreenSpace - prevScreenSpace;
 	screenVelocity	= screenVelocity - jitter;
 	screenVelocity	= screenVelocity / size;
-	out_Velocity = screenVelocity;
+	out_Velocity = length(screenVelocity) > 0.001f ? screenVelocity : vec2(0.0f);
 }
