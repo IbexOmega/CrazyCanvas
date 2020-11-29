@@ -96,7 +96,7 @@ void SandboxState::Init()
 	m_ShowDemoWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_SHOW_DEMO);
 	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
 
-	ECSCore* pECS = ECSCore::GetInstance();
+	//ECSCore* pECS = ECSCore::GetInstance();
 
 	// Load Match
 	{
@@ -104,13 +104,13 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[8]
 		};
 
 		Match::CreateMatch(&matchDescription);
 	}
 
-	{
+	/*{
 		GUID_Lambda characterMeshGUID;
 		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
 
@@ -351,7 +351,7 @@ void SandboxState::Init()
 
 			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 		}
-	}
+	}*/
 
 	// Emitter
 	{
