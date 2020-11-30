@@ -304,9 +304,11 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 					for (std::tuple<String, bool, Entity>& childEntityTuple : childEntities)
 					{
 						const String&	childTag		= std::get<0>(childEntityTuple);
+						bool			childAttached	= std::get<1>(childEntityTuple);
 						Entity			childEntity		= std::get<2>(childEntityTuple);
 
 						childComponent.AddChild(childTag, childEntity, true);
+						pECS->AddComponent<ParentComponent>(childEntity, ParentComponent{ .Parent = parentEntity, .Attached = childAttached, .DeleteParentOnRemoval = true });
 					}
 
 					pECS->AddComponent<ChildComponent>(parentEntity, childComponent);
