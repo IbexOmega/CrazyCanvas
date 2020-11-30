@@ -118,7 +118,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName = "Mesh paint Updater Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount = 128;
+		descriptorHeapDesc.DescriptorSetCount = 256;
 		descriptorHeapDesc.DescriptorCount = descriptorCountDesc;
 
 		m_DescriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);

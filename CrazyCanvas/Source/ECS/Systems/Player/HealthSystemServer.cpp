@@ -122,7 +122,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			// Update health
 			const uint32	paintedVerticies	= HealthCompute::GetEntityHealth(entity);
-			const float32	paintedHealth		= float32(paintedVerticies) / float32(HealthCompute::GetVertexCount());
+			const float32	paintedHealth		= float32(paintedVerticies) / float32(HealthCompute::GetVertexCount() * (1.0f - BIASED_MAX_HEALTH));
 			const int32		oldHealth			= healthComponent.CurrentHealth;
 			healthComponent.CurrentHealth		= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
 
