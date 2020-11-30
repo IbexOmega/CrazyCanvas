@@ -43,17 +43,17 @@ namespace LambdaEngine
 		{
 			if (!s_InputModeStack.empty())
 			{
-				bool* keyStates		= s_KeyboardStates[ConvertInputModeUINT8(s_InputModeStack.top())][STATE_WRITE_INDEX].KeyStates;
-				bool* mouseStates = s_MouseStates[ConvertInputModeUINT8(s_InputModeStack.top())][STATE_WRITE_INDEX].ButtonStates;
+				bool* pKeyStates		= s_KeyboardStates[ConvertInputModeUINT8(s_InputModeStack.top())][STATE_WRITE_INDEX].KeyStates;
+				bool* pMouseStates = s_MouseStates[ConvertInputModeUINT8(s_InputModeStack.top())][STATE_WRITE_INDEX].ButtonStates;
 
 				for (int k = 0; k < EKey::KEY_COUNT; k++)
 				{
-					keyStates[k] = false;
+					pKeyStates[k] = false;
 				}
 
 				for (int m = 0; m < EMouseButton::MOUSE_BUTTON_COUNT; m++)
 				{
-					mouseStates[m] = false;
+					pMouseStates[m] = false;
 				}
 			}
 
