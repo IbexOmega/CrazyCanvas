@@ -3,8 +3,6 @@
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/Player/Player.h"
 
-#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
-
 #include "Application/API/Events/EventQueue.h"
 
 #include "Events/GameplayEvents.h"

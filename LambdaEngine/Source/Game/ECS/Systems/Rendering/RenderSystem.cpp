@@ -1354,36 +1354,36 @@ namespace LambdaEngine
 		}
 
 		// Update resource for the entity mesh paint textures that is used for ray tracing
-		bool hasPaintMask = false;
-		if (m_RayTracingEnabled)
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
-			if (pMeshPaintComponents->HasComponent(entity))
-			{
-				hasPaintMask = true;
-				const auto& comp = pECS->GetComponent<MeshPaintComponent>(entity);
+		// bool hasPaintMask = false;
+		// if (m_RayTracingEnabled)
+		// {
+		// 	ECSCore* pECS = ECSCore::GetInstance();
+		// 	const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
+		// 	if (pMeshPaintComponents->HasComponent(entity))
+		// 	{
+		// 		hasPaintMask = true;
+		// 		const auto& comp = pECS->GetComponent<MeshPaintComponent>(entity);
 
-				Texture* pTexture			= comp.pTexture;
-				TextureView* pTextureView	= comp.pTextureView;
+		// 		Texture* pTexture			= comp.pTexture;
+		// 		TextureView* pTextureView	= comp.pTextureView;
 
-				// If the texture has not been added before, update resource
-				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
-				if (paintMaskTexturesIt == m_PaintMaskTextures.end())
-				{
-					if (m_PaintMaskTextures.IsEmpty())
-					{
-						m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
-						m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
-					}
+		// 		// If the texture has not been added before, update resource
+		// 		auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
+		// 		if (paintMaskTexturesIt == m_PaintMaskTextures.end())
+		// 		{
+		// 			if (m_PaintMaskTextures.IsEmpty())
+		// 			{
+		// 				m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
+		// 				m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
+		// 			}
 
-					m_PaintMaskTextures.PushBack(pTexture);
-					m_PaintMaskTextureViews.PushBack(pTextureView);
+		// 			m_PaintMaskTextures.PushBack(pTexture);
+		// 			m_PaintMaskTextureViews.PushBack(pTextureView);
 
-					m_RayTracingPaintMaskTexturesResourceDirty = true;
-				}
-			}
-		}
+		// 			m_RayTracingPaintMaskTexturesResourceDirty = true;
+		// 		}
+		// 	}
+		// }
 
 		InstanceKey instanceKey = {};
 		instanceKey.MeshKey			= meshKey;
@@ -1397,7 +1397,7 @@ namespace LambdaEngine
 
 			uint32 shiftedMaterialIndex	= (materialIndex & 0xFF) << 8;
 			uint32 paintIndex			= m_PaintMaskTextures.GetSize() - 1;
-			uint32 shiftedPaintIndex	= hasPaintMask ? (std::max(0u, paintIndex)) & 0xFF : 0;
+			uint32 shiftedPaintIndex	= false ? (std::max(0u, paintIndex)) & 0xFF : 0;
 
 			uint32 customIndex =
 				shiftedMaterialIndex |
@@ -1415,10 +1415,10 @@ namespace LambdaEngine
 
 			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
 
-			if (hasPaintMask)
-			{
-				m_PaintMaskASInstanceIndices[paintIndex].PushBack(asInstanceIndex);
-			}
+			// if (hasPaintMask)
+			// {
+			// 	m_PaintMaskASInstanceIndices[paintIndex].PushBack(asInstanceIndex);
+			// }
 
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}

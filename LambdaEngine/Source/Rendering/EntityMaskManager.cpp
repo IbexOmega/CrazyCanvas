@@ -14,7 +14,7 @@ namespace LambdaEngine
 	{
 		if (!s_Finalized)
 		{
-			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 1 }, false,	0x2);	// Bit = 0x2
+			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 0 }, false,	0x2);	// Bit = 0x2
 			BindTypeToExtensionDesc(PlayerLocalComponent::Type(),	{ 0 }, true,	0x4);	// Bit = 0x4
 			BindTypeToExtensionDesc(PlayerRelatedComponent::Type(),	{ 0 }, false,	0x8);	// Bit = 0x8
 		}

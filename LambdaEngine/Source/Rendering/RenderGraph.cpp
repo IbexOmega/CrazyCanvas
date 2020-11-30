@@ -3637,7 +3637,11 @@ namespace LambdaEngine
 					TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
 
 					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
-					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
+					PipelineTextureBarrierDesc textureBarrierTemplate = {}; 
+					if (!drawTextureBarriers.IsEmpty())
+					{
+						textureBarrierTemplate = drawTextureBarriers.GetFront();
+					}
 
 					if (pDesc->ExternalDrawArgsUpdate.Count != 0)
 					{

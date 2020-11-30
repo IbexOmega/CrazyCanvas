@@ -232,7 +232,8 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	Entity entity = pECS->CreateEntity();
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
+		MeshPaintComponent meshPaintComp = {};
+		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComp);
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		pECS->AddComponent<RayTracedComponent>(entity, 
 			RayTracedComponent
@@ -336,8 +337,9 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
 		if (!MultiplayerUtils::IsServer())
 		{
+			MeshPaintComponent meshPaintComp = {};
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
-			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 256, 256, false));
+			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComp);
 			pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
 					.HitMask = 0xFF
 				});
@@ -769,7 +771,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
-	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 256, 256, false));
+	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaintComponent{});
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
@@ -777,7 +779,7 @@ bool LevelObjectCreator::CreatePlayer(
 	playerChildComp.AddChild(weaponEntity, "weapon");
 
 	const bool readback = MultiplayerUtils::IsServer();
-	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
+	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaintComponent{});
 
 	AnimationComponent animationComponent = {};
 	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
