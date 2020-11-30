@@ -46,14 +46,28 @@ namespace LambdaEngine
 		perFrameBufferBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 		perFrameBufferBindingDesc.DescriptorCount = 1;
 		perFrameBufferBindingDesc.Binding = 0;
-		perFrameBufferBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		perFrameBufferBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
-		DescriptorBindingDesc textureBindingDesc = {};
-		textureBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		textureBindingDesc.DescriptorCount = 100;
-		textureBindingDesc.Binding = 0;
-		textureBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		textureBindingDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+		DescriptorBindingDesc textureBindingDesc0 = {};
+		textureBindingDesc0.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		textureBindingDesc0.DescriptorCount = 100;
+		textureBindingDesc0.Binding = 0;
+		textureBindingDesc0.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		textureBindingDesc0.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		DescriptorBindingDesc textureBindingDesc1 = {};
+		textureBindingDesc1.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		textureBindingDesc1.DescriptorCount = 1;
+		textureBindingDesc1.Binding = 1;
+		textureBindingDesc1.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		textureBindingDesc1.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		DescriptorBindingDesc textureBindingDesc2 = {};
+		textureBindingDesc2.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		textureBindingDesc2.DescriptorCount = 100;
+		textureBindingDesc2.Binding = 2;
+		textureBindingDesc2.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		textureBindingDesc2.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
 		DescriptorBindingDesc verticesBindingDesc = {};
 		verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -79,6 +93,12 @@ namespace LambdaEngine
 		emitterIndexBindingDesc.Binding = 3;
 		emitterIndexBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 
+		DescriptorBindingDesc lightBufferBindingDesc = {};
+		lightBufferBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		lightBufferBindingDesc.DescriptorCount = 1;
+		lightBufferBindingDesc.Binding = 4;
+		lightBufferBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
 		DescriptorBindingDesc atlasDataBindingDesc = {};
 		atlasDataBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 		atlasDataBindingDesc.DescriptorCount = 1;
@@ -89,10 +109,10 @@ namespace LambdaEngine
 		descriptorSetLayoutDesc1.DescriptorBindings = { perFrameBufferBindingDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
-		descriptorSetLayoutDesc2.DescriptorBindings = { textureBindingDesc };
+		descriptorSetLayoutDesc2.DescriptorBindings = { textureBindingDesc0, textureBindingDesc1, textureBindingDesc2 };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
-		descriptorSetLayoutDesc3.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, emitterBindingDesc, emitterIndexBindingDesc };
+		descriptorSetLayoutDesc3.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, emitterBindingDesc, emitterIndexBindingDesc, lightBufferBindingDesc };
 
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc4 = {};
 		descriptorSetLayoutDesc4.DescriptorBindings = { atlasDataBindingDesc };
@@ -399,6 +419,54 @@ namespace LambdaEngine
 				LOG_ERROR("[ParticleRenderer]: Failed to update m_AtlasTexturesDescriptorSet");
 			}
 		}
+		else if (resourceName == "DIRL_SHADOWMAP")
+		{
+			constexpr uint32 setIndex = 1U;
+			constexpr uint32 setBinding = 1U;
+
+			m_AtlasTexturesDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Point Lights texture Descriptor Set", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_AtlasTexturesDescriptorSet != nullptr)
+			{
+				m_AtlasTexturesDescriptorSet->WriteTextureDescriptors(
+					ppPerImageTextureViews,
+					ppPerImageSamplers,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					setBinding,
+					imageCount,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					false
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleRenderer]: Failed to update m_AtlasTexturesDescriptorSet");
+			}
+		}
+		else if (resourceName == SCENE_POINT_SHADOWMAPS)
+		{
+			constexpr uint32 setIndex = 1U;
+			constexpr uint32 setBinding = 2U;
+
+			m_AtlasTexturesDescriptorSet = m_DescriptorCache.GetDescriptorSet("Particle Point Lights texture Descriptor Set", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_AtlasTexturesDescriptorSet != nullptr)
+			{
+				//Sampler* pSampler = Sampler::GetLinearSampler();
+
+				m_AtlasTexturesDescriptorSet->WriteTextureDescriptors(
+					ppPerImageTextureViews,
+					ppPerImageSamplers,
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					setBinding,
+					imageCount,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					false
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleRenderer]: Failed to update m_AtlasTexturesDescriptorSet");
+			}
+		}
 		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
 		{
 			if (imageCount == 1)
@@ -526,6 +594,28 @@ namespace LambdaEngine
 				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
 			}
 		}
+		else if (resourceName == SCENE_LIGHTS_BUFFER)
+		{
+			constexpr uint32 setIndex = 2U;
+			constexpr uint32 setBinding = 4U;
+
+			m_VertexInstanceDescriptorSet = m_DescriptorCache.GetDescriptorSet("Emitter Index Buffer Descriptor Set 2 Binding 4", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_VertexInstanceDescriptorSet != nullptr)
+			{
+				m_VertexInstanceDescriptorSet->WriteBufferDescriptors(
+					ppBuffers,
+					pOffsets,
+					pSizesInBytes,
+					setBinding,
+					count,
+					EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
+				);
+			}
+			else
+			{
+				LOG_ERROR("[ParticleUpdater]: Failed to update DescriptorSet[%d]", 0);
+			}
+		}
 
 		if (resourceName == SCENE_PARTICLE_INDEX_BUFFER)
 		{
@@ -570,10 +660,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppFirstExecutionStage);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
-		UNREFERENCED_VARIABLE(Sleeping);
-
-		if (Sleeping)
-			return;
 
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
 
@@ -628,8 +714,13 @@ namespace LambdaEngine
 		
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-		if(m_EmitterCount > 0)
-			pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, m_EmitterCount, sizeof(IndirectData));
+		if (!Sleeping) 
+		{
+			if (m_EmitterCount > 0) 
+			{
+				pCommandList->DrawIndexedIndirect(m_pIndirectBuffer, 0, m_EmitterCount, sizeof(IndirectData));
+			}
+		}
 
 		pCommandList->EndRenderPass();
 		pCommandList->End();

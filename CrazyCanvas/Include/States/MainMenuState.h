@@ -7,6 +7,11 @@
 #include "NoesisPCH.h"
 
 
+namespace LambdaEngine
+{
+	class IMusic;
+}
+
 class MainMenuState : public LambdaEngine::State
 {
 public:
@@ -24,4 +29,6 @@ public:
 private:
 	Noesis::Ptr<MainMenuGUI> m_MainMenuGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
+
+	GUID_Lambda m_MainMenuMusicGUID = GUID_NONE;
 };

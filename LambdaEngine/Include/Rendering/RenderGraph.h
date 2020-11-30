@@ -84,13 +84,13 @@ namespace LambdaEngine
 
 			struct
 			{
-				Texture**		ppTextures;
-				TextureView**	ppTextureViews;
-				TextureView**	ppPerSubImageTextureViews;
-				Sampler**		ppSamplers;
-				uint32			TextureCount;
-				uint32			SamplerCount;
-				uint32			PerImageSubImageTextureViewCount;
+				Texture* const*		ppTextures;
+				TextureView* const*	ppTextureViews;
+				TextureView* const*	ppPerSubImageTextureViews;
+				Sampler* const*		ppSamplers;
+				uint32				TextureCount;
+				uint32				SamplerCount;
+				uint32				PerImageSubImageTextureViewCount;
 			} ExternalTextureUpdate;
 
 			struct
@@ -102,8 +102,8 @@ namespace LambdaEngine
 
 			struct
 			{
-				Buffer**	ppBuffer;
-				uint32		Count;
+				Buffer* const*	ppBuffer;
+				uint32			Count;
 			} ExternalBufferUpdate;
 
 			struct
@@ -452,12 +452,12 @@ namespace LambdaEngine
 		void UpdateRelativeResourceDimensions(InternalResourceUpdateDesc* pResourceUpdateDesc);
 
 		void ExecuteSynchronizationStage(
-			SynchronizationStage* pSynchronizationStage, 
-			CommandAllocator* pGraphicsCommandAllocator, 
-			CommandList* pGraphicsCommandList, 
-			CommandAllocator* pComputeCommandAllocator, 
-			CommandList* pComputeCommandList, 
-			CommandList** ppFirstExecutionStage, 
+			SynchronizationStage* pSynchronizationStage,
+			CommandAllocator* pGraphicsCommandAllocator,
+			CommandList* pGraphicsCommandList,
+			CommandAllocator* pComputeCommandAllocator,
+			CommandList* pComputeCommandList,
+			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondExecutionStage);
 		
 		void ExecuteGraphicsRenderStage(

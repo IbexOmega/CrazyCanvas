@@ -40,6 +40,9 @@ namespace LambdaEngine
 		FORCEINLINE const ClearColorDesc* GetClearColors() const { return m_pClearColorDesc; }
 		FORCEINLINE uint32 GetClearColorCount() const { return ARR_SIZE(m_pClearColorDesc); }
 
+		FORCEINLINE uint32 GetWidth() const { return m_Desc.Width; }
+		FORCEINLINE uint32 GetHeight() const { return m_Desc.Height; }
+
 	private:
 		bool CreateColorTextures(const GUIRenderTargetDesc* pDesc);
 		bool CreateDepthStencilTexture(const GUIRenderTargetDesc* pDesc);

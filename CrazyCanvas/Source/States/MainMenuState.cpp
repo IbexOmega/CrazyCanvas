@@ -9,8 +9,16 @@
 
 #include "GUI/GUIHelpers.h"
 
+#include "Resources/ResourceCatalog.h"
+
+#include "Application/API/CommonApplication.h"
+#include "World/Player/PlayerActionSystem.h"
+#include "Input/API/Input.h"
+
 MainMenuState::~MainMenuState()
 {
+	using namespace LambdaEngine;
+
 	m_MainMenuGUI.Reset();
 	m_View.Reset();
 }
@@ -19,7 +27,12 @@ void MainMenuState::Init()
 {
 	using namespace LambdaEngine;
 
+	CommonApplication::Get()->SetMouseVisibility(true);
+	PlayerActionSystem::SetMouseEnabled(false);
+	Input::PushInputMode(EInputLayer::GUI);
+
 	DisablePlaySessionsRenderstages();
+	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
 
 	RenderGraphStructureDesc renderGraphStructure = {};
 

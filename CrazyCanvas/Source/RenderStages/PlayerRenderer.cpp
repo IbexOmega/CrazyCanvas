@@ -134,10 +134,6 @@ namespace LambdaEngine
 		// Fetching render targets
 		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE") 
 		{
-			if (imageCount != 0)
-			{
-				LOG_WARNING("RenderGraph has been altered. imageCount is %d but should be 0", imageCount);
-			}
 			m_IntermediateOutputImage = MakeSharedRef(ppPerImageTextureViews[0]);
 		}
 		
@@ -369,8 +365,6 @@ namespace LambdaEngine
 				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
 				const ComponentArray<WeaponComponent>* pWeaponComponents = pECSCore->GetComponentArray<WeaponComponent>();
-
-				LOG_MESSAGE("JA FIM: %u", m_DrawCount);
 
 				m_PlayerData.Clear();
 				TArray<WeaponData> weapons;

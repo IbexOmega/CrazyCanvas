@@ -8,6 +8,11 @@
 
 namespace LambdaEngine
 {
+	struct ServerSystemDesc : public ServerDesc
+	{
+		String Name;
+	};
+
 	class ServerSystem : public IServerHandler, public INetworkDiscoveryServer
 	{
 		friend class EngineLoop;
@@ -34,14 +39,14 @@ namespace LambdaEngine
 			return *s_pInstance;
 		}
 
-		static void Init(const String& name)
+		static void Init(ServerSystemDesc& desc)
 		{
 			if (!s_pInstance)
-				s_pInstance = DBG_NEW ServerSystem(name);
+				s_pInstance = DBG_NEW ServerSystem(desc);
 		}
 
 	private:
-		ServerSystem(const String& name);
+		ServerSystem(ServerSystemDesc& desc);
 
 	private:
 		static void StaticTickMainThread(Timestamp deltaTime);

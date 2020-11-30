@@ -135,7 +135,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				bool killed = false;
 				if (healthComponent.CurrentHealth <= 0)
 				{
-					MatchServer::KillPlayer(entity, projectileOwner);
+					MatchServer::KillPlayer(entity, projectileOwner, false);
 					killed = true;
 
 					LOG_INFO("PLAYER DIED");
@@ -194,7 +194,7 @@ bool HealthSystemServer::InitInternal()
 		systemReg.SubscriberRegistration.AdditionalAccesses.PushBack(
 			{ R, ProjectileComponent::Type() }
 		);
-		
+
 		RegisterSystem(TYPE_NAME(HealthSystemServer), systemReg);
 	}
 
@@ -214,7 +214,7 @@ bool HealthSystemServer::OnProjectileHit(const ProjectileHitEvent& projectileHit
 		if (projectileHitEvent.CollisionInfo1.Entity == entity)
 		{
 			const Entity projectileEntity = projectileHitEvent.CollisionInfo0.Entity;
-			
+
 			ECSCore* pECS = ECSCore::GetInstance();
 			const ProjectileComponent& projectileComponent = pECS->GetConstComponent<ProjectileComponent>(projectileEntity);
 			

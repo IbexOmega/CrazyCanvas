@@ -13,9 +13,9 @@
 
 FlagSystemBase::~FlagSystemBase()
 {
-	if (s_Instance == this)
+	if (s_pInstance == this)
 	{
-		s_Instance = nullptr;
+		s_pInstance = nullptr;
 	}
 }
 
@@ -52,7 +52,7 @@ bool FlagSystemBase::Init()
 		RegisterSystem(TYPE_NAME(FlagSystemBase), systemReg);
 	}
 
-	s_Instance = this;
+	s_pInstance = this;
 	return true;
 }
 

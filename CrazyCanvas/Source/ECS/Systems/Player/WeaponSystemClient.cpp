@@ -9,7 +9,11 @@
 
 #include "Math/Random.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 #include "Match/Match.h"
+
+#include "Resources/ResourceCatalog.h"
 
 /*
 * WeaponSystemClients
@@ -102,20 +106,23 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			StartReload(weaponComponent, playerActions);
 		}
 
-		// Reload if we are not reloading
-		if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
-		{
-			StartReload(weaponComponent, playerActions);
-		}
-		else if (!onCooldown) // If we did not hit the reload try and shoot
-		{
-			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
+		if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
+		{ 
+			// Reload if we are not reloading
+			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
 			{
-				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
+				StartReload(weaponComponent, playerActions);
 			}
-			else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
+			else if (!onCooldown) // If we did not hit the reload try and shoot
 			{
-				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
+				if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
+				{
+					TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
+				}
+				else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
+				{
+					TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
+				}
 			}
 		}
 
@@ -131,8 +138,20 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 	WeaponSystem::Fire(weaponEntity, weaponComponent, ammoType, position, velocity, playerTeam, angle);
 
 	// Play gun fire and spawn particles
-	ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
-	pSound->PlayOnceAt(position, velocity, 0.2f, 1.0f);
+	ECSCore* pECS = ECSCore::GetInstance();
+	const auto* pWeaponLocalComponents = pECS->GetComponentArray<WeaponLocalComponent>();
+
+	// Play 2D sound if local player shooting else play 3D sound
+	if (pWeaponLocalComponents != nullptr && pWeaponLocalComponents->HasComponent(weaponEntity))
+	{
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_2D_GUID);
+		pSound->PlayOnce(0.5f);
+	}
+	else
+	{
+		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_3D_GUID);
+		pSound->PlayOnceAt(position, velocity, 0.25f, 1.0f);
+	}
 }
 
 bool WeaponSystemClient::InitInternal()
@@ -175,73 +194,6 @@ bool WeaponSystemClient::InitInternal()
 		);
 
 		RegisterSystem(TYPE_NAME(WeaponSystemClient), systemReg);
-	}
-
-	// Create rendering resources for projectiles
-	{
-		MaterialProperties projectileMaterialProperties;
-		projectileMaterialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		projectileMaterialProperties.Metallic = 0.5f;
-		projectileMaterialProperties.Roughness = 0.5f;
-
-		GUID_Lambda projectileMeshGUID;
-		ResourceManager::LoadMeshFromFile("sphere.obj", projectileMeshGUID);
-		if (projectileMeshGUID == GUID_NONE)
-		{
-			return false;
-		}
-
-		// Paint
-		m_RedPaintProjectileMeshComponent = { };
-		m_RedPaintProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
-		m_RedPaintProjectileMeshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
-			"Red Paint Projectile",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			projectileMaterialProperties);
-
-		projectileMaterialProperties.Albedo = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-
-		m_BluePaintProjectileMeshComponent = { };
-		m_BluePaintProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
-		m_BluePaintProjectileMeshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
-			"Blue Paint Projectile",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			projectileMaterialProperties);
-
-		// Water
-		projectileMaterialProperties.Albedo = glm::vec4(87.0f / 255.0f, 217.0f / 255.0f, 1.0f, 1.0f);
-
-		m_WaterProjectileMeshComponent = { };
-		m_WaterProjectileMeshComponent.MeshGUID		= projectileMeshGUID;
-		m_WaterProjectileMeshComponent.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
-			"Water Projectile",
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_NORMAL_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			GUID_TEXTURE_DEFAULT_COLOR_MAP,
-			projectileMaterialProperties);
-	}
-
-	// Create soundeffects
-	m_GunFireGUID	= ResourceManager::LoadSoundEffect3DFromFile("gun.wav");
-	if (m_GunFireGUID == GUID_NONE)
-	{
-		return false;
-	}
-
-	m_OutOfAmmoGUID = ResourceManager::LoadSoundEffect2DFromFile("out_of_ammo.wav");
-	if (m_OutOfAmmoGUID == GUID_NONE)
-	{
-		return false;
 	}
 
 	return true;
@@ -294,7 +246,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 	else
 	{
 		// Play out of ammo
-		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_OUTOFAMMO_2D_GUID);
 		pSound->PlayOnce(1.0f, 1.0f);
 
 		return false;

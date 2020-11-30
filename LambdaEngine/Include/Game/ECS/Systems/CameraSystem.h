@@ -22,6 +22,9 @@ namespace LambdaEngine
 
 		void MainThreadTick(Timestamp deltaTime);
 
+		FORCEINLINE void SetMainFOV(float32 fov) { m_MainFOV = fov; }
+		FORCEINLINE float32 GetMainFOV() const { return m_MainFOV; }
+
 	public:
 		static CameraSystem& GetInstance() { return s_Instance; }
 
@@ -45,6 +48,8 @@ namespace LambdaEngine
 		glm::ivec2	m_NewMousePos;
 
 		THashTable<Entity, uint32> m_LineGroupEntityIDs;
+
+		float32		m_MainFOV = 0.0f;
 
 	private:
 		static CameraSystem	s_Instance;

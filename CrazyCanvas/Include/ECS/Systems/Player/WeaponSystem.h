@@ -27,7 +27,7 @@ namespace LambdaEngine
 
 struct WeaponProperties
 {
-	float32	FireRate		= 4.0f;
+	float32	FireRate		= 6.0f;
 	int32	AmmoCapacity	= 50;
 	EAmmoType AmmoType		= EAmmoType::AMMO_TYPE_PAINT;
 };
@@ -75,8 +75,8 @@ public:
 public:
 	static bool Init();
 
-	FORCEINLINE static WeaponSystem& GetInstance() 
-	{ 
+	FORCEINLINE static WeaponSystem& GetInstance()
+	{
 		VALIDATE(s_Instance != nullptr);
 		return *s_Instance;
 	}
@@ -85,13 +85,6 @@ protected:
 	virtual bool InitInternal() = 0;
 
 	void CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg);
-
-	virtual LambdaEngine::MeshComponent GetMeshComponent(EAmmoType ammoType, uint32 playerTeam)
-	{
-		UNREFERENCED_VARIABLE(ammoType);
-		UNREFERENCED_VARIABLE(playerTeam);
-		return LambdaEngine::MeshComponent();
-	}
 
 	void UpdateWeapon(WeaponComponent& weaponComponent, float32 dt);
 

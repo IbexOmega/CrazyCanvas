@@ -42,27 +42,34 @@
 
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Application/API/Events/EventQueue.h"
+
+#include "States/ServerState.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
 
-MatchServer::~MatchServer()
-{
-	using namespace LambdaEngine;
-	
-	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
-	EventQueue::UnregisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
-	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
-}
-
-bool MatchServer::InitInternal()
+MatchServer::MatchServer()
 {
 	using namespace LambdaEngine;
 
 	EventQueue::RegisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
 	EventQueue::RegisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
-	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &MatchServer::OnClientDisconnected);
+	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
+}
 
+MatchServer::~MatchServer()
+{
+	using namespace LambdaEngine;
+
+	EventQueue::UnregisterEventHandler<FlagDeliveredEvent>(this, &MatchServer::OnFlagDelivered);
+	EventQueue::UnregisterEventHandler<FlagRespawnEvent>(this, &MatchServer::OnFlagRespawn);
+	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &MatchServer::OnPlayerLeft);
+}
+
+bool MatchServer::InitInternal()
+{
 	return true;
 }
 
@@ -92,9 +99,36 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 				const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 				const ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
 				const ComponentArray<PositionComponent>* pPositionComponent = pECS->GetComponentArray<PositionComponent>();
+				const ComponentArray<DynamicCollisionComponent>* pCollisionComponents = pECS->GetComponentArray<DynamicCollisionComponent>();
+
+				// Server
+				ImGui::Text((String("Clients: " + std::to_string(PlayerManagerServer::GetPlayerCount()))).c_str());
+				ImGui::Text((String("Game State: ") + ServerStateToString(ServerState::GetState())).c_str());
+
+				// Scores
+				ImGui::Text("Score Status:");
+				for (uint32 s = 0; s < m_Scores.GetSize(); s++)
+				{
+					int32 score = (int32)m_Scores[s];
+
+					std::string name = "Team " + std::to_string(s) + ": [Score=" + std::to_string(score) + "]";
+					if (ImGui::TreeNode(name.c_str()))
+					{
+						if (ImGui::Button("+"))
+							InternalSetScore((uint8)s, score + 1);
+
+						ImGui::SameLine();
+
+						if (ImGui::Button("-"))
+							InternalSetScore((uint8)s, glm::max<int32>(score - 1, 0));
+
+						ImGui::TreePop();
+					}
+				}
 
 				// Flags
 				TArray<Entity> flagEntities = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG);
+				ImGui::Text("Flag Status:");
 				for (uint32 f = 0; f < flagEntities.GetSize(); f++)
 				{
 					Entity flagEntity = flagEntities[f];
@@ -102,11 +136,23 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					std::string name = "Flag " + std::to_string(f) + ": [EntityID=" + std::to_string(flagEntity) + "]";
 					if (ImGui::TreeNode(name.c_str()))
 					{
-						const TeamComponent& flagTeamComponent			= pTeamComponents->GetConstData(flagEntity);
+						TeamComponent flagTeamComponent = {};
+						
+						if (pTeamComponents->GetConstIf(flagEntity, flagTeamComponent))
+						{
+							ImGui::Text("Flag Team Index: %u", flagTeamComponent.TeamIndex);
+						}
+						else
+						{
+							flagTeamComponent.TeamIndex = UINT8_MAX;
+						}
+
 						const ParentComponent& flagParentComponent		= pParentComponents->GetConstData(flagEntity);
 						const PositionComponent& flagPositionComponent	= pPositionComponent->GetConstData(flagEntity);
-						ImGui::Text("Flag Team Index: %u", flagTeamComponent.TeamIndex);
+						const DynamicCollisionComponent& flagCollisionComponent	= pCollisionComponents->GetConstData(flagEntity);
+						const PxVec3& flagColliderPosition = flagCollisionComponent.pActor->getGlobalPose().p;
 						ImGui::Text("Flag Position: [ %f, %f, %f ]", flagPositionComponent.Position.x, flagPositionComponent.Position.y, flagPositionComponent.Position.z);
+						ImGui::Text("Flag Collider Position: [ %f, %f, %f ]", flagColliderPosition.x, flagColliderPosition.y, flagColliderPosition.z);
 						ImGui::Text("Flag Status: %s", flagParentComponent.Attached ? "Carried" : "Not Carried");
 
 						if (flagParentComponent.Attached)
@@ -162,9 +208,9 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 							if (ImGui::Button("Kill"))
 							{
-								MatchServer::KillPlayer(playerEntity, UINT32_MAX);
+								MatchServer::KillPlayer(playerEntity, UINT32_MAX, false);
 							}
-							
+
 							ImGui::SameLine();
 
 							if (ImGui::Button("Disconnect"))
@@ -314,10 +360,10 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 
 	{
 		std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
-		for (Entity playerEntity : m_PlayersToKill)
+		for (const PlayerKillDesc& playerKillDesc : m_PlayersToKill)
 		{
-			LOG_INFO("SERVER: Player=%u DIED", playerEntity);
-			DoKillPlayer(playerEntity);
+			LOG_INFO("SERVER: Player=%u DIED", playerKillDesc.PlayerToKill);
+			DoKillPlayer(playerKillDesc.PlayerToKill, playerKillDesc.RespawnFlagIfCarried);
 		}
 		m_PlayersToKill.Clear();
 	}
@@ -338,6 +384,15 @@ void MatchServer::FixedTickInternal(LambdaEngine::Timestamp deltaTime)
 			}
 		}
 	}
+}
+
+bool MatchServer::ResetMatchInternal()
+{
+	m_PlayersToKill.Clear();
+	m_PlayersToRespawn.Clear();
+	m_ShouldBeginMatch = false;
+
+	return false;
 }
 
 void MatchServer::SpawnFlag(uint8 teamIndex)
@@ -396,7 +451,6 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	createProjectileDesc.TeamIndex		= event.TeamIndex;
 	createProjectileDesc.Callback		= event.Callback;
 	createProjectileDesc.WeaponOwner	= event.WeaponOwnerEntity;
-	createProjectileDesc.MeshComponent	= event.MeshComponent;
 	createProjectileDesc.Angle			= event.Angle;
 
 	TArray<Entity> createdFlagEntities;
@@ -409,29 +463,77 @@ bool MatchServer::OnWeaponFired(const WeaponFiredEvent& event)
 	return false;
 }
 
+void MatchServer::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity)
+{
+	UNREFERENCED_VARIABLE(killPlaneEntity);
+
+	using namespace LambdaEngine;
+
+	ELevelObjectType levelObjectType = m_pLevel->GetLevelObjectType(otherEntity);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	if (levelObjectType != ELevelObjectType::LEVEL_OBJECT_TYPE_NONE)
+	{
+		switch (levelObjectType)
+		{
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER:
+			{
+				LOG_WARNING("[MatchServer]: A player hit the Kill Plane");
+				KillPlayer(otherEntity, UINT32_MAX, true);
+				break;
+			}
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
+			{
+				LOG_WARNING("[MatchServer]: A flag hit the Kill Plane");
+				TeamComponent flagTeamComponent = {};
+
+				if (!pECS->GetConstComponentIf(otherEntity, flagTeamComponent))
+				{
+					flagTeamComponent.TeamIndex = UINT8_MAX;
+				}
+
+				glm::vec3 flagPosition;
+				if (CreateFlagSpawnProperties(flagTeamComponent.TeamIndex, flagPosition))
+				{
+					FlagSystemBase::GetInstance()->OnFlagDropped(otherEntity, flagPosition);
+				}
+				break;
+			}
+			case ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE:
+			{
+				m_pLevel->DeleteObject(otherEntity);
+				break;
+			}
+			default:
+			{
+				LOG_WARNING("[MatchServer]: Non Implemented Level Object Type hit the Kill Plane");
+				break;
+			}
+		}
+	}
+	else
+	{
+		pECS->RemoveEntity(otherEntity);
+	}
+}
+
 void MatchServer::DeleteGameLevelObject(LambdaEngine::Entity entity)
 {
-	m_pLevel->DeleteObject(entity);
+	if(m_pLevel)
+		m_pLevel->DeleteObject(entity);
 
 	PacketDeleteLevelObject packet;
-	packet.NetworkUID = entity;
+	packet.NetworkUID = int32(entity);
 
 	ServerHelper::SendBroadcast(packet);
 }
 
-bool MatchServer::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
+bool MatchServer::OnPlayerLeft(const PlayerLeftEvent& event)
 {
-	VALIDATE(event.pClient != nullptr);
+	using namespace LambdaEngine;
 
-	const Player* pPlayer = PlayerManagerBase::GetPlayer(event.pClient);
-	if (pPlayer)
-	{
-		MatchServer::KillPlayer(pPlayer->GetEntity(), UINT32_MAX);
-	}
-	
-
-	// TODO: Fix this
-	//DeleteGameLevelObject(playerEntity);
+	Entity playerEntity = event.pPlayer->GetEntity();
+	DeleteGameLevelObject(playerEntity);
 
 	return true;
 }
@@ -450,22 +552,7 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		FlagSystemBase::GetInstance()->OnFlagDropped(event.Entity, flagPosition);
 
 		uint32 newScore = GetScore(event.ScoringTeamIndex) + 1;
-		SetScore(event.ScoringTeamIndex, newScore);
-
-		PacketTeamScored packet;
-		packet.TeamIndex	= event.ScoringTeamIndex;
-		packet.Score		= newScore;
-		ServerHelper::SendBroadcast(packet);
-
-		if (newScore == m_MatchDesc.MaxScore) // game over
-		{
-			PacketGameOver gameOverPacket;
-			gameOverPacket.WinningTeamIndex = event.ScoringTeamIndex;
-
-			ServerHelper::SendBroadcast(gameOverPacket);
-
-			ResetMatch();
-		}
+		InternalSetScore(event.ScoringTeamIndex, newScore, pPlayer->GetUID());
 	}
 	else
 	{
@@ -493,7 +580,7 @@ bool MatchServer::OnFlagRespawn(const FlagRespawnEvent& event)
 	return true;
 }
 
-void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity)
+void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity, bool respawnFlagIfCarried)
 {
 	using namespace LambdaEngine;
 
@@ -537,7 +624,22 @@ void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity)
 			const ParentComponent& flagParentComponent = pECS->GetConstComponent<ParentComponent>(flagEntity);
 			if (flagParentComponent.Attached && flagParentComponent.Parent == playerEntity)
 			{
-				FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, oldPosition);
+				if (respawnFlagIfCarried)
+				{
+					TeamComponent flagTeamComponent = {};
+					if (!pECS->GetConstComponentIf<TeamComponent>(flagEntity, flagTeamComponent))
+					{
+						flagTeamComponent.TeamIndex = UINT8_MAX;
+					}
+
+					glm::vec3 flagSpawnPosition;
+					CreateFlagSpawnProperties(flagTeamComponent.TeamIndex, flagSpawnPosition);
+					FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, flagSpawnPosition);
+				}
+				else
+				{
+					FlagSystemBase::GetInstance()->OnFlagDropped(flagEntity, oldPosition);
+				}
 			}
 		}
 	}
@@ -547,10 +649,9 @@ void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity)
 	}
 }
 
-void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
+void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity, bool respawnFlagIfCarried)
 {
 	using namespace LambdaEngine;
-
 
 	const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
 	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
@@ -577,15 +678,13 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 	{
 
 		std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
-		m_PlayersToKill.EmplaceBack(entityToKill);
-
+		m_PlayersToKill.EmplaceBack(PlayerKillDesc{ .PlayerToKill = entityToKill, .RespawnFlagIfCarried = respawnFlagIfCarried });
 	}
 
 	{
 
 		std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
 		m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 5.0f));
-	
 	}
 }
 
@@ -633,12 +732,36 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 }
 
-void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity)
+void MatchServer::InternalSetScore(uint8 team, uint32 score, uint64 playerUID)
+{
+	using namespace LambdaEngine;
+
+	if (SetScore(team, score))
+	{
+		PacketTeamScored packet;
+		packet.TeamIndex = team;
+		packet.Score = score;
+		packet.PlayerUID = playerUID;
+		ServerHelper::SendBroadcast(packet);
+
+		if (score == m_MatchDesc.MaxScore)
+		{
+			PacketGameOver gameOverPacket;
+			gameOverPacket.WinningTeamIndex = team;
+
+			ServerHelper::SendBroadcast(gameOverPacket);
+
+			EventQueue::SendEvent<GameOverEvent>(team);
+		}
+	}
+}
+
+void MatchServer::KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity, bool respawnFlagIfCarried)
 {
 	using namespace LambdaEngine;
 
 	MatchServer* pMatchServer = static_cast<MatchServer*>(Match::GetInstance());
-	pMatchServer->InternalKillPlayer(entityToKill, killedByEntity);
+	pMatchServer->InternalKillPlayer(entityToKill, killedByEntity, respawnFlagIfCarried);
 }
 
 bool MatchServer::CreateFlagSpawnProperties(uint8 teamIndex, glm::vec3& position)

@@ -50,6 +50,8 @@
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
+#include "Game/ECS/ComponentOwners/Misc/InheritanceComponentOwner.h"
+
 #include "GUI/Core/GUIApplication.h"
 
 #include <imgui/imgui.h>
@@ -165,6 +167,8 @@ namespace LambdaEngine
 		StateManager::GetInstance()->Tick(delta);
 		AudioSystem::GetInstance().Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
+
+		InheritanceComponentOwner::GetInstance()->Tick();
 
 		// Game
 		Game::Get().Tick(delta);
@@ -327,6 +331,11 @@ namespace LambdaEngine
 			return false;
 		}
 
+		if (!InheritanceComponentOwner::GetInstance()->Init())
+		{
+			return false;
+		}
+
 		if (!InitSystems())
 		{
 			return false;
@@ -398,6 +407,13 @@ namespace LambdaEngine
 		}
 
 		EventQueue::UnregisterAll();
+
+		//Needs to be released before ECSCore to prevent it from deleting parent/child entities
+		if (!InheritanceComponentOwner::GetInstance()->Release())
+		{
+			return false;
+		}
+
 		ECSCore::Release();
 
 		if (!ThreadPool::Release())

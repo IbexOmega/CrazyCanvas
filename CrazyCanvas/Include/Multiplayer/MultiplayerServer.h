@@ -2,6 +2,7 @@
 #include "Multiplayer/MultiplayerBase.h"
 
 #include "ECS/Systems/Match/ServerFlagSystem.h"
+#include "ECS/Systems/Match/ServerShowerSystem.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 
 #include "World/Player/Server/PlayerRemoteSystem.h"
@@ -20,5 +21,6 @@ protected:
 
 private:
 	ServerFlagSystem* m_pFlagSystem = nullptr;
+	ServerShowerSystem* m_pShowerSystem = nullptr;
 	PlayerRemoteSystem m_PlayerRemoteSystem;
 };
