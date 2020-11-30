@@ -31,6 +31,11 @@ namespace LambdaEngine
 			{
 				.SrcName = "G_BUFFER_LINEAR_Z",
 				.DstName = "G_BUFFER_PREV_LINEAR_Z",
+			},
+			BlitDescription
+			{
+				.SrcName = "DENOISED_REFLECTIONS_TEXTURE",
+				.DstName = "PREV_DENOISED_REFLECTIONS_TEXTURE",
 			}
 		};
 

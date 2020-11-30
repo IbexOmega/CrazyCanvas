@@ -9,13 +9,14 @@
 
 layout (local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
 
-layout(binding = 0,	set = TEXTURE_SET_INDEX) uniform sampler2D u_Reflections;
-layout(binding = 1,	set = TEXTURE_SET_INDEX) uniform sampler2D u_BRDF_PDF;
-layout(binding = 2,	set = TEXTURE_SET_INDEX, rgba16f) volatile coherent restrict uniform image2D u_DenoisedReflections;
-layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferCompactNormal;
-layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferVelocity;
-layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferLinearZ;
-layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferPrevLinearZ;
+layout(binding = 0,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D u_DenoisedReflections;
+layout(binding = 1,	set = TEXTURE_SET_INDEX) uniform sampler2D u_Reflections;
+layout(binding = 2,	set = TEXTURE_SET_INDEX) uniform sampler2D u_BRDF_PDF;
+layout(binding = 3,	set = TEXTURE_SET_INDEX) uniform sampler2D u_PrevDenoisedReflections;
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferCompactNormal;
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferVelocity;
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferLinearZ;
+layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferPrevLinearZ;
 
 float ValidSample(ivec2 iImageDim, ivec2 reprojCoord, float Z, float prevZ, float fwidthZ, vec3 normal, vec3 reprojNormal)
 {
@@ -101,7 +102,7 @@ void main()
     float historyLength = 0.0f;
 
 #if TEMPORAL_REUSE_ENABLED
-    vec2 reprojLoc          = vec2(p) - velocity * vec2(BLUR_IMAGE_SIZE);
+    vec2 reprojLoc          = ((vec2(p) + 0.5f) /  vec2(BLUR_IMAGE_SIZE)) - velocity;
     ivec2 reprojP           = ivec2(reprojLoc);
 
     vec3 reprojNormal       = UnpackNormal(texelFetch(u_GBufferCompactNormal, reprojP, 0).xyz);
@@ -109,7 +110,7 @@ void main()
     vec2 prev_z_Values      = texelFetch(u_GBufferPrevLinearZ, p, 0).xy;
 
     float validReprojection = ValidSample(BLUR_IMAGE_SIZE, reprojP, current_z_Values.x, prev_z_Values.x, current_z_Values.y, currentNormal, reprojNormal);
-    vec4 prev_Radiance_HistoryLength = imageLoad(u_DenoisedReflections, reprojP);
+    vec4 prev_Radiance_HistoryLength = texture(u_PrevDenoisedReflections, reprojLoc);
     prev_Radiance_HistoryLength.rgb = clamp(prev_Radiance_HistoryLength.rgb, minRadiance, maxRadiance);
 
 	historyLength = validSample * min(prev_Radiance_HistoryLength.a + 1.0f, TEMPORAL_REUSE_MAX_HISTORY_LENGTH); 
@@ -120,8 +121,8 @@ void main()
 
 #endif
 
-    //imageStore(u_DenoisedReflections, p, vec4(current_Radiance_Valid.rgb, historyLength));
-    imageStore(u_DenoisedReflections, p, vec4(vec2(p) - reprojLoc, 0.0f, 1.0f));
+    imageStore(u_DenoisedReflections, p, vec4(current_Radiance_Valid.rgb, historyLength));
+    //imageStore(u_DenoisedReflections, p, vec4(vec2(p) - reprojLoc, 0.0f, 1.0f));
     //imageStore(u_DenoisedReflections, p, vec4(mix(vec3(1.0f, 0.0f, 0.0f), current_Radiance_Valid.rgb, validReprojection), historyLength));
     //imageStore(u_DenoisedReflections, p, mix(vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), validReprojection));
 }
