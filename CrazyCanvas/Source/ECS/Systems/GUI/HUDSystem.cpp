@@ -232,7 +232,7 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 
 			if (pPlayerLocalComponents->HasComponent(weaponComponent.WeaponOwner) && m_HUDGUI)
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType, false);
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
 			}
 		}
 	}
@@ -252,8 +252,7 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT, false);
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER, false);
+				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
 			}
 		}
 	}
@@ -273,7 +272,8 @@ bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event
 
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_NONE, true);
+				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
+
 			}
 		}
 	}
@@ -282,6 +282,22 @@ bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event
 
 bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& event)
 {
+	if (!MultiplayerUtils::IsServer())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+		for (Entity playerWeapon : m_WeaponEntities)
+		{
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			{
+				m_HUDGUI->AbortReload();
+			}
+		}
+	}
+
 	return false;
 }
 

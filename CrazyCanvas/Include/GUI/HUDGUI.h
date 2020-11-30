@@ -51,8 +51,11 @@ struct GameGUIState
 
 	LambdaEngine::TArray<uint32> Scores;
 
-	int32 Ammo;
-	int32 AmmoCapacity;
+	int32 WaterAmmo = 50;
+	int32 PaintAmmo = 50;
+
+	int32 WaterAmmoCapacity = 50;
+	int32 PaintAmmoCapacity = 50;
 };
 
 typedef std::pair<int16, const Player*> PlayerPair;
@@ -71,7 +74,10 @@ public:
 
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
-	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType, const bool isReloading);
+	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
+
+	void Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading);
+	void AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo);
 
 	void UpdateCountdown(uint8 countDownTime);
 
@@ -107,12 +113,15 @@ private:
 	GameGUIState m_GUIState;
 
 	bool m_IsGameOver	= false;
-	bool m_IsFinishedReloading = false;
+	bool m_IsReloading = false;
 
 	float m_WaterAmmoScale = 0.0f;
 	float m_PaintAmmoScale = 0.0f;
 
-	float32 m_ReloadAnimationTime = 1.0f;
+	float m_WaterAmmoFactor = 0.0f;
+	float m_PaintAmmoFactor = 0.0f;
+
+	float32 m_ReloadAnimationTime = 2.0f;
 
 	Noesis::Image* m_pWaterAmmoRect				= nullptr;
 	Noesis::Image* m_pPaintAmmoRect				= nullptr;

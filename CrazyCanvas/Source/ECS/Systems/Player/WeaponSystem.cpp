@@ -229,7 +229,6 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 
-
 	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
 
 	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
@@ -256,6 +255,9 @@ void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent
 	}
 
 	weaponComponent.ReloadClock = weaponComponent.ReloadTime;
+
+	WeaponReloadStartedEvent reloadStartedEvent(weaponComponent.WeaponOwner);
+	LambdaEngine::EventQueue::SendEventImmediate(reloadStartedEvent);
 }
 
 void WeaponSystem::AbortReload(WeaponComponent& weaponComponent)
