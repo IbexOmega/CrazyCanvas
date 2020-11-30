@@ -166,8 +166,8 @@ namespace LambdaEngine
 		pushConstantData.outerBorder = 3; // Not counting the corners! One outer edge on the triangle will be, o-x-x-x-o, if the outerBorder is 3.
 
 		// TODO: Change this to be the correct size, if assuming all triangle will be fully tessellated!
-		uint64 newVerticesMaxSize = pMesh->Vertices.GetSize() * sizeof(Vertex);
-		uint64 newIndicesMaxSize = pMesh->Indices.GetSize() * sizeof(MeshIndexType);
+		uint64 newVerticesMaxSize = (pushConstantData.triangleCount*12) * sizeof(Vertex);
+		uint64 newIndicesMaxSize = (pushConstantData.triangleCount * 12) * sizeof(MeshIndexType);
 
 		LOG_WARNING("Create buffers...");
 		static uint64 signalValue = 0;
@@ -285,6 +285,29 @@ namespace LambdaEngine
 		memcpy(pMesh->Vertices.GetData(), pMapped, newVerticesMaxSize);
 		m_pOutVertexSecondStagingBuffer->Unmap();
 		LOG_WARNING("Done");
+
+		LOG_WARNING("Compact data...");
+		uint32 emptyCount = 0;
+		// Move all elements to the left.
+		for (uint32 i = 0; i < pMesh->Indices.GetSize(); i++)
+		{
+			uint32 index = pMesh->Indices[i];
+			if (index == UINT32_MAX)
+				emptyCount++;
+			else
+			{
+				uint32 newI = i - emptyCount;
+				pMesh->Indices[newI] = newI;
+				pMesh->Vertices[newI] = pMesh->Vertices[index];
+			}
+		}
+
+		// Remove the unused elements.
+		pMesh->Indices.Resize(pMesh->Indices.GetSize() - emptyCount);
+		pMesh->Vertices.Resize(pMesh->Vertices.GetSize() - emptyCount);
+
+		LOG_WARNING("Done");
+		
 		LOG_WARNING("Tessellation Complete");
 	}
 
