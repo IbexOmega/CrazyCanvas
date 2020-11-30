@@ -207,6 +207,7 @@ void HealthCompute::Render(
 
 	UNREFERENCED_VARIABLE(backBufferIndex);
 	UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+	UNREFERENCED_VARIABLE(sleeping);
 
 	if (s_HealthsToCalculate.empty())
 		return;
