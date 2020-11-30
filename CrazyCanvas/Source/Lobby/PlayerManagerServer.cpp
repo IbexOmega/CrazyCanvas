@@ -172,22 +172,20 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 		{
 			if (player.IsHost())
 			{
-				ServerHelper::SetIgnoreNewClients(true);
-
 				for (auto& pair : s_Players)
 				{
 					Player& p = pair.second;
+					p.m_State = packet.State;
+
 					if (p != player)
 					{
-						p.m_State = packet.State;
 						packet.UID = p.m_UID;
-
 						ServerHelper::SendBroadcast(packet);
-
-						PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
-						EventQueue::SendEventImmediate(playerStateUpdatedEvent);
 					}
 				}
+
+				PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
+				EventQueue::SendEventImmediate(playerStateUpdatedEvent);
 			}
 		}
 	}
