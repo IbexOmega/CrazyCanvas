@@ -333,6 +333,20 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 	{
 		if (pPlayer->IsDead())
 		{
+
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+			for (Entity playerWeapon : m_WeaponEntities)
+			{
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (pPlayer->GetEntity() == weaponComponent.WeaponOwner && m_HUDGUI)
+				{
+					m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
+				}
+			}
+
 			m_HUDGUI->ShowHUD(false);
 
 			if (event.pPlayerKiller)

@@ -54,9 +54,7 @@
                 </TransformGroup>
             </TextBlock.RenderTransform>
         </TextBlock>
-    </Grid>
-
-    <Grid>
+        
         <TextBlock x:Name="SMALL_PROMPT_TEXT" Text="" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="26" Foreground="Red" Visibility="Hidden" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="2.5" RenderTransformOrigin="0.5 0.5">
             <TextBlock.RenderTransform>
                 <TransformGroup x:Name="smallTransformGroup">
