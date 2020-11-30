@@ -25,7 +25,7 @@ using namespace LambdaEngine;
 
 
 bool PlayerActionSystem::m_MouseEnabled = true;
-float PlayerActionSystem::m_Speed = 1.0f;
+float32 PlayerActionSystem::m_Speed = 1.0f;
 
 PlayerActionSystem::PlayerActionSystem()
 {
@@ -107,7 +107,7 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 	bool verticalMovement = deltaAction.y != 0;
 
 	if (isHoldingFlag)
-		m_Speed = 0.8;
+		m_Speed = 0.8f;
 	else
 		m_Speed = 1.0f;
 

@@ -29,5 +29,5 @@ public:
 private:
 	static bool m_MouseEnabled;
 
-	static float m_Speed;
+	static float32 m_Speed;
 };
