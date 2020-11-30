@@ -386,12 +386,44 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 	}
 	 
 	// Modify material of mesh component to represent team color
-	GUID_Lambda teamMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(teamComponent.TeamIndex);
+	glm::vec3 teamColor = TeamHelper::GetTeamColor(teamComponent.TeamIndex);
+
 	TArray<MeshComponent> meshComponents = levelObject.MeshComponents;
 	createdEntities.Reserve(meshComponents.GetSize());
 
 	for (auto& meshComp : meshComponents)
 	{
+		// Recreate material with team color
+		ResourceManager::MaterialLoadDesc loadDesc = ResourceManager::GetMaterialDesc(meshComp.MaterialGUID);
+		Material* pMaterial = ResourceManager::GetMaterial(meshComp.MaterialGUID);
+		MaterialProperties materialProperties = {};
+		materialProperties = pMaterial->Properties;
+		materialProperties.Albedo = glm::vec4(teamColor, 1.0f);
+
+		// Create Unique Material Name
+		const std::string strFlag = "_INCLUDEMESH_";
+		size_t startPos = levelObject.Name.find(strFlag);
+		size_t endPos = levelObject.Name.find(".");
+		std::string materialName;
+		if (startPos != std::string::npos && endPos != std::string::npos)
+		{
+			startPos = startPos + strFlag.size();
+			materialName = levelObject.Name.substr(startPos, endPos - startPos);
+		}
+		else
+		{
+			materialName = levelObject.Name;
+		}
+
+		GUID_Lambda teamMaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"TeamIndicator Color Material " + materialName,
+			loadDesc.AlbedoMapGUID		!= GUID_NONE ? loadDesc.AlbedoMapGUID  : GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			loadDesc.NormalMapGUID		!= GUID_NONE ? loadDesc.NormalMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			loadDesc.AOMapGUID			!= GUID_NONE ? loadDesc.AOMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			loadDesc.MetallicMapGUID	!= GUID_NONE ? loadDesc.MetallicMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			loadDesc.RoughnessMapGUID	!= GUID_NONE ? loadDesc.RoughnessMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			materialProperties);
+
 		meshComp.MaterialGUID = teamMaterialGUID;
 		Entity entity = CreateStaticGeometry(meshComp, translation);
 		createdEntities.PushBack(entity);

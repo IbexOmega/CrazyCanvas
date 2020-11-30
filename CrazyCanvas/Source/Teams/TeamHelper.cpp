@@ -67,6 +67,7 @@ glm::vec3 TeamHelper::GetTeamColor(uint8 teamIndex)
 }
 
 void TeamHelper::SetTeamColor(uint8 teamIndex, const glm::vec3& color)
+
 {
 	using namespace LambdaEngine;
 
@@ -79,6 +80,7 @@ void TeamHelper::SetTeamColor(uint8 teamIndex, const glm::vec3& color)
 	MaterialProperties materialProperties = {};
 	materialProperties.Albedo = glm::vec4(color, 1.0f);
 	materialProperties.Roughness = 0.5f;
+
 
 	s_TeamColorMaterialGUIDs[teamIndex] = ResourceManager::LoadMaterialFromMemory(
 		"Team " + std::to_string(teamIndex) + " Color Material",

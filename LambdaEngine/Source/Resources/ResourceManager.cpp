@@ -1858,6 +1858,22 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
+	ResourceManager::MaterialLoadDesc ResourceManager::GetMaterialDesc(GUID_Lambda guid)
+	{
+
+		auto it = s_MaterialLoadConfigurations.find(guid);
+		if (it != s_MaterialLoadConfigurations.end())
+		{
+			return it->second;
+		}
+
+		D_LOG_WARNING("GetMaterialDesc called with invalid GUID %u", guid);
+
+		// Return empty 
+		ResourceManager::MaterialLoadDesc materialLoadDesc = {};
+		return materialLoadDesc;
+	}
+
 	Animation* ResourceManager::GetAnimation(GUID_Lambda guid)
 	{
 		auto it = s_Animations.find(guid);
