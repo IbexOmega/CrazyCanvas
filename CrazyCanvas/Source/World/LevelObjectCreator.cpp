@@ -137,7 +137,7 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
 		}
-
+		
 		//Team Indicator
 		{
 			LevelObjectOnLoadDesc levelObjectDesc =
@@ -147,6 +147,17 @@ bool LevelObjectCreator::Init()
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateTeamIndicator;
+		}
+
+		//No collider/paint Object
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "NO_COLLIDER_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateNoColliderObject;
 		}
 	}
 
@@ -339,6 +350,27 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 		LOG_ERROR("[LevelObjectCreator]: Failed to create special object, no create function could be found");
 		return false;
 	}
+}
+
+ELevelObjectType LevelObjectCreator::CreateNoColliderObject(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	for (auto& meshComp : levelObject.MeshComponents)
+	{
+		Entity entity = pECS->CreateEntity();
+		Mesh* pMesh = ResourceManager::GetMesh(meshComp.MeshGUID);
+
+		pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
+		pECS->AddComponent<ScaleComponent>(entity, { true, pMesh->DefaultScale }),
+		pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
+		pECS->AddComponent<MeshComponent>(entity, meshComp);
+
+		createdEntities.PushBack(entity);
+	}
+
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_STATIC_GEOMETRY_NO_COLLIDER;
 }
 
 ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
