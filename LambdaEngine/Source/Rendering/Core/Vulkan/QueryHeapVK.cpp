@@ -33,7 +33,7 @@ namespace LambdaEngine
 		VkResult result = vkCreateQueryPool(m_pDevice->Device, &createInfo, nullptr, &m_QueryPool);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[QueryHeapVK]: Failed to create QueryPool");
+			LOG_VULKAN_ERROR(result, "Failed to create QueryPool");
 			return false;
 		}
 		else
@@ -41,7 +41,7 @@ namespace LambdaEngine
 			m_Desc = *pDesc;
 			SetName(pDesc->DebugName);
 
-			D_LOG_MESSAGE("[QueryHeapVK]: Created QueryPool");
+			LOG_DEBUG("Created QueryPool");
 			return true;
 		}
 	}
@@ -51,13 +51,13 @@ namespace LambdaEngine
 		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_QueryPool), VK_OBJECT_TYPE_QUERY_POOL);
 		m_Desc.DebugName = debugName;
 	}
-	
+
 	bool QueryHeapVK::GetResults(uint32 firstQuery, uint32 queryCount, uint64 dataSize, uint64* pData) const
 	{
 		VkResult result = vkGetQueryPoolResults(m_pDevice->Device, m_QueryPool, firstQuery, queryCount, dataSize, reinterpret_cast<void*>(pData), sizeof(uint64), VK_QUERY_RESULT_64_BIT);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[QueryHeapVK]: Failed to retrive query results");
+			LOG_VULKAN_ERROR(result, "Failed to retrive query results");
 			return false;
 		}
 		else
@@ -74,7 +74,7 @@ namespace LambdaEngine
 		// The available uint64 will be non-zero if the result is finished.
 		if (result != VK_SUCCESS && result != VK_NOT_READY)
 		{
-			LOG_VULKAN_ERROR(result, "[QueryHeapVK]: Failed to retrive query results");
+			LOG_VULKAN_ERROR(result, "Failed to retrive query results");
 			return false;
 		}
 		else

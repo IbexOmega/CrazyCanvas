@@ -48,11 +48,11 @@ namespace LambdaEngine
 		{
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[RenderPassVK]: vkCreateRenderPass failed for \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "vkCreateRenderPass failed for \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[RenderPassVK]: vkCreateRenderPass failed");
+				LOG_VULKAN_ERROR(result, "vkCreateRenderPass failed");
 			}
 
 			return false;
@@ -64,11 +64,11 @@ namespace LambdaEngine
 
 			if (!pDesc->DebugName.empty())
 			{
-				D_LOG_MESSAGE("[RenderPassVK]: Renderpass \"%s\" successfully initialized", pDesc->DebugName.c_str());
+				LOG_DEBUG("Renderpass \"%s\" successfully initialized", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				D_LOG_MESSAGE("[RenderPassVK]: Renderpass successfully initialized");
+				LOG_DEBUG("Renderpass successfully initialized");
 			}
 
 			return true;
@@ -114,11 +114,11 @@ namespace LambdaEngine
 
 			VALIDATE(subpass.InputAttachmentStates.GetSize()	<= MAX_COLOR_ATTACHMENTS);
 			VALIDATE(subpass.RenderTargetStates.GetSize()		<= MAX_COLOR_ATTACHMENTS);
-			
+
 			vkSubpass.flags					= 0;
 			vkSubpass.pipelineBindPoint		= VK_PIPELINE_BIND_POINT_GRAPHICS;
 			vkSubpass.inputAttachmentCount	= static_cast<uint32>(subpass.InputAttachmentStates.GetSize());
-			
+
 			// Input attachments
 			for (uint32 attachment = 0; attachment < static_cast<uint32>(subpass.InputAttachmentStates.GetSize()); attachment++)
 			{

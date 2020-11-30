@@ -27,7 +27,7 @@ namespace LambdaEngine
 		, m_StoredMessages()
 		, m_MessageHandlers()
 	{
-		VALIDATE_MSG(s_pApplication == nullptr, "[Win32Application]: An instance of application already exists");
+		VALIDATE_MSG(s_pApplication == nullptr, "An instance of application already exists");
 		s_pApplication = this;
 
 		VALIDATE(hInstance != NULL);
@@ -43,11 +43,11 @@ namespace LambdaEngine
 		if (!result)
 		{
 			DWORD dwError = ::GetLastError();
-			LOG_ERROR("[Win32Application]: Failed to unregister windowclass. Error=%d", dwError);
+			LOG_ERROR("Failed to unregister windowclass. Error=%d", dwError);
 		}
 
 		// Destroy application
-		VALIDATE_MSG(s_pApplication != nullptr, "[Win32Application]: Instance of application has already been deleted");
+		VALIDATE_MSG(s_pApplication != nullptr, "Instance of application has already been deleted");
 		s_pApplication = nullptr;
 
 		m_hInstance = 0;
@@ -154,7 +154,7 @@ namespace LambdaEngine
 				BOOL bResult = SetCursorPos(point.x, point.y);
 				if (!bResult)
 				{
-					LOG_ERROR("[Win32Application]: Failed to set mouse position!");
+					LOG_ERROR("Failed to set mouse position!");
 				}
 			}
 		}
@@ -465,7 +465,7 @@ namespace LambdaEngine
 
 		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, m_RawInputBuffer.GetData(), &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
 		{
-			LOG_ERROR("[Win32Application]: GetRawInputData did not return correct size");
+			LOG_ERROR("GetRawInputData did not return correct size");
 			return 0;
 		}
 
@@ -513,7 +513,7 @@ namespace LambdaEngine
 		::BOOL bResult = ::SetForegroundWindow(hActiveWindow);
 		if (!bResult)
 		{
-			LOG_ERROR("[Win32Application]: Failed to set active window");
+			LOG_ERROR("Failed to set active window");
 		}
 	}
 
@@ -615,7 +615,7 @@ namespace LambdaEngine
 		ATOM classAtom = ::RegisterClass(&wc);
 		if (classAtom == 0)
 		{
-			LOG_ERROR("[Win32Application]: Failed to register windowclass");
+			LOG_ERROR("Failed to register windowclass");
 			return false;
 		}
 		else
@@ -639,12 +639,12 @@ namespace LambdaEngine
 		BOOL bResult = ::RegisterRawInputDevices(devices, DEVICE_COUNT, sizeof(RAWINPUTDEVICE));
 		if (bResult == FALSE)
 		{
-			LOG_ERROR("[Win32Application]: Failed to register Raw Input devices");
+			LOG_ERROR("Failed to register Raw Input devices");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[Win32Application]: Registered Raw Input devices");
+			LOG_DEBUG("Registered Raw Input devices");
 			return true;
 		}
 	}
@@ -664,12 +664,12 @@ namespace LambdaEngine
 		BOOL bResult = ::RegisterRawInputDevices(devices, DEVICE_COUNT, sizeof(RAWINPUTDEVICE));
 		if (bResult == FALSE)
 		{
-			LOG_ERROR("[Win32Application]: Failed to unregister Raw Input devices");
+			LOG_ERROR("Failed to unregister Raw Input devices");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[Win32Application]: Unregistered Raw Input devices");
+			LOG_DEBUG("Unregistered Raw Input devices");
 			return true;
 		}
 	}
