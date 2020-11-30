@@ -552,7 +552,7 @@ bool MatchServer::OnFlagDelivered(const FlagDeliveredEvent& event)
 		FlagSystemBase::GetInstance()->OnFlagDropped(event.Entity, flagPosition);
 
 		uint32 newScore = GetScore(event.ScoringTeamIndex) + 1;
-		InternalSetScore(event.ScoringTeamIndex, newScore);
+		InternalSetScore(event.ScoringTeamIndex, newScore, pPlayer->GetUID());
 	}
 	else
 	{
@@ -653,7 +653,6 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 {
 	using namespace LambdaEngine;
 
-
 	const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
 	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
 	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
@@ -733,7 +732,7 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 }
 
-void MatchServer::InternalSetScore(uint8 team, uint32 score)
+void MatchServer::InternalSetScore(uint8 team, uint32 score, uint64 playerUID)
 {
 	using namespace LambdaEngine;
 
@@ -742,6 +741,7 @@ void MatchServer::InternalSetScore(uint8 team, uint32 score)
 		PacketTeamScored packet;
 		packet.TeamIndex = team;
 		packet.Score = score;
+		packet.PlayerUID = playerUID;
 		ServerHelper::SendBroadcast(packet);
 
 		if (score == m_MatchDesc.MaxScore)

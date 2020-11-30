@@ -6,7 +6,7 @@
 
 namespace LambdaEngine
 {
-	ClientNetworkDiscovery::ClientNetworkDiscovery() : 
+	ClientNetworkDiscovery::ClientNetworkDiscovery() :
 		m_SegmentPool(256),
 		m_pSocket(nullptr),
 		m_pEndPoints(nullptr),
@@ -26,7 +26,7 @@ namespace LambdaEngine
 
 	ClientNetworkDiscovery::~ClientNetworkDiscovery()
 	{
-		LOG_INFO("[ClientNetworkDiscovery]: Released");
+		LOG_INFO("Released");
 	}
 
 	bool ClientNetworkDiscovery::Connect(const TSet<IPEndPoint>* pEndPoints, SpinLock* pLock, const String& nameOfGame, INetworkDiscoveryClient* pHandler, Timestamp searchInterval)
@@ -40,7 +40,7 @@ namespace LambdaEngine
 			m_SearchInterval = searchInterval;
 			if (StartThreads())
 			{
-				LOG_WARNING("[ClientNetworkDiscovery]: Connecting...");
+				LOG_WARNING("Connecting...");
 				return true;
 			}
 		}
@@ -130,7 +130,7 @@ namespace LambdaEngine
 					m_SegmentPool.FreeSegment(packets[0], "ClientNetworkDiscovery::RunReceiver");
 #else
 					m_SegmentPool.FreeSegment(packets[0]);
-#endif		
+#endif
 				}
 			}
 			else
@@ -139,7 +139,7 @@ namespace LambdaEngine
 				m_SegmentPool.FreeSegments(packets, "ClientNetworkDiscovery::RunReceiver2");
 #else
 				m_SegmentPool.FreeSegments(packets);
-#endif				
+#endif
 			}
 		}
 	}
@@ -155,12 +155,12 @@ namespace LambdaEngine
 			m_pSocket = nullptr;
 		}
 
-		LOG_INFO("[ClientNetworkDiscovery]: Disconnected");
+		LOG_INFO("Disconnected");
 	}
 
 	void ClientNetworkDiscovery::OnTerminationRequested(const std::string& reason)
 	{
-		LOG_WARNING("[ClientNetworkDiscovery]: Disconnecting... [%s]", reason.c_str());
+		LOG_WARNING("Disconnecting... [%s]", reason.c_str());
 	}
 
 	void ClientNetworkDiscovery::OnReleaseRequested(const std::string& reason)
@@ -221,7 +221,7 @@ namespace LambdaEngine
 			m_SegmentPool.FreeSegment(decoder.GetPacket(), "ClientNetworkDiscovery::HandleReceivedPacketsMainThread");
 #else
 			m_SegmentPool.FreeSegment(decoder.GetPacket());
-#endif	
+#endif
 		}
 		packets.Clear();
 	}
