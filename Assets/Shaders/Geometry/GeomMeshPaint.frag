@@ -27,12 +27,11 @@ layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 
-
 layout(location = 0) out vec3 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 2) out vec3 out_Compact_Normal;
 layout(location = 3) out vec2 out_Velocity;
-layout(location = 4) out vec2 out_Linear_Z;
+layout(location = 4) out vec4 out_Linear_Z;
 
 void main()
 {
@@ -73,7 +72,8 @@ void main()
 	out_Velocity				= vec2(screenVelocity);
 
 	//4
-	float linearZ 				= in_ClipPosition.z * in_ClipPosition.w;
+	float linearZ 				= in_ClipPosition.z;
+	float prevLinearZ 			= in_PrevClipPosition.z;
 	float maxChangeZ			= (max(abs(dFdxFine(linearZ)), abs(dFdyFine(linearZ)))); //fwidthFine(linearZ);
-	out_Linear_Z				= vec2(linearZ, maxChangeZ);
+	out_Linear_Z				= vec4(linearZ, prevLinearZ, maxChangeZ, 1.0f);
 }

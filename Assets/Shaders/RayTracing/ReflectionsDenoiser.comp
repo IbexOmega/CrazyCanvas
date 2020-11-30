@@ -23,11 +23,11 @@ float ValidSample(ivec2 iImageDim, ivec2 reprojCoord, float Z, float prevZ, floa
     bool result = true;
 
     // check whether reprojected pixel is inside of the screen
-    result = result && (!any(lessThan(reprojCoord, ivec2(0, 0))) && !any(greaterThan(reprojCoord, iImageDim - ivec2(1, 1))));
+    //asresult = result && (!any(lessThan(reprojCoord, ivec2(0, 0))) && !any(greaterThan(reprojCoord, iImageDim - ivec2(1, 1))));
     // check if deviation of depths is acceptable
     result = result && !((abs(prevZ - Z) / (fwidthZ + 1e-4f)) > 2.0f);
     // check normals for compatibility
-    result = result && !(dot(normal, reprojNormal) < 0.95f);
+    //result = result && !(dot(normal, reprojNormal) < 0.95f);
 
     return float(result);
 }
@@ -40,7 +40,9 @@ void main()
     if (gl_GlobalInvocationID.x >= BLUR_IMAGE_TOTAL_NUM_PIXELS) 
         return;
 
-    ivec2 p = ivec2(gl_GlobalInvocationID.x % BLUR_IMAGE_SIZE.x, gl_GlobalInvocationID.x / BLUR_IMAGE_SIZE.x);
+    ivec2 p         = ivec2(gl_GlobalInvocationID.x % BLUR_IMAGE_SIZE.x, gl_GlobalInvocationID.x / BLUR_IMAGE_SIZE.x);
+    vec2 texCoords  = (vec2(p) + 0.5f) /  vec2(BLUR_IMAGE_SIZE);
+
 
     vec4 current_Radiance_Valid = texelFetch(u_Reflections, p, 0);
     float validSample = current_Radiance_Valid.a;
@@ -102,18 +104,20 @@ void main()
     float historyLength = 0.0f;
 
 #if TEMPORAL_REUSE_ENABLED
-    vec2 reprojLoc          = ((vec2(p) + 0.5f) /  vec2(BLUR_IMAGE_SIZE)) - velocity;
-    ivec2 reprojP           = ivec2(reprojLoc);
+    vec2 reprojTexCoords    = texCoords - velocity;
+    ivec2 reprojP           = ivec2(reprojTexCoords * BLUR_IMAGE_SIZE);
 
     vec3 reprojNormal       = UnpackNormal(texelFetch(u_GBufferCompactNormal, reprojP, 0).xyz);
-    vec2 current_z_Values   = texelFetch(u_GBufferLinearZ, p, 0).xy;
-    vec2 prev_z_Values      = texelFetch(u_GBufferPrevLinearZ, p, 0).xy;
 
-    float validReprojection = ValidSample(BLUR_IMAGE_SIZE, reprojP, current_z_Values.x, prev_z_Values.x, current_z_Values.y, currentNormal, reprojNormal);
-    vec4 prev_Radiance_HistoryLength = texture(u_PrevDenoisedReflections, reprojLoc);
+    // Contains [ linearZ, prevLinearZ, fWidthZ ]
+    vec3 current_z_Values   = texture(u_GBufferLinearZ, texCoords).xyz;
+    vec3 prev_z_Values      = texture(u_GBufferPrevLinearZ, reprojTexCoords).xyz;
+
+    float validReprojection = ValidSample(BLUR_IMAGE_SIZE, reprojP, current_z_Values.y, prev_z_Values.x, current_z_Values.z, currentNormal, reprojNormal);
+    vec4 prev_Radiance_HistoryLength = texture(u_PrevDenoisedReflections, reprojTexCoords);
     prev_Radiance_HistoryLength.rgb = clamp(prev_Radiance_HistoryLength.rgb, minRadiance, maxRadiance);
 
-	historyLength = validSample * min(prev_Radiance_HistoryLength.a + 1.0f, TEMPORAL_REUSE_MAX_HISTORY_LENGTH); 
+	historyLength = validReprojection * validSample * min(prev_Radiance_HistoryLength.a + 1.0f, TEMPORAL_REUSE_MAX_HISTORY_LENGTH); 
 	current_Radiance_Valid.rgb = mix(
         current_Radiance_Valid.rgb,
         prev_Radiance_HistoryLength.rgb,
@@ -121,8 +125,11 @@ void main()
 
 #endif
 
-    imageStore(u_DenoisedReflections, p, vec4(current_Radiance_Valid.rgb, historyLength));
+    //imageStore(u_DenoisedReflections, p, vec4(current_Radiance_Valid.rgb, historyLength));
     //imageStore(u_DenoisedReflections, p, vec4(vec2(p) - reprojLoc, 0.0f, 1.0f));
     //imageStore(u_DenoisedReflections, p, vec4(mix(vec3(1.0f, 0.0f, 0.0f), current_Radiance_Valid.rgb, validReprojection), historyLength));
     //imageStore(u_DenoisedReflections, p, mix(vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), validReprojection));
+
+    float zRejection = abs(prev_z_Values.x - current_z_Values.y) / (current_z_Values.z + 1e-4f);
+    imageStore(u_DenoisedReflections, p, vec4(vec3(zRejection), 1.0f));
 }

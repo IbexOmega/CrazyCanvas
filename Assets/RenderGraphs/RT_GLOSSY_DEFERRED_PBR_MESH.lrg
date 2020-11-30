@@ -699,7 +699,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R16G16_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
@@ -709,7 +709,7 @@
                 "y_dim_var": 1.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
-                "sampler_type": "LINEAR",
+                "sampler_type": "NEAREST",
                 "sampler_address_mode": "REPEAT",
                 "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
@@ -724,7 +724,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R16G16_SFLOAT",
+                "texture_format": "FORMAT_R32G32B32A32_SFLOAT",
                 "is_of_array_type": false,
                 "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
@@ -734,7 +734,7 @@
                 "y_dim_var": 1.0,
                 "sample_count": 1,
                 "miplevel_count": 1,
-                "sampler_type": "LINEAR",
+                "sampler_type": "NEAREST",
                 "sampler_address_mode": "REPEAT",
                 "sampler_border_color": "BORDER_COLOR_FLOAT_OPAQUE_BLACK",
                 "memory_type": "MEMORY_TYPE_GPU"
