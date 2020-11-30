@@ -10,9 +10,13 @@ PromptGUI::PromptGUI()
 {
 	Noesis::GUI::LoadComponent(this, "PromptGUI.xaml");
 
-	m_pPromptStoryboard				= FindResource<Noesis::Storyboard>("PromptStoryboard");
-	m_pPromptVisibilityStoryboard	= FindResource<Noesis::Storyboard>("PromptVisibilityStoryboard");
-	m_pPromptTextblock				= FindName<Noesis::TextBlock>("PROMPT_TEXT");
+	m_pPromptStoryboard					= FindResource<Noesis::Storyboard>("PromptStoryboard");
+	m_pPromptVisibilityStoryboard		= FindResource<Noesis::Storyboard>("PromptVisibilityStoryboard");
+	m_pPromptTextblock					= FindName<Noesis::TextBlock>("PROMPT_TEXT");
+	
+	m_pSmallPromptStoryboard			= FindResource<Noesis::Storyboard>("SmallPromptStoryboard");
+	m_pSmallPromptVisibilityStoryboard	= FindResource<Noesis::Storyboard>("SmallPromptVisibilityStoryboard");
+	m_pSmallPromptTextblock				= FindName<Noesis::TextBlock>("SMALL_PROMPT_TEXT");
 }
 
 PromptGUI::~PromptGUI()
@@ -45,4 +49,17 @@ void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const u
 	m_pPromptTextblock->SetText(promptMessage.c_str());
 	m_pPromptVisibilityStoryboard->Begin();
 	m_pPromptStoryboard->Begin();
+}
+
+void PromptGUI::DisplaySmallPrompt(const LambdaEngine::String& promptMessage)
+{
+	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
+
+	pBrush->SetColor(Noesis::Color::Red());
+
+	m_pSmallPromptTextblock->SetForeground(pBrush);
+	m_pSmallPromptTextblock->SetText(promptMessage.c_str());
+
+	m_pSmallPromptVisibilityStoryboard->Begin();
+	m_pSmallPromptStoryboard->Begin();
 }

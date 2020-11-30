@@ -51,7 +51,7 @@ private:
 
 public:
 
-	static void PromptMessage(const LambdaEngine::String& promtMessage, const uint8 teamIndex = UINT8_MAX);
+	static void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
 
 private:
 

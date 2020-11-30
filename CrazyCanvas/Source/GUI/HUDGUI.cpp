@@ -298,8 +298,6 @@ void HUDGUI::DisplayHitIndicator()
 
 void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex)
 {
-	LambdaEngine::String feedText = killer + " Killed " + killed;
-
 	m_pKillFeedGUI->AddToKillFeed(killed, killer, killedPlayerTeamIndex);
 }
 
@@ -375,10 +373,20 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	m_pScoreBoardGUI->DisplayScoreboardMenu(true);
 }
 
-void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const uint8 teamIndex)
+void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex)
 {
-	PromptGUI* pCountdownGUI = FindName<PromptGUI>("PROMPT");
-	pCountdownGUI->DisplayPrompt(promptMessage, teamIndex);
+	PromptGUI* pPromptGUI = nullptr;
+
+	if (isSmallPrompt)
+	{
+		pPromptGUI = FindName<PromptGUI>("SMALLPROMPT");
+		pPromptGUI->DisplaySmallPrompt(promptMessage);
+	}
+	else
+	{
+		pPromptGUI = FindName<PromptGUI>("PROMPT");
+		pPromptGUI->DisplayPrompt(promptMessage, teamIndex);
+	}
 }
 
 void HUDGUI::InitGUI()
