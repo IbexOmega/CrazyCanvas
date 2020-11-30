@@ -3637,11 +3637,8 @@ namespace LambdaEngine
 					TArray<PipelineTextureBarrierDesc>& drawTextureBarriers = pSynchronizationStage->DrawTextureBarriers[pBarrierInfo->SynchronizationTypeIndex];
 
 					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
-					PipelineTextureBarrierDesc textureBarrierTemplate = {}; 
-					if (!drawTextureBarriers.IsEmpty())
-					{
-						textureBarrierTemplate = drawTextureBarriers.GetFront();
-					}
+					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
+					bool repushTextureBarrier = true;
 
 					if (pDesc->ExternalDrawArgsUpdate.Count != 0)
 					{
@@ -3719,6 +3716,8 @@ namespace LambdaEngine
 						// For draw arg extensions
 						if (pDrawArg->HasExtensions)
 						{
+							repushTextureBarrier = false;
+
 							uint32 numExtensionGroups = pDrawArg->InstanceCount;
 							for (uint32 i = 0; i < numExtensionGroups; i++)
 							{
@@ -3746,6 +3745,12 @@ namespace LambdaEngine
 								}
 							}
 						}
+					}
+					
+					//We must make sure to repush the template texture barrier if we didn't push any new texture barriers
+					if (repushTextureBarrier)
+					{
+						drawTextureBarriers.PushBack(textureBarrierTemplate);
 					}
 				}
 			}
