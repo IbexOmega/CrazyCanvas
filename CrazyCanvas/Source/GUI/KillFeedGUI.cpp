@@ -106,7 +106,7 @@ void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& killed, const Lambda
 	m_pKillFeedStackPanel->GetChildren()->Add(grid);
 }
 
-void KillFeedGUI::RemoveFromKillFeed(Noesis::Grid* textblock)
+void KillFeedGUI::RemoveFromKillFeed(Noesis::Grid* pGrid)
 {
-	m_pKillFeedStackPanel->GetChildren()->Remove(textblock);
+	m_pKillFeedStackPanel->GetChildren()->Remove(pGrid);
 }

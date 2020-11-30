@@ -30,7 +30,7 @@ public:
 	void AddToKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, const uint8 killedPlayerTeamIndex);
 
 private:
-	void RemoveFromKillFeed(Noesis::Grid* textblock);
+	void RemoveFromKillFeed(Noesis::Grid* pGrid);
 
 private:
 	Noesis::StackPanel* m_pKillFeedStackPanel			= nullptr;
