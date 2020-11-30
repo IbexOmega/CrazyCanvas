@@ -23,9 +23,11 @@ private:
 	bool OnKeyPressed(const LambdaEngine::KeyPressedEvent& event);
 
 public:
-	static void ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity);
+	static void ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag);
 	static void SetMouseEnabled(bool isEnabled);
 
 private:
 	static bool m_MouseEnabled;
+
+	static float m_Speed;
 };

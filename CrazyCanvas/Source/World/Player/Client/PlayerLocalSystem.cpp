@@ -5,6 +5,8 @@
 
 #include "Game/ECS/Components/Networking/NetworkComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
+#include "ECS/Components/Match/FlagComponent.h"
 
 #include "Networking/API/NetworkSegment.h"
 #include "Networking/API/BinaryDecoder.h"
@@ -55,9 +57,18 @@ void PlayerLocalSystem::Init()
 				{RW, PacketComponent<PacketPlayerAction>::Type()},
 				{R, PacketComponent<PacketPlayerActionResponse>::Type()},
 			}
+		},
+		{
+			.pSubscriber = &m_FlagEntities,
+			.ComponentAccesses =
+			{
+				{R, FlagComponent::Type()},
+				{R, ParentComponent::Type()},
+			}
 		}
 	};
 	systemReg.Phase = 0;
+
 
 	RegisterSystem(TYPE_NAME(PlayerLocalSystem), systemReg);
 }
@@ -82,6 +93,7 @@ void PlayerLocalSystem::SendGameState(const PlayerGameState& gameState, Entity e
 	packet.Rotation			= gameState.Rotation;
 	packet.DeltaAction		= gameState.DeltaAction;
 	packet.Walking			= gameState.Walking;
+	packet.HoldingFlag		= gameState.HoldingFlag;
 
 	pPacketComponent.SendPacket(packet);
 }
@@ -130,11 +142,24 @@ void PlayerLocalSystem::DoAction(
 
 	bool walking = InputActionSystem::IsActive(EAction::ACTION_MOVE_WALK);
 
-	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity);
+	ECSCore* pECS = ECSCore::GetInstance();
+	auto pParentComponents = pECS->GetComponentArray<ParentComponent>();
+	bool holdingFlag = false;
+	for (Entity flagEntity : m_FlagEntities)
+	{
+		const ParentComponent& parentComponent = pParentComponents->GetConstData(flagEntity);
+		if (parentComponent.Parent == m_Entities[0])
+		{
+			holdingFlag = true;
+			break;
+		}
+	}
+	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
 	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, deltaAction, walking, inAir);
 
 	pGameState->DeltaAction		= deltaAction;
 	pGameState->Walking			= walking;
+	pGameState->HoldingFlag		= holdingFlag;
 	pGameState->Rotation		= rotationComponent.Quaternion;
 }
 
@@ -174,7 +199,7 @@ void PlayerLocalSystem::ReplayGameState(float32 dt, PlayerGameState& clientState
 	/*
 	* Returns the velocity based on key presses
 	*/
-	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaAction, clientState.Walking, dt, velocityComponent.Velocity);
+	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaAction, clientState.Walking, dt, velocityComponent.Velocity, clientState.HoldingFlag);
 
 	/*
 	* Sets the position of the PxController taken from the PositionComponent.
