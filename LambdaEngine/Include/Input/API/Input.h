@@ -41,6 +41,22 @@ namespace LambdaEngine
 
 		FORCEINLINE static void PushInputMode(EInputLayer inputMode)
 		{
+			if (!s_InputModeStack.empty())
+			{
+				bool* pKeyStates		= s_KeyboardStates[ConvertInputModeUINT8(s_InputModeStack.top())][STATE_WRITE_INDEX].KeyStates;
+				bool* pMouseStates = s_MouseStates[ConvertInputModeUINT8(s_InputModeStack.top())][STATE_WRITE_INDEX].ButtonStates;
+
+				for (int k = 0; k < EKey::KEY_COUNT; k++)
+				{
+					pKeyStates[k] = false;
+				}
+
+				for (int m = 0; m < EMouseButton::MOUSE_BUTTON_COUNT; m++)
+				{
+					pMouseStates[m] = false;
+				}
+			}
+
 			s_InputModeStack.push(inputMode);
 		}
 
