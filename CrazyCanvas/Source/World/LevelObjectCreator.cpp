@@ -159,12 +159,12 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 	using namespace LambdaEngine;
 
 	Entity entity = UINT32_MAX;
-
+	/*
 	if (!MultiplayerUtils::IsServer())
 	{
 		// Can be good to keep if we want statiuc directional lights later
 		
-	/*	ECSCore* pECS = ECSCore::GetInstance();
+		ECSCore* pECS = ECSCore::GetInstance();
 
 		DirectionalLightComponent directionalLightComponent =
 		{
@@ -179,6 +179,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 		LOG_DEBUG("Created Directional Light");
 	}
 
+	*/
 	return entity;
 }
 
