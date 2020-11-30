@@ -8,6 +8,7 @@
 #include "Rendering/RenderAPI.h"
 #include "Multiplayer/ClientHelper.h"
 #include "Multiplayer/ServerHelper.h"
+#include "RenderStages/MeshPaintUpdater.h"
 
 /*
 * MeshPaintHandler
@@ -145,8 +146,9 @@ void MeshPaintHandler::ResetClient()
 
 void MeshPaintHandler::ResetServer(LambdaEngine::Entity entity)
 {
-	// s_ServerResets.EmplaceBack(entity);
-	LOG_WARNING("[MeshPaintHandler]: Reseting entities on server is currently not implmeneted with vertex painting!");
+	using namespace LambdaEngine;
+
+	MeshPaintUpdater::ClearServer(entity);
 }
 
 bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)
