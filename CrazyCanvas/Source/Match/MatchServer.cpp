@@ -732,7 +732,7 @@ void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 }
 
-void MatchServer::InternalSetScore(uint8 team, uint32 score, const uint64 playerUID)
+void MatchServer::InternalSetScore(uint8 team, uint32 score, uint64 playerUID)
 {
 	using namespace LambdaEngine;
 

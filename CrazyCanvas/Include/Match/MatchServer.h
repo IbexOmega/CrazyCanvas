@@ -56,7 +56,7 @@ private:
 	// MUST HAPPEN ON MAIN THREAD IN FIXED TICK FOR NOW
 	void InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity, bool respawnFlagIfCarried);
 
-	void InternalSetScore(uint8 team, uint32 score, const uint64 playerUID = 0);
+	void InternalSetScore(uint8 team, uint32 score, uint64 playerUID = 0);
 
 public:
 	static void KillPlayer(LambdaEngine::Entity entityToKill, LambdaEngine::Entity killedByEntity, bool respawnFlagIfCarried);
