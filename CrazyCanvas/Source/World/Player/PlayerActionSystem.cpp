@@ -15,6 +15,9 @@
 #include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
 
+#include "ECS/Components/Match/FlagComponent.h"
+
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
 
 #include "Match/Match.h"
 
@@ -22,6 +25,7 @@ using namespace LambdaEngine;
 
 
 bool PlayerActionSystem::m_MouseEnabled = true;
+float32 PlayerActionSystem::m_Speed = 1.0f;
 
 PlayerActionSystem::PlayerActionSystem()
 {
@@ -97,10 +101,15 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 	return false;
 }
 
-void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity)
+void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
 {
 	bool horizontalMovement = deltaAction.x != 0 || deltaAction.z != 0;
 	bool verticalMovement = deltaAction.y != 0;
+
+	if (isHoldingFlag)
+		m_Speed = 0.8f;
+	else
+		m_Speed = 1.0f;
 
 	if (!Match::HasBegun())
 	{
@@ -120,7 +129,7 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 		currentVelocity		= rotationNoPitch * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
 		currentVelocity.y	= 0.0f;
 		currentVelocity		= glm::normalize(currentVelocity);
-		currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking));
+		currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking)) * m_Speed;
 
 		velocity.x = currentVelocity.x;
 		velocity.z = currentVelocity.z;

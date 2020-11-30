@@ -238,7 +238,7 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 			const TeamComponent& playerTeamComponent = pTeamComponents->GetConstData(entityPlayer);
 
 			TeamComponent flagTeamComponent = {};
-			
+
 			bool validFlagDelivery = false;
 			if (pTeamComponents->GetConstIf(flagEntity, flagTeamComponent))
 			{

@@ -11,6 +11,7 @@ struct PlayerGameState
 	glm::quat Rotation;
 	glm::i8vec3 DeltaAction;
 	bool Walking;
+	bool HoldingFlag;
 };
 
 struct GameStateComparator
