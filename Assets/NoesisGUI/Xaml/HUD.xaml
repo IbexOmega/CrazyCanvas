@@ -184,14 +184,14 @@
                 
                     <TextBlock x:Name="AMMUNITION_WATER_DISPLAY" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Text="50/50" FontSize="24" Foreground="Black" Margin="0,0,-70,-30" Height="31.923" Width="68.429" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                    <Image x:Name="PAINT_RECT" Height="150" Width="350" Source="Paint1.png" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0" RenderTransformOrigin="0.21,0.5" >
+                    <Image x:Name="PAINT_RECT" Height="150" Width="350" Source="PaintAmmo\PurplePaint.png" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0" RenderTransformOrigin="0.21,0.5" >
                     <Image.RenderTransform>
                         <ScaleTransform/>
                     </Image.RenderTransform>
                     </Image>
 
                     <Image Source="PaintBar.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0"/>
-                    <Image Source="PaintDrop.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0"/>
+                    <Image x:Name="PAINT_DROP" Source="PaintAmmo\PurplePaintDrop.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0"/>
                     <TextBlock x:Name="AMMUNITION_PAINT_DISPLAY" Grid.Column="2" Grid.Row="0" TextWrapping="Wrap" Text="50/50" FontSize="24" Foreground="Black" Margin="0,0,-70,-30" Height="31.923" Width="68.429" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     
                 </Grid>

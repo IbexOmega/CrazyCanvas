@@ -407,6 +407,7 @@ void HUDGUI::InitGUI()
 
 	m_pWaterAmmoRect	= FrameworkElement::FindName<Image>("WATER_RECT");
 	m_pPaintAmmoRect	= FrameworkElement::FindName<Image>("PAINT_RECT");
+	m_pPaintDropRect	= FrameworkElement::FindName<Image>("PAINT_DROP");
 	m_pHealthRect		= FrameworkElement::FindName<Image>("HEALTH_RECT");
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
@@ -415,6 +416,13 @@ void HUDGUI::InitGUI()
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
+
+
+	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
+	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
+
+	m_pPaintAmmoRect->SetSource(pBitmap);
+	m_pPaintDropRect->SetSource(pBitmapDrop);
 
 	InitScore();
 
