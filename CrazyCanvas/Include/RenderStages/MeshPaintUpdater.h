@@ -7,10 +7,19 @@
 
 #include "Rendering/Core/API/PipelineContext.h"
 
+#include <unordered_set>
+
 namespace LambdaEngine
 {
 	class MeshPaintUpdater : public CustomRenderer
 	{
+	private:
+		struct SPushConstantData
+		{
+			uint32 VertexCount;
+			uint32 ShouldResetServer;
+		};
+
 	public:
 		MeshPaintUpdater();
 		~MeshPaintUpdater();
@@ -41,6 +50,8 @@ namespace LambdaEngine
 			return name;
 		}
 
+		static void ClearServer(Entity entity);
+
 	private:
 		bool CreatePipelineLayout();
 		bool CreateDescriptorSets();
@@ -55,7 +66,7 @@ namespace LambdaEngine
 		PipelineContext						m_UpdatePipeline;
 
 		TArray<uint32>						m_VertexCountList;
-		TArray<TSharedRef<DescriptorSet>>	m_DrawArgDescriptorSets;
+		TArray<std::pair<Entity, TSharedRef<DescriptorSet>>>	m_DrawArgDescriptorSets;
 
 		uint32								m_BackBufferCount = 0;
 		uint32								m_CurrentFrameIndex = 0;
@@ -65,8 +76,7 @@ namespace LambdaEngine
 
 		TArray<TArray<DeviceChild*>> m_ResourcesToRemove;
 
-	private:
-		static MeshPaintUpdater* s_pInstance;
+		static std::unordered_set<Entity> s_EntitiesToClear;
 	};
 }
 

@@ -13,6 +13,7 @@ layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1
 layout(push_constant) uniform PushConstants
 {
 	uint VertexCount;
+    uint ShouldResetServer;
 } u_PC;
 
 layout(binding = 0, set = 0) uniform HitPointsBuffer				{ SUnwrapData val[10]; }	u_HitPointsBuffer;
@@ -127,19 +128,15 @@ void main()
             vertex.Normal.w = min(vertex.Normal.w, dist);
         }
 
-        /*{
+        if(u_PC.ShouldResetServer != 0)
+        {
             uint teamSC = floatBitsToUint(vertex.Position.w);
             uint client = (teamSC >> 4) & 0x0F;
-            uint server = teamSC & 0x0F;
-
-            client = (instanceTeam) & 0x0F;
-
+            uint server = 0; // Clear server
             teamSC = (client << 4) | server;
             vertex.Position.w = uintBitsToFloat(teamSC);
-        }*/
-
-        //vertex.Position.w = uintBitsToFloat(32);
-	    //vertex.Normal.w = 0.f;
+	        vertex.Normal.w = teamSC > 0 ? 0.f : 1.f;
+        }
 
         b_Vertices.val[vertexIndex] = vertex;
 
