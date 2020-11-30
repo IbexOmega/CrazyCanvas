@@ -55,26 +55,10 @@ void main()
 	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
 	uint index = gl_GlobalInvocationID.x;
 
-	// Reset memory
-	// if (index == 0)
-	// {
-	// 	b_PlayerHealths.Val[p_EntitySettings.EntityIndex] = 0;
-	// 	vec4 pos = b_Vertices.Val[index].Position;
-	// 	debugPrintfEXT("Entity: %u, xyzw: (%f, %f, %f, %u)", p_EntitySettings.EntityIndex, pos.x, pos.y, pos.z, floatBitsToUint(pos.w));
-	// }
-
-	// groupMemoryBarrier();
-
 	if (index < u_VertexCount.Val)
 	{
 		uint healthBits = floatBitsToUint(b_Vertices.Val[index].Position.w);
 		uint value = uint((healthBits & 0xF) > 0);
-
-		// if ((index - 100 * (index/100)) == 0)
-		// {
-		// 	vec4 pos = b_Vertices.Val[index].Position;
-		// 	debugPrintfEXT("Entity: %u, index: %u, xyzw: (%f, %f, %f, %u)", p_EntitySettings.EntityIndex, index, pos.x, pos.y, pos.z, floatBitsToUint(pos.w));
-		// }
 
 		// Sorry
 		atomicAdd(b_PlayerHealths.Val[p_EntitySettings.EntityIndex], value);

@@ -1661,38 +1661,6 @@ bool RenderSystem::InitIntegrationLUT()
 			WriteDrawArgExtensionData(meshAndInstancesIt->second);
 		}
 
-		// Update resource for the entity mesh paint textures that is used for ray tracing
-		// bool hasPaintMask = false;
-		// if (m_RayTracingEnabled)
-		// {
-		// 	ECSCore* pECS = ECSCore::GetInstance();
-		// 	const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
-		// 	if (pMeshPaintComponents->HasComponent(entity))
-		// 	{
-		// 		hasPaintMask = true;
-		// 		const auto& comp = pECS->GetComponent<MeshPaintComponent>(entity);
-
-		// 		Texture* pTexture			= comp.pTexture;
-		// 		TextureView* pTextureView	= comp.pTextureView;
-
-		// 		// If the texture has not been added before, update resource
-		// 		auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
-		// 		if (paintMaskTexturesIt == m_PaintMaskTextures.end())
-		// 		{
-		// 			if (m_PaintMaskTextures.IsEmpty())
-		// 			{
-		// 				m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
-		// 				m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
-		// 			}
-
-		// 			m_PaintMaskTextures.PushBack(pTexture);
-		// 			m_PaintMaskTextureViews.PushBack(pTextureView);
-
-		// 			m_RayTracingPaintMaskTexturesResourceDirty = true;
-		// 		}
-		// 	}
-		// }
-
 		InstanceKey instanceKey = {};
 		instanceKey.MeshKey			= meshKey;
 		instanceKey.InstanceIndex	= meshAndInstancesIt->second.RasterInstances.GetSize();
@@ -1703,13 +1671,7 @@ bool RenderSystem::InitIntegrationLUT()
 			RayTracedComponent rayTracedComponent = {};
 			ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent);
 
-			uint32 shiftedMaterialIndex	= (materialIndex & 0xFF) << 8;
-			uint32 paintIndex			= m_PaintMaskTextures.GetSize() - 1;
-			uint32 shiftedPaintIndex	= false ? (std::max(0u, paintIndex)) & 0xFF : 0;
-
-			uint32 customIndex =
-				shiftedMaterialIndex |
-				shiftedPaintIndex;
+			uint32 customIndex = materialIndex & 0xFF;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
 			ASInstanceDesc asInstanceDesc =
@@ -1722,11 +1684,6 @@ bool RenderSystem::InitIntegrationLUT()
 			};
 
 			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
-
-			// if (hasPaintMask)
-			// {
-			// 	m_PaintMaskASInstanceIndices[paintIndex].PushBack(asInstanceIndex);
-			// }
 
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
