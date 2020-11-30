@@ -219,6 +219,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		if (isReloading)
 		{
 			AbortReload(weaponComponent);
+
 		}
 
 		//Calculate Weapon Fire Properties (Position, Velocity and Team)

@@ -165,3 +165,22 @@ public:
 
 	const LambdaEngine::Entity WeaponOwnerEntity;
 };
+
+struct WeaponReloadCanceledEvent : public LambdaEngine::Event
+{
+public:
+	inline WeaponReloadCanceledEvent(const LambdaEngine::Entity weaponOwnerEntity) :
+		WeaponOwnerEntity(weaponOwnerEntity)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Canceled to reload a weapon. EntitiyID=%u", WeaponOwnerEntity);
+	}
+
+	DECLARE_EVENT_TYPE(WeaponReloadCanceledEvent);
+
+	const LambdaEngine::Entity WeaponOwnerEntity;
+};

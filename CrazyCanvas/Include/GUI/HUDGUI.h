@@ -71,7 +71,7 @@ public:
 
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
-	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType, bool isReloading);
+	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType, const bool isReloading);
 
 	void UpdateCountdown(uint8 countDownTime);
 
@@ -108,6 +108,9 @@ private:
 
 	bool m_IsGameOver	= false;
 	bool m_IsFinishedReloading = false;
+
+	float m_WaterAmmoScale = 0.0f;
+	float m_PaintAmmoScale = 0.0f;
 
 	float32 m_ReloadAnimationTime = 1.0f;
 

@@ -261,6 +261,9 @@ void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent
 void WeaponSystem::AbortReload(WeaponComponent& weaponComponent)
 {
 	weaponComponent.ReloadClock = 0;
+
+	WeaponReloadCanceledEvent reloadCancelEvent(weaponComponent.WeaponOwner);
+	LambdaEngine::EventQueue::SendEventImmediate(reloadCancelEvent);
 }
 
 glm::vec3 WeaponSystem::CalculateZeroingDirection(
