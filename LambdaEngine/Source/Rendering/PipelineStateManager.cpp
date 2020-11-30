@@ -21,11 +21,11 @@ namespace LambdaEngine
 	* Managed Shader Module
 	*/
 	ManagedShaderModule::operator ShaderModuleDesc() const noexcept
-	{ 
+	{
 		ShaderModuleDesc desc = {};
 		desc.pShader			= ResourceManager::GetShader(ShaderGUID);
 		desc.ShaderConstants	= ShaderConstants;
-		
+
 		return desc;
 	}
 
@@ -36,7 +36,7 @@ namespace LambdaEngine
 	{
 		GraphicsPipelineStateDesc desc = { };
 		desc.DebugName			= DebugName;
-		
+
 		desc.InputAssembly		= InputAssembly;
 		desc.InputLayout		= InputLayout;
 		desc.DepthStencilState	= DepthStencilState;
@@ -49,17 +49,17 @@ namespace LambdaEngine
 
 		desc.pRenderPass		= RenderPass.Get();
 		desc.pPipelineLayout	= PipelineLayout.Get();
-		
+
 		// Vertex-Shader Pipeline
 		desc.VertexShader		= VertexShader;
 		desc.HullShader			= HullShader;
 		desc.DomainShader		= DomainShader;
 		desc.GeometryShader		= GeometryShader;
-		
+
 		// Mesh-Shader Pipeline
 		desc.MeshShader			= MeshShader;
 		desc.TaskShader			= TaskShader;
-		
+
 		// Common-Shader Pipeline
 		desc.PixelShader		= PixelShader;
 
@@ -75,7 +75,7 @@ namespace LambdaEngine
 		desc.DebugName			= DebugName;
 		desc.pPipelineLayout	= PipelineLayout.Get();
 		desc.Shader				= Shader;
-		
+
 		return desc;
 	}
 
@@ -89,7 +89,7 @@ namespace LambdaEngine
 		desc.MaxRecursionDepth	= MaxRecursionDepth;
 		desc.RaygenShader		= RaygenShader;
 		desc.pPipelineLayout	= PipelineLayout.Get();
-		
+
 		desc.MissShaders.Resize(MissShaders.GetSize());
 		for (uint32 i = 0; i < MissShaders.GetSize(); i++)
 		{
@@ -143,7 +143,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
@@ -161,7 +161,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
@@ -179,7 +179,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
@@ -190,7 +190,7 @@ namespace LambdaEngine
 		if (it != s_PipelineStates.end())
 		{
 			VALIDATE(it->second != nullptr);
-			
+
 			switch (it->second->GetType())
 			{
 			case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		s_GraphicsPipelineStateDescriptions.erase(id);		break;
@@ -225,14 +225,14 @@ namespace LambdaEngine
 		{
 			PipelineState* pNewPipelineState = nullptr;
 			VALIDATE(it->second != nullptr);
-			
+
 			switch (it->second->GetType())
 			{
 				case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:
 				{
 					const ManagedGraphicsPipelineStateDesc* pPipelineDesc = &s_GraphicsPipelineStateDescriptions[it->first];
 					GraphicsPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
-					
+
 					pNewPipelineState = RenderAPI::GetDevice()->CreateGraphicsPipelineState(&pipelineDesc);
 					break;
 				}
@@ -240,7 +240,7 @@ namespace LambdaEngine
 				{
 					const ManagedComputePipelineStateDesc* pPipelineDesc = &s_ComputePipelineStateDescriptions[it->first];
 					ComputePipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
-					
+
 					pNewPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
 					break;
 				}

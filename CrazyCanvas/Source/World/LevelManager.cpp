@@ -24,7 +24,7 @@ bool LevelManager::Init()
 
 	if (!LevelObjectCreator::Init())
 	{
-		LOG_ERROR("[LevelManager]: Failed to initialize LevelObjectCreator");
+		LOG_ERROR("Failed to initialize LevelObjectCreator");
 		return false;
 	}
 
@@ -32,7 +32,7 @@ bool LevelManager::Init()
 
 	if (pLevelsFile == nullptr)
 	{
-		LOG_ERROR("[LevelManager]: Failed to open levels file");
+		LOG_ERROR("Failed to open levels file");
 		return false;
 	}
 	else
@@ -91,7 +91,7 @@ bool LevelManager::Init()
 								uint32 dataSize;
 								if (!ResourceLoader::ReadDataFromFile(LEVEL_MODULES_DIRECTORY + moduleDesc.Filename, "rb", &pData, &dataSize))
 								{
-									LOG_ERROR("[LevelManager]: Failed to load level %s, module %s does not exist", levelDesc.Name.c_str(), moduleDesc.Filename.c_str());
+									LOG_ERROR("Failed to load level %s, module %s does not exist", levelDesc.Name.c_str(), moduleDesc.Filename.c_str());
 									return false;
 								}
 
@@ -104,7 +104,7 @@ bool LevelManager::Init()
 						}
 						else
 						{
-							LOG_ERROR("[LevelManager]: Failed to load level %s, module %d has no filename", levelDesc.Name.c_str(), m);
+							LOG_ERROR("Failed to load level %s, module %d has no filename", levelDesc.Name.c_str(), m);
 							return false;
 						}
 
@@ -122,7 +122,7 @@ bool LevelManager::Init()
 						}
 						else
 						{
-							LOG_WARNING("[LevelManager]: Module %d in level %s, has no translation", m, levelDesc.Name.c_str());
+							LOG_WARNING("Module %d in level %s, has no translation", m, levelDesc.Name.c_str());
 						}
 
 						levelDesc.LevelModuleDescriptions[m] = moduleDesc;
@@ -137,7 +137,7 @@ bool LevelManager::Init()
 
 				byteRepresentation.clear();
 
-				D_LOG_INFO("\n[LevelManager]: Level Registered:\nName: %s\nNum Modules: %d\nSHA256: %x%x\n",
+				LOG_DEBUG("\nLevel Registered:\nName: %s\nNum Modules: %d\nSHA256: %x%x\n",
 					levelDesc.Name.c_str(),
 					levelDesc.LevelModuleDescriptions.GetSize(),
 					levelDesc.Hash.SHA256Chunk0,
@@ -173,7 +173,7 @@ Level* LevelManager::LoadLevel(const LambdaEngine::SHA256Hash& levelHash)
 		}
 	}
 
-	LOG_ERROR("[LevelManager]: Can't find level with Hash: %x%x", levelHash.SHA256Chunk0, levelHash.SHA256Chunk1);
+	LOG_ERROR("Can't find level with Hash: %x%x", levelHash.SHA256Chunk0, levelHash.SHA256Chunk1);
 	return nullptr;
 }
 
@@ -187,7 +187,7 @@ Level* LevelManager::LoadLevel(const LambdaEngine::String& levelName)
 		}
 	}
 
-	LOG_ERROR("[LevelManager]: Can't find level with Name: %s", levelName.c_str());
+	LOG_ERROR("Can't find level with Name: %s", levelName.c_str());
 	return nullptr;
 }
 
@@ -223,7 +223,7 @@ Level* LevelManager::LoadLevel(uint32 index)
 				LevelModule* pModule = DBG_NEW LevelModule();
 				if (!pModule->Init(moduleDesc.Filename, moduleDesc.Translation))
 				{
-					LOG_ERROR("[LevelManager]: Failed to initialize Level Module");
+					LOG_ERROR("Failed to initialize Level Module");
 					return nullptr;
 				}
 
@@ -241,18 +241,18 @@ Level* LevelManager::LoadLevel(uint32 index)
 
 		if (!pLevel->Init(&levelCreateDesc))
 		{
-			LOG_ERROR("[LevelManager]: Failed to create level %s", levelDesc.Name.c_str());
+			LOG_ERROR("Failed to create level %s", levelDesc.Name.c_str());
 			SAFEDELETE(pLevel);
 			return nullptr;
 		}
 		else
 		{
-			D_LOG_INFO("[LevelManager]: Level %s created", levelDesc.Name.c_str());
+			LOG_DEBUG("Level %s created", levelDesc.Name.c_str());
 			return pLevel;
 		}
 	}
 
-	LOG_ERROR("[LevelManager]: Level with index %d is out of bounds", index);
+	LOG_ERROR("Level with index %d is out of bounds", index);
 	return nullptr;
 }
 
@@ -266,7 +266,7 @@ const LambdaEngine::SHA256Hash& LevelManager::GetHash(const LambdaEngine::String
 		}
 	}
 
-	LOG_ERROR("[LevelManager]: Can't find level with Name: %s", levelName.c_str());
+	LOG_ERROR("Can't find level with Name: %s", levelName.c_str());
 
 	return s_DefaultEmptyHash;
 }
@@ -278,7 +278,7 @@ const LambdaEngine::SHA256Hash& LevelManager::GetHash(uint32 index)
 		return s_LevelHashes[index];
 	}
 
-	LOG_ERROR("[LevelManager]: Level with index %d is out of bounds", index);
+	LOG_ERROR("Level with index %d is out of bounds", index);
 
 	return s_DefaultEmptyHash;
 }
