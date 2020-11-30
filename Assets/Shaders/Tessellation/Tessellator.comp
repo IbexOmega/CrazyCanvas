@@ -22,6 +22,44 @@ layout(binding = 1, set = 0) restrict readonly buffer InIndices		            { u
 layout(binding = 0, set = 1) restrict writeonly buffer OutVertices				{ SVertex val[]; }	b_OutVertices;
 layout(binding = 1, set = 1) restrict writeonly buffer OutIndices		        { uint val[]; }		b_OutIndices;
 
+// Assume pos is inside the triangle { v0 v1 v2 }
+SVertex InterpolateVertex(SVertex v0, SVertex v1, SVertex v2, vec3 pos)
+{
+    vec3 edge0 = v1.Position.xyz-v0.Position.xyz;
+    vec3 vp0 = pos-v0.Position.xyz;
+    vec3 edge1 = v2.Position.xyz-v1.Position.xyz;
+    vec3 vp1 = pos-v1.Position.xyz;
+    vec3 edge2 = v0.Position.xyz-v2.Position.xyz;
+    vec3 vp2 = pos-v2.Position.xyz;
+
+    vec3 N = cross(edge0, -edge2); // N 
+    float denom = dot(N, N); 
+
+    vec3 C = cross(edge1, vp1);
+    float u = dot(N, C) / denom;
+
+    C = cross(edge2, vp2);
+    float v = dot(N, C) / denom;
+
+    SVertex vertex;
+    vertex.Position.xyz = u*v0.Position.xyz + v*v1.Position.xyz + (1.f - u - v)*v2.Position.xyz;
+    vertex.Normal.xyz = u*v0.Normal.xyz + v*v1.Normal.xyz + (1.f - u - v)*v2.Normal.xyz;
+    vertex.Normal.w = u*v0.Normal.w + v*v1.Normal.w + (1.f - u - v)*v2.Normal.w;
+    vertex.Tangent.xyz = u*v0.Position.xyz + v*v1.Position.xyz + (1.f - u - v)*v2.Position.xyz;
+    vertex.TexCoord.xy = u*v0.TexCoord.xy + v*v1.TexCoord.xy + (1.f - u - v)*v2.TexCoord.xy;
+
+    vec4 paintInfo4V0 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v0.Position.w)));
+	vec4 paintInfo4V1 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v1.Position.w)));
+	vec4 paintInfo4V2 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v2.Position.w)));
+	vec4 paintInfo4 = (paintInfo4V0 * u + paintInfo4V1 * v + paintInfo4V2 * (1.f - u - v));
+	uint packedPaintInfo = 0;
+	float dist = 1.f;
+	GetVec4ToPackedPaintInfoAndDistance(position, paintInfo4, paintDist, packedPaintInfo, dist);
+    vertex.Position.w = packedPaintInfo;
+
+    return vertex;
+}
+
 void main()
 {
 	// Return in case this thread is outside of our vertex count
@@ -34,14 +72,31 @@ void main()
         uint index1 = b_InIndices.val[triangleIndex*3 + 1];
         uint index2 = b_InIndices.val[triangleIndex*3 + 2];
 
-        b_OutVertices.val[index0] = b_InVertices.val[index0];
+        SVertex v0 = b_InVertices.val[index0];
+        SVertex v1 = b_InVertices.val[index1];
+        SVertex v2 = b_InVertices.val[index2];
+
+        b_OutVertices.val[index0] = v0;
         b_OutIndices.val[triangleIndex*3 + 0] = index0;
 
-        b_OutVertices.val[index1] = b_InVertices.val[index1];
+        b_OutVertices.val[index1] = v1;
         b_OutIndices.val[triangleIndex*3 + 1] = index1;
 
-        b_OutVertices.val[index2] = b_InVertices.val[index2];
+        b_OutVertices.val[index2] = v2;
         b_OutIndices.val[triangleIndex*3 + 2] = index2;
+        /*
+        vec3 p0 = v0.Position.xyz;
+        vec3 p1 = v1.Position.xyz;
+        vec3 p2 = v2.Position.xyz;
+
+        vec3 a = (p0+v1)*0.5f;
+        vec3 b = (p1+v2)*0.5f;
+        vec3 c = (p2+v0)*0.5f;
+
+        SVertex A = InterpolateVertex(v0, v1, v2, a);
+        SVertex B = InterpolateVertex(v0, v1, v2, b);
+        SVertex C = InterpolateVertex(v0, v1, v2, c);
+        */
 		triangleIndex += totalInvocations;
 	}
 }
