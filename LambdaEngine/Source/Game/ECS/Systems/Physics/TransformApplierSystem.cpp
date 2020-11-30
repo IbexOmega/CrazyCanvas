@@ -80,6 +80,7 @@ namespace LambdaEngine
 			const uint64 sampleIndex = m_Tick % SAMPLES;
 			glm::vec2 jitter = Math::Hammersley2D(sampleIndex, SAMPLES);
 			jitter = (jitter * 2.0f) - 1.0f;
+
 			cameraComp.PrevJitter = cameraComp.Jitter;
 			cameraComp.Jitter.x = jitter.x;
 			cameraComp.Jitter.y = jitter.y;

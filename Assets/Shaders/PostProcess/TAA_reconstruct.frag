@@ -25,7 +25,7 @@ void main()
 	const vec2 size			= vec2(textureSize(u_HistoryBuffer, 0));
 	const vec2 pixelSize	= 1.0f / size;
 
-	// Reconstrutcion filter
+	// Reconstrucion filter
 	vec4 finalSample = vec4(0.0f);
 	float totalWeight = 0.0f;
 	for (int x = -1; x <= 1; x++)
@@ -39,5 +39,6 @@ void main()
 		}
 	}
 	finalSample /= totalWeight;
-	out_Color = finalSample;//texture(u_HistoryBuffer, texcoord);
+
+	out_Color = vec4(texture(u_HistoryBuffer, texcoord));
 }

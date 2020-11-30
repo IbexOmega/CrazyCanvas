@@ -49,33 +49,37 @@ void main()
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 	
-	vec3 shadingNormal		= normalize((sampledNormal * 2.0f) - 1.0f);
-	shadingNormal			= normalize(TBN * normalize(shadingNormal));
+	vec3 shadingNormal	= normalize((sampledNormal * 2.0f) - 1.0f);
+	shadingNormal		= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
 	//0
-	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
-	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
+	vec3 storedAlbedo	= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
+	out_Albedo			= vec4(storedAlbedo, sampledAlbedo.a);
 
 	//1
 	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.r, materialParameters.Roughness * sampledCombinedMaterial.g, materialParameters.Metallic * sampledCombinedMaterial.b);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//2
-	out_Compact_Normal			= PackNormal(shadingNormal);
+	out_Compact_Normal = PackNormal(shadingNormal);
 
 	//3
 	const vec2 size		= u_PerFrameBuffer.Val.ViewPortSize;
-	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter;
+	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter * 0.5f;
 	
-	vec2 currentScreenSpace	= gl_FragCoord.xy;
-	
-	vec2 prevScreenSpace = ((in_PrevClipPosition.xy / in_PrevClipPosition.z) * vec2(0.5f, -0.5f)) + 0.5f;
+	vec2 currentScreenSpace = in_ClipPosition.xy / in_ClipPosition.w;
+	currentScreenSpace = (currentScreenSpace * vec2(0.5f, -0.5f)) + 0.5f;
+	currentScreenSpace = currentScreenSpace * size;
+
+	vec2 prevScreenSpace = in_PrevClipPosition.xy / in_PrevClipPosition.w;
+	prevScreenSpace = (prevScreenSpace * vec2(0.5f, -0.5f)) + 0.5f;
 	prevScreenSpace = prevScreenSpace * size;
 
 	vec2 screenVelocity	= currentScreenSpace - prevScreenSpace;
-	screenVelocity	= screenVelocity - jitter;
-	screenVelocity	= screenVelocity / size;
-	out_Velocity = length(screenVelocity) > 0.001f ? screenVelocity : vec2(0.0f);
+	screenVelocity = screenVelocity - jitter;
+	screenVelocity = screenVelocity / size;
+	
+	out_Velocity = screenVelocity;
 }

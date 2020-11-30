@@ -13,6 +13,6 @@ layout(location = 0) out vec4 out_Color;
 void main()
 {
 	// Perform blit
-	vec2 texCoord = in_TexCoord;
+	const vec2 texCoord = in_TexCoord;
 	out_Color = texture(u_HistoryCopy, texCoord);
 }
