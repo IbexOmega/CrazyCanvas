@@ -58,9 +58,12 @@ namespace LambdaEngine
 		TArray<TSharedRef<DescriptorSet>>	m_DrawArgDescriptorSets;
 
 		uint32								m_BackBufferCount = 0;
+		uint32								m_CurrentFrameIndex = 0;
 
 		CommandAllocator** m_ppComputeCommandAllocators = nullptr;
 		CommandList** m_ppComputeCommandLists = nullptr;
+
+		TArray<TArray<DeviceChild*>> m_ResourcesToRemove;
 
 	private:
 		static MeshPaintUpdater* s_pInstance;
