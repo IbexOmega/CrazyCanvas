@@ -153,12 +153,17 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
+	UNREFERENCED_VARIABLE(directionalLight);
+	UNREFERENCED_VARIABLE(translation);
+
 	using namespace LambdaEngine;
 
 	Entity entity = UINT32_MAX;
-
+	/*
 	if (!MultiplayerUtils::IsServer())
 	{
+		// Can be good to keep if we want statiuc directional lights later
+		
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		DirectionalLightComponent directionalLightComponent =
@@ -174,6 +179,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 		LOG_DEBUG("Created Directional Light");
 	}
 
+	*/
 	return entity;
 }
 
@@ -1113,6 +1119,19 @@ bool LevelObjectCreator::CreatePlayer(
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
+
+			// Create Directional Light Component
+			DirectionalLightComponent directionalLightComponent =
+			{
+				.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
+				.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
+				.FrustumWidth	= 25.0f,
+				.FrustumHeight	= 15.0f,
+				.FrustumZNear	= -60.0f,
+				.FrustumZFar	= 10.0f
+			};
+
+			pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
 		}
 	}
 	else

@@ -597,12 +597,15 @@ namespace LambdaEngine
 			const auto& dirLight = pDirLightComponents->GetConstData(entity);
 			const auto& position = pPositionComponents->GetConstData(entity);
 			const auto& rotation = pRotationComponents->GetConstData(entity);
+
+			const glm::vec3 playerDirection = GetForward(rotation.Quaternion);
 			if (dirLight.Dirty || rotation.Dirty || position.Dirty)
 			{
 				UpdateDirectionalLight(
 					dirLight.ColorIntensity,
-					position.Position,
-					rotation.Quaternion,
+					// Specific settings for map, I know its ugly
+					glm::vec3(position.Position.x * 0.2, 0.0f, position.Position.z) + glm::normalize(glm::vec3(playerDirection.x * 0.3f, 0.0f, playerDirection.z* 0.7)) * dirLight.FrustumHeight*0.85f,
+					dirLight.Rotation,
 					dirLight.FrustumWidth,
 					dirLight.FrustumHeight,
 					dirLight.FrustumZNear,
@@ -1949,7 +1952,6 @@ bool RenderSystem::InitIntegrationLUT()
 		glm::mat4 lightProj = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
 		m_LightBufferData.DirL_ProjViews = lightProj * lightView;
 
-		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsBufferDirty = true;
 	}
 
