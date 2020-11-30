@@ -134,6 +134,7 @@ void SandboxState::Init()
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		materialProperties.Roughness = 0.125f;
 
 		const uint32 materialGUID = ResourceManager::LoadMaterialFromMemory(
 			"Flag Material",

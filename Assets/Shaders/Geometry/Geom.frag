@@ -26,8 +26,8 @@ layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMateria
 layout(location = 0) out vec4 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 2) out vec3 out_Compact_Normal;
-layout(location = 3) out vec2 out_Velocity;
-layout(location = 4) out vec4 out_Linear_Z;
+layout(location = 3) out vec4 out_Velocity_fWidth_Z_Norm;
+layout(location = 4) out vec4 out_Linear_Z_Geom_Norm;
 
 void main()
 {
@@ -41,9 +41,6 @@ void main()
 	vec4 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord);
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
-	
-	vec3 shadingNormal		= normalize((sampledNormal * 2.0f) - 1.0f);
-	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
@@ -52,21 +49,26 @@ void main()
 	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
 
 	//1
-	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.r, materialParameters.Roughness * sampledCombinedMaterial.g, materialParameters.Metallic * sampledCombinedMaterial.b);
+	vec3 storedMaterial			= vec3(
+									materialParameters.AO * sampledCombinedMaterial.r, 
+									materialParameters.Roughness * sampledCombinedMaterial.g, 
+									materialParameters.Metallic * sampledCombinedMaterial.b);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//2
+	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
+	shadingNormal				= normalize(TBN * normalize(shadingNormal));
 	out_Compact_Normal			= PackNormal(shadingNormal);
 
-	//3
+	//3 & 4
+	float linearZ 				= in_ClipPosition.z;
+	float prevLinearZ 			= in_PrevClipPosition.z;
+	float maxChangeZ			= max(abs(dFdx(linearZ)), abs(dFdy(linearZ))); //Not completely sure why we do this instead of fwidth(linearZ), difference seems to be negligible, see SVGF
+	float fwidthNorm			= length(fwidth(normal));
+
 	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * vec2(0.5f, -0.5f);
 	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f);
 	vec2 screenVelocity			= (currentNDC - prevNDC);
-	out_Velocity				= vec2(screenVelocity);
-	
-	//4
-	float linearZ 				= in_ClipPosition.z;
-	float prevLinearZ 			= in_PrevClipPosition.z;
-	float maxChangeZ			= fwidthFine(linearZ);//(max(abs(dFdxFine(linearZ)), abs(dFdyFine(linearZ))));
-	out_Linear_Z				= vec4(linearZ, prevLinearZ, maxChangeZ, 1.0f);
+	out_Velocity_fWidth_Z_Norm	= vec4(screenVelocity, maxChangeZ, fwidthNorm);
+	out_Linear_Z_Geom_Norm		= vec4(linearZ, prevLinearZ, DirToOct(normal));
 }

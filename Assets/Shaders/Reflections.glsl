@@ -9,6 +9,8 @@
 	#define REFLECTION_REJECT_THRESHOLD         0.35f
     #define BRDF_TAIL_TRUNCATION_BIAS           0.85f
     #define TEMPORAL_REUSE_MAX_HISTORY_LENGTH   32.0f
+    #define BRDF_DENOISING_MIN_KERNEL_RADIUS    0
+    #define BRDF_DENOISING_MAX_KERNEL_RADIUS    3
 #else
     //Constants
 	#define REFLECTION_REJECT_THRESHOLD         0.0f
