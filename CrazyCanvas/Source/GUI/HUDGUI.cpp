@@ -223,6 +223,8 @@ void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, in
 	Noesis::Ptr<Noesis::ScaleTransform> waterScaleTransform = *new ScaleTransform();
 	Noesis::Ptr<Noesis::ScaleTransform> paintScaleTransform = *new ScaleTransform();
 
+	CancelSmallPrompt();
+
 	for (auto& ammo : WeaponTypeAmmo)
 	{
 		float scale = (float)ammo.second.first / (float)ammo.second.second;
@@ -387,6 +389,13 @@ void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSma
 		pPromptGUI = FindName<PromptGUI>("PROMPT");
 		pPromptGUI->DisplayPrompt(promptMessage, teamIndex);
 	}
+}
+
+void HUDGUI::CancelSmallPrompt()
+{
+	PromptGUI* pPromptGUI = nullptr;
+	pPromptGUI = FindName<PromptGUI>("SMALLPROMPT");
+	pPromptGUI->CancelSmallPrompt();
 }
 
 void HUDGUI::InitGUI()

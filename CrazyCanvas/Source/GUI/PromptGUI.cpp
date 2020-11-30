@@ -63,3 +63,9 @@ void PromptGUI::DisplaySmallPrompt(const LambdaEngine::String& promptMessage)
 	m_pSmallPromptVisibilityStoryboard->Begin();
 	m_pSmallPromptStoryboard->Begin();
 }
+
+void PromptGUI::CancelSmallPrompt()
+{
+	m_pSmallPromptVisibilityStoryboard->Stop();
+	m_pSmallPromptStoryboard->Stop();
+}

@@ -30,11 +30,11 @@
         <Storyboard x:Key="SmallPromptStoryboard">
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleX)" Storyboard.TargetName="SMALL_PROMPT_TEXT">
                 <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
-                <EasingDoubleKeyFrame KeyTime="0:0:2" Value="1.2"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:2" Value="1.4"/>
             </DoubleAnimationUsingKeyFrames>
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[0].(ScaleTransform.ScaleY)" Storyboard.TargetName="SMALL_PROMPT_TEXT">
                 <EasingDoubleKeyFrame KeyTime="0" Value="1"/>
-                <EasingDoubleKeyFrame KeyTime="0:0:2" Value="1.2"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:2" Value="1.4"/>
             </DoubleAnimationUsingKeyFrames>
         </Storyboard>
         <Storyboard x:Key="SmallPromptVisibilityStoryboard">

@@ -19,6 +19,8 @@ public:
 	void DisplayPrompt(const LambdaEngine::String& promptMessage, const uint8 teamIndex);
 	void DisplaySmallPrompt(const LambdaEngine::String& promptMessage);
 
+	void CancelSmallPrompt();
+
 private:
 	Noesis::Storyboard* m_pPromptStoryboard					= nullptr;
 	Noesis::Storyboard* m_pSmallPromptStoryboard			= nullptr;
