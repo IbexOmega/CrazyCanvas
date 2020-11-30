@@ -19,6 +19,8 @@
 #include "World/Player/PlayerActionSystem.h"
 #include "Input/API/Input.h"
 
+#include "Match/Match.h"
+
 using namespace LambdaEngine;
 
 LobbyState::LobbyState(const PacketGameSettings& gameSettings, const Player* pPlayer) : 
@@ -81,6 +83,8 @@ void LobbyState::Init()
 	LambdaEngine::GUIApplication::SetView(m_View);
 
 	m_LobbyGUI->InitGUI();
+
+	Match::ResetMatch();
 
 	if (!m_IsReplayLobby)
 	{

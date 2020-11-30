@@ -282,8 +282,6 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
 
-	ResetMatch();
-
 	return true;
 }
 
