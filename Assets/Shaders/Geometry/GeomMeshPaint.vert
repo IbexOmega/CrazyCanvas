@@ -4,7 +4,6 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "../Defines.glsl"
-#include "../Noise.glsl"
 #include "../MeshPaintFunc.glsl"
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer					{ SPerFrameBuffer val; }	u_PerFrameBuffer;
