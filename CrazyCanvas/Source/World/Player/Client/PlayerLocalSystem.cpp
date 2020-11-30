@@ -145,6 +145,7 @@ void PlayerLocalSystem::DoAction(
 	ECSCore* pECS = ECSCore::GetInstance();
 	auto pParentComponents = pECS->GetComponentArray<ParentComponent>();
 	bool holdingFlag = false;
+
 	for (Entity flagEntity : m_FlagEntities)
 	{
 		const ParentComponent& parentComponent = pParentComponents->GetConstData(flagEntity);
@@ -154,6 +155,7 @@ void PlayerLocalSystem::DoAction(
 			break;
 		}
 	}
+
 	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
 	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, deltaAction, walking, inAir);
 
