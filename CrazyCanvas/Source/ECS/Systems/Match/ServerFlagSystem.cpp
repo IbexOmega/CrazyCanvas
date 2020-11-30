@@ -221,7 +221,7 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 		{ ComponentPermissions::R,	ParentComponent::Type() },
 	};
 
-    	job.Function = [entity0, entity1]()
+	job.Function = [entity0, entity1]()
 	{
 		Entity flagEntity = entity0;
 		Entity deliveryPointEntity = entity1;
@@ -238,7 +238,7 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 			const TeamComponent& playerTeamComponent = pTeamComponents->GetConstData(entityPlayer);
 
 			TeamComponent flagTeamComponent = {};
-			
+
 			bool validFlagDelivery = false;
 			if (pTeamComponents->GetConstIf(flagEntity, flagTeamComponent))
 			{
