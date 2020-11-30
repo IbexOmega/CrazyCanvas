@@ -19,6 +19,8 @@
 #include "World/Player/PlayerActionSystem.h"
 #include "Input/API/Input.h"
 
+#include "Application/API/PlatformConsole.h"
+
 using namespace LambdaEngine;
 
 LobbyState::LobbyState(const PacketGameSettings& gameSettings, const Player* pPlayer) : 
@@ -87,6 +89,7 @@ void LobbyState::Init()
 
 	if (!m_IsReplayLobby)
 	{
+		PlatformConsole::SetTitle((String("Crazy Canvas Console - ") + m_Name).c_str());
 		PlayerManagerClient::Reset();
 		PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
 	}

@@ -102,6 +102,8 @@ void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 		{
 			pPlayer->m_State = GAME_STATE_SETUP;
 
+			LOG_WARNING("PlayerManagerClient::SetLocalPlayerReady(%s): %s", pPlayer->GetName().c_str(), Player::GameStateToString(pPlayer->GetState()));
+
 			PacketPlayerState packet;
 			packet.State = pPlayer->m_State;
 
@@ -134,6 +136,8 @@ void PlayerManagerClient::SetLocalPlayerStateLoading()
 	{
 		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_SETUP, "Player not in SETUP state!");
 
+		ClientHelper::SetTimeout(Timestamp::Seconds(15));
+
 		pPlayer->m_State = GAME_STATE_LOADING;
 
 		PacketPlayerState packet;
@@ -154,6 +158,8 @@ void PlayerManagerClient::SetLocalPlayerStateLoaded()
 	if (pPlayer)
 	{
 		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_LOADING, "Player not in LOADING state!");
+
+		ClientHelper::ResetTimeout();
 
 		pPlayer->m_State = GAME_STATE_LOADED;
 
@@ -244,6 +250,8 @@ bool PlayerManagerClient::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 		if (pPlayer->m_State != packet.State)
 		{
 			pPlayer->m_State = packet.State;
+
+			LOG_WARNING("PlayerManagerClient::OnPacketPlayerStateReceived(%s): %s", pPlayer->GetName().c_str(), Player::GameStateToString(pPlayer->GetState()));
 
 			PlayerStateUpdatedEvent playerStateUpdatedEvent(pPlayer);
 			EventQueue::SendEventImmediate(playerStateUpdatedEvent);

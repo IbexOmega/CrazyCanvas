@@ -179,6 +179,7 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 
 bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 {
+	LOG_WARNING("ServerState::OnPlayerStateUpdatedEvent(%s)", event.pPlayer->GetName().c_str());
 	using namespace LambdaEngine;
 
 	const Player* pPlayer = event.pPlayer;
@@ -197,14 +198,7 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 	}
 	else if (gameState == GAME_STATE_LOADING)
 	{
-		if (GetState() == SERVER_STATE_SETUP)
-		{
-			TryLoadMatch();
-		}
-		else
-		{
-			LOG_ERROR("Player [%s] tried to load a match but the server is not in the setup state", pPlayer->GetName().c_str());
-		}
+		TryLoadMatch();
 	}
 	else if (gameState == GAME_STATE_LOADED)
 	{
@@ -218,8 +212,6 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 			}
 
 			SetState(SERVER_STATE_PLAYING);
-
-			Match::StartMatch();
 		}
 		else
 		{
@@ -261,7 +253,9 @@ void ServerState::TryLoadMatch()
 			.GameMode = m_GameSettings.GameMode,
 			.MaxScore = m_GameSettings.FlagsToWin,
 		};
-		Match::CreateMatch(&matchDescription);
+		if (!Match::CreateMatch(&matchDescription))
+			LOG_ERROR("Failed to create match");
+
 		Match::BeginLoading();
 	}
 }
@@ -287,6 +281,12 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	else if (state == SERVER_STATE_SETUP)
 	{
 		ServerHelper::SetIgnoreNewClients(true);
+		ServerHelper::SetTimeout(Timestamp::Seconds(15));
+	}
+	else if (state == SERVER_STATE_PLAYING)
+	{
+		ServerHelper::ResetTimeout();
+		Match::StartMatch();
 	}
 	return true;
 }
@@ -315,6 +315,7 @@ bool ServerState::OnGameOverEvent(const GameOverEvent& event)
 void ServerState::SetState(EServerState state)
 {
 	s_State = state;
+	LOG_WARNING("SERVER_STATE(%s)", ServerStateToString(state));
 	ServerStateEvent event(s_State);
 	EventQueue::SendEventImmediate(event);
 }

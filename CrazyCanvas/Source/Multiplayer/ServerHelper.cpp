@@ -12,14 +12,19 @@ void ServerHelper::SetIgnoreNewClients(bool ignore)
 	ServerSystem::GetInstance().GetServer()->SetAcceptingConnections(!ignore);
 }
 
-void ServerHelper::DisconnectPlayer(const Player* pPlayer, const LambdaEngine::String& reason)
+void ServerHelper::DisconnectPlayer(const Player* pPlayer, const String& reason)
 {
 	ClientRemoteBase* pClient = ServerSystem::GetInstance().GetServer()->GetClient(pPlayer->GetUID());
 	if(pClient)
 		pClient->Disconnect(reason);
 }
 
-/*ClientRemoteBase* ServerHelper::GetClient(uint64 uid)
+void ServerHelper::SetTimeout(Timestamp time)
 {
-	return ServerSystem::GetInstance().GetServer()->GetClient(uid);
-}*/
+	ServerSystem::GetInstance().GetServer()->SetTimeout(time);
+}
+
+void ServerHelper::ResetTimeout()
+{
+	ServerSystem::GetInstance().GetServer()->ResetTimeout();
+}

@@ -55,8 +55,12 @@ PlaySessionState* PlaySessionState::s_pInstance = nullptr;
 
 PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool singlePlayer) :
 	m_Singleplayer(singlePlayer),
-	m_MultiplayerClient(), 
-	m_GameSettings(gameSettings)
+	m_MultiplayerClient(),
+	m_GameSettings(gameSettings),
+	m_DefferedTicks(3),
+	m_Initiated(false),
+	m_MatchReadyReceived(false),
+	m_MatchLoaded(false)
 {
 	if (m_Singleplayer)
 	{
@@ -73,16 +77,19 @@ PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool 
 	renderSystem.SetPaintMaskColor(1, TeamHelper::GetTeamColor(1));
 
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &PlaySessionState::OnPacketMatchReadyReceived);
 }
 
 PlaySessionState::~PlaySessionState()
 {
+	s_pInstance = nullptr;
 	if (m_Singleplayer)
 	{
 		SingleplayerInitializer::Release();
 	}
 
 	EventQueue::UnregisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &PlaySessionState::OnPacketMatchReadyReceived);
 
 	Match::Release();
 }
@@ -90,6 +97,12 @@ PlaySessionState::~PlaySessionState()
 void PlaySessionState::Init()
 {
 	s_pInstance = this;
+
+	if (!m_Singleplayer)
+	{
+		//Called to tell the server we are ready to load the match
+		PlayerManagerClient::SetLocalPlayerStateLoading();
+	}
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
@@ -103,33 +116,41 @@ void PlaySessionState::Init()
 	m_MeshPaintHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
-	// Load Match
-	{
-		const TArray<SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
-
-		MatchDescription matchDescription =
-		{
-			.LevelHash	= levelHashes[m_GameSettings.MapID],
-			.GameMode	= m_GameSettings.GameMode,
-			.MaxScore	= m_GameSettings.FlagsToWin,
-		};
-		Match::CreateMatch(&matchDescription);
-	}
-
 	if (m_Singleplayer)
 	{
 		SingleplayerInitializer::Setup();
 	}
 	else
 	{
-		//Called to tell the server we are ready to start the match
-		PlayerManagerClient::SetLocalPlayerStateLoading();
 		m_CamSystem.Init();
 	}
 
 	// Init Systems
 	m_HUDSystem.Init();
 	m_DestructionSystem.Init();
+}
+
+void PlaySessionState::InternalInit()
+{
+	// Load Match
+	const TArray<SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+	MatchDescription matchDescription =
+	{
+		.LevelHash = levelHashes[m_GameSettings.MapID],
+		.GameMode = m_GameSettings.GameMode,
+		.MaxScore = m_GameSettings.FlagsToWin,
+	};
+	Match::CreateMatch(&matchDescription);
+
+	m_MatchLoaded = true;
+	TryFinishMatchLoading();
+}
+
+void PlaySessionState::TryFinishMatchLoading()
+{
+	if(m_MatchLoaded && m_MatchReadyReceived)
+		PlayerManagerClient::SetLocalPlayerStateLoaded();
 }
 
 void PlaySessionState::Tick(Timestamp delta)
@@ -141,6 +162,18 @@ void PlaySessionState::FixedTick(Timestamp delta)
 {
 	m_HUDSystem.FixedTick(delta);
 	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+
+	if (!m_Initiated)
+	{
+		if (s_pInstance)
+		{
+			if (--m_DefferedTicks == 0)
+			{
+				InternalInit();
+				m_Initiated = true;
+			}
+		}
+	}
 }
 
 bool PlaySessionState::OnClientDisconnected(const ClientDisconnectedEvent& event)
@@ -155,6 +188,14 @@ bool PlaySessionState::OnClientDisconnected(const ClientDisconnectedEvent& event
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;
+}
+
+bool PlaySessionState::OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	m_MatchReadyReceived = true;
+	TryFinishMatchLoading();
+	return true;
 }
 
 const PacketGameSettings& PlaySessionState::GetGameSettings() const

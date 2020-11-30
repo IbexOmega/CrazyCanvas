@@ -8,24 +8,6 @@
 
 #include "Application/API/Events/EventQueue.h"
 
-bool Match::Init()
-{
-	using namespace LambdaEngine;
-
-	std::scoped_lock<SpinLock> lock(m_Lock);
-
-	if (MultiplayerUtils::IsServer())
-	{
-		s_pMatchInstance = DBG_NEW MatchServer();
-	}
-	else
-	{
-		s_pMatchInstance = DBG_NEW MatchClient();
-	}
-
-	return true;
-}
-
 bool Match::Release()
 {
 	using namespace LambdaEngine;
@@ -39,14 +21,19 @@ bool Match::Release()
 bool Match::CreateMatch(const MatchDescription* pDesc)
 {
 	using namespace LambdaEngine;
-	{
-		std::scoped_lock<SpinLock> lock(m_Lock);
 
-		if (s_pMatchInstance && !s_pMatchInstance->Init(pDesc))
-		{
-			return false;
-		}
-	}
+	std::scoped_lock<SpinLock> lock(m_Lock);
+
+	if (s_pMatchInstance)
+		return false;
+
+	if (MultiplayerUtils::IsServer())
+		s_pMatchInstance = DBG_NEW MatchServer();
+	else
+		s_pMatchInstance = DBG_NEW MatchClient();
+	
+	if (!s_pMatchInstance->Init(pDesc))
+		return false;
 
 	EventQueue::SendEvent<MatchInitializedEvent>(MatchInitializedEvent(pDesc->GameMode));
 

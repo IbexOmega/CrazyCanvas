@@ -15,6 +15,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "States/ServerState.h"
+
 using namespace LambdaEngine;
 
 Timestamp PlayerManagerServer::s_Timer;
@@ -147,6 +149,8 @@ bool PlayerManagerServer::OnClientDisconnected(const LambdaEngine::ClientDisconn
 
 bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<PacketPlayerState>& event)
 {
+	LOG_WARNING("PlayerManagerServer::OnPacketPlayerStateReceived()");
+
 	PacketPlayerState packet = event.Packet;
 	IClient* pClient = event.pClient;
 	packet.UID = pClient->GetUID();
@@ -183,7 +187,7 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 						ServerHelper::SendBroadcast(packet);
 					}
 				}
-
+				LOG_WARNING("PlayerManagerServer::OnPacketPlayerStateReceived(%s): %s", player.GetName().c_str(), Player::GameStateToString(player.GetState()));
 				PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
 				EventQueue::SendEventImmediate(playerStateUpdatedEvent);
 			}
@@ -230,7 +234,7 @@ void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 		SetPlayerHost(&(s_Players.begin()->second));
 	}
 
-	if (s_Players.size() < 2)
+	if (s_Players.size() < 2 || ServerState::GetState() != SERVER_STATE_LOBBY)
 		return;
 
 	TArray<const Player*> pPlayersTeam0;

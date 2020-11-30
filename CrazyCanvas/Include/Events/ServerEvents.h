@@ -34,6 +34,7 @@ constexpr FORCEINLINE const char* ServerStateToString(EServerState state)
 	switch (state)
 	{
 	case EServerState::SERVER_STATE_LOBBY:		return "Lobby";
+	case EServerState::SERVER_STATE_SETUP:		return "Setup";
 	case EServerState::SERVER_STATE_LOADING:	return "Loading";
 	case EServerState::SERVER_STATE_PLAYING:	return "Playing";
 	default: return "NONE";
