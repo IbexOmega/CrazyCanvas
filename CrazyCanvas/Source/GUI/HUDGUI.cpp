@@ -63,6 +63,46 @@ HUDGUI::~HUDGUI()
 {
 }
 
+void HUDGUI::FixedTick(LambdaEngine::Timestamp delta)
+{
+
+	UpdateKillFeedTimer(delta);
+	UpdateScore();
+
+	if (m_IsFinishedReloading)
+	{
+		AnimateReload(float32(delta.AsSeconds()));
+		int a = 1;
+		UNREFERENCED_VARIABLE(a);
+	}
+
+}
+
+void HUDGUI::AnimateReload(const float32 timePassed)
+{
+	Noesis::ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
+	Noesis::ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
+
+	float currentWaterScale = pWaterScale->GetScaleX();
+	float currentPaintScale = pWaterScale->GetScaleX();
+
+	if (currentWaterScale <= 1.0f)
+		currentWaterScale += timePassed * 0.5;
+	else if (currentWaterScale > 1.0f)
+		currentWaterScale = 1.0f;
+
+	if (currentPaintScale <= 1.0f)
+		currentPaintScale += timePassed * 0.5;
+	else if (currentPaintScale > 1.0f)
+		currentPaintScale = 1.0f;
+
+	pWaterScale->SetScaleX(currentWaterScale);
+	pPaintScale->SetScaleX(currentPaintScale);
+
+	m_pWaterAmmoRect->SetRenderTransform(pWaterScale);
+	m_pPaintAmmoRect->SetRenderTransform(pPaintScale);
+}
+
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
 	UNREFERENCED_VARIABLE(pSource);
@@ -119,9 +159,11 @@ bool HUDGUI::UpdateScore()
 	return true;
 }
 
-bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType)
+bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType, bool isReloading)
 {
 	//Returns false if Out Of Ammo
+	m_IsFinishedReloading = isReloading;
+
 	std::string ammoString;
 	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
 
@@ -142,15 +184,25 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	}
 
 
-	if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+	if (isReloading)
 	{
 		m_pWaterAmmoText->SetText(ammoString.c_str());
-		m_pWaterAmmoRect->SetRenderTransform(scale);
-	}
-	else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
-	{
+		//m_pWaterAmmoRect->SetRenderTransform(scale);
 		m_pPaintAmmoText->SetText(ammoString.c_str());
-		m_pPaintAmmoRect->SetRenderTransform(scale);
+		//m_pPaintAmmoRect->SetRenderTransform(scale);
+	}
+	else
+	{
+		if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+		{
+			m_pWaterAmmoText->SetText(ammoString.c_str());
+			m_pWaterAmmoRect->SetRenderTransform(scale);
+		}
+		else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+		{
+			m_pPaintAmmoText->SetText(ammoString.c_str());
+			m_pPaintAmmoRect->SetRenderTransform(scale);
+		}
 	}
 
 	return true;

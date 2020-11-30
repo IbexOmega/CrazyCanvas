@@ -35,6 +35,8 @@
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
 
+#include "Time/API/Timestamp.h"
+
 #include "Lobby/Player.h"
 
 #include "Application/API/Events/KeyEvents.h"
@@ -61,11 +63,15 @@ public:
 	HUDGUI();
 	~HUDGUI();
 
+	void FixedTick(LambdaEngine::Timestamp delta);
+
+	void AnimateReload(const float32 timePassed);
+
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
-	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
+	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType, bool isReloading);
 
 	void UpdateCountdown(uint8 countDownTime);
 
@@ -99,7 +105,11 @@ private:
 
 private:
 	GameGUIState m_GUIState;
-	bool m_IsGameOver = false;
+
+	bool m_IsGameOver	= false;
+	bool m_IsFinishedReloading = false;
+
+	float32 m_ReloadAnimationTime = 1.0f;
 
 	Noesis::Image* m_pWaterAmmoRect				= nullptr;
 	Noesis::Image* m_pPaintAmmoRect				= nullptr;

@@ -146,3 +146,22 @@ public:
 
 	const LambdaEngine::Entity WeaponOwnerEntity;
 };
+
+struct WeaponReloadStartedEvent : public LambdaEngine::Event
+{
+public:
+	inline WeaponReloadStartedEvent(const LambdaEngine::Entity weaponOwnerEntity) :
+		WeaponOwnerEntity(weaponOwnerEntity)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Started to reload a weapon. EntitiyID=%u", WeaponOwnerEntity);
+	}
+
+	DECLARE_EVENT_TYPE(WeaponReloadStartedEvent);
+
+	const LambdaEngine::Entity WeaponOwnerEntity;
+};

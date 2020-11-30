@@ -30,6 +30,7 @@ HUDSystem::~HUDSystem()
 
 	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
+	EventQueue::UnregisterEventHandler<WeaponReloadStartedEvent>(this, &HUDSystem::OnWeaponReloadStartedEvent);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
@@ -99,6 +100,7 @@ void HUDSystem::Init()
 
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::RegisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
+	EventQueue::RegisterEventHandler<WeaponReloadStartedEvent>(this, &HUDSystem::OnWeaponReloadStartedEvent);
 	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
@@ -139,7 +141,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 	for (Entity player : m_PlayerEntities)
 	{
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
-		m_HUDGUI->UpdateScore();
+
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
 
 		{
@@ -196,6 +198,8 @@ void HUDSystem::FixedTick(Timestamp delta)
 		}
 	}
 
+
+
 	static bool activeButtonChanged = false;
 	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
@@ -208,7 +212,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 		activeButtonChanged = false;
 	}
 
-	m_HUDGUI->UpdateKillFeedTimer(delta);
+	m_HUDGUI->FixedTick(delta);
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -225,7 +229,7 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 
 			if (pPlayerLocalComponents->HasComponent(weaponComponent.WeaponOwner) && m_HUDGUI)
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType, false);
 			}
 		}
 	}
@@ -245,11 +249,16 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT);
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER);
+				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT, true);
+				//m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER, true);
 			}
 		}
 	}
+	return false;
+}
+
+bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event)
+{
 	return false;
 }
 
