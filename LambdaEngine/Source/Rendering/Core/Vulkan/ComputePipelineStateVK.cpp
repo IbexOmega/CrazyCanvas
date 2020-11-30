@@ -8,7 +8,7 @@
 
 namespace LambdaEngine
 {
-	ComputePipelineStateVK::ComputePipelineStateVK(const GraphicsDeviceVK* pDevice) 
+	ComputePipelineStateVK::ComputePipelineStateVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
 		, m_Pipeline(VK_NULL_HANDLE)
 	{
@@ -47,7 +47,7 @@ namespace LambdaEngine
 		if (!pDesc->Shader.ShaderConstants.IsEmpty())
 		{
 			const uint32 constantCount = static_cast<uint32>(pDesc->Shader.ShaderConstants.GetSize());
-			
+
 			specializationEntries.Resize(constantCount);
 			for (uint32 i = 0; i < constantCount; i++)
 			{
@@ -83,13 +83,13 @@ namespace LambdaEngine
 		{
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed for %s", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "vkCreateComputePipelines failed for %s", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[ComputePipelineStateVK]: vkCreateComputePipelines failed");
+				LOG_VULKAN_ERROR(result, "vkCreateComputePipelines failed");
 			}
-			
+
 			return false;
 		}
 		else
@@ -97,13 +97,13 @@ namespace LambdaEngine
 			SetName(pDesc->DebugName);
 			if (!pDesc->DebugName.empty())
 			{
-				D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline for %s", pDesc->DebugName.c_str());
+				LOG_DEBUG("Created Pipeline for %s", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				D_LOG_MESSAGE("[ComputePipelineStateVK]: Created Pipeline");
+				LOG_DEBUG("Created Pipeline");
 			}
-			
+
 			return true;
 		}
 	}

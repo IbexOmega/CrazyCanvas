@@ -8,7 +8,7 @@
 
 namespace LambdaEngine
 {
-	ShaderVK::ShaderVK(const GraphicsDeviceVK* pDevice) 
+	ShaderVK::ShaderVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
 	{
 	}
@@ -34,7 +34,7 @@ namespace LambdaEngine
 		VkResult result = vkCreateShaderModule(m_pDevice->Device, &createInfo, nullptr, &m_Module);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[ShaderVK]: Failed to create ShaderModule");
+			LOG_VULKAN_ERROR(result, "Failed to create ShaderModule");
 			return false;
 		}
 		else
@@ -42,8 +42,8 @@ namespace LambdaEngine
 			m_Desc = *pDesc;
 			SetName(pDesc->DebugName);
 
-			D_LOG_MESSAGE("[ShaderVK]: Created ShaderModule");
-			
+			LOG_DEBUG("Created ShaderModule");
+
 			return true;
 		}
 	}

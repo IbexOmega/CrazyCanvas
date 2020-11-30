@@ -9,12 +9,12 @@
 	#define FUNCTION_SIG __PRETTY_FUNCTION__
 #endif
 
-#define LOG(severity, ...)  LambdaEngine::Log::Print(severity, __VA_ARGS__)
-#define LOG_MESSAGE(...)    LOG(LambdaEngine::ELogSeverity::LOG_MESSAGE, __VA_ARGS__)
-#define LOG_INFO(...)		LOG(LambdaEngine::ELogSeverity::LOG_INFO, __VA_ARGS__)
-#define LOG_WARNING(...)    LOG(LambdaEngine::ELogSeverity::LOG_WARNING, __VA_ARGS__)
-#define LOG_ERROR(...)      LOG(LambdaEngine::ELogSeverity::LOG_ERROR, __VA_ARGS__)
-#define LOG_ERROR_CRIT(...) LambdaEngine::Log::PrintTraceError(FUNCTION_SIG, __VA_ARGS__)
+#define LOG(fileName, lineNr, severity, ...)  LambdaEngine::Log::Print(fileName, lineNr, severity, __VA_ARGS__)
+#define LOG_MESSAGE(...)    LOG(__FILE__, __LINE__, LambdaEngine::ELogSeverity::LOG_MESSAGE, __VA_ARGS__)
+#define LOG_INFO(...)		LOG(__FILE__, __LINE__, LambdaEngine::ELogSeverity::LOG_INFO, __VA_ARGS__)
+#define LOG_WARNING(...)    LOG(__FILE__, __LINE__, LambdaEngine::ELogSeverity::LOG_WARNING, __VA_ARGS__)
+#define LOG_ERROR(...)      LOG(__FILE__, __LINE__, LambdaEngine::ELogSeverity::LOG_ERROR, __VA_ARGS__)
+#define LOG_ERROR_CRIT(...) LambdaEngine::Log::PrintTraceError(FUNCTION_SIG, __FILE__, __LINE__, __VA_ARGS__)
 
 #ifndef LAMBDA_ENABLE_LOGS
 	#ifdef LAMBDA_DEVELOPMENT
@@ -25,17 +25,9 @@
 #endif
 
 #if LAMBDA_ENABLE_LOGS
-	#define D_LOG(severity, ...)    LOG(severity, __VA_ARGS__)
-	#define D_LOG_MESSAGE(...)      LOG_MESSAGE(__VA_ARGS__)
-	#define D_LOG_INFO(...)			LOG_INFO(__VA_ARGS__)
-	#define D_LOG_WARNING(...)      LOG_WARNING(__VA_ARGS__)
-	#define D_LOG_ERROR(...)        LOG_ERROR(__VA_ARGS__)
+	#define LOG_DEBUG(...) LOG_INFO(__VA_ARGS__)
 #else
-	#define D_LOG(severity, ...)
-	#define D_LOG_MESSAGE(...)
-	#define D_LOG_INFO(...)
-	#define D_LOG_WARNING(...)
-	#define D_LOG_ERROR(...)
+	#define LOG_DEBUG(...)
 #endif
 
 namespace LambdaEngine
@@ -57,30 +49,34 @@ namespace LambdaEngine
 	class LAMBDA_API Log
 	{
 	public:
-		/*
+		/**
 		* Prints a message to the log
 		*
-		* severity  - The message severity, determines how important the message is
-		* pFormat   - Formatted string to print to the log
-		* args      - Arguments for the formatted string
+		* @param severity	The message severity, determines how important the message is
+		* @param pFileName	Name of the file where Print is called from
+		* @param lineNr		Line number inside the code file in which Print is called from
+		* @param pFormat	Formatted string to print to the log
+		* @param args		Arguments for the formatted string
 		*/
-		static void Print(ELogSeverity severity, const char* pFormat, ...);
-		static void PrintV(ELogSeverity severity, const char* pFormat, va_list vaArgs);
+		static void Print(const char* pFileName, uint32 lineNr, ELogSeverity severity, const char* pFormat, ...);
+		static void PrintV(const char* pFileName, uint32 lineNr, ELogSeverity severity, const char* pFormat, va_list vaArgs);
 
-		/*
+		/**
 		* Prints an error message with the function-signature where the error occured
 		*
-		* pFunction - The function- signature as a string
-		* pFormat   - Formatted string to print to the log
-		* args      - The arguments to the formatted string
+		* @param pFunction The function- signature as a string
+		* @param pFileName	Name of the file where Print is called from
+		* @param lineNr		Line number inside the code file in which Print is called from
+		* @param pFormat   Formatted string to print to the log
+		* @param args      The arguments to the formatted string
 		*/
-		static void PrintTraceError(const char* pFunction, const char* pFormat, ...);
-		static void PrintTraceErrorV(const char* pFunction, const char* pFormat, va_list vaArgs);
+		static void PrintTraceError(const char* pFunction, const char* pFileName, uint32 lineNr, const char* pFormat, ...);
+		static void PrintTraceErrorV(const char* pFunction, const char* pFileName, uint32 lineNr, const char* pFormat, va_list vaArgs);
 
-		/*
+		/**
 		* Enables the log to print to the debugger using PlatformMisc::OutputDebugString
 		*
-		* enable - True if the debugger logging should be enabled
+		* @param enable True if the debugger logging should be enabled
 		*/
 		FORCEINLINE static void SetDebuggerOutputEnabled(bool enable)
 		{

@@ -11,26 +11,25 @@ namespace LambdaEngine
 		PhysXErrorCallback() = default;
 		~PhysXErrorCallback() = default;
 
-		inline virtual void reportError(physx::PxErrorCode::Enum code, const char* pMessage, const char* pFile, int line) override final
+		inline virtual void reportError(physx::PxErrorCode::Enum code, const char* pMessage, const char* pFile, int lineNr) override final
 		{
-			UNREFERENCED_VARIABLE(pFile);
-			UNREFERENCED_VARIABLE(line);
-
-			using namespace physx;
+			ELogSeverity severity;
 			switch (code)
 			{
-				case PxErrorCode::eNO_ERROR:
-				case PxErrorCode::eDEBUG_INFO:
-					D_LOG_INFO(pMessage);
+				case physx::PxErrorCode::eNO_ERROR:
+				case physx::PxErrorCode::eDEBUG_INFO:
+					severity = ELogSeverity::LOG_INFO;
 					break;
-				case PxErrorCode::eDEBUG_WARNING:
-				case PxErrorCode::ePERF_WARNING:
-					LOG_WARNING(pMessage);
+				case physx::PxErrorCode::eDEBUG_WARNING:
+				case physx::PxErrorCode::ePERF_WARNING:
+					severity = ELogSeverity::LOG_WARNING;
 					break;
 				default:
-					LOG_ERROR(pMessage);
+					severity = ELogSeverity::LOG_ERROR;
 					break;
 			}
+
+			LOG(pFile, lineNr, severity, pMessage);
 		}
 	};
 };

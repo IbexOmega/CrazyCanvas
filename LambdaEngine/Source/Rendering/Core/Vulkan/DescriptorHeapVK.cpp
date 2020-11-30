@@ -11,7 +11,7 @@ namespace LambdaEngine
 		: TDeviceChild(pDevice)
 	{
 	}
-	
+
 	DescriptorHeapVK::~DescriptorHeapVK()
 	{
 		if (m_DescriptorHeap != VK_NULL_HANDLE)
@@ -20,7 +20,7 @@ namespace LambdaEngine
 			m_DescriptorHeap = VK_NULL_HANDLE;
 		}
 	}
-	
+
 	bool DescriptorHeapVK::Init(const DescriptorHeapDesc* pDesc)
 	{
 		constexpr uint32 DESCRIPTOR_TYPE_COUNT = 7;
@@ -87,17 +87,17 @@ namespace LambdaEngine
 		poolInfo.poolSizeCount	= poolCount;
 		poolInfo.pPoolSizes		= poolSizes;
 		poolInfo.maxSets		= pDesc->DescriptorSetCount;
-		
+
 		VkResult result = vkCreateDescriptorPool(m_pDevice->Device, &poolInfo, nullptr, &m_DescriptorHeap);
 		if (result != VK_SUCCESS)
 		{
 			if (pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to create DescriptorHeap \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "Failed to create DescriptorHeap \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to create DescriptorHeap");
+				LOG_VULKAN_ERROR(result, "Failed to create DescriptorHeap");
 			}
 
 			return false;
@@ -107,14 +107,14 @@ namespace LambdaEngine
 			m_Desc			= *pDesc;
 			m_HeapStatus	= pDesc->DescriptorCount;
 			SetName(pDesc->DebugName);
-		
+
 			if (pDesc->DebugName.empty())
 			{
-				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap \"%s\"", pDesc->DebugName.c_str());
+				LOG_DEBUG("Created DescriptorHeap \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				D_LOG_MESSAGE("[DescriptorHeapVK]: Created DescriptorHeap");
+				LOG_DEBUG("Created DescriptorHeap");
 			}
 
 			return true;
@@ -134,7 +134,7 @@ namespace LambdaEngine
 #ifndef LAMBDA_PRODUCTION
 		if (!newStatus.IsValid())
 		{
-			LOG_ERROR("[DescriptorHeapVK]: Not enough descriptors in DescriptorHeap for allocation");
+			LOG_ERROR("Not enough descriptors in DescriptorHeap for allocation");
 			return VK_NULL_HANDLE;
 		}
 #endif
@@ -149,7 +149,7 @@ namespace LambdaEngine
 		VkResult result = vkAllocateDescriptorSets(m_pDevice->Device, &allocate, &descriptorSet);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to allocate descriptorset");
+			LOG_VULKAN_ERROR(result, "Failed to allocate descriptorset");
 			return VK_NULL_HANDLE;
 		}
 		else
@@ -164,7 +164,7 @@ namespace LambdaEngine
 		VkResult result = vkFreeDescriptorSets(m_pDevice->Device, m_DescriptorHeap, 1, &descriptorSet);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[DescriptorHeapVK]: Failed to allocate descriptorset");
+			LOG_VULKAN_ERROR(result, "Failed to allocate descriptorset");
 		}
 	}
 

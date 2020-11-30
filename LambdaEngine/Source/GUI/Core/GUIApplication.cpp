@@ -126,23 +126,23 @@ namespace LambdaEngine
 	{
 		if (level == 0) // [TRACE]
 		{
-			LOG_MESSAGE("[NoesisGUI]: [TRACE] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			LOG_MESSAGE("[TRACE] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
 		}
 		else if (level == 1) // [DEBUG]
 		{
-			LOG_MESSAGE("[NoesisGUI]: [DEBUG] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			LOG_MESSAGE("[DEBUG] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
 		}
 		else if (level == 2) // [INFO]
 		{
-			LOG_INFO("[NoesisGUI]: [INFO] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			LOG_INFO("[INFO] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
 		}
 		else if (level == 3) // [WARNING]
 		{
-			LOG_WARNING("[NoesisGUI]: [WARNING] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			LOG_WARNING("[WARNING] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
 		}
 		else if (level == 4) // [ERROR]
 		{
-			LOG_ERROR("[NoesisGUI]: [ERROR] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			LOG_ERROR("[ERROR] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
 		}
 	}
 
@@ -150,11 +150,11 @@ namespace LambdaEngine
 	{
 		if (fatal)
 		{
-			LOG_ERROR("[NoesisGUI]: [FATAL] In \"%s\", at L%d:\n \"%s\"", file, line, message);
+			LOG_ERROR("[FATAL] In \"%s\", at L%d:\n \"%s\"", file, line, message);
 		}
 		else
 		{
-			LOG_ERROR("[NoesisGUI]: In \"%s\", at L%d:\n \"%s\"", file, line, message);
+			LOG_ERROR("In \"%s\", at L%d:\n \"%s\"", file, line, message);
 		}
 	}
 
