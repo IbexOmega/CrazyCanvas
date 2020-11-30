@@ -293,7 +293,7 @@ bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& eve
 
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
 			{
-				m_HUDGUI->AbortReload();
+				m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
 			}
 		}
 	}

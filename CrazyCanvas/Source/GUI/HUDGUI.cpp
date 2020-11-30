@@ -80,9 +80,6 @@ void HUDGUI::AnimateReload(const float32 timePassed)
 	Noesis::ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
 	Noesis::ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
 
-	//float currentWaterScale = glm::clamp<float>(pWaterScale->GetScaleX() + m_WaterAmmoFactor * timePassed, 0.0f, 1.0f);
-	//float currentPaintScale = glm::clamp<float>(pPaintScale->GetScaleX() + m_PaintAmmoFactor * timePassed, 0.0f, 1.0f);
-
 	pWaterScale->SetScaleX(glm::clamp<float>(pWaterScale->GetScaleX() + m_WaterAmmoFactor * timePassed, 0.0f, 1.0f));
 	pPaintScale->SetScaleX(glm::clamp<float>(pPaintScale->GetScaleX() + m_PaintAmmoFactor * timePassed, 0.0f, 1.0f));
 
@@ -189,8 +186,6 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading)
 {
-	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
-
 	m_IsReloading = isReloading;
 
 	if (m_IsReloading)
@@ -207,16 +202,17 @@ void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>
 	}
 	else
 	{
+		Noesis::Ptr<Noesis::ScaleTransform> scaleTransform = *new ScaleTransform();
 		std::string ammoString = std::to_string(50) + "/" + std::to_string(50);
-		scale->SetCenterX(0.0);
-		scale->SetCenterY(0.0);
-		scale->SetScaleX(1.0f);
+		scaleTransform->SetCenterX(0.0);
+		scaleTransform->SetCenterY(0.0);
+		scaleTransform->SetScaleX(1.0f);
 
 		m_pWaterAmmoText->SetText(ammoString.c_str());
-		m_pWaterAmmoRect->SetRenderTransform(scale);
+		m_pWaterAmmoRect->SetRenderTransform(scaleTransform);
 
 		m_pPaintAmmoText->SetText(ammoString.c_str());
-		m_pPaintAmmoRect->SetRenderTransform(scale);
+		m_pPaintAmmoRect->SetRenderTransform(scaleTransform);
 	}
 }
 

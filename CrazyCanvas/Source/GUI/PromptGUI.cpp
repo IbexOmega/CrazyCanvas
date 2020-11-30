@@ -40,7 +40,6 @@ void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const u
 	else
 		pBrush->SetColor(Noesis::Color::Red());
 
-
 	m_pPromptTextblock->SetForeground(pBrush);
 
 	m_pPromptTextblock->SetText(promptMessage.c_str());
