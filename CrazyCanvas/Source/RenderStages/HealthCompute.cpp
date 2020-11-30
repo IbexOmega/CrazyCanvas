@@ -44,6 +44,7 @@ HealthCompute::~HealthCompute()
 		SAFERELEASE(m_pHealthBuffer);
 		SAFERELEASE(m_pCopyBuffer);
 		SAFERELEASE(m_pVertexCountBuffer);
+		SAFERELEASE(m_pStagingBuffer);
 	}
 
 	s_Healths.Clear();

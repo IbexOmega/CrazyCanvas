@@ -42,11 +42,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(deltaTime);
 
-	if (!m_HitInfoToProcess.IsEmpty())
-	{
-		RenderSystem::GetInstance().GetRenderGraph()->TriggerRenderStage("COMPUTE_HEALTH");
-	}
-
 	// TEMP REMOVE
 	static bool pressed = false;
 	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_F) && !pressed)
@@ -60,6 +55,8 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		pressed = false;
 	}
 
+	for (Entity entity : m_HealthEntities)
+		HealthCompute::QueueHealthCalculation(entity);
 
 
 	// More threadsafe
@@ -103,8 +100,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	// Update health
 	if (!m_HitInfoToProcess.IsEmpty())
 	{
-		const TArray<uint32> playerHealths = HealthCompute::GetHealths();
-
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<HealthComponent>*		pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
 		ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
@@ -117,7 +112,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
 			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
 
-			constexpr float32 BIASED_MAX_HEALTH	= 0.15f;
+			constexpr float32 BIASED_MAX_HEALTH	= 0.2f;
 			constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
 
 			// Update health
@@ -151,8 +146,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				packets.SendPacket(packet);
 			}
 		}
-
-		m_HitInfoToProcess.Clear();
 	}
 
 	// Reset healthcomponents
@@ -225,13 +218,20 @@ bool HealthSystemServer::OnProjectileHit(const ProjectileHitEvent& projectileHit
 			ECSCore* pECS = ECSCore::GetInstance();
 			const ProjectileComponent& projectileComponent = pECS->GetConstComponent<ProjectileComponent>(projectileEntity);
 			
-			m_DeferredHitInfo.PushBack(
-				{ 
-					projectileHitEvent.CollisionInfo1.Entity,
-					projectileComponent.Owner
-				});
+			auto it = std::find_if(m_DeferredHitInfo.Begin(), m_DeferredHitInfo.End(), [entity](const HitInfo& hitInfo){ return hitInfo.Player == entity; });
 
-			HealthCompute::QueueHealthCalculation(entity);
+			if (it != m_DeferredHitInfo.End())
+			{
+				it->ProjectileOwner = projectileEntity;
+			}
+			else
+			{
+				m_DeferredHitInfo.PushBack(
+					{
+						projectileHitEvent.CollisionInfo1.Entity,
+						projectileComponent.Owner
+					});
+			}
 
 			break;
 		}

@@ -130,12 +130,8 @@ void main()
 
         if(u_PC.ShouldResetServer != 0)
         {
-            uint teamSC = floatBitsToUint(vertex.Position.w);
-            uint client = (teamSC >> 4) & 0x0F;
-            uint server = 0; // Clear server
-            teamSC = (client << 4) | server;
-            vertex.Position.w = uintBitsToFloat(teamSC);
-	        vertex.Normal.w = teamSC > 0 ? 0.f : 1.f;
+            vertex.Position.w = uintBitsToFloat(0);
+	        vertex.Normal.w = 1.f;
         }
 
         b_Vertices.val[vertexIndex] = vertex;
