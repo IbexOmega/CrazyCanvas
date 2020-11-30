@@ -172,8 +172,6 @@ void SandboxState::Init()
 		robotMeshComp.MeshGUID		= robotMeshGUID;
 		robotMeshComp.MaterialGUID	= robotMaterialGUID;
 
-		MeshPaintComponent meshPaintComp = {};
-
 		AnimationComponent robotAnimationComp = {};
 		robotAnimationComp.pGraph			= DBG_NEW AnimationGraph(DBG_NEW AnimationState("thriller", thriller[0]));
 		robotAnimationComp.Pose.pSkeleton	= ResourceManager::GetMesh(robotMeshGUID)->pSkeleton; // TODO: Safer way than getting the raw pointer (GUID for skeletons?)
@@ -188,7 +186,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
@@ -227,7 +225,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
@@ -266,7 +264,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });
@@ -325,7 +323,7 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 0 });

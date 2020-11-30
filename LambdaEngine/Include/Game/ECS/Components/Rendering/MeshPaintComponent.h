@@ -12,19 +12,11 @@ namespace LambdaEngine
 	struct MeshPaintComponent
 	{
 		DECL_COMPONENT(MeshPaintComponent);
-		// Buffer*			pReadBackBuffer		= nullptr;
-		// Texture*		pTexture			= nullptr;
-		// TextureView*	pTextureView		= nullptr;
+
 	};
 
-	// namespace MeshPaint
-	// {
-	// 	MeshPaintComponent CreateComponent(
-	// 		Entity entity,
-	// 		const std::string& textureName,
-	// 		uint32 width,
-	// 		uint32 height,
-	// 		bool generateMips,
-	// 		bool createMipReadBack = false);
-	// }
+	namespace MeshPaint
+	{
+		MeshPaintComponent CreateComponent(Entity entity);
+	}
 }

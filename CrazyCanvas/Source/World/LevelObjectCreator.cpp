@@ -160,7 +160,7 @@ bool LevelObjectCreator::Init()
 }
 
 LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
-	const LambdaEngine::LoadedDirectionalLight& directionalLight, 
+	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -232,10 +232,9 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	Entity entity = pECS->CreateEntity();
 	if (!MultiplayerUtils::IsServer())
 	{
-		MeshPaintComponent meshPaintComp = {};
-		pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComp);
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<RayTracedComponent>(entity, 
+		pECS->AddComponent<RayTracedComponent>(entity,
 			RayTracedComponent
 			{
 				.HitMask = 0xFF
@@ -337,14 +336,13 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 		const MeshComponent& meshComponent = levelObject.MeshComponents[0];
 		if (!MultiplayerUtils::IsServer())
 		{
-			MeshPaintComponent meshPaintComp = {};
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
-			pECS->AddComponent<MeshPaintComponent>(entity, meshPaintComp);
+			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 			pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
 					.HitMask = 0xFF
 				});
 		}
-		
+
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 		const CollisionCreateInfo collisionCreateInfo =
 		{
@@ -455,8 +453,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -521,8 +519,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 }
 
 ELevelObjectType LevelObjectCreator::CreateKillPlane(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -771,7 +769,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
-	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaintComponent{});
+	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity));
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
@@ -779,7 +777,7 @@ bool LevelObjectCreator::CreatePlayer(
 	playerChildComp.AddChild(weaponEntity, "weapon");
 
 	const bool readback = MultiplayerUtils::IsServer();
-	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaintComponent{});
+	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity));
 
 	AnimationComponent animationComponent = {};
 	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
@@ -793,7 +791,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	GUID_Lambda playerMaterialGUID;
 
-	// Server/Client 
+	// Server/Client
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())

@@ -8,7 +8,6 @@
 #include "../Helpers.glsl"
 
 layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
-layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 #include "../MeshPaintHelper.glsl"
 #include "../MeshPaintFunc.glsl"
 
