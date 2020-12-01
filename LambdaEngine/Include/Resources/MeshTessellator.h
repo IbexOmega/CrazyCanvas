@@ -26,7 +26,9 @@ namespace LambdaEngine
 		static MeshTessellator& GetInstance() { return s_Instance; }
 
 	private:
-		void CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name);
+		void CreateDummyRenderTarget();
+
+		void CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags);
 		void CreateAndClearOutBuffer(CommandList* pCommandList, Buffer** outBuffer, Buffer** outFirstStagingBuffer, Buffer** outSecondStagingBuffer, uint64 size, uint32 clearData, const String& name);
 
 	private:
@@ -44,6 +46,9 @@ namespace LambdaEngine
 
 		RenderPass* m_RenderPass;
 		GUID_Lambda m_pPipelineStateID;
+
+		Texture* m_pDummyTexture;
+		TextureView* m_pDummyTextureView;
 
 		Buffer* m_pInVertexStagingBuffer = nullptr;
 		Buffer* m_pInVertexBuffer = nullptr;

@@ -16,11 +16,11 @@ layout(location = 1) in vec4 in_Normal[];
 layout(location = 2) in vec4 in_Tangent[];
 layout(location = 3) in vec4 in_TexCoord[];
 
-// Remove this...
-layout(location = 0) out float out_PosW;
-layout(location = 1) out vec4 out_Normal;
-layout(location = 2) out vec4 out_Tangent;
-layout(location = 3) out vec4 out_TexCoord;
+// // Remove this...
+// layout(location = 0) out float out_PosW;
+// layout(location = 1) out vec4 out_Normal;
+// layout(location = 2) out vec4 out_Tangent;
+// layout(location = 3) out vec4 out_TexCoord;
 
 void main()
 {

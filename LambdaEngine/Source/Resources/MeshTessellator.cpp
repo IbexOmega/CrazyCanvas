@@ -9,8 +9,10 @@
 #include "Rendering/Core/API/Fence.h"
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/TextureView.h"
 #include "Rendering/Core/API/CommandQueue.h"
 #include "Rendering/PipelineStateManager.h"
+
 
 #include "Resources/ResourceManager.h"
 
@@ -20,6 +22,9 @@ namespace LambdaEngine
 
 	void MeshTessellator::Init()
 	{
+		// Create dummy render target because graphics pipeline must RENDER to something
+		CreateDummyRenderTarget();
+
 		// Create Command List
 		{
 			m_pCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Tessellator Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
@@ -104,8 +109,31 @@ namespace LambdaEngine
 
 		// Create Pipeline State
 		{
+			RenderPassSubpassDesc subpassDesc = {};
+
+			RenderPassSubpassDependencyDesc subpassDependencyDesc = {};
+			subpassDependencyDesc.SrcSubpass = EXTERNAL_SUBPASS;
+			subpassDependencyDesc.DstSubpass = 0;
+			subpassDependencyDesc.SrcAccessMask = 0;
+			subpassDependencyDesc.DstAccessMask = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE;
+			subpassDependencyDesc.SrcStageMask = FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+			subpassDependencyDesc.DstStageMask = FPipelineStageFlag::PIPELINE_STAGE_FLAG_RENDER_TARGET_OUTPUT;
+
+			RenderPassAttachmentDesc colorAttachmentDesc = {};
+			colorAttachmentDesc.Format = EFormat::FORMAT_R8_UINT;
+			colorAttachmentDesc.SampleCount = 1;
+			colorAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_DONT_CARE;
+			colorAttachmentDesc.StoreOp = EStoreOp::STORE_OP_DONT_CARE;
+			colorAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
+			colorAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
+			colorAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_UNKNOWN;
+			colorAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_UNKNOWN;
+
 			RenderPassDesc renderPassDesc = {};
 			renderPassDesc.DebugName = "Tessellator Render Pass";
+			renderPassDesc.Attachments = { colorAttachmentDesc };
+			renderPassDesc.Subpasses = { subpassDesc };
+			renderPassDesc.SubpassDependencies = { subpassDependencyDesc };
 			m_RenderPass = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
 
 			ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
@@ -138,13 +166,16 @@ namespace LambdaEngine
 			};
 
 			GUID_Lambda vertexShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+			GUID_Lambda pixelShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
 			GUID_Lambda controlShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.tesc", FShaderStageFlag::SHADER_STAGE_FLAG_HULL_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
 			GUID_Lambda evaluationShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.tese", FShaderStageFlag::SHADER_STAGE_FLAG_DOMAIN_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+			GUID_Lambda geomShader = ResourceManager::LoadShaderFromFile("Tessellation/Output.geom", FShaderStageFlag::SHADER_STAGE_FLAG_GEOMETRY_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
 
 			pipelineStateDesc.VertexShader.ShaderGUID = vertexShader;
 			pipelineStateDesc.HullShader.ShaderGUID = controlShader;
 			pipelineStateDesc.DomainShader.ShaderGUID = evaluationShader;
-			//pipelineStateDesc.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
+			pipelineStateDesc.GeometryShader.ShaderGUID = geomShader;
+			pipelineStateDesc.PixelShader.ShaderGUID = pixelShader;
 
 			m_pPipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
 		}
@@ -199,16 +230,28 @@ namespace LambdaEngine
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass = m_RenderPass;
-		beginRenderPassDesc.ppRenderTargets = nullptr;
+		beginRenderPassDesc.ppRenderTargets = &m_pDummyTextureView;
 		beginRenderPassDesc.pDepthStencil = nullptr;
-		beginRenderPassDesc.RenderTargetCount = 0;
-		beginRenderPassDesc.Width = 0;
-		beginRenderPassDesc.Height = 0;
+		beginRenderPassDesc.RenderTargetCount = 1;
+		beginRenderPassDesc.Width = 1;
+		beginRenderPassDesc.Height = 1;
 		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
 		beginRenderPassDesc.pClearColors = nullptr;
 		beginRenderPassDesc.ClearColorCount = 0;
 		beginRenderPassDesc.Offset.x = 0;
 		beginRenderPassDesc.Offset.y = 0;
+
+		Viewport viewport = {};
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		viewport.Width = 1;
+		viewport.Height = 1;
+		viewport.x = 0.0f;
+		viewport.y = 0;
+
+		ScissorRect scissorRect = {};
+		scissorRect.Width = 1;
+		scissorRect.Height = 1;
 
 		LOG_WARNING("Create buffers...");
 		static uint64 signalValue = 0;
@@ -216,16 +259,16 @@ namespace LambdaEngine
 			m_pCommandAllocator->Reset();
 			m_pCommandList->Begin(nullptr);
 
-			// ------- Create buffers if needed and copy data to them -------
+			// ------- Create buffers if needed and copy data to them ------
 
 			// In Buffers
 			void* data = pMesh->Vertices.GetData();
 			uint64 size = pMesh->Vertices.GetSize() * sizeof(Vertex);
-			CreateAndCopyInBuffer(m_pCommandList, &m_pInVertexBuffer, &m_pInVertexStagingBuffer, pMesh->Vertices.GetData(), size, "Tessellator In Vertex Buffer");
+			CreateAndCopyInBuffer(m_pCommandList, &m_pInVertexBuffer, &m_pInVertexStagingBuffer, pMesh->Vertices.GetData(), size, "Tessellator In Vertex Buffer", FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER);
 
 			data = pMesh->Indices.GetData();
 			size = pMesh->Indices.GetSize() * sizeof(MeshIndexType);
-			CreateAndCopyInBuffer(m_pCommandList, &m_pInIndicesBuffer, &m_pInIndicesStagingBuffer, pMesh->Indices.GetData(), size, "Tessellator In Index Buffer");
+			CreateAndCopyInBuffer(m_pCommandList, &m_pInIndicesBuffer, &m_pInIndicesStagingBuffer, pMesh->Indices.GetData(), size, "Tessellator In Index Buffer", FBufferFlag::BUFFER_FLAG_INDEX_BUFFER);
 
 			// Out Buffers
 			CreateAndClearOutBuffer(m_pCommandList, &m_pOutVertexBuffer, &m_pOutVertexFirstStagingBuffer, &m_pOutVertexSecondStagingBuffer, newVerticesMaxSize, UINT32_MAX, "Tessellator Out Vertex Buffer");
@@ -234,7 +277,7 @@ namespace LambdaEngine
 			m_pCommandList->End();
 
 			signalValue++;
-			RenderAPI::GetComputeQueue()->ExecuteCommandLists(
+			RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
 				&m_pCommandList, 1,
 				FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN,
 				nullptr, 0,
@@ -272,9 +315,12 @@ namespace LambdaEngine
 			m_pCommandList->Begin(nullptr);
 			m_pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
-			// ------- Compute pipeline -------
-			m_pCommandList->BindDescriptorSetCompute(m_pInDescriptorSet, m_pPipelineLayout, 0);
-			m_pCommandList->BindDescriptorSetCompute(m_pOutDescriptorSet, m_pPipelineLayout, 1);
+			m_pCommandList->SetViewports(&viewport, 0, 1);
+			m_pCommandList->SetScissorRects(&scissorRect, 0, 1);
+
+			// ------- Graphics pipeline -------
+			m_pCommandList->BindDescriptorSetGraphics(m_pInDescriptorSet, m_pPipelineLayout, 0);
+			m_pCommandList->BindDescriptorSetGraphics(m_pOutDescriptorSet, m_pPipelineLayout, 1);
 
 			m_pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_pPipelineStateID));
 			m_pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlag::SHADER_STAGE_FLAG_ALL, (void*)&pushConstantData, sizeof(pushConstantData), 0);
@@ -302,7 +348,7 @@ namespace LambdaEngine
 			m_pCommandList->End();
 
 			signalValue++;
-			RenderAPI::GetComputeQueue()->ExecuteCommandLists(
+			RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
 				&m_pCommandList, 1,
 				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
 				m_pFence, signalValue-1,
@@ -353,7 +399,36 @@ namespace LambdaEngine
 		LOG_WARNING("Tessellation Complete");
 	}
 
-	void MeshTessellator::CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name)
+	void MeshTessellator::CreateDummyRenderTarget()
+	{
+		TextureDesc textureDesc = {};
+
+		TextureDesc textureDesc;
+		textureDesc.DebugName = "Dummy Texture Tessellation";
+		textureDesc.Type = ETextureType::TEXTURE_TYPE_2D;
+		textureDesc.ArrayCount = 1;
+		textureDesc.Depth = 1;
+		textureDesc.Flags = FTextureFlag::TEXTURE_FLAG_RENDER_TARGET;
+		textureDesc.Width = 1;
+		textureDesc.Height = 1;
+		textureDesc.Format = EFormat::FORMAT_R8_UINT;
+		textureDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
+		textureDesc.Miplevels = 1;
+		textureDesc.SampleCount = 1;
+		m_pDummyTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
+
+		TextureViewDesc textureViewDesc = {};
+		textureViewDesc.pTexture = m_pDummyTexture;
+		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+		textureViewDesc.Format = textureDesc.Format;
+		textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
+		textureViewDesc.Miplevel = textureDesc.Miplevels;
+		textureViewDesc.MiplevelCount = 1;
+		textureViewDesc.ArrayCount = 1;
+		m_pDummyTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+	}
+
+	void MeshTessellator::CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags)
 	{
 		if ((*inStagingBuffer) == nullptr || (*inStagingBuffer)->GetDesc().SizeInBytes < size)
 		{
@@ -381,7 +456,7 @@ namespace LambdaEngine
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = name;
 			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
+			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | flags;
 			bufferDesc.SizeInBytes = size;
 
 			(*inBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
