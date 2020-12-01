@@ -11,41 +11,6 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 /*
-* PlayerConnectedEvent
-*/
-
-struct PlayerConnectedEvent : public LambdaEngine::Event
-{
-public:
-	inline PlayerConnectedEvent(const LambdaEngine::Entity newEntity, const glm::vec3 position)
-		: Event()
-		, NewEntity(newEntity)
-		, Position(position)
-	{
-	}
-
-	DECLARE_EVENT_TYPE(PlayerConnectedEvent);
-
-	virtual LambdaEngine::String ToString() const
-	{
-		using namespace LambdaEngine;
-		return
-			"Player Connected. EntitiyID=" +
-			std::to_string(NewEntity) +
-			"Position=[" +
-			std::to_string(Position.x) +
-			", " +
-			std::to_string(Position.y) +
-			", " +
-			std::to_string(Position.z) +
-			"]";
-	}
-
-	const LambdaEngine::Entity NewEntity;
-	const glm::vec3 Position;
-};
-
-/*
 * PlayerHitEvent
 */
 

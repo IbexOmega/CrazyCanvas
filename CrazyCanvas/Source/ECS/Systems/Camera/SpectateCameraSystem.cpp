@@ -116,8 +116,8 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 				m_InSpectateView = false;
 				m_pSpectatedPlayer = nullptr;
 
-				SpectatePlayerEvent event("", false);
-				EventQueue::SendEventImmediate(event);
+				SpectatePlayerEvent spectatePlayerEvent("", false);
+				EventQueue::SendEventImmediate(spectatePlayerEvent);
 			}
 			else
 			{
