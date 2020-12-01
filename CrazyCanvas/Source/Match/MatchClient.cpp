@@ -53,7 +53,7 @@ MatchClient::MatchClient()
 	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
 	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
 	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
-	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/go.mp3");
+	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/start.mp3");
 }
 
 MatchClient::~MatchClient()
@@ -184,13 +184,6 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
 			}
 
-			// Notify systems that a new player connected (Not myself tho)
-			if (!createPlayerDesc.IsLocal)
-			{
-				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
-				EventQueue::SendEvent(connectedEvent);
-			}
-
 			break;
 		}
 		case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
@@ -268,22 +261,20 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
 
-	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
+	GameOverEvent gameOverEvent(packet.WinningTeamIndex);
+	EventQueue::SendEventImmediate(gameOverEvent);
 
 	return true;
 }
 
 bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
-	UNREFERENCED_VARIABLE(event);
-
 	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
 
-	UNREFERENCED_VARIABLE(event);
-
-	if (event.pPlayer == PlayerManagerClient::GetPlayerLocal())
+	if (event.pPlayer == pPlayerLocal)
 	{
-		if (PlayerManagerClient::GetPlayerLocal()->IsDead())
+		if (pPlayerLocal->IsDead())
 		{
 			if (currentInputLayer == EInputLayer::GUI)
 			{
