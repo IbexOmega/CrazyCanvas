@@ -371,8 +371,6 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	pGameOverGUI->SetMostKillsStats((uint8)mostKills.first, mostKills.second->GetName());
 	pGameOverGUI->SetMostDeathsStats((uint8)mostDeaths.first, mostDeaths.second->GetName());
 	pGameOverGUI->SetMostFlagsStats((uint8)mostFlags.first, mostFlags.second->GetName());
-
-	m_pScoreBoardGUI->DisplayScoreboardMenu(true);
 }
 
 void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex)
