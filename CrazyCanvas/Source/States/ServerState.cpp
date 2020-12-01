@@ -111,6 +111,7 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	ServerBase* pServer = event.pServer;
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
+	pEncoder->WriteUInt8(m_GameSettings.Players);
 	pEncoder->WriteString(m_GameSettings.ServerName);
 	pEncoder->WriteString(m_MapName);
 	pEncoder->WriteInt32(m_ClientHostID);
@@ -224,7 +225,6 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 
 void ServerState::TryLoadMatch()
 {
-	LOG_ERROR("ServerState::TryLoadMatch(%s) A", ServerStateToString(GetState()));
 	if (GetState() != SERVER_STATE_SETUP)
 		return;
 
@@ -255,16 +255,10 @@ void ServerState::TryLoadMatch()
 			.MaxScore = m_GameSettings.FlagsToWin,
 		};
 
-		LOG_ERROR("ServerState::TryLoadMatch(%s) B", ServerStateToString(GetState()));
-
 		if (!Match::CreateMatch(&matchDescription))
 			LOG_ERROR("Failed to create match");
 
-		LOG_ERROR("ServerState::TryLoadMatch(%s) C", ServerStateToString(GetState()));
-
 		Match::BeginLoading();
-
-		LOG_ERROR("ServerState::TryLoadMatch(%s) D", ServerStateToString(GetState()));
 	}
 }
 
@@ -290,7 +284,6 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	{
 		ServerHelper::SetIgnoreNewClients(true);
 		ServerHelper::SetTimeout(Timestamp::Seconds(15));
-		LOG_INFO("Timeout set to 15 seconds");
 	}
 	else if (state == SERVER_STATE_PLAYING)
 	{
@@ -324,7 +317,6 @@ bool ServerState::OnGameOverEvent(const GameOverEvent& event)
 void ServerState::SetState(EServerState state)
 {
 	s_State = state;
-	LOG_WARNING("SERVER_STATE(%s)", ServerStateToString(state));
 	ServerStateEvent event(s_State);
 	EventQueue::SendEventImmediate(event);
 }
