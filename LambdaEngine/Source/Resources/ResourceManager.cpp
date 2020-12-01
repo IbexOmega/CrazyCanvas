@@ -1867,7 +1867,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		D_LOG_WARNING("GetMaterialDesc called with invalid GUID %u", guid);
+		//D_LOG_WARNING("GetMaterialDesc called with invalid GUID %u", guid);
 
 		// Return empty 
 		ResourceManager::MaterialLoadDesc materialLoadDesc = {};
