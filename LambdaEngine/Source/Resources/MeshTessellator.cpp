@@ -13,7 +13,6 @@
 #include "Rendering/Core/API/CommandQueue.h"
 #include "Rendering/PipelineStateManager.h"
 
-
 #include "Resources/ResourceManager.h"
 
 namespace LambdaEngine
@@ -127,7 +126,7 @@ namespace LambdaEngine
 			colorAttachmentDesc.StencilLoadOp = ELoadOp::LOAD_OP_DONT_CARE;
 			colorAttachmentDesc.StencilStoreOp = EStoreOp::STORE_OP_DONT_CARE;
 			colorAttachmentDesc.InitialState = ETextureState::TEXTURE_STATE_UNKNOWN;
-			colorAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_UNKNOWN;
+			colorAttachmentDesc.FinalState = ETextureState::TEXTURE_STATE_GENERAL;
 
 			RenderPassDesc renderPassDesc = {};
 			renderPassDesc.DebugName = "Tessellator Render Pass";
@@ -204,6 +203,10 @@ namespace LambdaEngine
 		m_pOutVertexBuffer->Release();
 		m_pOutVertexFirstStagingBuffer->Release();
 		m_pOutVertexSecondStagingBuffer->Release();
+
+		// Release textures
+		m_pDummyTexture->Release();
+		m_pDummyTextureView->Release();
 	}
 
 	void MeshTessellator::Tessellate(Mesh* pMesh)
@@ -401,8 +404,6 @@ namespace LambdaEngine
 
 	void MeshTessellator::CreateDummyRenderTarget()
 	{
-		TextureDesc textureDesc = {};
-
 		TextureDesc textureDesc;
 		textureDesc.DebugName = "Dummy Texture Tessellation";
 		textureDesc.Type = ETextureType::TEXTURE_TYPE_2D;
@@ -417,15 +418,25 @@ namespace LambdaEngine
 		textureDesc.SampleCount = 1;
 		m_pDummyTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 
+		if (m_pDummyTexture == nullptr)
+		{
+			LOG_ERROR("[MeshTessellator]: Failed to create texture for \"Tessellator\"");
+		}
+
 		TextureViewDesc textureViewDesc = {};
 		textureViewDesc.pTexture = m_pDummyTexture;
 		textureViewDesc.Flags = FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
 		textureViewDesc.Format = textureDesc.Format;
 		textureViewDesc.Type = ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		textureViewDesc.Miplevel = textureDesc.Miplevels;
-		textureViewDesc.MiplevelCount = 1;
+		textureViewDesc.Miplevel = 0;
+		textureViewDesc.MiplevelCount = textureDesc.Miplevels;
 		textureViewDesc.ArrayCount = 1;
 		m_pDummyTextureView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
+
+		if (m_pDummyTextureView == nullptr)
+		{
+			LOG_ERROR("[MeshTessellator]: Failed to create texture view for \"Tessellator\"");
+		}
 	}
 
 	void MeshTessellator::CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags)
