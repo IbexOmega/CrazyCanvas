@@ -6,7 +6,7 @@
 
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
-#include "RenderStages/PaintMaskRenderer.h"
+#include "MeshPaint/MeshPaintTypes.h"
 
 struct ProjectileHitEvent : LambdaEngine::Event
 {
@@ -17,7 +17,7 @@ public:
 			const LambdaEngine::EntityCollisionInfo& collisionInfo0, 
 			const LambdaEngine::EntityCollisionInfo& collisionInfo1, 
 			const EAmmoType ammoType,
-			const LambdaEngine::ETeam team,
+			const ETeam team,
 			const uint32 angle)
 		: Event()
 		, CollisionInfo0(collisionInfo0)
@@ -37,6 +37,6 @@ public:
 	const LambdaEngine::EntityCollisionInfo CollisionInfo0;
 	const LambdaEngine::EntityCollisionInfo CollisionInfo1;
 	const EAmmoType AmmoType;
-	const LambdaEngine::ETeam Team;
+	const ETeam Team;
 	const uint32 Angle;
 };

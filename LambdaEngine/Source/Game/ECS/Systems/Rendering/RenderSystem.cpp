@@ -28,6 +28,7 @@
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Rendering/ParticleRenderer.h"
@@ -42,6 +43,7 @@
 #include "Engine/EngineConfig.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/PlayerIndexHelper.h"
 
 namespace LambdaEngine
 {
@@ -197,7 +199,8 @@ namespace LambdaEngine
 
 			systemReg.SubscriberRegistration.AdditionalAccesses =
 			{
-				{ R, MeshPaintComponent::Type() }
+				{ R, MeshPaintComponent::Type() },
+				{ R, TeamComponent::Type() }
 			};
 
 			RegisterSystem(TYPE_NAME(RenderSystem), systemReg);
@@ -1134,6 +1137,8 @@ bool RenderSystem::InitIntegrationLUT()
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 
+		PlayerIndexHelper::AddPlayerEntity(entity);
+
 		bool forceUniqueResources = false;
 		if (MultiplayerUtils::IsServer())
 		{
@@ -1299,6 +1304,17 @@ bool RenderSystem::InitIntegrationLUT()
 
 		bool hasExtensionData = false;
 		DrawArgExtensionGroup* pExtensionGroup = nullptr;
+
+		uint32 teamIndex = 0;
+		const ECSCore* pECSCore = ECSCore::GetInstance();
+		const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+		if (pTeamComponents->HasComponent(entity))
+		{
+			LOG_WARNING("[RenderSystem] TODO: Change TeamComponent to use 0 as \"No Team\"! For now just add 1 to the team index before sending it to shaders");
+			// TODO: Fix team index
+			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex);
+			teamIndex = (teamIndex == 0) ? 2 : 1;
+		}
 
 		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())
 		{
@@ -1645,38 +1661,6 @@ bool RenderSystem::InitIntegrationLUT()
 			WriteDrawArgExtensionData(meshAndInstancesIt->second);
 		}
 
-		// Update resource for the entity mesh paint textures that is used for ray tracing
-		bool hasPaintMask = false;
-		if (m_RayTracingEnabled)
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
-			if (pMeshPaintComponents->HasComponent(entity))
-			{
-				hasPaintMask = true;
-				const auto& comp = pECS->GetComponent<MeshPaintComponent>(entity);
-
-				Texture* pTexture			= comp.pTexture;
-				TextureView* pTextureView	= comp.pTextureView;
-
-				// If the texture has not been added before, update resource
-				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
-				if (paintMaskTexturesIt == m_PaintMaskTextures.end())
-				{
-					if (m_PaintMaskTextures.IsEmpty())
-					{
-						m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
-						m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
-					}
-
-					m_PaintMaskTextures.PushBack(pTexture);
-					m_PaintMaskTextureViews.PushBack(pTextureView);
-
-					m_RayTracingPaintMaskTexturesResourceDirty = true;
-				}
-			}
-		}
-
 		InstanceKey instanceKey = {};
 		instanceKey.MeshKey			= meshKey;
 		instanceKey.InstanceIndex	= meshAndInstancesIt->second.RasterInstances.GetSize();
@@ -1687,13 +1671,7 @@ bool RenderSystem::InitIntegrationLUT()
 			RayTracedComponent rayTracedComponent = {};
 			ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent);
 
-			uint32 shiftedMaterialIndex	= (materialIndex & 0xFF) << 8;
-			uint32 paintIndex			= m_PaintMaskTextures.GetSize() - 1;
-			uint32 shiftedPaintIndex	= hasPaintMask ? (std::max(0u, paintIndex)) & 0xFF : 0;
-
-			uint32 customIndex =
-				shiftedMaterialIndex |
-				shiftedPaintIndex;
+			uint32 customIndex = materialIndex & 0xFF;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
 			ASInstanceDesc asInstanceDesc =
@@ -1707,11 +1685,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
 
-			if (hasPaintMask)
-			{
-				m_PaintMaskASInstanceIndices[paintIndex].PushBack(asInstanceIndex);
-			}
-
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
 
@@ -1722,6 +1695,7 @@ bool RenderSystem::InitIntegrationLUT()
 		instance.ExtensionGroupIndex		= extensionGroupIndex;
 		instance.TexturesPerExtensionGroup	= meshAndInstancesIt->second.TexturesPerExtensionGroup;
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
+		instance.TeamIndex					= teamIndex;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
@@ -2488,6 +2462,18 @@ bool RenderSystem::InitIntegrationLUT()
 			const uint32 workGroupCount = std::max<uint32>((uint32)AlignUp(vertexCount, THREADS_PER_WORKGROUP) / THREADS_PER_WORKGROUP, 1u);
 			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
+
+		static constexpr const PipelineMemoryBarrierDesc INSTANCE_BUFFER_MEMORY_BARRIER
+		{
+			.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+		};
+
+		pCommandList->PipelineMemoryBarriers(
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			&INSTANCE_BUFFER_MEMORY_BARRIER,
+			1);
 
 		m_AnimationsToUpdate.clear();
 	}

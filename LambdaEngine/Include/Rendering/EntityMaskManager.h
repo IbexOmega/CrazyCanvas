@@ -58,7 +58,7 @@ namespace LambdaEngine
 
 		static const DrawArgExtensionDesc& GetExtensionDescFromExtensionFlag(uint32 flag);
 
-		static void BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType);
+		static void BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType, uint32 bitmask);
 
 	private:
 		static void CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc);

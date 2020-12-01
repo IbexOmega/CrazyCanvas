@@ -91,7 +91,7 @@ void main()
 		// Only paint if the position is within the texture's uv coordinates.
 		if(brushMask.a > EPSILON && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
 		{
-			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in PaintMaskRenderer.h for enum)
+			// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in MeshPaintTypes.h for enum)
 			if (remoteMode == 1)
 			{
 				uint client = teamMode << 1;

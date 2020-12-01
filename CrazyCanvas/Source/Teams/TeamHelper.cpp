@@ -61,7 +61,7 @@ bool TeamHelper::Init()
 
 const glm::vec3& TeamHelper::GetTeamColor(uint8 teamIndex)
 {
-	VALIDATE(teamIndex < MAX_NUM_TEAMS);
+	VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
 
 	return s_AvailableColors[s_TeamIndexes[teamIndex]];
 }

@@ -1,7 +1,7 @@
 #include "ECS/Systems/Match/FlagSystemBase.h"
 
 #include "ECS/Components/Match/FlagComponent.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Physics/Collision.h"

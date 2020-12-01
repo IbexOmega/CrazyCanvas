@@ -4,7 +4,7 @@
 
 #include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
-#include "RenderStages/PaintMaskRenderer.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 
@@ -42,8 +42,8 @@ void ClientShowerSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp del
 
 		if (!packets.GetPacketsReceived().IsEmpty())
 		{
-			PaintMaskRenderer::ResetServer(entity);
-			PaintMaskRenderer::ResetServer(pECS->GetComponent<ChildComponent>(entity).GetEntityWithTag("weapon"));
+			MeshPaintHandler::ResetServer(entity);
+			MeshPaintHandler::ResetServer(pECS->GetComponent<ChildComponent>(entity).GetEntityWithTag("weapon"));
 		}
 	}
 }

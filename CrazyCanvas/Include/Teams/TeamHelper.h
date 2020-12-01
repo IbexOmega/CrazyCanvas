@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 struct ImageSources
 {
@@ -27,13 +27,13 @@ public:
 
 	FORCEINLINE static GUID_Lambda GetTeamColorMaterialGUID(uint8 teamIndex)
 	{
-		VALIDATE(teamIndex < MAX_NUM_TEAMS);
+		VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
 		return s_TeamColorMaterialGUIDs[teamIndex];
 	}
 
 	FORCEINLINE static GUID_Lambda GetTeamPlayerMaterialGUID(uint8 teamIndex)
 	{
-		VALIDATE(teamIndex < MAX_NUM_TEAMS);
+		VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
 		return s_TeamPlayerMaterialGUIDs[teamIndex];
 	}
 
@@ -41,11 +41,13 @@ public:
 
 private:
 	inline static uint8			s_TeamIndexes[MAX_NUM_TEAMS];
-	inline static GUID_Lambda	s_TeamColorMaterialGUIDs[MAX_NUM_TEAMS];
 
-	inline static GUID_Lambda	s_TeamPlayerMaterialGUIDs[MAX_NUM_TEAMS];
-	inline static GUID_Lambda	s_MyTeamPlayerMaterialGUID;
-	inline static GUID_Lambda	s_PlayerTextureGUID;
+	inline static GUID_Lambda	s_PlayerTextureGUID = GUID_NONE;
+	inline static GUID_Lambda	s_TeamColorMaterialGUIDs[LambdaEngine::MAX_NUM_TEAMS];
+
+	inline static GUID_Lambda	s_MyTeamPlayerMaterialGUID = GUID_NONE;
+	inline static GUID_Lambda	s_TeamPlayerMaterialGUIDs[LambdaEngine::MAX_NUM_TEAMS];
+	inline static glm::vec3		s_TeamColors[LambdaEngine::MAX_NUM_TEAMS];
 	
 	inline static LambdaEngine::TArray<glm::vec3>	s_AvailableColors =
 	{

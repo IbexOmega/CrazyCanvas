@@ -5,7 +5,7 @@
 
 #include "ECS/ComponentArray.h"
 
-#include "RenderStages/PaintMaskRenderer.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 #include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
@@ -39,8 +39,8 @@ void ServerShowerSystem::OnPlayerShowerCollision(LambdaEngine::Entity entity0, L
 	// Check if player has recently used the shower
 	if (EngineLoop::GetTimeSinceStart() > showerComponent.ShowerAvailableTimestamp)
 	{
-		PaintMaskRenderer::ResetServer(entity1);
-		PaintMaskRenderer::ResetServer(pECS->GetComponent<ChildComponent>(entity1).GetEntityWithTag("weapon"));
+		MeshPaintHandler::ResetServer(entity1);
+		MeshPaintHandler::ResetServer(pECS->GetComponent<ChildComponent>(entity1).GetEntityWithTag("weapon"));
 		HealthSystemServer::ResetHealth(entity1);
 
 		showerComponent.ShowerAvailableTimestamp = EngineLoop::GetTimeSinceStart() + showerComponent.ShowerCooldown;
