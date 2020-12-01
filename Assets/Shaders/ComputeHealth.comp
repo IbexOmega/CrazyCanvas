@@ -3,8 +3,6 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
 
-// #extension GL_EXT_debug_printf : enable
-
 #define NO_TEXTURES
 
 #include "Defines.glsl"
@@ -60,7 +58,6 @@ void main()
 		uint healthBits = floatBitsToUint(b_Vertices.Val[index].Position.w);
 		uint value = uint((healthBits & 0xF) > 0);
 
-		// Sorry
 		atomicAdd(b_PlayerHealths.Val[p_EntitySettings.EntityIndex], value);
 	}
 }
