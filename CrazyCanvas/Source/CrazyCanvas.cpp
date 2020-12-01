@@ -191,6 +191,7 @@ CrazyCanvas::~CrazyCanvas()
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 {
+	m_MeshPaintHandler.Tick(delta);
 	Render(delta);
 }
 
