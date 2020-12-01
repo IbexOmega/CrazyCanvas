@@ -77,7 +77,6 @@ namespace LambdaEngine
 		/*
 		* How much of an opposite force the particles should have, 1 is the standard force (no bounciness), if greater than 1, it will bounce, if lower it will fall throuh the ground.
 		*/
-		float			Bounciness				= 1.0f;
 		GUID_Lambda		AtlasGUID				= GUID_NONE;
 		uint32			AtlasTileSize			= 64;
 		bool			RandomStartIndex		= false;
