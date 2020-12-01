@@ -94,49 +94,49 @@ namespace LambdaEngine
 
 		if (!InitImGui())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to initialize ImGui");
+			LOG_ERROR("Failed to initialize ImGui");
 			return false;
 		}
 
 		if (!CreateCopyCommandList())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create copy Command List");
+			LOG_ERROR("Failed to create copy Command List");
 			return false;
 		}
 
 		if (!CreateBuffers(m_pDesc->VertexBufferSize, m_pDesc->IndexBufferSize))
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create buffers");
+			LOG_ERROR("Failed to create buffers");
 			return false;
 		}
 
 		if (!CreateTextures())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create textures");
+			LOG_ERROR("Failed to create textures");
 			return false;
 		}
 
 		if (!CreateSamplers())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create samplers");
+			LOG_ERROR("Failed to create samplers");
 			return false;
 		}
 
 		if (!CreatePipelineLayout())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create PipelineLayout");
+			LOG_ERROR("Failed to create PipelineLayout");
 			return false;
 		}
 
 		if (!CreateDescriptorSet())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create DescriptorSet");
+			LOG_ERROR("Failed to create DescriptorSet");
 			return false;
 		}
 
 		if (!CreateShaders())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create Shaders");
+			LOG_ERROR("Failed to create Shaders");
 			return false;
 		}
 
@@ -170,19 +170,19 @@ namespace LambdaEngine
 
 		if (!CreateRenderCommandLists())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create render command lists");
+			LOG_ERROR("Failed to create render command lists");
 			return false;
 		}
 
 		if (!CreateRenderPass(&pPreInitDesc->pColorAttachmentDesc[0]))
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create RenderPass");
+			LOG_ERROR("Failed to create RenderPass");
 			return false;
 		}
 
 		if (!CreatePipelineState())
 		{
-			LOG_ERROR("[ImGuiRenderer]: Failed to create PipelineState");
+			LOG_ERROR("Failed to create PipelineState");
 			return false;
 		}
 
@@ -198,11 +198,11 @@ namespace LambdaEngine
 	}
 
 	void ImGuiRenderer::UpdateTextureResource(
-		const String& resourceName, 
-		const TextureView* const* ppPerImageTextureViews, 
+		const String& resourceName,
+		const TextureView* const* ppPerImageTextureViews,
 		const TextureView* const* ppPerSubImageTextureViews,
 		const Sampler* const* ppPerImageSamplers,
-		uint32 imageCount, 
+		uint32 imageCount,
 		uint32 subImageCount,
 		bool backBufferBound)
 	{
@@ -295,7 +295,7 @@ namespace LambdaEngine
 						}
 						else
 						{
-							LOG_ERROR("[ImGuiRenderer]: Texture count changed between calls to UpdateTextureResource for resource \"%s\"", resourceName.c_str());
+							LOG_ERROR("Texture count changed between calls to UpdateTextureResource for resource \"%s\"", resourceName.c_str());
 						}
 					}
 				}
@@ -303,45 +303,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[ImGuiRenderer]: Textures with subImageCount or imageCount != subImageCount and not BackBufferBound is not implemented. imageCount: %d, subImageCount: %d", imageCount, subImageCount);
-		}
-	}
-
-	void ImGuiRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pDrawArgs);
-		UNREFERENCED_VARIABLE(count);
-
-		for (uint32 i = 0; i < count; i++)
-		{
-			const DrawArg& drawArg = pDrawArgs[i];
-			
-			if (drawArg.HasExtensions)
-			{
-				for (Entity entity : drawArg.EntityIDs)
-				{
-					DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
-					if (pExtensionGroup)
-					{
-						for (uint32 extensionIndex = 0; extensionIndex < pExtensionGroup->ExtensionCount; extensionIndex++)
-						{
-							DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[extensionIndex];
-							for (uint32 textureIndex = 0; textureIndex < extensionData.TextureCount; textureIndex++)
-							{
-								UpdateTextureResource(
-									extensionData.ppTextures[textureIndex]->GetDesc().DebugName,
-									&extensionData.ppTextureViews[textureIndex],
-									&extensionData.ppTextureViews[textureIndex],
-									&extensionData.ppSamplers[textureIndex],
-									1,
-									1,
-									false);
-							}
-						}
-					}
-				}
-			}
+			LOG_WARNING("Textures with subImageCount or imageCount != subImageCount and not BackBufferBound is not implemented. imageCount: %d, subImageCount: %d", imageCount, subImageCount);
 		}
 	}
 
@@ -460,7 +422,7 @@ namespace LambdaEngine
 		}
 
 		pCommandList->BeginRenderPass(&beginRenderPassDesc);
-	
+
 		Viewport viewport = {};
 		viewport.MinDepth	= 0.0f;
 		viewport.MaxDepth	= 1.0f;
@@ -1028,7 +990,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName			= "ImGui Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount	= 256;
+		descriptorHeapDesc.DescriptorSetCount	= 1024;
 		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_DescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);
@@ -1048,7 +1010,7 @@ namespace LambdaEngine
 		m_PixelShaderGUID		= ResourceManager::LoadShaderFromFile("/ImGui/ImGuiPixel.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		return m_VertexShaderGUID != GUID_NONE && m_PixelShaderGUID != GUID_NONE;
 	}
-	
+
 	bool ImGuiRenderer::CreateRenderCommandLists()
 	{
 		if (m_ppRenderCommandLists != nullptr && m_ppRenderCommandAllocators != nullptr)

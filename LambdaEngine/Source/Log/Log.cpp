@@ -15,17 +15,17 @@ namespace LambdaEngine
 	/*
 	* Log
 	*/
-	void Log::Print(ELogSeverity severity, const char* pFormat, ...)
+	void Log::Print(const char* pFileName, uint32 lineNr, ELogSeverity severity, const char* pFormat, ...)
 	{
 		va_list args;
 		va_start(args, pFormat);
 
-		PrintV(severity, pFormat, args);
+		PrintV(pFileName, lineNr, severity, pFormat, args);
 
 		va_end(args);
 	}
 
-	void Log::PrintV(ELogSeverity severity, const char* pFormat, va_list vaArgs)
+	void Log::PrintV(const char* pFileName, uint32 lineNr, ELogSeverity severity, const char* pFormat, va_list vaArgs)
 	{
 		if (severity == ELogSeverity::LOG_INFO)
 		{
@@ -44,18 +44,26 @@ namespace LambdaEngine
 			static SpinLock bufferLock;
 			std::scoped_lock<SpinLock> lock(bufferLock);
 
+			// Remove the path from the file string
+			String fileName(pFileName);
+			fileName = String(&pFileName[fileName.find_last_of('\\') + 1]);
+
+			const String prefix = fileName + " (" + std::to_string(lineNr) + "): ";
+
 			static String buffer;
 			static String lastMessage;
 
 			// Check length of formated string and resize buffer
 			va_list vaCopy;
 			va_copy(vaCopy, vaArgs);
-			int length = vsnprintf(nullptr, 0, pFormat, vaCopy);
+			const int32 length = vsnprintf(nullptr, 0, pFormat, vaCopy);
 			va_end(vaCopy);
 
-			buffer.resize(length);
+			buffer.resize(prefix.size() + uint64(length));
+			memcpy(buffer.data(), prefix.data(), prefix.size());
+
 			// Since we reserve 1 more char than length this should be safe to do
-			vsnprintf(buffer.data(), buffer.size() + 1, pFormat, vaArgs);
+			vsnprintf(buffer.data() + prefix.size(), length + 1, pFormat, vaArgs);
 
 			// Print message
 			if (s_DebuggerOutputEnabled)
@@ -89,22 +97,22 @@ namespace LambdaEngine
 		}
 	}
 
-	void Log::PrintTraceError(const char* pFunction, const char* pFormat, ...)
+	void Log::PrintTraceError(const char* pFunction, const char* pFileName, uint32 lineNr, const char* pFormat, ...)
 	{
 		va_list args;
 		va_start(args, pFormat);
 
-		PrintTraceErrorV(pFunction, pFormat, args);
+		PrintTraceErrorV(pFunction, pFileName, lineNr, pFormat, args);
 
 		va_end(args);
 	}
 
-	void Log::PrintTraceErrorV(const char* pFunction, const char* pFormat, va_list vaArgs)
+	void Log::PrintTraceErrorV(const char* pFunction, const char* pFileName, uint32 lineNr, const char* pFormat, va_list vaArgs)
 	{
 		PlatformConsole::SetColor(EConsoleColor::COLOR_RED);
 		PlatformConsole::Print("CRITICAL ERROR IN '%s': ", pFunction);
 		PlatformConsole::SetColor(EConsoleColor::COLOR_WHITE);
 
-		PrintV(ELogSeverity::LOG_ERROR, pFormat, vaArgs);
+		PrintV(pFileName, lineNr, ELogSeverity::LOG_ERROR, pFormat, vaArgs);
 	}
 }

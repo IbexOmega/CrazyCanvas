@@ -478,7 +478,7 @@ namespace LambdaEngine
 					constexpr DescriptorSetIndex setIndex = 3U;
 
 					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
 
 					if (m_DescriptorSetList3[d] != nullptr)
 					{

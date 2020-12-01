@@ -153,12 +153,17 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
+	UNREFERENCED_VARIABLE(directionalLight);
+	UNREFERENCED_VARIABLE(translation);
+
 	using namespace LambdaEngine;
 
 	Entity entity = UINT32_MAX;
-
+	/*
 	if (!MultiplayerUtils::IsServer())
 	{
+		// Can be good to keep if we want statiuc directional lights later
+		
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		DirectionalLightComponent directionalLightComponent =
@@ -171,9 +176,10 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::quatLookAt({directionalLight.Direction}, g_DefaultUp) });
 		pECS->AddComponent<DirectionalLightComponent>(entity, directionalLightComponent);
 
-		D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
+		LOG_DEBUG("Created Directional Light");
 	}
 
+	*/
 	return entity;
 }
 
@@ -196,7 +202,7 @@ LambdaEngine::Entity LevelObjectCreator::CreatePointLight(const LambdaEngine::Lo
 		pECS->AddComponent<PositionComponent>(entity, { true, (pointLight.Position + translation) });
 		pECS->AddComponent<PointLightComponent>(entity, pointLightComponent);
 
-		D_LOG_INFO("[LevelObjectCreator]: Created Point Light");
+		LOG_DEBUG("Created Point Light");
 	}
 
 	return entity;
@@ -268,7 +274,7 @@ ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", levelObject.Name.c_str(), levelObject.Prefix.c_str());
+		LOG_ERROR("Failed to create special object %s with prefix %s, no create function could be found", levelObject.Name.c_str(), levelObject.Prefix.c_str());
 		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
 	}
 }
@@ -320,7 +326,7 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object, no create function could be found");
+		LOG_ERROR("Failed to create special object, no create function could be found");
 		return false;
 	}
 }
@@ -334,7 +340,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	if (levelObject.BoundingBoxes.GetSize() > 1 )
 	{
-		LOG_WARNING("[LevelObjectCreator]: Player Spawn can currently not be created with more than one mesh, using the first mesh...");
+		LOG_WARNING("Player Spawn can currently not be created with more than one mesh, using the first mesh...");
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -348,7 +354,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Player Spawn, defaulting to 0...");
+		LOG_ERROR("Team Index not found for Player Spawn, defaulting to 0...");
 		teamComponent.TeamIndex = 0;
 	}
 
@@ -392,7 +398,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
+	LOG_DEBUG("Created Player Spawn with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
@@ -402,7 +408,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 	if (levelObject.BoundingBoxes.GetSize() > 1)
 	{
-		LOG_WARNING("[LevelObjectCreator]: Player Jail can currently not be created with more than one mesh, using the first mesh...");
+		LOG_WARNING("Player Jail can currently not be created with more than one mesh, using the first mesh...");
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -445,7 +451,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Jail with EntityID %u", entity);
+	LOG_DEBUG("Created Player Jail with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_JAIL;
 }
 
@@ -471,7 +477,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Flag Spawn with EntityID %u", entity);
+	LOG_DEBUG("Created Flag Spawn with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
 }
 
@@ -487,7 +493,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	if (levelObject.BoundingBoxes.GetSize() > 1)
 	{
-		LOG_WARNING("[LevelObjectCreator]: Bases can currently not be created with more than one Bounding Box, using the first Bounding Box...");
+		LOG_WARNING("Bases can currently not be created with more than one Bounding Box, using the first Bounding Box...");
 	}
 
 	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
@@ -503,7 +509,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Flag Delivery Point, defaulting to 0...");
+		LOG_ERROR("Team Index not found for Flag Delivery Point, defaulting to 0...");
 		teamComponent.TeamIndex = 0;
 	}
 
@@ -537,7 +543,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Base with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
+	LOG_DEBUG("Created Base with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
@@ -576,7 +582,7 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Kill Plane with EntityID %u", entity);
+	LOG_DEBUG("Created Kill Plane with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_KILL_PLANE;
 }
 
@@ -651,7 +657,7 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 	}
 
 	createdEntities.PushBack(entity);
-	D_LOG_INFO("Created Particle Shower with EntityID %u", entity);
+	LOG_DEBUG("Created Particle Shower with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PARTICLE_SHOWER;
 }
 
@@ -793,7 +799,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	createdEntities.PushBack(flagEntity);
 
-	D_LOG_INFO("Created Flag with EntityID %u and NetworkID %u", flagEntity, networkUID);
+	LOG_DEBUG("Created Flag with EntityID %u and NetworkID %u", flagEntity, networkUID);
 	return true;
 }
 
@@ -1066,7 +1072,7 @@ bool LevelObjectCreator::CreatePlayer(
 			if (pPlayerDesc->pCameraDesc == nullptr)
 			{
 				pECS->RemoveEntity(playerEntity);
-				LOG_ERROR("[LevelObjectCreator]: Local Player must have a camera description");
+				LOG_ERROR("Local Player must have a camera description");
 				return false;
 			}
 
@@ -1113,6 +1119,19 @@ bool LevelObjectCreator::CreatePlayer(
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
+
+			// Create Directional Light Component
+			DirectionalLightComponent directionalLightComponent =
+			{
+				.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
+				.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
+				.FrustumWidth	= 25.0f,
+				.FrustumHeight	= 15.0f,
+				.FrustumZNear	= -60.0f,
+				.FrustumZFar	= 10.0f
+			};
+
+			pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
 		}
 	}
 	else
@@ -1141,8 +1160,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 	PlayerManagerBase::SetPlayerEntity(pPlayer, playerEntity);
 
-	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
-	D_LOG_INFO("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
+	LOG_DEBUG("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
+	LOG_DEBUG("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
 
 	return true;
 }
