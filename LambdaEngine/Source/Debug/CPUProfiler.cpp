@@ -109,7 +109,7 @@ namespace LambdaEngine
 		{
 			frameCounter = 0;
 			CPUProfiler::g_RunProfilingSample = true;
-			D_LOG_INFO("Start Profiling");
+			LOG_DEBUG("Start Profiling");
 		}
 
 		if (CPUProfiler::g_RunProfilingSample)
@@ -118,7 +118,7 @@ namespace LambdaEngine
 			if (frameCounter > frameCount)
 			{
 				CPUProfiler::g_RunProfilingSample = false;
-				D_LOG_INFO("End Profiling");
+				LOG_DEBUG("End Profiling");
 			}
 		}
 	}

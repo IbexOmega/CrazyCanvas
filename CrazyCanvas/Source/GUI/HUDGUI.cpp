@@ -61,7 +61,6 @@ HUDGUI::HUDGUI() :
 
 HUDGUI::~HUDGUI()
 {
-	m_PlayerGrids.clear();
 }
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)

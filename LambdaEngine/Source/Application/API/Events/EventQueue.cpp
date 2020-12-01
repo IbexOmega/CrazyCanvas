@@ -14,7 +14,7 @@ namespace LambdaEngine
 	static TArray<EventHandler> GetEventHandlerOfType(EventType type)
 	{
 		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
-		
+
 		auto handlers = g_EventHandlers.find(type);
 		if (handlers != g_EventHandlers.end())
 		{
@@ -34,11 +34,11 @@ namespace LambdaEngine
 	EventContainer	EventQueue::s_DeferredEvents[2];
 	uint32			EventQueue::s_ReadIndex		= 0;
 	uint32			EventQueue::s_WriteIndex	= 1;
-	
+
 	bool EventQueue::RegisterEventHandler(EventType eventType, const EventHandler& eventHandler)
 	{
 		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
-	
+
 		TArray<EventHandler>& eventHandlers = g_EventHandlers[eventType];
 		for (const EventHandler& handler : eventHandlers)
 		{
@@ -102,14 +102,14 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(g_EventHandlersSpinlock);
 		g_EventHandlers.clear();
 	}
-	
+
 	bool EventQueue::SendEventImmediate(Event& event)
 	{
 		TArray<EventHandler> handlers = GetEventHandlerOfType(event.GetType());
 		InternalSendEventToHandlers(event, handlers);
 		return event.IsConsumed;
 	}
-	
+
 	void EventQueue::Tick()
 	{
 		// Process events
@@ -135,7 +135,7 @@ namespace LambdaEngine
 		s_DeferredEvents[0].Clear();
 		s_DeferredEvents[1].Clear();
 	}
-	
+
 	void EventQueue::InternalSendEventToHandlers(Event& event, const TArray<EventHandler>& handlers)
 	{
 		for (const EventHandler& handler : handlers)

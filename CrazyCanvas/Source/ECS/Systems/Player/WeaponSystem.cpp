@@ -230,7 +230,7 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 
 
-	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
+	constexpr const float PROJECTILE_INITAL_SPEED = 30.0f;
 
 	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
 	glm::quat playerRotation = playerRotationComponent.Quaternion;

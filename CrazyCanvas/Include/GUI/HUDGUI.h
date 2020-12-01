@@ -117,8 +117,6 @@ private:
 
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
-	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
-
 	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
 
 	KillFeedGUI* m_pKillFeedGUI		= nullptr;

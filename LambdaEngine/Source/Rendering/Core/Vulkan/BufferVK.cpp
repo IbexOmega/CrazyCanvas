@@ -20,7 +20,7 @@ namespace LambdaEngine
 		{
 			Unmap();
 		}
-		
+
 		if (m_Buffer != VK_NULL_HANDLE)
 		{
 			vkDestroyBuffer(m_pDevice->Device, m_Buffer, nullptr);
@@ -31,7 +31,7 @@ namespace LambdaEngine
 		{
 			m_pDevice->FreeMemory(&m_Allocation);
 		}
-		
+
 		ZERO_MEMORY(&m_Allocation, sizeof(m_Allocation));
 	}
 
@@ -47,7 +47,7 @@ namespace LambdaEngine
 		info.size                   = pDesc->SizeInBytes;
 
 		VALIDATE(info.size > 0);
-		
+
 		VkPhysicalDeviceProperties deviceProperties = m_pDevice->GetPhysicalDeviceProperties();
 		VkPhysicalDeviceLimits& deviceLimits = deviceProperties.limits;
 		m_AlignmentRequirement = 1LLU;
@@ -93,16 +93,16 @@ namespace LambdaEngine
 			info.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
 			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
 		}
-		
+
 		VkResult result = vkCreateBuffer(m_pDevice->Device, &info, nullptr, &m_Buffer);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[BufferVK]: Failed to create buffer");
+			LOG_VULKAN_ERROR(result, "Failed to create buffer");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[BufferVK]: Created Buffer");
+			LOG_DEBUG("Created Buffer");
 
 			m_Desc = *pDesc;
 			SetName(m_Desc.DebugName);
@@ -124,7 +124,7 @@ namespace LambdaEngine
 		int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, memoryProperties);
 		if (!m_pDevice->AllocateBufferMemory(&m_Allocation, m_Desc.Flags, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
 		{
-			LOG_ERROR("[BufferVK]: Failed to allocate memory");
+			LOG_ERROR("Failed to allocate memory");
 			return false;
 		}
 
@@ -156,7 +156,7 @@ namespace LambdaEngine
 	void BufferVK::Unmap()
 	{
 		VALIDATE(m_IsMapped);
-		
+
 		m_IsMapped = false;
 		m_pDevice->UnmapBufferMemory(&m_Allocation);
 	}
@@ -166,12 +166,12 @@ namespace LambdaEngine
 		m_pDevice->SetVulkanObjectName(debugname, reinterpret_cast<uint64>(m_Buffer), VK_OBJECT_TYPE_BUFFER);
 		m_Desc.DebugName = debugname;
 	}
-	
+
 	uint64 BufferVK::GetDeviceAddress() const
 	{
 		return static_cast<uint64>(m_DeviceAddress);
 	}
-	
+
 	uint64 BufferVK::GetAlignmentRequirement() const
 	{
 		return m_AlignmentRequirement;
