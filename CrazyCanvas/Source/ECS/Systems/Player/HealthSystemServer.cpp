@@ -3,8 +3,6 @@
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/Player/Player.h"
 
-#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
-
 #include "Application/API/Events/EventQueue.h"
 
 #include "Events/GameplayEvents.h"
@@ -13,11 +11,20 @@
 
 #include "Match/MatchServer.h"
 
-#include "EventHandlers/MeshPaintHandler.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Resources/ResourceManager.h"
+
+#include "RenderStages/HealthCompute.h"
+#include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Rendering/RenderGraph.h"
+
 #include <mutex>
+
+// TEMP REMOVE
+#include "Input/API/Input.h"
 
 /*
 * HealthSystemServer
@@ -34,6 +41,23 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 {
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(deltaTime);
+
+	// TEMP REMOVE
+	static bool pressed = false;
+	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_F) && !pressed)
+	{
+		for (Entity entity : m_HealthEntities)
+			HealthCompute::QueueHealthCalculation(entity);
+		pressed = true;
+	}
+	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_F) && pressed)
+	{
+		pressed = false;
+	}
+
+	for (Entity entity : m_HealthEntities)
+		HealthCompute::QueueHealthCalculation(entity);
+
 
 	// More threadsafe
 	{
@@ -55,12 +79,29 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		}
 	}
 
+	// TEMP REMOVE
+	static bool p = false;
+	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_G) && !p)
+	{
+		TArray<uint32> healths = HealthCompute::GetHealths();
+		for (auto health : healths)
+		{
+			LOG_WARNING("Health: %u", health);
+		}
+		LOG_WARNING("VertexCount: %u", HealthCompute::GetVertexCount());
+		p = true;
+	}
+	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_G) && p)
+	{
+		p = false;
+	}
+
+
 	// Update health
 	if (!m_HitInfoToProcess.IsEmpty())
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<HealthComponent>*		pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
-		ComponentArray<MeshPaintComponent>*		pMeshPaintComponents	= pECS->GetComponentArray<MeshPaintComponent>();
 		ComponentArray<PacketComponent<PacketHealthChanged>>* pHealthChangedComponents = pECS->GetComponentArray<PacketComponent<PacketHealthChanged>>();
 
 		for (HitInfo& hitInfo : m_HitInfoToProcess)
@@ -70,58 +111,26 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
 			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
-			MeshPaintComponent& meshPaintComponent			= pMeshPaintComponents->GetData(entity);
 
-			// Check painted pixels
-			Buffer* pBuffer = meshPaintComponent.pReadBackBuffer;
-
-			struct Pixel
-			{
-				byte Red;
-				byte Green;
-			};
-
-			Pixel* pPaintMask = reinterpret_cast<Pixel*>(pBuffer->Map());
-			VALIDATE(pPaintMask != nullptr);
-
-			constexpr uint32 SIZE_Y = 32;
-			constexpr uint32 SIZE_X = SIZE_Y;
-
-			uint32 paintedPixels = 0;
-			for (uint32 y = 0; y < SIZE_Y; y++)
-			{
-				for (uint32 x = 0; x < SIZE_X; x++)
-				{
-					const byte mask = pPaintMask[(y * SIZE_X) + x].Red;
-					const bool isPainted = IS_MASK_PAINTED(mask);
-					if (isPainted)
-					{
-						paintedPixels++;
-					}
-				}
-			}
-
-			pBuffer->Unmap();
-
-			constexpr float32 BIASED_MAX_HEALTH	= 0.15f;
-			constexpr float32 MAX_PIXELS		= float32(SIZE_Y * SIZE_X * BIASED_MAX_HEALTH);
+			constexpr float32 BIASED_MAX_HEALTH	= 0.3f; // CHANGE THIS TO CHANGE AMOUNT OF HEALTH NEEDED TO DIE
 			constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
 
 			// Update health
-			const float32	paintedHealth	= float32(paintedPixels) / float32(MAX_PIXELS);
-			const int32		oldHealth		= healthComponent.CurrentHealth;
-			healthComponent.CurrentHealth	= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
+			const uint32	paintedVerticies	= HealthCompute::GetEntityHealth(entity);
+			const float32	paintedHealth		= float32(paintedVerticies) / float32(HealthCompute::GetVertexCount() * (1.0f - BIASED_MAX_HEALTH));
+			const int32		oldHealth			= healthComponent.CurrentHealth;
+			healthComponent.CurrentHealth		= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
 
 			LOG_INFO("HIT REGISTERED: oldHealth=%d currentHealth=%d", oldHealth, healthComponent.CurrentHealth);
 
 			// Check if health changed
 			if (oldHealth != healthComponent.CurrentHealth)
 			{
-				LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedPixels=%u MAX_PIXELS=%.4f",
+				LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedVerticies=%u VertexCount=%u",
 					healthComponent.CurrentHealth,
 					paintedHealth,
-					paintedPixels,
-					MAX_PIXELS);
+					paintedVerticies,
+					HealthCompute::GetVertexCount());
 
 				bool killed = false;
 				if (healthComponent.CurrentHealth <= 0)
@@ -137,8 +146,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				packets.SendPacket(packet);
 			}
 		}
-
-		m_HitInfoToProcess.Clear();
 	}
 
 	// Reset healthcomponents
@@ -151,7 +158,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		for (Entity entity : m_ResetsToProcess)
 		{
 			// Reset texture
-			PaintMaskRenderer::ResetServer(entity);
+			MeshPaintHandler::ResetServer(entity);
 
 			// Reset health and send to client
 			HealthComponent& healthComponent	= pHealthComponents->GetData(entity);
@@ -192,6 +199,7 @@ bool HealthSystemServer::InitInternal()
 	}
 
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HealthSystemServer::OnProjectileHit);
+
 	return true;
 }
 
@@ -209,12 +217,21 @@ bool HealthSystemServer::OnProjectileHit(const ProjectileHitEvent& projectileHit
 
 			ECSCore* pECS = ECSCore::GetInstance();
 			const ProjectileComponent& projectileComponent = pECS->GetConstComponent<ProjectileComponent>(projectileEntity);
+			
+			auto it = std::find_if(m_DeferredHitInfo.Begin(), m_DeferredHitInfo.End(), [entity](const HitInfo& hitInfo){ return hitInfo.Player == entity; });
 
-			m_DeferredHitInfo.PushBack(
-				{
-					projectileHitEvent.CollisionInfo1.Entity,
-					projectileComponent.Owner
-				});
+			if (it != m_DeferredHitInfo.End())
+			{
+				it->ProjectileOwner = projectileEntity;
+			}
+			else
+			{
+				m_DeferredHitInfo.PushBack(
+					{
+						projectileHitEvent.CollisionInfo1.Entity,
+						projectileComponent.Owner
+					});
+			}
 
 			break;
 		}
