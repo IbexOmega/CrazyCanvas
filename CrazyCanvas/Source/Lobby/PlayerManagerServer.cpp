@@ -149,8 +149,6 @@ bool PlayerManagerServer::OnClientDisconnected(const LambdaEngine::ClientDisconn
 
 bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<PacketPlayerState>& event)
 {
-	LOG_WARNING("PlayerManagerServer::OnPacketPlayerStateReceived()");
-
 	PacketPlayerState packet = event.Packet;
 	IClient* pClient = event.pClient;
 	packet.UID = pClient->GetUID();
@@ -187,7 +185,7 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 						ServerHelper::SendBroadcast(packet);
 					}
 				}
-				LOG_WARNING("PlayerManagerServer::OnPacketPlayerStateReceived(%s): %s", player.GetName().c_str(), Player::GameStateToString(player.GetState()));
+				
 				PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
 				EventQueue::SendEventImmediate(playerStateUpdatedEvent);
 			}

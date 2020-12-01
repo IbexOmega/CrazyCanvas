@@ -102,8 +102,6 @@ void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 		{
 			pPlayer->m_State = GAME_STATE_SETUP;
 
-			LOG_WARNING("PlayerManagerClient::SetLocalPlayerReady(%s): %s", pPlayer->GetName().c_str(), Player::GameStateToString(pPlayer->GetState()));
-
 			PacketPlayerState packet;
 			packet.State = pPlayer->m_State;
 
@@ -250,8 +248,6 @@ bool PlayerManagerClient::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 		if (pPlayer->m_State != packet.State)
 		{
 			pPlayer->m_State = packet.State;
-
-			LOG_WARNING("PlayerManagerClient::OnPacketPlayerStateReceived(%s): %s", pPlayer->GetName().c_str(), Player::GameStateToString(pPlayer->GetState()));
 
 			PlayerStateUpdatedEvent playerStateUpdatedEvent(pPlayer);
 			EventQueue::SendEventImmediate(playerStateUpdatedEvent);
