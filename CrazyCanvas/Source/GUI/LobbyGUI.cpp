@@ -632,23 +632,38 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	{
 		TextBlock* pBox = (TextBlock*)pComboBox->GetSelectedItem();
 		SolidColorBrush* pBoxColorBrush = static_cast<SolidColorBrush*>(pBox->GetBackground());
-		pComboBox->SetBackground(pBoxColorBrush);
-
 		SolidColorBrush* pLabelColorBrush = nullptr;
 
 		if (setting == SETTING_CHANGE_TEAM_0_COLOR)
 		{
-			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
-			m_pGameSettings->TeamColor0 = (uint8)indexSelected;
+			if (m_pGameSettings->TeamColor1 != (uint8)indexSelected)
+			{
+				m_pGameSettings->TeamColor0 = (uint8)indexSelected;
+				pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
+			}
+			else
+			{
+				pComboBox->SetSelectedIndex(m_pGameSettings->TeamColor0);
+				return;
+			}
 		}
 		else
 		{
-			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
-			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
+			if (m_pGameSettings->TeamColor0 != (uint8)indexSelected)
+			{
+				m_pGameSettings->TeamColor1 = (uint8)indexSelected;
+				pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
+			}
+			else
+			{
+				pComboBox->SetSelectedIndex(m_pGameSettings->TeamColor1);
+				return;
+			}
 		}
 
+		pComboBox->SetBackground(pBoxColorBrush);
 		pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
-			
+
 		m_pChatPanel->GetChildren()->Clear();
 		ChatManager::RenotifyAllChatMessages();
 	}

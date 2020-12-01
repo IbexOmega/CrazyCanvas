@@ -53,7 +53,7 @@ MatchClient::MatchClient()
 	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
 	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
 	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
-	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/go.mp3");
+	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/start.mp3");
 }
 
 MatchClient::~MatchClient()
@@ -182,13 +182,6 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER, &createPlayerDesc, createdPlayerEntities))
 			{
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
-			}
-
-			// Notify systems that a new player connected (Not myself tho)
-			if (!createPlayerDesc.IsLocal)
-			{
-				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
-				EventQueue::SendEvent(connectedEvent);
 			}
 
 			break;
