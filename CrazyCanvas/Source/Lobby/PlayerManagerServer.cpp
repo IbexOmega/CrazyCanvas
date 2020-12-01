@@ -235,11 +235,11 @@ void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 	if (s_Players.size() < 2 || ServerState::GetState() != SERVER_STATE_LOBBY)
 		return;
 
-	TArray<const Player*> pPlayersTeam0;
-	TArray<const Player*> pPlayersTeam1;
-	GetPlayersOfTeam(pPlayersTeam0, 0);
-	GetPlayersOfTeam(pPlayersTeam1, 1);
-	int32 delta = pPlayersTeam0.GetSize() - pPlayersTeam1.GetSize();
+	TArray<const Player*> playersTeam0;
+	TArray<const Player*> playersTeam1;
+	GetPlayersOfTeam(playersTeam0, 0);
+	GetPlayersOfTeam(playersTeam1, 1);
+	int32 delta = playersTeam0.GetSize() - playersTeam1.GetSize();
 	if (glm::abs(delta) >= 2)
 	{
 		Player* pPlayer = &(s_Players.begin()->second);
