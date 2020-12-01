@@ -123,10 +123,9 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
 		{ 
 			// Reload if we are not reloading
-			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
+			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading && !hasFullAmmo)
 			{
-				if(!hasFullAmmo)
-					StartReload(weaponComponent, playerActions);
+				StartReload(weaponComponent, playerActions);
 			}
 			else if (!onCooldown) // If we did not hit the reload try and shoot
 			{

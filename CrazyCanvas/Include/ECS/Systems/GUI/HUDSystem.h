@@ -43,15 +43,13 @@ public:
 	bool OnGameOver(const GameOverEvent& event);
 	bool OnWindowResized(const LambdaEngine::WindowResizedEvent& event);
 
+	void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
+
 private:
 	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);
 	bool OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& event);
 	bool OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity);
 	bool RemoveProjectedEntity(LambdaEngine::Entity projectedEntity);
-
-public:
-
-	static void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
 
 private:
 
@@ -72,7 +70,4 @@ private:
 	LambdaEngine::TArray<bool> m_EnemyHitEventsToProcess;
 	
 	uint8 m_LocalTeamIndex = UINT8_MAX;
-
-private:
-	static HUDSystem* s_pHudsystemInstance;
 };

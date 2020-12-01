@@ -22,8 +22,6 @@
 
 using namespace LambdaEngine;
 
-HUDSystem* HUDSystem::s_pHudsystemInstance = nullptr;
-
 HUDSystem::~HUDSystem()
 {
 	m_HUDGUI.Reset();
@@ -45,8 +43,6 @@ HUDSystem::~HUDSystem()
 
 void HUDSystem::Init()
 {
-	s_pHudsystemInstance = this;
-
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
@@ -273,7 +269,7 @@ bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
 			{
 				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
-				HUDSystem::PromptMessage("Reloading", true);
+				PromptMessage("Reloading", true);
 			}
 		}
 	}
@@ -352,12 +348,12 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 			if (event.pPlayerKiller)
 			{
 				String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
-				HUDSystem::PromptMessage(promptText, false);
+				PromptMessage(promptText, false);
 			}
 			else
 			{
 				String promptText = "You Were Killed By The Server";
-				HUDSystem::PromptMessage(promptText, false);
+				PromptMessage(promptText, false);
 			}
 		}
 		else
@@ -386,7 +382,7 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 	else
 		promptText = "Team " + std::to_string(packet.TeamIndex + 1) + " Scored!";
 
-	HUDSystem::PromptMessage(promptText, false, packet.TeamIndex);
+	PromptMessage(promptText, false, packet.TeamIndex);
 
 	return false;
 }
@@ -494,5 +490,5 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 
 void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
 {
-	s_pHudsystemInstance->m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
+	m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
 }

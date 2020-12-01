@@ -206,10 +206,10 @@ bool CrazyCanvas::RegisterGUIComponents()
 	Noesis::RegisterComponent<GameOverGUI>();
 	Noesis::RegisterComponent<EscapeMenuGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
-	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<KillFeedGUI>();
+	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
