@@ -43,7 +43,9 @@ private:
 	bool OnServerStateEvent(const ServerStateEvent& event);
 	bool OnPlayerLeftEvent(const PlayerLeftEvent& event);
 	bool OnGameOverEvent(const GameOverEvent& event);
+
 	void SetState(EServerState state);
+	void TryLoadMatch();
 
 public:
 	static EServerState GetState();

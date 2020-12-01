@@ -77,9 +77,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		ClientSystemDesc desc = {};
 		desc.Name					= pGameName;
-		desc.PoolSize				= 8196;
+		desc.PoolSize				= 4096;
 		desc.MaxRetries				= 10;
-		desc.ResendRTTMultiplier	= 3.0f;
+		desc.ResendRTTMultiplier	= 5.0f;
 		desc.Protocol				= EProtocolParser::FromString(protocol);
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(5);
@@ -91,9 +91,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		ServerSystemDesc desc = {};
 		desc.Name					= pGameName;
-		desc.PoolSize				= 8196;
+		desc.PoolSize				= 4096;
 		desc.MaxRetries				= 10;
-		desc.ResendRTTMultiplier	= 3.0f;
+		desc.ResendRTTMultiplier	= 5.0f;
 		desc.Protocol				= EProtocolParser::FromString(protocol);
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(5);
@@ -218,10 +218,10 @@ bool CrazyCanvas::RegisterGUIComponents()
 	Noesis::RegisterComponent<GameOverGUI>();
 	Noesis::RegisterComponent<EscapeMenuGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
-	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<KillFeedGUI>();
+	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 

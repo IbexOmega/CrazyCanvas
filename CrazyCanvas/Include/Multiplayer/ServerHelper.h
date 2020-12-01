@@ -31,7 +31,8 @@ public:
 
 	static void DisconnectPlayer(const Player* pPlayer, const LambdaEngine::String& reason);
 
-	//static class LambdaEngine::ClientRemoteBase* GetClient(uint64 uid);
+	static void SetTimeout(LambdaEngine::Timestamp time);
+	static void ResetTimeout();
 };
 
 template<class T>

@@ -2,12 +2,25 @@
 
 #include "NoesisPCH.h"
 
+#include "Teams/TeamHelper.h"
+#include "Lobby/PlayerManagerClient.h"
+#include "Math/Math.h"
+
 CountdownGUI::CountdownGUI()
 {
 	Noesis::GUI::LoadComponent(this, "CountdownGUI.xaml");
 
 	m_pCountdownStoryboard = FindResource<Noesis::Storyboard>("CountdownStoryboard");
 	m_pCountdownTextblock = FindName<Noesis::TextBlock>("textBlock");
+
+	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
+
+	const glm::vec3& promptColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
+	Noesis::Color color(promptColor.r, promptColor.g, promptColor.b);
+
+	pBrush->SetColor(color);
+
+	m_pCountdownTextblock->SetForeground(pBrush);
 }
 
 CountdownGUI::~CountdownGUI()
