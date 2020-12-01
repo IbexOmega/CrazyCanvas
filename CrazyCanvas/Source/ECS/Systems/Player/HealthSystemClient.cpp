@@ -2,7 +2,7 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/Player/Player.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
@@ -95,6 +95,11 @@ bool HealthSystemClient::InitInternal()
 			.ComponentGroups = { &playerGroup }
 		});
 
+		systemReg.SubscriberRegistration.AdditionalAccesses =
+		{
+			{ R, TeamComponent::Type() }
+		};
+
 		RegisterSystem(TYPE_NAME(HealthSystemClient), systemReg);
 	}
 
@@ -152,7 +157,7 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 			}
 		);
 
-		PaintMaskRenderer::AddHitPoint(
+		MeshPaintHandler::AddHitPoint(
 			positionComponent.Position,
 			glm::vec3(0.0f, -1.0f, 0.0f),
 			EPaintMode::PAINT,
