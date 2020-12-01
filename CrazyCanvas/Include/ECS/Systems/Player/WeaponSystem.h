@@ -2,7 +2,7 @@
 #include "ECS/System.h"
 #include "ECS/Components/Player/ProjectileComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"

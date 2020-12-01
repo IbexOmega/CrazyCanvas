@@ -1,6 +1,6 @@
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 #include "ECS/Components/Match/FlagComponent.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 #include "ECS/ECSCore.h"
 
