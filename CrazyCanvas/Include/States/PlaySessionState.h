@@ -12,7 +12,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "EventHandlers/AudioEffectHandler.h"
-#include "EventHandlers/MeshPaintHandler.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 #include "Multiplayer/MultiplayerClient.h"
 
@@ -71,6 +71,9 @@ private:
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
 	MeshPaintHandler m_MeshPaintHandler;
+
+	/* Commands */
+	bool m_UpdateShaders = false;
 
 private:
 	static PlaySessionState* s_pInstance;

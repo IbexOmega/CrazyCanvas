@@ -244,7 +244,7 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
-	float bias = max(0.001 * (1.0 - dot(fragNormal, -lightDir)), 0.004);
+	float bias = max(0.01 * (1.0 - dot(fragNormal, lightDir)), 0.001);
 	float shadow = 0.0;
 	
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0); // Todo: send in shadowMap width as pushback constant

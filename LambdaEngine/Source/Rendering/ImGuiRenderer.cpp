@@ -307,44 +307,6 @@ namespace LambdaEngine
 		}
 	}
 
-	void ImGuiRenderer::UpdateDrawArgsResource(const String& resourceName, const DrawArg* pDrawArgs, uint32 count)
-	{
-		UNREFERENCED_VARIABLE(resourceName);
-		UNREFERENCED_VARIABLE(pDrawArgs);
-		UNREFERENCED_VARIABLE(count);
-
-		for (uint32 i = 0; i < count; i++)
-		{
-			const DrawArg& drawArg = pDrawArgs[i];
-
-			if (drawArg.HasExtensions)
-			{
-				for (Entity entity : drawArg.EntityIDs)
-				{
-					DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
-					if (pExtensionGroup)
-					{
-						for (uint32 extensionIndex = 0; extensionIndex < pExtensionGroup->ExtensionCount; extensionIndex++)
-						{
-							DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[extensionIndex];
-							for (uint32 textureIndex = 0; textureIndex < extensionData.TextureCount; textureIndex++)
-							{
-								UpdateTextureResource(
-									extensionData.ppTextures[textureIndex]->GetDesc().DebugName,
-									&extensionData.ppTextureViews[textureIndex],
-									&extensionData.ppTextureViews[textureIndex],
-									&extensionData.ppSamplers[textureIndex],
-									1,
-									1,
-									false);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
 	void ImGuiRenderer::Render(
 		uint32 modFrameIndex,
 		uint32 backBufferIndex,
@@ -1028,7 +990,7 @@ namespace LambdaEngine
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
 		descriptorHeapDesc.DebugName			= "ImGui Descriptor Heap";
-		descriptorHeapDesc.DescriptorSetCount	= 256;
+		descriptorHeapDesc.DescriptorSetCount	= 1024;
 		descriptorHeapDesc.DescriptorCount		= descriptorCountDesc;
 
 		m_DescriptorHeap = m_pGraphicsDevice->CreateDescriptorHeap(&descriptorHeapDesc);

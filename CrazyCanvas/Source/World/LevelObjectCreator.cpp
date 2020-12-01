@@ -153,12 +153,17 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
+	UNREFERENCED_VARIABLE(directionalLight);
+	UNREFERENCED_VARIABLE(translation);
+
 	using namespace LambdaEngine;
 
 	Entity entity = UINT32_MAX;
-
+	/*
 	if (!MultiplayerUtils::IsServer())
 	{
+		// Can be good to keep if we want statiuc directional lights later
+		
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		DirectionalLightComponent directionalLightComponent =
@@ -174,6 +179,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 		LOG_DEBUG("Created Directional Light");
 	}
 
+	*/
 	return entity;
 }
 
@@ -222,7 +228,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	Entity entity = pECS->CreateEntity();
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
 		pECS->AddComponent<RayTracedComponent>(entity,
 			RayTracedComponent
@@ -304,9 +310,11 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 					for (std::tuple<String, bool, Entity>& childEntityTuple : childEntities)
 					{
 						const String&	childTag		= std::get<0>(childEntityTuple);
+						bool			childAttached	= std::get<1>(childEntityTuple);
 						Entity			childEntity		= std::get<2>(childEntityTuple);
 
 						childComponent.AddChild(childTag, childEntity, true);
+						pECS->AddComponent<ParentComponent>(childEntity, ParentComponent{ .Parent = parentEntity, .Attached = childAttached, .DeleteParentOnRemoval = true });
 					}
 
 					pECS->AddComponent<ChildComponent>(parentEntity, childComponent);
@@ -358,7 +366,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 		if (!MultiplayerUtils::IsServer())
 		{
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
-			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 256, 256, false));
+			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 			pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
 					.HitMask = 0xFF
 				});
@@ -868,12 +876,12 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
 	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
-	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 256, 256, false));
+	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity));
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
 	const bool readback = MultiplayerUtils::IsServer();
-	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
+	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity));
 
 	AnimationComponent animationComponent = {};
 	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::PLAYER_MESH_GUID)->pSkeleton;
@@ -1111,6 +1119,19 @@ bool LevelObjectCreator::CreatePlayer(
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
+
+			// Create Directional Light Component
+			DirectionalLightComponent directionalLightComponent =
+			{
+				.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
+				.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
+				.FrustumWidth	= 25.0f,
+				.FrustumHeight	= 15.0f,
+				.FrustumZNear	= -60.0f,
+				.FrustumZFar	= 10.0f
+			};
+
+			pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
 		}
 	}
 	else
@@ -1133,6 +1154,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
+	EntityMaskManager::AddExtensionToEntity(playerEntity, HealthComponent::Type(), nullptr);
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
 	pECS->AddComponent<PacketComponent<PacketResetPlayerTexture>>(playerEntity, {});
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });

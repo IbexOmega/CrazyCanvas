@@ -74,6 +74,8 @@ namespace LambdaEngine
 		GUID_Lambda GetFragmentShader() { return m_FragmentShaderGUID; };
 		GUID_Lambda GetComputeShader() { return m_ComputeShaderGUID; };
 
+		TSharedRef<PipelineLayout> GetPipelineLayout() { return m_PipelineLayout; };
+
 	private:
 		bool									m_Initilized = false;
 

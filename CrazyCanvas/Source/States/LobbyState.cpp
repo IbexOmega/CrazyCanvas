@@ -21,6 +21,8 @@
 
 #include "Application/API/PlatformConsole.h"
 
+#include "Match/Match.h"
+
 using namespace LambdaEngine;
 
 LobbyState::LobbyState(const PacketGameSettings& gameSettings, const Player* pPlayer) : 
@@ -86,6 +88,7 @@ void LobbyState::Init()
 	m_LobbyGUI->InitGUI();
 
 	ChatManager::Clear();
+	Match::ResetMatch();
 
 	if (!m_IsReplayLobby)
 	{

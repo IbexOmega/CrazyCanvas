@@ -1,6 +1,6 @@
 #include "ECS/Systems/Match/ServerFlagSystem.h"
 #include "ECS/Components/Match/FlagComponent.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -221,7 +221,7 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 		{ ComponentPermissions::R,	ParentComponent::Type() },
 	};
 
-    	job.Function = [entity0, entity1]()
+	job.Function = [entity0, entity1]()
 	{
 		Entity flagEntity = entity0;
 		Entity deliveryPointEntity = entity1;
@@ -238,7 +238,7 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 			const TeamComponent& playerTeamComponent = pTeamComponents->GetConstData(entityPlayer);
 
 			TeamComponent flagTeamComponent = {};
-			
+
 			bool validFlagDelivery = false;
 			if (pTeamComponents->GetConstIf(flagEntity, flagTeamComponent))
 			{

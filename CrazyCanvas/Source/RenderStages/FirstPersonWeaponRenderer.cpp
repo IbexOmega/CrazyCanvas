@@ -471,65 +471,6 @@ namespace LambdaEngine
 						LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update descriptors for drawArgs vertices and instance buffers");
 					}
 				}
-
-				// Get Paint Mask Texture from each player & weapon
-				for (uint32 d = 0; d < count; d++)
-				{
-					constexpr DescriptorSetIndex setIndex = 3U;
-
-					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
-
-					if (m_DescriptorSetList3[d] != nullptr)
-					{
-						const DrawArg& drawArg = pDrawArgs[d];
-
-						TArray<TextureView*> textureViews;
-						TextureView* defaultMask = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
-						textureViews.PushBack(defaultMask);
-
-						for (Entity entity : drawArg.EntityIDs)
-						{
-							DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
-
-							if (pExtensionGroup)
-							{
-								// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
-								uint32 numExtensions = pExtensionGroup->ExtensionCount;
-								for (uint32 e = 0; e < numExtensions; e++)
-								{
-									uint32 flag = pExtensionGroup->pExtensionFlags[e];
-									bool inverted;
-									uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
-									uint32 invertedUInt = uint32(inverted);
-
-									if ((flag & meshPaintFlag) != invertedUInt)
-									{
-										DrawArgExtensionData& extension = pExtensionGroup->pExtensions[e];
-										TextureView* pTextureView = extension.ppTextureViews[0];
-										textureViews.PushBack(pTextureView);
-									}
-								}
-							}
-						}
-
-						// Set descriptor to give GPU access to paint mask textures
-						Sampler* sampler = Sampler::GetNearestSampler();
-						uint32 bindingIndex = 0;
-
-						m_DescriptorSetList3[d]->WriteTextureDescriptors(
-							textureViews.GetData(),
-							&sampler,
-							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, textureViews.GetSize(),
-							EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-							false
-						);
-					}
-					else
-					{
-						LOG_ERROR("[FirstPersonWeapon]: Failed to update descriptors for drawArgs paint masks");
-					}
-				}
 			}
 			else
 			{
@@ -612,7 +553,6 @@ namespace LambdaEngine
 		const DrawArg& drawArg = m_pDrawArgs[0];
 		pCommandList->BindIndexBuffer(m_IndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT32);
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[0].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[0].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
 		pCommandList->DrawIndexInstanced(m_IndicesCount, drawArg.InstanceCount, 0, 0, 0);
 	}
 
@@ -774,14 +714,6 @@ namespace LambdaEngine
 		combinedMaterialMapsDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		combinedMaterialMapsDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
-		// PaintMaskTextures
-		DescriptorBindingDesc paintMaskDesc = {};
-		paintMaskDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		paintMaskDesc.DescriptorCount = 6000;
-		paintMaskDesc.Binding = 0;
-		paintMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		paintMaskDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
-
 		// LightBuffer
 		DescriptorBindingDesc lightBufferDesc = {};
 		lightBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -810,13 +742,9 @@ namespace LambdaEngine
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
 		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, meshletBindingDesc, uniqueIndicesDesc, primitiveIndicesDesc };
 
-		// maps to SET = 3 (DRAW_EXTENSION_SET_INDEX)
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
-		descriptorSetLayoutDesc3.DescriptorBindings = { paintMaskDesc };
-
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2, descriptorSetLayoutDesc3 };
+		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
 		pipelineLayoutDesc.ConstantRanges = { };
 
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);

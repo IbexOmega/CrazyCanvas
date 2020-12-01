@@ -1585,26 +1585,28 @@ namespace LambdaEngine
 		for (uint32 vertexIdx = 0; vertexIdx < pMeshAI->mNumVertices; vertexIdx++)
 		{
 			Vertex vertex;
-			vertex.Position.x = pMeshAI->mVertices[vertexIdx].x;
-			vertex.Position.y = pMeshAI->mVertices[vertexIdx].y;
-			vertex.Position.z = pMeshAI->mVertices[vertexIdx].z;
+			vertex.PositionXYZPaintBitsW.x = pMeshAI->mVertices[vertexIdx].x;
+			vertex.PositionXYZPaintBitsW.y = pMeshAI->mVertices[vertexIdx].y;
+			vertex.PositionXYZPaintBitsW.z = pMeshAI->mVertices[vertexIdx].z;
+			vertex.PositionXYZPaintBitsW.w = glm::uintBitsToFloat(UINT32_MAX);
 
-			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.Position.x));
-			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.Position.y));
-			maxExtent.z = glm::max<float>(maxExtent.z, glm::abs(vertex.Position.z));
+			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.PositionXYZPaintBitsW.x));
+			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.PositionXYZPaintBitsW.y));
+			maxExtent.z = glm::max<float>(maxExtent.z, glm::abs(vertex.PositionXYZPaintBitsW.z));
 
-			minExtent.x = glm::min<float>(minExtent.x, glm::abs(vertex.Position.x));
-			minExtent.y = glm::min<float>(minExtent.y, glm::abs(vertex.Position.y));
-			minExtent.z = glm::min<float>(minExtent.z, glm::abs(vertex.Position.z));
+			minExtent.x = glm::min<float>(minExtent.x, glm::abs(vertex.PositionXYZPaintBitsW.x));
+			minExtent.y = glm::min<float>(minExtent.y, glm::abs(vertex.PositionXYZPaintBitsW.y));
+			minExtent.z = glm::min<float>(minExtent.z, glm::abs(vertex.PositionXYZPaintBitsW.z));
 
 			//Moving Average
-			pMesh->BoundingBox.Centroid += (vertex.Position - pMesh->BoundingBox.Centroid) / float32(vertexIdx + 1);
+			pMesh->BoundingBox.Centroid += (vertex.ExtractPosition() - pMesh->BoundingBox.Centroid) / float32(vertexIdx + 1);
 
 			if (pMeshAI->HasNormals())
 			{
-				vertex.Normal.x = pMeshAI->mNormals[vertexIdx].x;
-				vertex.Normal.y = pMeshAI->mNormals[vertexIdx].y;
-				vertex.Normal.z = pMeshAI->mNormals[vertexIdx].z;
+				vertex.NormalXYZPaintDistW.x = pMeshAI->mNormals[vertexIdx].x;
+				vertex.NormalXYZPaintDistW.y = pMeshAI->mNormals[vertexIdx].y;
+				vertex.NormalXYZPaintDistW.z = pMeshAI->mNormals[vertexIdx].z;
+				vertex.NormalXYZPaintDistW.w = 1.0f;
 			}
 
 			if (pMeshAI->HasTangentsAndBitangents())
@@ -2491,6 +2493,13 @@ namespace LambdaEngine
 
 	void ResourceLoader::LoadMeshletsFromCache(const String& name, Mesh* pMesh)
 	{
+		struct MeshletCacheHeader
+		{
+			uint32 MeshletCount;
+			uint32 PrimitiveIndexCount;
+			uint32 UniqueIndexCount;
+		};
+
 		const String meshletCachePath = MESHLET_CACHE_DIR + name;
 
 		std::fstream file;
@@ -2502,19 +2511,32 @@ namespace LambdaEngine
 			file.open(meshletCachePath, std::fstream::out | std::fstream::binary);
 
 			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
-			file.write((const char*)pMesh->Meshlets.GetData(), pMesh->Meshlets.GetSize() * sizeof(Meshlet));
+
+			const MeshletCacheHeader header =
+			{
+				.MeshletCount = pMesh->Meshlets.GetSize(),
+				.PrimitiveIndexCount = pMesh->PrimitiveIndices.GetSize(),
+				.UniqueIndexCount = pMesh->UniqueIndices.GetSize()
+			};
+
+			file.write((const char*)&header, sizeof(MeshletCacheHeader));
+
+			file.write((const char*)pMesh->Meshlets.GetData(), header.MeshletCount * sizeof(Meshlet));
+			file.write((const char*)pMesh->PrimitiveIndices.GetData(), header.PrimitiveIndexCount * sizeof(PackedTriangle));
+			file.write((const char*)pMesh->UniqueIndices.GetData(), header.UniqueIndexCount * sizeof(uint32));
 		}
 		else
 		{
-			file.ignore(std::numeric_limits<std::streamsize>::max());
+			MeshletCacheHeader header;
+			file.read((char*)&header, sizeof(MeshletCacheHeader));
 
-			const std::streamsize fileSize = file.gcount();
+			pMesh->Meshlets.Resize(header.MeshletCount);
+			pMesh->PrimitiveIndices.Resize(header.PrimitiveIndexCount);
+			pMesh->UniqueIndices.Resize(header.UniqueIndexCount);
 
-			file.clear();
-			file.seekg(0, std::fstream::beg);
-
-			pMesh->Meshlets.Resize(uint32(fileSize / sizeof(Meshlet)));
-			file.read((char*)pMesh->Meshlets.GetData(), fileSize);
+			file.read((char*)pMesh->Meshlets.GetData(), header.MeshletCount * sizeof(Meshlet));
+			file.read((char*)pMesh->PrimitiveIndices.GetData(), header.PrimitiveIndexCount * sizeof(PackedTriangle));
+			file.read((char*)pMesh->UniqueIndices.GetData(), header.UniqueIndexCount * sizeof(uint32));
 		}
 
 		file.close();

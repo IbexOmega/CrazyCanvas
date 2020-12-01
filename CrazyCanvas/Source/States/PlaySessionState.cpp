@@ -13,7 +13,6 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Rendering/DirectionalLightComponent.h"
 #include "Game/ECS/Components/Rendering/PointLightComponent.h"
-#include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 
@@ -45,6 +44,7 @@
 
 #include "GUI/GUIHelpers.h"
 
+#include "Game/GameConsole.h"
 #include "Resources/ResourceCatalog.h"
 
 #include "ECS/Systems/Misc/DestructionSystem.h"
@@ -128,6 +128,14 @@ void PlaySessionState::Init()
 	// Init Systems
 	m_HUDSystem.Init();
 	m_DestructionSystem.Init();
+
+	// Commands
+	ConsoleCommand cmd1;
+	cmd1.Init("update_shaders", true);
+	cmd1.AddDescription("Update all shaders. \n\t'update_shaders'");
+	GameConsole::Get().BindCommand(cmd1, [&, this](GameConsole::CallbackInput& input)->void {
+		m_UpdateShaders = true;
+	});
 }
 
 void PlaySessionState::InternalInit()
@@ -155,7 +163,15 @@ void PlaySessionState::TryFinishMatchLoading()
 
 void PlaySessionState::Tick(Timestamp delta)
 {
+	if (m_UpdateShaders)
+	{
+		m_UpdateShaders = false; 
+		EventQueue::SendEvent(ShaderRecompileEvent());
+		EventQueue::SendEvent(PipelineStateRecompileEvent());
+	}
+
 	m_MultiplayerClient.TickMainThreadInternal(delta);
+	m_MeshPaintHandler.Tick(delta);
 }
 
 void PlaySessionState::FixedTick(Timestamp delta)

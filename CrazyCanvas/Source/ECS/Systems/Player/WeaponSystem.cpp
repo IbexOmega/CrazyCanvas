@@ -209,6 +209,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 
 	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
 	{
+		// TODO: Make it do this (ETeam)(projectileTeam+1); (Or fix team index in whole project)
 		const ETeam team = (projectileTeam == 0) ? ETeam::BLUE : ETeam::RED;
 		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team, angle);
 		EventQueue::SendEventImmediate(hitEvent);
@@ -230,7 +231,7 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 
 
-	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
+	constexpr const float PROJECTILE_INITAL_SPEED = 30.0f;
 
 	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
 	glm::quat playerRotation = playerRotationComponent.Quaternion;

@@ -8,7 +8,6 @@
 #include "../Helpers.glsl"
 
 layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
-layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 #include "../MeshPaintHelper.glsl"
 
 layout(location = 0) in flat uint	in_MaterialSlot;
@@ -22,6 +21,8 @@ layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
 layout(location = 9) in flat uint	in_InstanceIndex;
 layout(location = 10) in vec3 		in_ViewDirection;
+layout(location = 11) in vec4		in_PaintInfo4;
+layout(location = 12) in float 		in_PaintDist;
 	
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 { 
@@ -62,16 +63,18 @@ void main()
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex);
-	shadingNormal = mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation);
+	uint packedPaintInfo = 0;
+	float dist = 1.f;
+	GetVec4ToPackedPaintInfoAndDistance(in_WorldPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, dist);
+
+	shadingNormal = mix(shadingNormal, paintDescription.Normal + shadingNormal * 0.2f, paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
-	uint serverData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).r);
-	uint clientData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).g);
-	float shouldPaint 			= float((serverData & 0x1) | (clientData & 0x1));
-	bool isPainted = (shouldPaint > 0.5f);
+	float shouldPaint = float(step(1, packedPaintInfo));
+	bool isPainted = (shouldPaint > 0.5f) && (paintDescription.Interpolation > 0.001f);
 
 	// Darken back faces like inside of painted legs
 	float backSide = 1.0f - step(0.0f, dot(in_ViewDirection, shadingNormal));

@@ -13,6 +13,7 @@ struct ProjectileHitEvent;
 namespace LambdaEngine
 {
 	class ISoundEffect2D;
+	class ISoundEffect3D;
 }
 
 // AudioEffectHandler handles events that should cause audio effects to be played
