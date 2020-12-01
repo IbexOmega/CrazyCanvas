@@ -112,7 +112,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
 			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
 
-			constexpr float32 BIASED_MAX_HEALTH	= 0.3f; // CHANGE THIS TO CHANGE AMOUNT OF HEALTH NEEDED TO DIE
+			constexpr float32 BIASED_MAX_HEALTH	= 0.5f; // CHANGE THIS TO CHANGE AMOUNT OF HEALTH NEEDED TO DIE
 			constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
 
 			// Update health
