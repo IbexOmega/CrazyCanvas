@@ -182,7 +182,7 @@ struct SParticle
 	float BeginRadius;
 	float EndRadius;
 	float FrictionFactor;
-	float Bounciness;
+	float ShouldStop;
 	float Padding1;
 };
 
