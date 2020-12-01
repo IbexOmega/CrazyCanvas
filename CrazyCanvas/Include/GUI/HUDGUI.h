@@ -23,6 +23,7 @@
 #include "NsGui/Collection.h"
 #include "NsGui/StackPanel.h"
 #include "NsGui/Rectangle.h"
+#include "NsGui/Ellipse.h"
 #include "NsGui/ObservableCollection.h"
 #include "NsGui/Button.h"
 
@@ -142,7 +143,7 @@ private:
 
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
-	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
+	std::unordered_map<LambdaEngine::Entity, Noesis::Grid*> m_ProjectedElements;
 
 	KillFeedGUI* m_pKillFeedGUI		= nullptr;
 	EscapeMenuGUI* m_pEscMenuGUI	= nullptr;

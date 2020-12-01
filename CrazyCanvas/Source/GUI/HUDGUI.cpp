@@ -417,7 +417,6 @@ void HUDGUI::InitGUI()
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
-
 	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
 	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
 
@@ -474,35 +473,57 @@ void HUDGUI::SetRenderStagesInactive()
 
 void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
-	Noesis::Ptr<Noesis::Rectangle> indicator = *new Noesis::Rectangle();
+	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
+
+	Noesis::Ptr<Noesis::Image> flagImage = *new Noesis::Image();
+	Noesis::Ptr<Noesis::Ellipse> ellipseIndicator = *new Noesis::Ellipse();
+
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+
+	BitmapImage* pBitmapFlag = new BitmapImage(Uri("Roller.png"));
+
+	flagImage->SetSource(pBitmapFlag);
 
 	translation->SetY(100.0f);
 	translation->SetX(100.0f);
 
-	indicator->SetRenderTransform(translation);
-	indicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+	gridIndicator->SetRenderTransform(translation);
+	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
+
+	strokeBrush->SetColor(Noesis::Color::Black());
 
 	if (teamIndex != UINT8_MAX)
 	{
-		if (localTeamIndex == teamIndex)
-			brush->SetColor(Noesis::Color::Blue());
-		else
-			brush->SetColor(Noesis::Color::Red());
+		glm::vec3 teamColor = TeamHelper::GetTeamColor(teamIndex);
+		Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
+		brush->SetColor(color);
 	}
 	else
 		brush->SetColor(Noesis::Color::Green());
 
-	indicator->SetHeight(40);
-	indicator->SetWidth(40);
+	flagImage->SetHeight(50);
+	flagImage->SetWidth(50);
 
-	indicator->SetFill(brush);
+	gridIndicator->SetHeight(60);
+	gridIndicator->SetWidth(60);
 
-	m_ProjectedElements[entity] = indicator;
+	ellipseIndicator->SetHeight(60);
+	ellipseIndicator->SetWidth(60);
 
-	if (m_pHUDGrid->GetChildren()->Add(indicator) == -1)
+	ellipseIndicator->SetStroke(strokeBrush);
+	ellipseIndicator->SetStrokeThickness(2);
+
+	ellipseIndicator->SetFill(brush);
+
+	gridIndicator->GetChildren()->Add(ellipseIndicator);
+	gridIndicator->GetChildren()->Add(flagImage);
+
+	m_ProjectedElements[entity] = gridIndicator;
+
+	if (m_pHUDGrid->GetChildren()->Add(gridIndicator) == -1)
 	{
 		LOG_ERROR("Could not add Proj Element");
 	}
@@ -531,5 +552,6 @@ void HUDGUI::SetIndicatorOpacity(float32 value, Entity entity)
 	auto indicator = m_ProjectedElements.find(entity);
 	VALIDATE(indicator != m_ProjectedElements.end())
 
-	indicator->second->GetFill()->SetOpacity(value);
+	Noesis::Ellipse* target = (Noesis::Ellipse*)indicator->second->GetChildren()->Get(0);
+	target->GetFill()->SetOpacity(value);
 }
