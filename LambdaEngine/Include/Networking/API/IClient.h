@@ -45,6 +45,8 @@ namespace LambdaEngine
 		virtual const PacketManagerBase* GetPacketManager() const = 0;
 		virtual IClientRemoteHandler* GetHandler() = 0;
 		virtual uint64 GetUID() const = 0;
+		virtual void SetTimeout(Timestamp time) = 0;
+		virtual void ResetTimeout() = 0;
 
 		template<class T>
 		bool SendUnreliableStruct(const T& packet, uint16 packetType)

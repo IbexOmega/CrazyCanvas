@@ -24,11 +24,6 @@ void MultiplayerBase::InitInternal()
 {
 	m_PlayerAnimationSystem.Init();
 
-	if (!Match::Init())
-	{
-		LOG_ERROR("Match Init Failed");
-	}
-
 	WeaponSystem::Init();
 	HealthSystem::Init();
 

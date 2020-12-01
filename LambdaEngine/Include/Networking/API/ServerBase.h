@@ -55,6 +55,8 @@ namespace LambdaEngine
 		const ServerDesc& GetDescription() const;
 		const ClientMap& GetClients() const;
 		ClientRemoteBase* GetClient(uint64 uid);
+		void SetTimeout(Timestamp time);
+		void ResetTimeout();
 		
 		template<class T>
 		bool SendUnreliableStructBroadcast(const T& packet, uint16 packetType, const IClient* pExclude = nullptr)

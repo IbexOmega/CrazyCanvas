@@ -57,6 +57,11 @@ void ChatManager::RenotifyAllChatMessages()
 	}
 }
 
+void ChatManager::Clear()
+{
+	m_ChatHistory.Clear();
+}
+
 void ChatManager::SendChatMessage(String message)
 {
 	if (MultiplayerUtils::IsServer())

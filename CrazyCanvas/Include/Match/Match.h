@@ -12,7 +12,6 @@ class Match
 public:
 	DECL_STATIC_CLASS(Match);
 
-	static bool Init();
 	static bool Release();
 
 	static bool CreateMatch(const MatchDescription* pDesc);
