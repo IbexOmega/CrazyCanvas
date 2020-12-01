@@ -1156,7 +1156,7 @@ bool LevelObjectCreator::CreatePlayer(
 			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
 			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
 			soundInstanceDesc.Position		= pPlayerDesc->Position;
-			soundInstanceDesc.Volume		= 1.0f;
+			soundInstanceDesc.Volume		= 2.0f;
 
 			AudibleComponent audibleComponent = {};
 			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);

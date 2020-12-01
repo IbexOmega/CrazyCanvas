@@ -21,7 +21,11 @@ void PlayerManagerBase::Release()
 
 void PlayerManagerBase::Reset()
 {
-	s_Players.clear();
+	if (!MultiplayerUtils::IsServer())
+	{
+		s_Players.clear();
+	}
+
 	s_PlayerEntityToUID.clear();
 }
 
@@ -120,6 +124,7 @@ bool PlayerManagerBase::HandlePlayerLeft(uint64 uid)
 		EventQueue::SendEventImmediate(event);
 
 		bool wasHost = player.IsHost();
+		s_PlayerEntityToUID.erase(player.GetEntity());
 		s_Players.erase(uid);
 
 		return wasHost;
