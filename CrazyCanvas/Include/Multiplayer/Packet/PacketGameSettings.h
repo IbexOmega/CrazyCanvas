@@ -18,7 +18,7 @@ struct PacketGameSettings
 	bool Visible			= false;
 	bool ChangeTeam			= false;
 	EGameMode GameMode		= EGameMode::CTF_TEAM_FLAG;
-	uint8 TeamColor0		= 0;
 	uint8 TeamColor1		= 1;
+	uint8 TeamColor2		= 2;
 };
 #pragma pack(pop)

@@ -315,7 +315,7 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 	if (pFlagCapturer)
 		promptText = pFlagCapturer->GetName() + " Captured The Flag!";
 	else
-		promptText = "Team " + std::to_string(packet.TeamIndex + 1) + " Scored!";
+		promptText = "Team " + std::to_string(packet.TeamIndex) + " Scored!";
 
 	HUDSystem::PromptMessage(promptText);
 

@@ -212,8 +212,6 @@ void HealthCompute::Render(
 	if (s_HealthsToCalculate.empty())
 		return;
 
-	LOG_WARNING("Health compute called");
-
 	CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 	m_ppComputeCommandAllocators[modFrameIndex]->Reset();
 	pCommandList->Begin(nullptr);

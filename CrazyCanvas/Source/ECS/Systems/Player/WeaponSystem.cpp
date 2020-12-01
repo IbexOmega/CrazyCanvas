@@ -209,8 +209,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 
 	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
 	{
-		// TODO: Make it do this (ETeam)(projectileTeam+1); (Or fix team index in whole project)
-		const ETeam team = (projectileTeam == 0) ? ETeam::BLUE : ETeam::RED;
+		const ETeam team = (ETeam)projectileTeam;
 		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team, angle);
 		EventQueue::SendEventImmediate(hitEvent);
 	}

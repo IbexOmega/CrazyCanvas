@@ -95,25 +95,25 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 bool HUDGUI::UpdateScore()
 {
 	std::string scoreString;
-	uint32 blueScore = Match::GetScore(0);
-	uint32 redScore = Match::GetScore(1);
+	uint32 team1Score = Match::GetScore(1);
+	uint32 team2Score = Match::GetScore(2);
 
-	if (blueScore > 5 || redScore > 5)
+	if (team1Score > 5 || team2Score > 5)
 		return true;
 
 	// poor solution to handle bug if Match being reset before entering
 
-	if (m_GUIState.Scores[0] != blueScore && blueScore != 0)	//Blue
+	if (m_GUIState.Scores[0] != team1Score && team1Score != 0)	//Blue
 	{
-		m_GUIState.Scores[0] = blueScore;
+		m_GUIState.Scores[0] = team1Score;
 
-		m_pTeam1Score->SetText(std::to_string(blueScore).c_str());
+		m_pTeam1Score->SetText(std::to_string(team1Score).c_str());
 	}
-	else if (m_GUIState.Scores[1] != redScore && redScore != 0) //Red
+	else if (m_GUIState.Scores[1] != team2Score && team2Score != 0) //Red
 	{
-		m_GUIState.Scores[1] = redScore;
+		m_GUIState.Scores[1] = team2Score;
 
-		m_pTeam2Score->SetText(std::to_string(redScore).c_str());
+		m_pTeam2Score->SetText(std::to_string(team2Score).c_str());
 	}
 
 	return true;
@@ -290,8 +290,8 @@ void HUDGUI::InitGUI()
 	m_GUIState.AmmoCapacity		= 50;
 	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
 
-	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
+	m_GUIState.Scores.PushBack(Match::GetScore(2));
 
 	m_pWaterAmmoRect	= FrameworkElement::FindName<Image>("WATER_RECT");
 	m_pPaintAmmoRect	= FrameworkElement::FindName<Image>("PAINT_RECT");
@@ -328,8 +328,8 @@ void HUDGUI::InitScore()
 	Noesis::Ptr<Noesis::SolidColorBrush> pBrush1 = *new Noesis::SolidColorBrush();
 	Noesis::Ptr<Noesis::SolidColorBrush> pBrush2 = *new Noesis::SolidColorBrush();
 
-	glm::vec3 teamColor1 = TeamHelper::GetTeamColor(0);
-	glm::vec3 teamColor2 = TeamHelper::GetTeamColor(1);
+	glm::vec3 teamColor1 = TeamHelper::GetTeamColor(1);
+	glm::vec3 teamColor2 = TeamHelper::GetTeamColor(2);
 	Noesis::Color Color1(teamColor1.r, teamColor1.g, teamColor1.b);
 	Noesis::Color Color2(teamColor2.r, teamColor2.g, teamColor2.b);
 
@@ -365,7 +365,7 @@ void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
 
-	if (teamIndex != UINT8_MAX)
+	if (teamIndex != 0)
 	{
 		if (localTeamIndex == teamIndex)
 			brush->SetColor(Noesis::Color::Blue());

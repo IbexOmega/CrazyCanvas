@@ -30,7 +30,8 @@ bool TeamHelper::Init()
 	// Create materials
 	for (uint8 teamIndex = 0; teamIndex < MAX_NUM_TEAMS; teamIndex++)
 	{
-		glm::vec3 color = GetAvailableColor(teamIndex);
+		// Team indicies start at 1, where 0 is no team, therefore + 1
+		glm::vec3 color = GetAvailableColor(teamIndex + 1);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(color, 1.0f);
@@ -61,25 +62,27 @@ bool TeamHelper::Init()
 
 glm::vec3 TeamHelper::GetTeamColor(uint8 teamIndex)
 {
-	VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
-	return s_TeamColors[teamIndex];
+	uint8 index = teamIndex - 1;
+	VALIDATE(index < LambdaEngine::MAX_NUM_TEAMS);
+	return s_TeamColors[index];
 }
 
 void TeamHelper::SetTeamColor(uint8 teamIndex, const glm::vec3& color)
 {
 	using namespace LambdaEngine;
 
-	VALIDATE(teamIndex < MAX_NUM_TEAMS);
+	uint8 index = teamIndex - 1;
+	VALIDATE(index < MAX_NUM_TEAMS);
 
 	// Update Team Material - Can't change loaded material therefore needs to be unloaded then reloaded with new albedo
-	ResourceManager::UnloadMaterial(s_TeamColorMaterialGUIDs[teamIndex]);
-	ResourceManager::UnloadMaterial(s_TeamPlayerMaterialGUIDs[teamIndex]);
+	ResourceManager::UnloadMaterial(s_TeamColorMaterialGUIDs[index]);
+	ResourceManager::UnloadMaterial(s_TeamPlayerMaterialGUIDs[index]);
 
 	MaterialProperties materialProperties = {};
 	materialProperties.Albedo = glm::vec4(color, 1.0f);
 
-	s_TeamColorMaterialGUIDs[teamIndex] = ResourceManager::LoadMaterialFromMemory(
-		"Team " + std::to_string(teamIndex) + " Color Material",
+	s_TeamColorMaterialGUIDs[index] = ResourceManager::LoadMaterialFromMemory(
+		"Team " + std::to_string(index) + " Color Material",
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
@@ -87,8 +90,8 @@ void TeamHelper::SetTeamColor(uint8 teamIndex, const glm::vec3& color)
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
 		materialProperties);
 
-	s_TeamPlayerMaterialGUIDs[teamIndex] = ResourceManager::LoadMaterialFromMemory(
-		"Team " + std::to_string(teamIndex) + " Player Material",
+	s_TeamPlayerMaterialGUIDs[index] = ResourceManager::LoadMaterialFromMemory(
+		"Team " + std::to_string(index) + " Player Material",
 		s_PlayerTextureGUID,
 		GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 		GUID_TEXTURE_DEFAULT_COLOR_MAP,
@@ -97,13 +100,14 @@ void TeamHelper::SetTeamColor(uint8 teamIndex, const glm::vec3& color)
 		materialProperties);
 
 	// Store Team Color
-	s_TeamColors[teamIndex] = color;
+	s_TeamColors[index] = color;
 }
 
 glm::vec3 TeamHelper::GetAvailableColor(uint32 colorIndex)
 {
-	VALIDATE(colorIndex < s_AvailableColors.GetSize());
-	return s_AvailableColors[colorIndex];
+	uint32 index = colorIndex - 1;
+	VALIDATE(index < s_AvailableColors.GetSize());
+	return s_AvailableColors[index];
 }
 
 LambdaEngine::TArray<glm::vec3> TeamHelper::GetAllAvailableColors()
@@ -115,4 +119,5 @@ glm::vec3 TeamHelper::GetHSVColor(float angle)
 {
 	float32 baseAngle = 240.0f;
 	return glm::vec3(baseAngle + angle, 1.0f, 1.0f);
+
 }

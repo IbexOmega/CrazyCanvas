@@ -487,9 +487,9 @@ void PlayerManagerServer::FillPacketPlayerScore(PacketPlayerScore* pPacket, cons
 
 void PlayerManagerServer::AutoSelectTeam(Player* pPlayer)
 {
-	TArray<const Player*> pPlayersTeam0;
 	TArray<const Player*> pPlayersTeam1;
-	GetPlayersOfTeam(pPlayersTeam0, 0);
+	TArray<const Player*> pPlayersTeam2;
 	GetPlayersOfTeam(pPlayersTeam1, 1);
-	pPlayer->m_Team = pPlayersTeam0.GetSize() > pPlayersTeam1.GetSize() ? 1 : 0;
+	GetPlayersOfTeam(pPlayersTeam2, 2);
+	pPlayer->m_Team = pPlayersTeam1.GetSize() > pPlayersTeam2.GetSize() ? 2 : 1;
 }

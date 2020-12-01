@@ -49,7 +49,7 @@ void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& feedMessage, const u
 	Noesis::Ptr<Noesis::TextBlock> feed = *new Noesis::TextBlock();
 	Noesis::Ptr<Noesis::SolidColorBrush> pBrush = *new Noesis::SolidColorBrush();
 	
-	uint8 colorIndex = killedPlayerTeamIndex == 0 ? 1 : 0; //will only work for 2 teams, Implement a smarter way to handle this later
+	uint8 colorIndex = killedPlayerTeamIndex == 1 ? 2 : 1; //will only work for 2 teams, Implement a smarter way to handle this later
 	glm::vec3 teamColor = TeamHelper::GetTeamColor(colorIndex);
 	Noesis::Color killFeedColor(teamColor.r, teamColor.g, teamColor.b);
 
