@@ -34,6 +34,8 @@ public:
 
 	bool OnWeaponFired(const WeaponFiredEvent& event);
 	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
+	bool OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event);
+	bool OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& event);
 	bool OnProjectileHit(const ProjectileHitEvent& event);
 	bool OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event);
 	bool OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event);
@@ -49,7 +51,7 @@ private:
 
 public:
 
-	static void PromptMessage(const LambdaEngine::String& promtMessage);
+	static void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
 
 private:
 

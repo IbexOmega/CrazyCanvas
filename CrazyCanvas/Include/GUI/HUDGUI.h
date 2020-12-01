@@ -35,6 +35,8 @@
 #include "NsCore/BaseComponent.h"
 #include "NsCore/Type.h"
 
+#include "Time/API/Timestamp.h"
+
 #include "Lobby/Player.h"
 
 #include "Application/API/Events/KeyEvents.h"
@@ -49,8 +51,11 @@ struct GameGUIState
 
 	LambdaEngine::TArray<uint32> Scores;
 
-	int32 Ammo;
-	int32 AmmoCapacity;
+	int32 WaterAmmo = 50;
+	int32 PaintAmmo = 50;
+
+	int32 WaterAmmoCapacity = 50;
+	int32 PaintAmmoCapacity = 50;
 };
 
 typedef std::pair<int16, const Player*> PlayerPair;
@@ -61,18 +66,26 @@ public:
 	HUDGUI();
 	~HUDGUI();
 
+	void FixedTick(LambdaEngine::Timestamp delta);
+
+	void AnimateReload(const float32 timePassed);
+
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	bool UpdateHealth(int32 currentHealth);
 	bool UpdateScore();
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
 
+	void Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading);
+	void AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo);
+
 	void UpdateCountdown(uint8 countDownTime);
 
 	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
 	void DisplayHitIndicator();
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
-	void DisplayPrompt(const LambdaEngine::String& promptMessage);
+	void DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex);
+	void CancelSmallPrompt();
 
 	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex);
 	void UpdateKillFeedTimer(LambdaEngine::Timestamp delta);
@@ -82,6 +95,7 @@ public:
 	void RemoveProjectedGUIElement(LambdaEngine::Entity entity);
 
 	void SetWindowSize(uint32 width, uint32 height);
+	void ShowHUD(const bool isVisible);
 
 	ScoreBoardGUI* GetScoreBoard() const;
 
@@ -98,7 +112,17 @@ private:
 
 private:
 	GameGUIState m_GUIState;
-	bool m_IsGameOver = false;
+
+	bool m_IsGameOver	= false;
+	bool m_IsReloading = false;
+
+	float m_WaterAmmoScale = 0.0f;
+	float m_PaintAmmoScale = 0.0f;
+
+	float m_WaterAmmoFactor = 0.0f;
+	float m_PaintAmmoFactor = 0.0f;
+
+	float32 m_ReloadAnimationTime = 2.0f;
 
 	Noesis::Image* m_pWaterAmmoRect				= nullptr;
 	Noesis::Image* m_pPaintAmmoRect				= nullptr;

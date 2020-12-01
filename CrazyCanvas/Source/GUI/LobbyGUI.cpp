@@ -82,6 +82,7 @@ void LobbyGUI::InitGUI()
 
 void LobbyGUI::AddPlayer(const Player& player)
 {
+	// TODO: Make sure team is correct (might have to change to == 1)
 	StackPanel* pPanel = player.GetTeam() == 0 ? m_pTeam1StackPanel : m_pTeam2StackPanel;
 
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
