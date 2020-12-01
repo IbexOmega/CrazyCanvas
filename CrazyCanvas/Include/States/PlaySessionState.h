@@ -12,7 +12,6 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "EventHandlers/AudioEffectHandler.h"
-#include "MeshPaint/MeshPaintHandler.h"
 
 #include "Multiplayer/MultiplayerClient.h"
 
@@ -31,11 +30,11 @@ public:
 
 	void Init() override final;
 
-	void Resume() override final 
+	void Resume() override final
 	{
 	}
 
-	void Pause() override final 
+	void Pause() override final
 	{
 	}
 
@@ -70,7 +69,6 @@ private:
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
-	MeshPaintHandler m_MeshPaintHandler;
 
 	/* Commands */
 	bool m_UpdateShaders = false;

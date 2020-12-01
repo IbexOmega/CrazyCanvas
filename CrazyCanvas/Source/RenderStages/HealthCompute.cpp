@@ -181,7 +181,7 @@ void HealthCompute::UpdateDrawArgsResource(
 
 	if (resourceName == SCENE_DRAW_ARGS)
 	{
-		if (count > 0U && pDrawArgs != nullptr)
+		if (pDrawArgs)
 		{
 			if (count != m_DrawArgsDescriptorSets.GetSize())
 			{
@@ -209,10 +209,8 @@ void HealthCompute::Render(
 	UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 	UNREFERENCED_VARIABLE(sleeping);
 
-	if (s_HealthsToCalculate.empty())
+	if (s_HealthsToCalculate.empty() || m_DrawArgsDescriptorSets.IsEmpty())
 		return;
-
-	LOG_WARNING("Health compute called");
 
 	CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 	m_ppComputeCommandAllocators[modFrameIndex]->Reset();

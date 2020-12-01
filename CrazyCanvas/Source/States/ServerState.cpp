@@ -93,7 +93,6 @@ void ServerState::Init()
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	m_MeshPaintHandler.Init();
 	m_MultiplayerServer.InitInternal();
 
 	ServerSystem::GetInstance().Start();
@@ -128,7 +127,6 @@ bool ServerState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
 void ServerState::Tick(Timestamp delta)
 {
 	m_MultiplayerServer.TickMainThreadInternal(delta);
-	m_MeshPaintHandler.Tick(delta);
 }
 
 void ServerState::FixedTick(LambdaEngine::Timestamp delta)
