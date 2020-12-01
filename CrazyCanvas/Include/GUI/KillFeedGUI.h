@@ -5,17 +5,15 @@
 
 #include "LambdaEngine.h"
 
-#include <NoesisGUI/Include/NsGui/Storyboard.h>
 #include <NoesisGUI/Include/NsGui/StackPanel.h>
-#include <NoesisGUI/Include/NsGui/Textblock.h>
-#include <NoesisGUI/Include/NsGui/DoubleAnimation.h>
+#include <NoesisGUI/Include/NsGui/Grid.h>
 #include <NoesisGUI/Include/NsGui/UserControl.h>
 
 #include "Time/API/Timestamp.h"
 
 #include <unordered_map>
 
-typedef std::pair<Noesis::Ptr<Noesis::TextBlock>, float32> TextFeedTimer;
+typedef std::pair<Noesis::Ptr<Noesis::Grid>, float32> TextFeedTimer;
 
 class KillFeedGUI : public Noesis::UserControl
 {
@@ -29,10 +27,10 @@ public:
 
 	void UpdateFeedTimer(LambdaEngine::Timestamp delta);
 
-	void AddToKillFeed(const LambdaEngine::String& feedMessage, const uint8 killedPlayerTeamIndex);
+	void AddToKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, const uint8 killedPlayerTeamIndex);
 
 private:
-	void RemoveFromKillFeed(Noesis::TextBlock* textblock);
+	void RemoveFromKillFeed(Noesis::Grid* pGrid);
 
 private:
 	Noesis::StackPanel* m_pKillFeedStackPanel			= nullptr;
