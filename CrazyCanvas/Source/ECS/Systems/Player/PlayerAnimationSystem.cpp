@@ -2,7 +2,7 @@
 
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/WeaponComponent.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 

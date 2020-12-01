@@ -13,6 +13,8 @@
 
 #include "Match/Match.h"
 
+#include "MeshPaint/MeshPaintHandler.h"
+
 /*
 * HealthSystemClient
 */
@@ -119,12 +121,12 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 			for (const std::string& tag : tags)
 			{
 				Entity childEntity = childComponent.GetEntityWithTag(tag);
-				PaintMaskRenderer::ResetServer(childEntity);
+				MeshPaintHandler::ResetServer(childEntity);
 			}
 		}
 
 		// Reset player
-		PaintMaskRenderer::ResetServer(event.pPlayer->GetEntity());
+		MeshPaintHandler::ResetServer(event.pPlayer->GetEntity());
 	}
 
 	return true;

@@ -1901,11 +1901,11 @@ namespace LambdaEngine
 							return false;
 						}
 
-						if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS || pRenderStageDesc->Graphics.DrawType != ERenderStageDrawType::SCENE_INSTANCES)
-						{
-							LOG_ERROR("Unfortunately, only GRAPHICS Render Stages with Draw Type SCENE_INSTANCES is allowed to have a resource of binding type DRAW_BUFFERS");
-							return false;
-						}
+						// if (pRenderStageDesc->Type != EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS || pRenderStageDesc->Graphics.DrawType != ERenderStageDrawType::SCENE_INSTANCES)
+						// {
+						// 	LOG_ERROR("[RenderGraph]: Unfortunately, only GRAPHICS Render Stages with Draw Type SCENE_INSTANCES is allowed to have a resource of binding type DRAW_BUFFERS");
+						// 	return false;
+						// }
 
 						DrawArgMaskDesc maskDesc = {};
 						maskDesc.IncludeMask = pResourceStateDesc->DrawArgsIncludeMask;
@@ -3658,6 +3658,7 @@ namespace LambdaEngine
 
 					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
 					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
+					bool repushTextureBarrier = true;
 
 					if (pDesc->ExternalDrawArgsUpdate.Count != 0)
 					{
@@ -3735,6 +3736,8 @@ namespace LambdaEngine
 						// For draw arg extensions
 						if (pDrawArg->HasExtensions)
 						{
+							repushTextureBarrier = false;
+
 							for (Entity entity : pDrawArg->EntityIDs)
 							{
 								DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
@@ -3761,6 +3764,12 @@ namespace LambdaEngine
 								}
 							}
 						}
+					}
+					
+					//We must make sure to repush the template texture barrier if we didn't push any new texture barriers
+					if (repushTextureBarrier)
+					{
+						drawTextureBarriers.PushBack(textureBarrierTemplate);
 					}
 				}
 			}

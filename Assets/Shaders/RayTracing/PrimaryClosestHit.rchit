@@ -15,7 +15,9 @@ struct SRayHitDescription
 	mat3 	TBN;
 	vec2	TexCoord;
 	uint	MaterialIndex;
-	uint	PaintMaskIndex;
+	uint	PackedPaintInfo;
+	float	PaintDist;
+	float	PaintBorder;
 };
 
 layout(buffer_reference, buffer_reference_align = 16) buffer VertexBuffer 
@@ -57,24 +59,36 @@ SRayHitDescription CalculateHitData()
 	vec3 B = cross(N, T);
 	mat3 TBN = mat3(T, B, N);
 
+	vec3 modelPosition = (v0.Position.xyz * barycentricCoords.x + v1.Position.xyz * barycentricCoords.y + v2.Position.xyz * barycentricCoords.z);
 	vec2 texCoord = (v0.TexCoord.xy * barycentricCoords.x + v1.TexCoord.xy * barycentricCoords.y + v2.TexCoord.xy * barycentricCoords.z);
+	float paintDist = (v0.Normal.w * barycentricCoords.x + v1.Normal.w * barycentricCoords.y + v2.Normal.w * barycentricCoords.z);
 
-	uint materialIndex		= (gl_InstanceCustomIndexEXT & 0xFF00) >> 8;
-	uint paintMaskIndex		= gl_InstanceCustomIndexEXT & 0xFF;
+	vec3 position = gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;
+
+	vec4 paintInfo4V0 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v0.Position.w)));
+	vec4 paintInfo4V1 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v1.Position.w)));
+	vec4 paintInfo4V2 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v2.Position.w)));
+	vec4 paintInfo4 = (paintInfo4V0 * barycentricCoords.x + paintInfo4V1 * barycentricCoords.y + paintInfo4V2 * barycentricCoords.z);
+	uint packedPaintInfo = 0;
+	float dist = 1.f;
+	GetVec4ToPackedPaintInfoAndDistance(position, paintInfo4, paintDist, packedPaintInfo, dist);
+
+	uint materialIndex		= gl_InstanceCustomIndexEXT & 0xFF;
 
 	vec3 shadingNormal		= texture(u_NormalMaps[materialIndex], texCoord).xyz;
 	shadingNormal			= normalize(shadingNormal * 2.0f - 1.0f);
 	shadingNormal			= TBN * shadingNormal;
 
 	SRayHitDescription hitDescription;
-	hitDescription.Position			= gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;
+	hitDescription.Position			= position;
 	hitDescription.Normal			= shadingNormal;
 	hitDescription.Tangent			= T;
 	hitDescription.Bitangent		= B;
 	hitDescription.TBN				= TBN;
 	hitDescription.TexCoord			= texCoord;
 	hitDescription.MaterialIndex	= materialIndex;
-	hitDescription.PaintMaskIndex	= paintMaskIndex;
+	hitDescription.PackedPaintInfo	= packedPaintInfo;
+	hitDescription.PaintDist		= dist;
 	
 	return hitDescription;
 }
@@ -82,7 +96,7 @@ SRayHitDescription CalculateHitData()
 void main() 
 {
 	SRayHitDescription hitDescription = CalculateHitData();
-	SPaintDescription paintDescription = InterpolatePaint(hitDescription.TBN, hitDescription.Position, hitDescription.Tangent, hitDescription.Bitangent, hitDescription.TexCoord, hitDescription.PaintMaskIndex);
+	SPaintDescription paintDescription = InterpolatePaint(hitDescription.TBN, hitDescription.Position, hitDescription.Tangent, hitDescription.Bitangent, hitDescription.PackedPaintInfo, hitDescription.PaintDist);
 	
 	SMaterialParameters materialParameters = u_MaterialParameters.val[hitDescription.MaterialIndex];
 

@@ -50,7 +50,6 @@ namespace LambdaEngine
 	class CommandAllocator;
 	// Custom Renderers
 	class LineRenderer;
-	class PaintMaskRenderer;
 	class ParticleRenderer;
 	class ParticleUpdater;
 	class ParticleCollider;
@@ -63,7 +62,6 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderSystem : public System
 	{
-		friend class PaintMaskRenderer;
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
 
@@ -75,6 +73,10 @@ namespace LambdaEngine
 			uint32		ExtensionGroupIndex			= 0;
 			uint32		TexturesPerExtensionGroup	= 0;
 			uint32		MeshletCount				= 0;
+			uint32		TeamIndex					= 0;
+			uint32		PlayerIndex					= 0;
+			uint32		Padding1					= 0;
+			uint32		Padding2					= 0;
 		};
 
 		struct MeshKey
@@ -538,7 +540,6 @@ namespace LambdaEngine
 		// Custom Renderers
 		LineRenderer*				m_pLineRenderer			= nullptr;
 		LightRenderer*				m_pLightRenderer		= nullptr;
-		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
 		ParticleCollider*			m_pParticleCollider		= nullptr;
