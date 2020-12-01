@@ -29,8 +29,8 @@ namespace LambdaEngine
 		{
 			BlitDescription
 			{
-				.SrcName = "G_BUFFER_LINEAR_Z_PACKED_GEOM_NORM",
-				.DstName = "G_BUFFER_PREV_LINEAR_Z_PACKED_GEOM_NORM",
+				.SrcName = "G_BUFFER_PACKED_GEOMETRIC_NORMAL",
+				.DstName = "G_BUFFER_PREV_PACKED_GEOMETRIC_NORMAL",
 			},
 			BlitDescription
 			{

@@ -1,0 +1,47 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+
+#define NO_BUFFERS
+
+#include "../Defines.glsl"
+#include "../Helpers.glsl"
+#include "../Reflections.glsl"
+
+layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 0,	set = TEXTURE_SET_INDEX) uniform sampler2D u_BlurSrc;
+layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAORoughMetalValid;
+layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferCompactNormal;
+layout(binding = 3,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D u_DenoisedReflections;
+
+#include "../Blur.glsl"
+
+void main()
+{
+    ivec2 BLUR_IMAGE_SIZE = imageSize(u_DenoisedReflections);
+    int BLUR_IMAGE_TOTAL_NUM_PIXELS = BLUR_IMAGE_SIZE.x * BLUR_IMAGE_SIZE.y;
+
+    if (gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * BLUR_IMAGE_SIZE.x >= BLUR_IMAGE_TOTAL_NUM_PIXELS) 
+        return;
+
+    ivec2 p         = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
+    vec2 texCoords  = (vec2(p) + 0.5f) / vec2(BLUR_IMAGE_SIZE);
+
+    vec4 current_Radiance_Valid = texelFetch(u_BlurSrc, p, 0);
+    float validSample = current_Radiance_Valid.a;
+    vec3 filteredColor;
+
+#if GAUSSIAN_FILTER_DENOISING_ENABLED
+
+    #if BILATERAL_FILTER_DENOISING_ENABLED
+        filteredColor = bilateralBlur9(u_BlurSrc, u_GBufferAORoughMetalValid, u_GBufferCompactNormal, texCoords, BLUR_IMAGE_SIZE, vec2(0.0f, 1.0f)).rgb;
+    #else
+        filteredColor = blur9(u_BlurSrc, texCoords, BLUR_IMAGE_SIZE, vec2(0.0f, 1.0f)).rgb;
+    #endif
+
+#else
+    filteredColor = current_Radiance_Valid.rgb;
+#endif
+
+    imageStore(u_DenoisedReflections, p, vec4(filteredColor, validSample));
+}

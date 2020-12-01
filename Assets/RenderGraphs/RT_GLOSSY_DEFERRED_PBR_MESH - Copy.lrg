@@ -599,7 +599,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
                 "is_of_array_type": false,
                 "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
@@ -649,7 +649,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
                 "is_of_array_type": false,
                 "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
@@ -674,7 +674,7 @@
             "editable": true,
             "external": false,
             "type_params": {
-                "texture_format": "FORMAT_R8G8B8A8_UNORM",
+                "texture_format": "FORMAT_R16G16B16A16_SFLOAT",
                 "is_of_array_type": false,
                 "unbounded_array": false,
                 "texture_type": "TEXTURE_2D",
@@ -1297,7 +1297,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "UNORDERED_ACCESS_R",
-                    "src_stage": "GAUSSIAN_DENOISE_PONG"
+                    "src_stage": "REFLECTION_DENOISE_PASS"
                 },
                 {
                     "name": "PREV_DENOISED_REFLECTIONS_TEXTURE",
@@ -1497,7 +1497,7 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "GAUSSIAN_DENOISE_PONG"
+                    "src_stage": "REFLECTION_DENOISE_PASS"
                 },
                 {
                     "name": "INTERMEDIATE_OUTPUT_IMAGE",
@@ -2385,58 +2385,6 @@
             ]
         },
         {
-            "name": "GAUSSIAN_DENOISE_PING",
-            "type": "COMPUTE",
-            "custom_renderer": false,
-            "allow_overriding_of_binding_types": false,
-            "trigger_type": "EVERY",
-            "frame_delay": 0,
-            "frame_offset": 0,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 0.0625,
-            "y_dim_var": 0.0625,
-            "z_dim_var": 1.0,
-            "shaders": {
-                "shader": "/RayTracing\\GaussianDenoiserPing.comp"
-            },
-            "resource_states": [
-                {
-                    "name": "DENOISED_REFLECTIONS_TEXTURE",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "REFLECTION_DENOISE_PASS"
-                },
-                {
-                    "name": "G_BUFFER_AO_ROUGH_METAL_VALID",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
-                },
-                {
-                    "name": "G_BUFFER_COMPACT_NORMAL",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
-                },
-                {
-                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "UNORDERED_ACCESS_W",
-                    "src_stage": ""
-                }
-            ]
-        },
-        {
             "name": "PARTICLE_COMBINE_PASS",
             "type": "GRAPHICS",
             "custom_renderer": false,
@@ -2612,14 +2560,14 @@
             "trigger_type": "EVERY",
             "frame_delay": 0,
             "frame_offset": 0,
-            "x_dim_type": "RELATIVE",
+            "x_dim_type": "RELATIVE_1D",
             "y_dim_type": "RELATIVE",
             "z_dim_type": "CONSTANT",
-            "x_dim_var": 0.0625,
-            "y_dim_var": 0.0625,
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
             "z_dim_var": 1.0,
             "shaders": {
-                "shader": "/RayTracing\\SpatioTemporalReflectionsDenoiser.comp"
+                "shader": "/RayTracing\\ReflectionsDenoiser.comp"
             },
             "resource_states": [
                 {
@@ -2685,58 +2633,6 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "TEMPORAL_RESOURCES"
-                }
-            ]
-        },
-        {
-            "name": "GAUSSIAN_DENOISE_PONG",
-            "type": "COMPUTE",
-            "custom_renderer": false,
-            "allow_overriding_of_binding_types": false,
-            "trigger_type": "EVERY",
-            "frame_delay": 0,
-            "frame_offset": 0,
-            "x_dim_type": "RELATIVE",
-            "y_dim_type": "RELATIVE",
-            "z_dim_type": "CONSTANT",
-            "x_dim_var": 0.0625,
-            "y_dim_var": 0.0625,
-            "z_dim_var": 1.0,
-            "shaders": {
-                "shader": "/RayTracing\\GaussianDenoiserPong.comp"
-            },
-            "resource_states": [
-                {
-                    "name": "INTERMEDIATE_OUTPUT_IMAGE",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "GAUSSIAN_DENOISE_PING"
-                },
-                {
-                    "name": "G_BUFFER_AO_ROUGH_METAL_VALID",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
-                },
-                {
-                    "name": "G_BUFFER_COMPACT_NORMAL",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "COMBINED_SAMPLER",
-                    "src_stage": "DEFERRED_GEOMETRY_PASS_MESH_PAINT"
-                },
-                {
-                    "name": "DENOISED_REFLECTIONS_TEXTURE",
-                    "removable": true,
-                    "draw_args_include_mask": 1,
-                    "draw_args_exclude_mask": 0,
-                    "binding_type": "UNORDERED_ACCESS_W",
-                    "src_stage": ""
                 }
             ]
         }

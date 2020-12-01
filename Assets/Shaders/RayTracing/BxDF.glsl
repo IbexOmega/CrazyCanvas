@@ -1,5 +1,6 @@
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
+#include "../Reflections.glsl"
 
 struct SReflectionDesc
 {
@@ -15,6 +16,32 @@ struct SBxDFEval
     vec3    f;
     float   PDF;
 };
+
+// Input Ve: view direction
+// Input alpha_x, alpha_y: roughness parameters
+// Input U1, U2: uniform random numbers
+// Output Ne: normal sampled with PDF D_Ve(Ne) = G1(Ve) * max(0, dot(Ve, Ne)) * D(Ne) / Ve.z
+vec3 Sample_w_h_GGXVNDF(vec3 Ve, float alpha, vec2 u)
+{
+    // Section 3.2: transforming the view direction to the hemisphere configuration
+    vec3 Vh = normalize(vec3(alpha * Ve.x, alpha * Ve.y, Ve.z));
+    // Section 4.1: orthonormal basis (with special case if cross product is zero)
+    float lensq = Vh.x * Vh.x + Vh.y * Vh.y;
+    vec3 T1 = lensq > 0 ? vec3(-Vh.y, Vh.x, 0) * inversesqrt(lensq) : vec3(1,0,0);
+    vec3 T2 = cross(Vh, T1);
+    // Section 4.2: parameterization of the projected area
+    float r = sqrt(u.x);
+    float phi = 2.0 * PI * u.y;
+    float t1 = r * cos(phi);
+    float t2 = r * sin(phi);
+    float s = 0.5 * (1.0 + Vh.z);
+    t2 = (1.0 - s)*sqrt(1.0 - t1*t1) + s*t2;
+    // Section 4.3: reprojection onto hemisphere
+    vec3 Nh = t1*T1 + t2*T2 + sqrt(max(0.0, 1.0 - t1*t1 - t2*t2))*Vh;
+    // Section 3.4: transforming the normal back to the ellipsoid configuration
+    vec3 Ne = normalize(vec3(alpha * Nh.x, alpha * Nh.y, max(0.0, Nh.z)));
+    return Ne;
+}
 
 /*
 * Samples the GGX Distribution (D) using Importance Sampling
@@ -59,7 +86,7 @@ vec3 Sample_w_h_CosHemisphere(vec2 u)
     return vec3(d.x, d.y, z);
 }
 
-SBxDFEval Eval_f_Specular(float n_dot_i, float n_dot_h, float o_dot_h, float n_dot_o, vec3 albedo, float roughness, float alphaSqrd, vec3 F)
+SBxDFEval Eval_f_Specular_GGX_Sampled(float n_dot_i, float n_dot_h, float o_dot_h, float n_dot_o, vec3 albedo, float roughness, float alphaSqrd, vec3 F)
 {
     float   D = Distribution(n_dot_h, alphaSqrd);
     float   G = Geometry(n_dot_o, n_dot_i, roughness);
@@ -67,6 +94,17 @@ SBxDFEval Eval_f_Specular(float n_dot_i, float n_dot_h, float o_dot_h, float n_d
     SBxDFEval bxdfEval;
     bxdfEval.f      = D * G * F / (4.0f * n_dot_o * n_dot_i);
     bxdfEval.PDF    = D * n_dot_h / (4.0f * o_dot_h);
+    return bxdfEval;
+}
+
+SBxDFEval Eval_f_Specular_GGXVNDF_Sampled(float n_dot_i, float n_dot_h, float o_dot_h, float n_dot_o, vec3 albedo, float roughness, float alphaSqrd, vec3 F)
+{
+    float   D = Distribution(n_dot_h, alphaSqrd);
+    float   G = Geometry(n_dot_o, n_dot_i, roughness);
+
+    SBxDFEval bxdfEval;
+    bxdfEval.f      = D * G * F / (4.0f * n_dot_o * n_dot_i);
+    bxdfEval.PDF    = D / (4.0f * o_dot_h);
     return bxdfEval;
 }
 
@@ -126,7 +164,11 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
         if (metallic == 1.0f)
         {
             //Sample Microfacet Normal using GGX Distribution
+#ifdef SAMPLE_VISIBLE_NORMALS_ENABLED
+            vec3 w_hs = Sample_w_h_GGXVNDF(w_os, alpha, u.xy);
+#else
             vec3 w_hs = Sample_w_h_GGX(w_os, alphaSqrd, u.xy);
+#endif
             vec3 w_is = reflect(-w_os, w_hs);
 
             reflectionDesc.w_iw = surfaceToWorld * w_is;
@@ -140,8 +182,11 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
             vec3 F = Fresnel(F0, n_dot_i);
 
             //Eval common BRDF
-            SBxDFEval specularBRDFEval  = Eval_f_Specular(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
-
+#ifdef SAMPLE_VISIBLE_NORMALS_ENABLED
+            SBxDFEval specularBRDFEval  = Eval_f_Specular_GGXVNDF_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#else
+            SBxDFEval specularBRDFEval  = Eval_f_Specular_GGX_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#endif
             reflectionDesc.PDF          = specularBRDFEval.PDF;
             reflectionDesc.f            = specularBRDFEval.f;
             reflectionDesc.PDF_Specular = specularBRDFEval.PDF;
@@ -151,7 +196,11 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
         {     
             //Sample Microfacet Normal using GGX Distribution
             {
+#ifdef SAMPLE_VISIBLE_NORMALS_ENABLED
+                vec3 w_hs = Sample_w_h_GGXVNDF(w_os, alpha, u.xy);
+#else
                 vec3 w_hs = Sample_w_h_GGX(w_os, alphaSqrd, u.xy);
+#endif
                 vec3 w_is = reflect(-w_os, w_hs);
 
                 reflectionDesc.w_iw = surfaceToWorld * w_is;
@@ -165,7 +214,11 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
                 vec3 F = Fresnel(F0, n_dot_i);
 
                 //Eval common BRDF
-                SBxDFEval specularBRDFEval  = Eval_f_Specular(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#ifdef SAMPLE_VISIBLE_NORMALS_ENABLED
+                SBxDFEval specularBRDFEval  = Eval_f_Specular_GGXVNDF_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#else
+                SBxDFEval specularBRDFEval  = Eval_f_Specular_GGX_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#endif
 
                 vec3 k_s = F;
                 vec3 k_d = (1.0f - k_s) * (1.0f - metallic);            
@@ -202,7 +255,11 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
                 vec3 F = Fresnel(F0, n_dot_i);
 
                 //Eval common BRDF
-                SBxDFEval specularBRDFEval  = Eval_f_Specular(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#ifdef SAMPLE_VISIBLE_NORMALS_ENABLED
+                SBxDFEval specularBRDFEval  = Eval_f_Specular_GGXVNDF_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#else
+                SBxDFEval specularBRDFEval  = Eval_f_Specular_GGX_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#endif
 
                 vec3 k_s = F;
                 vec3 k_d = (1.0f - k_s) * (1.0f - metallic);            

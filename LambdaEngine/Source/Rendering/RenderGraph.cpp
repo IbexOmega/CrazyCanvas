@@ -4084,18 +4084,18 @@ namespace LambdaEngine
 	{
 		if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE_1D)
 		{
-			pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth * m_WindowHeight);
+			pRenderStage->Dimensions.x = uint32(ceil(pRenderStage->Parameters.XDimVariable * m_WindowWidth * m_WindowHeight));
 		}
 		else
 		{
 			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE)
 			{
-				pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth);
+				pRenderStage->Dimensions.x = uint32(ceil(pRenderStage->Parameters.XDimVariable * m_WindowWidth));
 			}
 
 			if (pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::RELATIVE)
 			{
-				pRenderStage->Dimensions.y = uint32(pRenderStage->Parameters.YDimVariable * m_WindowHeight);
+				pRenderStage->Dimensions.y = uint32(ceil(pRenderStage->Parameters.YDimVariable * m_WindowHeight));
 			}
 		}
 	}

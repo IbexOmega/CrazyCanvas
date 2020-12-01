@@ -55,22 +55,20 @@ void main()
 		//Reinhard Tone-Mapping
 		vec3 colorLDR = albedo / (albedo + vec3(1.0f));
 
-		//Gamma Correction
-		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
-		out_Color = vec4(finalColor, luminance);
+		out_Color = vec4(colorLDR, luminance);
 		return;
 	}
 	else if (aoRoughMetalValid.g <= REFLECTION_REJECT_THRESHOLD)
 	{
-		vec3 reflectionHDR = texture(u_Reflections, in_TexCoord).rgb;
-		float luminance = CalculateLuminance(reflectionHDR);
+		vec3 finalColor = texture(u_Reflections, in_TexCoord).rgb;
+		
+		//Inverse Gamma Correction
+		vec3 colorLDR = pow(finalColor, vec3(GAMMA));
 
-		//Reinhard Tone-Mapping
-		vec3 colorLDR = reflectionHDR / (reflectionHDR + vec3(1.0f));
+		//Inverse Reinhard Tone-Mapping
+		vec3 colorHDR = -colorLDR / max(vec3(0.000001f), colorLDR - vec3(1.0f));
 
-		//Gamma Correction
-		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+		float luminance = CalculateLuminance(colorHDR);
 
 		out_Color = vec4(finalColor, luminance);
 		return;
