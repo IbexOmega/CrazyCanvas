@@ -55,7 +55,6 @@ public:
 	inline PlayerStateUpdatedEvent(const Player* pPlayerConst)
 		: PlayerBaseEvent(pPlayerConst)
 	{
-		LOG_WARNING("[%s] CLIENT_STATE(%s)", pPlayerConst->GetName().c_str(), Player::GameStateToString(pPlayerConst->GetState()));
 	}
 
 	DECLARE_PLAYER_EVENT_TYPE(PlayerStateUpdatedEvent);
