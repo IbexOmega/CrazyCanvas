@@ -358,10 +358,7 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 			}
 		}
 		else
-		{
 			m_HUDGUI->ShowHUD(true);
-			m_HUDGUI->DisplaySpectateText("", false);
-		}
 	}
 
 	return false;
@@ -457,7 +454,7 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 
 bool HUDSystem::OnSpectatePlayerEvent(const SpectatePlayerEvent& event)
 {
-	m_HUDGUI->DisplaySpectateText(event.PlayerName, true);
+	m_HUDGUI->DisplaySpectateText(event.PlayerName, event.IsSpectating);
 	return false;
 }
 

@@ -115,6 +115,9 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 				m_SpectatorIndex = 0;
 				m_InSpectateView = false;
 				m_pSpectatedPlayer = nullptr;
+
+				SpectatePlayerEvent event("", false);
+				EventQueue::SendEventImmediate(event);
 			}
 			else
 			{
@@ -177,7 +180,7 @@ void SpectateCameraSystem::SpectatePlayer()
 				Entity nextPlayer = m_pSpectatedPlayer->GetEntity();
 				parentComponent.Parent = nextPlayer;
 
-				SpectatePlayerEvent event(m_pSpectatedPlayer->GetName());
+				SpectatePlayerEvent event(m_pSpectatedPlayer->GetName(), true);
 				EventQueue::SendEventImmediate(event);
 			}
 		}
