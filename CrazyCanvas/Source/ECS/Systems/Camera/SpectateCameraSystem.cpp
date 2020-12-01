@@ -11,6 +11,8 @@
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 
+#include "Events/GameplayEvents.h"
+
 #include "Lobby/Player.h"
 
 #include "Lobby/PlayerManagerClient.h"
@@ -174,6 +176,9 @@ void SpectateCameraSystem::SpectatePlayer()
 
 				Entity nextPlayer = m_pSpectatedPlayer->GetEntity();
 				parentComponent.Parent = nextPlayer;
+
+				SpectatePlayerEvent event = SpectatePlayerEvent(m_pSpectatedPlayer->GetName());
+				EventQueue::SendEventImmediate(event);
 			}
 		}
 		else // spectate Flag

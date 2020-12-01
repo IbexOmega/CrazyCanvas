@@ -37,6 +37,7 @@ public:
 	bool OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event);
 	bool OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& event);
 	bool OnProjectileHit(const ProjectileHitEvent& event);
+	bool OnSpectatePlayerEvent(const SpectatePlayerEvent& event);
 	bool OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event);
 	bool OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event);
 	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);

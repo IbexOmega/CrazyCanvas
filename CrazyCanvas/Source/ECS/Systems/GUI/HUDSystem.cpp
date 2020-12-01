@@ -33,6 +33,7 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::UnregisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
@@ -102,6 +103,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::RegisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
@@ -357,7 +359,10 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 			}
 		}
 		else
+		{
 			m_HUDGUI->ShowHUD(true);
+			m_HUDGUI->DisplaySpecateText("", false);
+		}
 	}
 
 	return false;
@@ -448,6 +453,12 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 		}
 	}
 
+	return false;
+}
+
+bool HUDSystem::OnSpectatePlayerEvent(const SpectatePlayerEvent& event)
+{
+	m_HUDGUI->DisplaySpecateText(event.PlayerName, true);
 	return false;
 }
 

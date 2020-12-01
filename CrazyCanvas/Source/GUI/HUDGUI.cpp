@@ -391,6 +391,18 @@ void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSma
 	}
 }
 
+void HUDGUI::DisplaySpecateText(const LambdaEngine::String& name, bool isSpectating)
+{
+	if (isSpectating)
+	{
+		LambdaEngine::String spectateText = "Spectating " + name;
+		m_pSpectatePlayerText->SetText(spectateText.c_str());
+		m_pSpectatePlayerText->SetVisibility(Visibility::Visibility_Visible);
+	}
+	else
+		m_pSpectatePlayerText->SetVisibility(Visibility::Visibility_Hidden);
+}
+
 void HUDGUI::CancelSmallPrompt()
 {
 	PromptGUI* pPromptGUI = nullptr;
@@ -416,6 +428,8 @@ void HUDGUI::InitGUI()
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
+
+	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
 
 	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
 	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
