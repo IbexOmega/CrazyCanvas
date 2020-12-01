@@ -57,10 +57,10 @@ void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& killed, const Lambda
 	Noesis::Ptr<Noesis::TextBlock> feed			= *new Noesis::TextBlock();
 	Noesis::Ptr<Noesis::TextBlock> killedFeed	= *new Noesis::TextBlock();
 
-	Noesis::Ptr<Noesis::SolidColorBrush> pkillerFeedBrush = *new Noesis::SolidColorBrush();
-	Noesis::Ptr<Noesis::SolidColorBrush> pfeedBrush = *new Noesis::SolidColorBrush();
-	Noesis::Ptr<Noesis::SolidColorBrush> pkilledFeedBrush = *new Noesis::SolidColorBrush();
-	Noesis::Ptr<Noesis::SolidColorBrush> pStrokeBrush = *new Noesis::SolidColorBrush();
+	Noesis::Ptr<Noesis::SolidColorBrush> killerFeedBrush = *new Noesis::SolidColorBrush();
+	Noesis::Ptr<Noesis::SolidColorBrush> feedBrush = *new Noesis::SolidColorBrush();
+	Noesis::Ptr<Noesis::SolidColorBrush> killedFeedBrush = *new Noesis::SolidColorBrush();
+	Noesis::Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
 
 	uint8 killerPlayerIndex = killedPlayerTeamIndex == 0 ? 1 : 0;
 	uint8 killedPlayerIndex = killedPlayerTeamIndex == 0 ? 0 : 1;
@@ -73,18 +73,18 @@ void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& killed, const Lambda
 	Noesis::Color killedFeedColor(killedTeamColor.r, killedTeamColor.g, killedTeamColor.b);
 	Noesis::Color StrokeColor(Noesis::Color::Black());
 
-	pkillerFeedBrush->SetColor(killerFeedColor);
-	pfeedBrush->SetColor(feedColor);
-	pkilledFeedBrush->SetColor(killedFeedColor);
-	pStrokeBrush->SetColor(StrokeColor);
+	killerFeedBrush->SetColor(killerFeedColor);
+	feedBrush->SetColor(feedColor);
+	killedFeedBrush->SetColor(killedFeedColor);
+	strokeBrush->SetColor(StrokeColor);
 
 	killerFeed->SetText(killer.c_str());
 	feed->SetText(" killed ");
 	killedFeed->SetText(killed.c_str());
 
-	killerFeed->SetForeground(pkillerFeedBrush);
-	feed->SetForeground(pfeedBrush);
-	killedFeed->SetForeground(pkilledFeedBrush);
+	killerFeed->SetForeground(killerFeedBrush);
+	feed->SetForeground(feedBrush);
+	killedFeed->SetForeground(killedFeedBrush);
 
 	Noesis::Style* pStyle = FrameworkElement::FindResource<Noesis::Style>("KillFeedTextStyle");
 
