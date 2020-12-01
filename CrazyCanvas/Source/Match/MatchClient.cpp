@@ -352,6 +352,7 @@ void MatchClient::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, Lambda
 			}
 			case ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE:
 			{
+				LOG_INFO("Projectile hit killplane!");
 				m_pLevel->DeleteObject(otherEntity);
 				break;
 			}

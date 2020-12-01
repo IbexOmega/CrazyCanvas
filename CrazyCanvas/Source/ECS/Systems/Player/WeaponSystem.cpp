@@ -208,7 +208,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 			friendly = true;
 		}
 	}
-	else
+	else if (!MultiplayerUtils::IsServer())
 	{
 		// Play Level Hit Sound
 		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::SOUND_EFFECT_SPLASH0_3D_GUID);
