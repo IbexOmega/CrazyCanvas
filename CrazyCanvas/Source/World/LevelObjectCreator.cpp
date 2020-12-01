@@ -1,5 +1,4 @@
 #include "World/LevelObjectCreator.h"
-#include "World/KillPlane.h"
 #include "World/Level.h"
 
 #include "Audio/AudioAPI.h"
@@ -27,12 +26,16 @@
 
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
+#include "ECS/Systems/Match/ShowerSystemBase.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystemServer.h"
 #include "ECS/Components/Match/FlagComponent.h"
+#include "ECS/Components/Match/ShowerComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/GUI/ProjectedGUIComponent.h"
+#include "ECS/Components/Misc/DestructionComponent.h"
 
 #include "Teams/TeamHelper.h"
 
@@ -52,11 +55,16 @@
 #include "Multiplayer/Packet/PacketFlagEdited.h"
 #include "Multiplayer/Packet/PacketHealthChanged.h"
 #include "Multiplayer/Packet/PacketWeaponFired.h"
+#include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
 #include "Physics/CollisionGroups.h"
 
 #include "Lobby/PlayerManagerBase.h"
 #include "Lobby/PlayerManagerClient.h"
+
+#include "Resources/ResourceCatalog.h"
+
+#include "Match/Match.h"
 
 bool LevelObjectCreator::Init()
 {
@@ -118,6 +126,17 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateKillPlane;
 		}
+
+		//Shower
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_PARTICLE_SHOWER_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
+		}
 	}
 
 	//Register Create Special Object by Type Functions
@@ -127,48 +146,24 @@ bool LevelObjectCreator::Init()
 		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]	= &LevelObjectCreator::CreateProjectile;
 	}
 
-	//Load Object Resources
-	{
-		//Flag
-		{
-			ResourceManager::LoadMeshAndMaterialFromFile("Roller.glb", s_FlagMeshGUID, s_FlagCommonMaterialGUID, false);
-		}
-
-		//Player
-		{
-			ResourceManager::LoadMeshFromFile("Player/Idle.glb", s_PlayerMeshGUID, s_PlayerIdleGUIDs, false);
-
-#ifdef USE_ALL_ANIMATIONS
-			s_PlayerRunGUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
-			s_PlayerRunMirroredGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunMirrored.glb");
-			s_PlayerRunBackwardGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/RunBackward.glb");
-			s_PlayerRunBackwardMirroredGUIDs	= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.glb");
-			s_PlayerStrafeLeftGUIDs				= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
-			s_PlayerStrafeRightGUIDs			= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
-#endif
-
-			s_PlayerStepSoundGUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
-		}
-
-		//Weapon
-		{
-			ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", s_WeaponMeshGUID, s_WeaponMaterialGUID, false);
-		}
-	}
-
 	return true;
 }
 
 LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
-	const LambdaEngine::LoadedDirectionalLight& directionalLight, 
+	const LambdaEngine::LoadedDirectionalLight& directionalLight,
 	const glm::vec3& translation)
 {
+	UNREFERENCED_VARIABLE(directionalLight);
+	UNREFERENCED_VARIABLE(translation);
+
 	using namespace LambdaEngine;
 
 	Entity entity = UINT32_MAX;
-
+	/*
 	if (!MultiplayerUtils::IsServer())
 	{
+		// Can be good to keep if we want statiuc directional lights later
+		
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		DirectionalLightComponent directionalLightComponent =
@@ -181,9 +176,10 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::quatLookAt({directionalLight.Direction}, g_DefaultUp) });
 		pECS->AddComponent<DirectionalLightComponent>(entity, directionalLightComponent);
 
-		D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
+		LOG_DEBUG("Created Directional Light");
 	}
 
+	*/
 	return entity;
 }
 
@@ -206,7 +202,7 @@ LambdaEngine::Entity LevelObjectCreator::CreatePointLight(const LambdaEngine::Lo
 		pECS->AddComponent<PositionComponent>(entity, { true, (pointLight.Position + translation) });
 		pECS->AddComponent<PointLightComponent>(entity, pointLightComponent);
 
-		D_LOG_INFO("[LevelObjectCreator]: Created Point Light");
+		LOG_DEBUG("Created Point Light");
 	}
 
 	return entity;
@@ -232,9 +228,9 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 	Entity entity = pECS->CreateEntity();
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", meshPaintSize, meshPaintSize, false));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<MeshComponent>(entity, meshComponent);
-		pECS->AddComponent<RayTracedComponent>(entity, 
+		pECS->AddComponent<RayTracedComponent>(entity,
 			RayTracedComponent
 			{
 				.HitMask = 0xFF
@@ -278,7 +274,7 @@ ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object %s with prefix %s, no create function could be found", levelObject.Name.c_str(), levelObject.Prefix.c_str());
+		LOG_ERROR("Failed to create special object %s with prefix %s, no create function could be found", levelObject.Name.c_str(), levelObject.Prefix.c_str());
 		return ELevelObjectType::LEVEL_OBJECT_TYPE_NONE;
 	}
 }
@@ -286,18 +282,51 @@ ELevelObjectType LevelObjectCreator::CreateLevelObjectFromPrefix(
 bool LevelObjectCreator::CreateLevelObjectOfType(
 	ELevelObjectType levelObjectType,
 	const void* pData,
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities)
 {
+	using namespace LambdaEngine;
+
 	auto createFuncIt = s_LevelObjectByTypeCreateFunctions.find(levelObjectType);
+
+	TArray<TArray<std::tuple<String, bool, Entity>>> createdChildEntities;
 
 	if (createFuncIt != s_LevelObjectByTypeCreateFunctions.end())
 	{
-		return createFuncIt->second(pData, createdEntities, createdChildEntities);
+		bool success = createFuncIt->second(pData, createdEntities, createdChildEntities);
+
+		if (success)
+		{
+			if (!createdChildEntities.IsEmpty())
+			{
+				ECSCore* pECS = ECSCore::GetInstance();
+
+				for (uint32 e = 0; e < createdEntities.GetSize(); e++)
+				{
+					Entity parentEntity = createdEntities[e];
+					ChildComponent childComponent = {};
+					//If you crash here you havent pushed child entities for all entities created, its either all or none
+					TArray<std::tuple<String, bool, Entity>>& childEntities = createdChildEntities[e];
+
+					for (std::tuple<String, bool, Entity>& childEntityTuple : childEntities)
+					{
+						const String&	childTag		= std::get<0>(childEntityTuple);
+						bool			childAttached	= std::get<1>(childEntityTuple);
+						Entity			childEntity		= std::get<2>(childEntityTuple);
+
+						childComponent.AddChild(childTag, childEntity, true);
+						pECS->AddComponent<ParentComponent>(childEntity, ParentComponent{ .Parent = parentEntity, .Attached = childAttached, .DeleteParentOnRemoval = true });
+					}
+
+					pECS->AddComponent<ChildComponent>(parentEntity, childComponent);
+				}
+			}
+		}
+
+		return success;
 	}
 	else
 	{
-		LOG_ERROR("[LevelObjectCreator]: Failed to create special object, no create function could be found");
+		LOG_ERROR("Failed to create special object, no create function could be found");
 		return false;
 	}
 }
@@ -311,7 +340,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	if (levelObject.BoundingBoxes.GetSize() > 1 )
 	{
-		LOG_WARNING("[LevelObjectCreator]: Player Spawn can currently not be created with more than one mesh, using the first mesh...");
+		LOG_WARNING("Player Spawn can currently not be created with more than one mesh, using the first mesh...");
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -325,7 +354,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Player Spawn, defaulting to 0...");
+		LOG_ERROR("Team Index not found for Player Spawn, defaulting to 0...");
 		teamComponent.TeamIndex = 0;
 	}
 
@@ -337,12 +366,12 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 		if (!MultiplayerUtils::IsServer())
 		{
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
-			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "GeometryUnwrappedTexture", 256, 256, false));
+			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 			pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
 					.HitMask = 0xFF
 				});
 		}
-		
+
 		PhysicsSystem* pPhysicsSystem	= PhysicsSystem::GetInstance();
 		const CollisionCreateInfo collisionCreateInfo =
 		{
@@ -369,7 +398,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Spawn with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
+	LOG_DEBUG("Created Player Spawn with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN;
 }
 
@@ -379,7 +408,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 	if (levelObject.BoundingBoxes.GetSize() > 1)
 	{
-		LOG_WARNING("[LevelObjectCreator]: Player Jail can currently not be created with more than one mesh, using the first mesh...");
+		LOG_WARNING("Player Jail can currently not be created with more than one mesh, using the first mesh...");
 	}
 
 	ECSCore* pECS = ECSCore::GetInstance();
@@ -422,7 +451,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Player Jail with EntityID %u", entity);
+	LOG_DEBUG("Created Player Jail with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_JAIL;
 }
 
@@ -448,13 +477,13 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Flag Spawn with EntityID %u", entity);
+	LOG_DEBUG("Created Flag Spawn with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_SPAWN;
 }
 
 ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -464,7 +493,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	if (levelObject.BoundingBoxes.GetSize() > 1)
 	{
-		LOG_WARNING("[LevelObjectCreator]: Bases can currently not be created with more than one Bounding Box, using the first Bounding Box...");
+		LOG_WARNING("Bases can currently not be created with more than one Bounding Box, using the first Bounding Box...");
 	}
 
 	const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
@@ -480,7 +509,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Flag Delivery Point, defaulting to 0...");
+		LOG_ERROR("Team Index not found for Flag Delivery Point, defaulting to 0...");
 		teamComponent.TeamIndex = 0;
 	}
 
@@ -514,13 +543,13 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	createdEntities.PushBack(entity);
 
-	D_LOG_INFO("Created Base with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
+	LOG_DEBUG("Created Base with EntityID %u and Team Index %u", entity, teamComponent.TeamIndex);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT;
 }
 
 ELevelObjectType LevelObjectCreator::CreateKillPlane(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 	using namespace LambdaEngine;
@@ -543,7 +572,7 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 				.CollisionGroup		= FCollisionGroup::COLLISION_GROUP_STATIC,
 				.CollisionMask		= ~FCollisionGroup::COLLISION_GROUP_STATIC,
 				.EntityID			= entity,
-				.CallbackFunction	= &KillPlaneCallback
+				.CallbackFunction	= &Match::KillPlaneCallback
 			}
 		}
 	};
@@ -553,13 +582,89 @@ ELevelObjectType LevelObjectCreator::CreateKillPlane(
 	pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
 	createdEntities.PushBack(entity);
 
+	LOG_DEBUG("Created Kill Plane with EntityID %u", entity);
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_KILL_PLANE;
+}
+
+ELevelObjectType LevelObjectCreator::CreateShowerPoint(
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+	const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	const PositionComponent& positionComponent	= pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	const ScaleComponent& scaleComponent		= pECS->AddComponent<ScaleComponent>(entity, { true, levelObject.DefaultScale });
+	const RotationComponent& rotationComponent	= pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+
+	if (!MultiplayerUtils::IsServer())
+	{
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.Active = true,
+				.OneTime = false,
+				.Explosive = 0.5f,
+				.SpawnDelay = 0.05f,
+				.ParticleCount = 512,
+				.EmitterShape = EEmitterShape::CONE,
+				.Angle = 45.f,
+				.VelocityRandomness = 0.5f,
+				.Velocity = 2.0,
+				.Acceleration = 0.0,
+				.Gravity = -7.f,
+				.LifeTime = 1.2f,
+				.RadiusRandomness = 0.5f,
+				.BeginRadius = 0.2f,
+				.FrictionFactor = 0.f,
+				.Bounciness = 0.f,
+				.RandomStartIndex = true,
+				.AnimationCount = 1,
+				.FirstAnimationIndex = 6,
+				.Color = glm::vec4(0.0f, 0.5f, 1.0f, 1.f)
+			}
+		);
+	}
+	else
+	{
+		const BoundingBox& boundingBox = levelObject.BoundingBoxes[0];
+		const CollisionCreateInfo collisionCreateInfo =
+		{
+			.Entity		= entity,
+			.Position	= positionComponent,
+			.Scale		= scaleComponent,
+			.Rotation	= rotationComponent,
+			.Shapes =
+			{
+				{
+					/* Shape Type */		EShapeType::TRIGGER,
+					/* GeometryType */		EGeometryType::BOX,
+					/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
+					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
+					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					/* EntityID*/			entity,
+					/* CallbackFunction*/	&ShowerSystemBase::PlayerShowerCollision
+				}
+			},
+		};
+
+		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+		const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
+	}
+
+	createdEntities.PushBack(entity);
+	LOG_DEBUG("Created Particle Shower with EntityID %u", entity);
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_PARTICLE_SHOWER;
 }
 
 bool LevelObjectCreator::CreateFlag(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
+	LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities)
 {
 	UNREFERENCED_VARIABLE(createdChildEntities);
 
@@ -574,7 +679,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	Entity flagEntity = pECS->CreateEntity();
 
-	GUID_Lambda flagMaterialGUID = s_FlagCommonMaterialGUID;
+	GUID_Lambda flagMaterialGUID = ResourceCatalog::FLAG_COMMON_MATERIAL_GUID;
 
 	if (pFlagDesc->TeamIndex != UINT8_MAX)
 	{
@@ -588,7 +693,7 @@ bool LevelObjectCreator::CreateFlag(
 	const PositionComponent	positionComponent{ true, pFlagDesc->Position };
 	const ScaleComponent	scaleComponent{ true, pFlagDesc->Scale };
 	const RotationComponent	rotationComponent{ true, pFlagDesc->Rotation };
-	const MeshComponent		meshComponent{ s_FlagMeshGUID, flagMaterialGUID };
+	const MeshComponent		meshComponent{ ResourceCatalog::FLAG_MESH_GUID, flagMaterialGUID };
 	const ProjectedGUIComponent	projectedGUIComponent{ IndicatorTypeGUI::FLAG_INDICATOR };
 
 	pECS->AddComponent<FlagComponent>(flagEntity,			flagComponent);
@@ -602,8 +707,9 @@ bool LevelObjectCreator::CreateFlag(
 
 	ParentComponent parentComponent =
 	{
-		.Parent		= pFlagDesc->ParentEntity,
-		.Attached	= attachedToParent,
+		.Parent					= pFlagDesc->ParentEntity,
+		.Attached				= attachedToParent,
+		.DeleteParentOnRemoval	= false
 	};
 
 	OffsetComponent offsetComponent =
@@ -656,25 +762,25 @@ bool LevelObjectCreator::CreateFlag(
 			/* Scale */				scaleComponent,
 			/* Rotation */			rotationComponent,
 			{
-				{
+				{	// Triggers Flag-Player Collisions
 					/* Shape Type */		EShapeType::TRIGGER,
 					/* GeometryType */		EGeometryType::BOX,
 					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
 					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
 					/* EntityID*/			flagEntity,
-					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnPlayerFlagCollision, FlagSystemBase::GetInstance()),
+					/* CallbackFunction */	&FlagSystemBase::StaticOnPlayerFlagCollision,
 					/* UserData */			&flagPlayerColliderType,
 					/* UserDataSize */		sizeof(EFlagColliderType)
 				},
-				{
+				{	// Triggers Flag-Delivery Point Collisions
 					/* Shape Type */		EShapeType::SIMULATION,
 					/* GeometryType */		EGeometryType::BOX,
 					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
 					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
 					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
 					/* EntityID*/			flagEntity,
-					/* CallbackFunction */	std::bind_front(&FlagSystemBase::OnDeliveryPointFlagCollision, FlagSystemBase::GetInstance()),
+					/* CallbackFunction */& FlagSystemBase::StaticOnDeliveryPointFlagCollision,
 					/* UserData */			&flagDeliveryPointColliderType,
 					/* UserDataSize */		sizeof(EFlagColliderType)
 				},
@@ -693,14 +799,14 @@ bool LevelObjectCreator::CreateFlag(
 
 	createdEntities.PushBack(flagEntity);
 
-	D_LOG_INFO("Created Flag with EntityID %u and NetworkID %u", flagEntity, networkUID);
+	LOG_DEBUG("Created Flag with EntityID %u and NetworkID %u", flagEntity, networkUID);
 	return true;
 }
 
 bool LevelObjectCreator::CreatePlayer(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
+	LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities)
 {
 	if (pData == nullptr)
 		return false;
@@ -714,7 +820,7 @@ bool LevelObjectCreator::CreatePlayer(
 	ECSCore* pECS = ECSCore::GetInstance();
 	const Entity playerEntity = pECS->CreateEntity();
 	createdEntities.PushBack(playerEntity);
-	TArray<Entity>& childEntities = createdChildEntities.PushBack({});
+	TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>& childEntities = createdChildEntities.PushBack({});
 
 	const glm::quat lookDirQuat = glm::quatLookAt(pPlayerDesc->Forward, g_DefaultUp);
 
@@ -748,6 +854,7 @@ bool LevelObjectCreator::CreatePlayer(
 		.CollisionMask	= (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+						 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER |
 						 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
 		.EntityID		= playerEntity
 	};
@@ -761,29 +868,26 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
 
 	Entity weaponEntity = pECS->CreateEntity();
+	childEntities.PushBack(std::make_tuple("weapon", true, weaponEntity));
 	pECS->AddComponent<WeaponComponent>(weaponEntity, { .WeaponOwner = playerEntity });
 	pECS->AddComponent<PacketComponent<PacketWeaponFired>>(weaponEntity, { });
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 1.5f, 0.0f) });
-	pECS->AddComponent<ParentComponent>(weaponEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
 	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
-	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity, "WeaponUnwrappedTexture", 256, 256, false));
+	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity));
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
 	EntityMaskManager::AddExtensionToEntity(weaponEntity, PlayerRelatedComponent::Type(), nullptr);
 
-	ChildComponent playerChildComp;
-	playerChildComp.AddChild(weaponEntity, "weapon");
-
 	const bool readback = MultiplayerUtils::IsServer();
-	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity, "PlayerUnwrappedTexture", 512, 512, true, readback));
+	pECS->AddComponent<MeshPaintComponent>(playerEntity, MeshPaint::CreateComponent(playerEntity));
 
 	AnimationComponent animationComponent = {};
-	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(s_PlayerMeshGUID)->pSkeleton;
+	animationComponent.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::PLAYER_MESH_GUID)->pSkeleton;
 
 	AnimationGraph* pAnimationGraph = DBG_NEW AnimationGraph();
-	pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", s_PlayerIdleGUIDs[0]));
+	pAnimationGraph->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::PLAYER_IDLE_GUIDs[0]));
 	pAnimationGraph->TransitionToState("Idle");
 	animationComponent.pGraph = pAnimationGraph;
 
@@ -791,17 +895,17 @@ bool LevelObjectCreator::CreatePlayer(
 
 	GUID_Lambda playerMaterialGUID;
 
-	// Server/Client 
+	// Server/Client
 	int32 playerNetworkUID;
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		playerMaterialGUID = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam() ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamColorMaterialGUID(pPlayer->GetTeam());
+		playerMaterialGUID = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam() ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamPlayerMaterialGUID(pPlayer->GetTeam());
 
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
-				.MeshGUID = s_WeaponMeshGUID,
-				.MaterialGUID = s_WeaponMaterialGUID,
+				.MeshGUID = ResourceCatalog::WEAPON_MESH_GUID,
+				.MaterialGUID = ResourceCatalog::WEAPON_MATERIAL_GUID,
 			});
 
 		pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
@@ -818,15 +922,15 @@ bool LevelObjectCreator::CreatePlayer(
 		weaponNetworkUID = pPlayerDesc->WeaponNetworkUID;
 
 #ifdef USE_ALL_ANIMATIONS
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", s_PlayerRunGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", s_PlayerRunBackwardGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", s_PlayerStrafeRightGUIDs[0]));
-		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Left", s_PlayerStrafeLeftGUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Running", ResourceCatalog::PLAYER_RUN_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Run Backward", ResourceCatalog::PLAYER_RUN_BACKWARD_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Right", ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]));
+		pAnimationGraph->AddState(DBG_NEW AnimationState("Strafe Left", ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]));
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Left");
-			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			ClipNode* pRunning = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_MIRRORED_GUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -834,8 +938,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Running & Strafe Right");
-			ClipNode* pRunning = pAnimationState->CreateClipNode(s_PlayerRunGUIDs[0]);
-			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			ClipNode* pRunning = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_GUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunning, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -843,8 +947,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Left");
-			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardMirroredGUIDs[0]);
-			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(s_PlayerStrafeLeftGUIDs[0]);
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_BACKWARD_MIRRORED_GUIDs[0]);
+			ClipNode* pStrafeLeft = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_LEFT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeLeft, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -852,8 +956,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		{
 			AnimationState* pAnimationState = DBG_NEW AnimationState("Run Backward & Strafe Right");
-			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(s_PlayerRunBackwardGUIDs[0]);
-			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(s_PlayerStrafeRightGUIDs[0]);
+			ClipNode* pRunningBackward = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_RUN_BACKWARD_GUIDs[0]);
+			ClipNode* pStrafeRight = pAnimationState->CreateClipNode(ResourceCatalog::PLAYER_STRAFE_RIGHT_GUIDs[0]);
 			BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pStrafeRight, pRunningBackward, BlendInfo(0.5f));
 			pAnimationState->SetOutputNode(pBlendNode);
 			pAnimationGraph->AddState(pAnimationState);
@@ -948,7 +1052,7 @@ bool LevelObjectCreator::CreatePlayer(
 		{
 			SoundInstance3DDesc soundInstanceDesc = {};
 			soundInstanceDesc.pName			= "Step";
-			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(s_PlayerStepSoundGUID);
+			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
 			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
 			soundInstanceDesc.Position		= pPlayerDesc->Position;
 			soundInstanceDesc.Volume		= 1.0f;
@@ -968,7 +1072,7 @@ bool LevelObjectCreator::CreatePlayer(
 			if (pPlayerDesc->pCameraDesc == nullptr)
 			{
 				pECS->RemoveEntity(playerEntity);
-				LOG_ERROR("[LevelObjectCreator]: Local Player must have a camera description");
+				LOG_ERROR("Local Player must have a camera description");
 				return false;
 			}
 
@@ -980,11 +1084,10 @@ bool LevelObjectCreator::CreatePlayer(
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();
-			childEntities.PushBack(cameraEntity);
-			playerChildComp.AddChild(cameraEntity, "camera");
+			childEntities.PushBack(std::make_tuple("camera", true, cameraEntity));
 
 			//Todo: Better implementation for this somehow maybe?
-			const Mesh* pMesh = ResourceManager::GetMesh(s_PlayerMeshGUID);
+			const Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::PLAYER_MESH_GUID);
 			OffsetComponent offsetComponent = { .Offset = pPlayerDesc->Scale * glm::vec3(0.0f, 0.95f * pMesh->BoundingBox.Dimensions.y, 0.0f) };
 
 			pECS->AddComponent<OffsetComponent>(cameraEntity, offsetComponent);
@@ -1015,7 +1118,20 @@ bool LevelObjectCreator::CreatePlayer(
 				.FOV		= pPlayerDesc->pCameraDesc->FOVDegrees
 			};
 			pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
-			pECS->AddComponent<ParentComponent>(cameraEntity, ParentComponent{ .Parent = playerEntity, .Attached = true });
+			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
+
+			// Create Directional Light Component
+			DirectionalLightComponent directionalLightComponent =
+			{
+				.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
+				.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
+				.FrustumWidth	= 25.0f,
+				.FrustumHeight	= 15.0f,
+				.FrustumZNear	= -60.0f,
+				.FrustumZFar	= 10.0f
+			};
+
+			pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
 		}
 	}
 	else
@@ -1023,27 +1139,30 @@ bool LevelObjectCreator::CreatePlayer(
 		playerMaterialGUID = TeamHelper::GetMyTeamPlayerMaterialGUID();
 		playerNetworkUID = (int32)playerEntity;
 		weaponNetworkUID = (int32)weaponEntity;
+
+		const Timestamp	showerCooldown = Timestamp::Seconds(5.0f);
+		const ShowerComponent showerComponent{ EngineLoop::GetTimeSinceStart() + showerCooldown, showerCooldown };
+		pECS->AddComponent<ShowerComponent>(playerEntity, showerComponent);
 	}
 
 	pECS->AddComponent<MeshComponent>(playerEntity,
 		MeshComponent
 		{
-			.MeshGUID = s_PlayerMeshGUID,
+			.MeshGUID = ResourceCatalog::PLAYER_MESH_GUID,
 			.MaterialGUID = playerMaterialGUID
 		});
 
 	pECS->AddComponent<NetworkComponent>(playerEntity, { playerNetworkUID });
-	pECS->AddComponent<ChildComponent>(playerEntity, playerChildComp);
 	pECS->AddComponent<HealthComponent>(playerEntity, HealthComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, HealthComponent::Type(), nullptr);
 	pECS->AddComponent<PacketComponent<PacketHealthChanged>>(playerEntity, {});
-
+	pECS->AddComponent<PacketComponent<PacketResetPlayerTexture>>(playerEntity, {});
 	pECS->AddComponent<NetworkComponent>(weaponEntity, { weaponNetworkUID });
 
 	PlayerManagerBase::SetPlayerEntity(pPlayer, playerEntity);
 
-	D_LOG_INFO("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
-	D_LOG_INFO("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
+	LOG_DEBUG("Created Player with EntityID %d and NetworkID %d", playerEntity, playerNetworkUID);
+	LOG_DEBUG("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
 
 	return true;
 }
@@ -1051,7 +1170,7 @@ bool LevelObjectCreator::CreatePlayer(
 bool LevelObjectCreator::CreateProjectile(
 	const void* pData,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
-	LambdaEngine::TArray<LambdaEngine::TArray<LambdaEngine::Entity>>& createdChildEntities)
+	LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities)
 {
 	using namespace LambdaEngine;
 
@@ -1079,9 +1198,11 @@ bool LevelObjectCreator::CreateProjectile(
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
-	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition });
+	const glm::vec3 normVelocity = glm::normalize(desc.InitalVelocity);
+	const glm::vec3 projectileOffset = normVelocity * 0.5f;
+	PositionComponent& positionComponent = pECS->AddComponent<PositionComponent>(projectileEntity, { true, desc.FirePosition + projectileOffset });
 	ScaleComponent& scaleComponent = pECS->AddComponent<ScaleComponent>(projectileEntity, { true, glm::vec3(0.7f) });
-	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(glm::normalize(desc.InitalVelocity), g_DefaultUp) });
+	RotationComponent& rotationComponent = pECS->AddComponent<RotationComponent>(projectileEntity, { true, glm::quatLookAt(normVelocity, g_DefaultUp) });
 
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
@@ -1110,33 +1231,67 @@ bool LevelObjectCreator::CreateProjectile(
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshComponent>(projectileEntity, desc.MeshComponent );
+		glm::vec4 particleColor(1.0f);
+		if (desc.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
+		{
+			GUID_Lambda projectileMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(desc.TeamIndex);
+			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = projectileMaterialGUID });
+			particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
+		}
+		else
+		{
+			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
+			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
+		}
+
+		// Create particles
+		ParticleEmitterComponent emitterComponent = ParticleEmitterComponent{
+				.Active = true,
+				.OneTime = false,
+				.Explosive = 0.5f,
+				.SpawnDelay = 0.05f,
+				.ParticleCount = 64,
+				.EmitterShape = EEmitterShape::CONE,
+				.Angle = 90.f,
+				.VelocityRandomness = 0.5f,
+				.Velocity = 1.0,
+				.Acceleration = 0.0,
+				.Gravity = -7.f,
+				.LifeTime = 3.0f,
+				.RadiusRandomness = 0.5f,
+				.BeginRadius = 0.2f,
+				.FrictionFactor = 0.f,
+				.Bounciness = 0.f,
+				.RandomStartIndex = true,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 0,
+				.Color = particleColor,
+		};
+
+		// Create trail particles
+		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, emitterComponent);
+
+		// Create muzzle particles
+		{
+			emitterComponent.OneTime = true;
+			emitterComponent.ParticleCount = 64;
+			emitterComponent.BeginRadius = 0.1f;
+			emitterComponent.Explosive = 1.0f;
+			emitterComponent.SpawnDelay = 0.1f;
+			emitterComponent.Velocity = 6.0f;
+			emitterComponent.Angle = 45.0f;
+
+			const Entity particleEntity = pECS->CreateEntity();
+			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + projectileOffset });
+			pECS->AddComponent<ScaleComponent>(particleEntity, { true, glm::vec3(0.7f) });
+			pECS->AddComponent<RotationComponent>(particleEntity, { true, glm::quatLookAt(normVelocity, g_DefaultUp) });
+			pECS->AddComponent<DestructionComponent>(particleEntity, { .TimeLeft = 0.1f });
+			pECS->AddComponent<ParticleEmitterComponent>(particleEntity, emitterComponent);
+		}
+
 		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
 				.HitMask = 0x02
 			});
-
-		pECS->AddComponent<ParticleEmitterComponent>(projectileEntity, ParticleEmitterComponent{
-				.Active = true,
-				.OneTime = true,
-				.Explosive = 1.0f,
-				.ParticleCount = 64,
-				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 15.f,
-				.VelocityRandomness = 0.5f,
-				.Velocity = 10.0,
-				.Acceleration = 0.0,
-				.Gravity = -4.f,
-				.LifeTime = 2.0f,
-				.RadiusRandomness = 0.5f,
-				.BeginRadius = 0.1f,
-				.FrictionFactor = 0.f,
-				.Bounciness = 0.f,
-				.TileIndex = 14,
-				.AnimationCount = 1,
-				.FirstAnimationIndex = 14,
-				.Color = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f),
-			}
-		);
 	}
 
 	return true;

@@ -12,9 +12,11 @@ namespace LambdaEngine
 {
 	bool EntityMaskManager::Init()
 	{
+		s_RenderMaskComponentOwner.Init();
+
 		if (!s_Finalized)
 		{
-			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 1 }, false,	0x2);	// Bit = 0x2
+			BindTypeToExtensionDesc(MeshPaintComponent::Type(),		{ 0 }, false,	0x2);	// Bit = 0x2
 			BindTypeToExtensionDesc(PlayerLocalComponent::Type(),	{ 0 }, true,	0x4);	// Bit = 0x4
 			BindTypeToExtensionDesc(PlayerRelatedComponent::Type(),	{ 0 }, false,	0x8);	// Bit = 0x8
 		}
@@ -34,6 +36,8 @@ namespace LambdaEngine
 
 	void EntityMaskManager::AddExtensionToEntity(Entity entity, const ComponentType* pType, const DrawArgExtensionData* pDrawArgExtension)
 	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
 		bool inverted;
 		uint32 extensionFlag = GetExtensionFlag(pType, inverted);
 
@@ -82,12 +86,28 @@ namespace LambdaEngine
 
 		if (!inverted) 
 			groupEntry.Mask |= extensionFlag;
+
+		RenderMaskComponent renderMaskComponent;
+		if (pECS->GetComponentIf(entity, renderMaskComponent))
+		{
+			renderMaskComponent.Mask = groupEntry.Mask;
+		}
+		else
+		{
+			renderMaskComponent.Mask = groupEntry.Mask;
+			pECS->AddComponent<RenderMaskComponent>(entity, renderMaskComponent);
+		}
 	}
 
 	DrawArgExtensionGroup* EntityMaskManager::GetExtensionGroup(Entity entity)
 	{
-		VALIDATE(s_EntityToExtensionGroupEntryMap.contains(entity));
-		return &s_EntityToExtensionGroupEntryMap[entity].ExtensionGroup;
+		if (auto extensionGroupIt = s_EntityToExtensionGroupEntryMap.find(entity); 
+			extensionGroupIt != s_EntityToExtensionGroupEntryMap.end())
+		{
+			return &extensionGroupIt->second.ExtensionGroup;
+		}
+
+		return nullptr;
 	}
 
 	uint32 EntityMaskManager::FetchEntityMask(Entity entity)
@@ -154,5 +174,16 @@ namespace LambdaEngine
 	void EntityMaskManager::CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc)
 	{
 		memcpy(&dest, pSrc, sizeof(DrawArgExtensionData));
+	}
+
+	void EntityMaskManager::RenderMaskComponentOwner::Init()
+	{
+		SetComponentOwner<RenderMaskComponent>({ .Destructor = std::bind_front(&RenderMaskComponentOwner::RenderMaskComponentDestructor, this) });
+	}
+
+	void EntityMaskManager::RenderMaskComponentOwner::RenderMaskComponentDestructor(RenderMaskComponent& renderMaskComponent, Entity entity)
+	{
+		UNREFERENCED_VARIABLE(renderMaskComponent);
+		RemoveAllExtensionsFromEntity(entity);
 	}
 }

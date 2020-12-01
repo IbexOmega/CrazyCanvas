@@ -44,6 +44,7 @@ HealthCompute::~HealthCompute()
 		SAFERELEASE(m_pHealthBuffer);
 		SAFERELEASE(m_pCopyBuffer);
 		SAFERELEASE(m_pVertexCountBuffer);
+		SAFERELEASE(m_pStagingBuffer);
 	}
 
 	s_Healths.Clear();
@@ -206,6 +207,7 @@ void HealthCompute::Render(
 
 	UNREFERENCED_VARIABLE(backBufferIndex);
 	UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+	UNREFERENCED_VARIABLE(sleeping);
 
 	if (s_HealthsToCalculate.empty())
 		return;
@@ -217,7 +219,7 @@ void HealthCompute::Render(
 	pCommandList->Begin(nullptr);
 
 	m_PipelineContext.Bind(pCommandList);
-	// ResetHealthBuffer(pCommandList);
+	ResetHealthBuffer(pCommandList);
 
 	for (Entity entity : s_HealthsToCalculate)
 	{
@@ -512,16 +514,20 @@ void HealthCompute::ResetHealthBuffer(LambdaEngine::CommandList* pCommandList)
 {
 	using namespace LambdaEngine;
 
-	BufferDesc stagingBufferDesc	= {};
-	stagingBufferDesc.DebugName		= "Health System Server Health Reset Staging Buffer";
-	stagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-	stagingBufferDesc.SizeInBytes	= sizeof(uint32) * MAX_PLAYER_COUNT;
-	stagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_SRC;
-	Buffer* stagingBuffer			= RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
+	if (!m_pStagingBuffer)
+	{
+		BufferDesc stagingBufferDesc	= {};
+		stagingBufferDesc.DebugName		= "Health System Server Health Reset Staging Buffer";
+		stagingBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		stagingBufferDesc.SizeInBytes	= sizeof(uint32) * MAX_PLAYER_COUNT;
+		stagingBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_SRC;
+		m_pStagingBuffer				= RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
 
-	uint32* data = reinterpret_cast<uint32*>(stagingBuffer->Map());
-	ZERO_MEMORY(data, sizeof(uint32) * MAX_PLAYER_COUNT);
-	stagingBuffer->Unmap();
+		uint32* data = reinterpret_cast<uint32*>(m_pStagingBuffer->Map());
+		ZERO_MEMORY(data, sizeof(uint32) * MAX_PLAYER_COUNT);
+		m_pStagingBuffer->Unmap();
+	}
 
-	pCommandList->CopyBuffer(stagingBuffer, 0, m_pHealthBuffer, 0, sizeof(uint32) * MAX_PLAYER_COUNT);
+
+	pCommandList->CopyBuffer(m_pStagingBuffer, 0, m_pHealthBuffer, 0, sizeof(uint32) * MAX_PLAYER_COUNT);
 }

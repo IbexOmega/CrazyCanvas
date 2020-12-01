@@ -26,6 +26,8 @@
 
 #include "Game/GameConsole.h"
 
+#include "Resources/ResourceCatalog.h"
+
 /*
 * WeaponSystem
 */
@@ -121,7 +123,6 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 		playerTeam,
 		angle);
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
-	firedEvent.MeshComponent	= GetMeshComponent(ammoType, playerTeam);
 	EventQueue::SendEventImmediate(firedEvent);
 }
 
@@ -199,6 +200,10 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 	}
 	else
 	{
+		// Play Level Hit Sound
+		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::SOUND_EFFECT_SPLASH0_3D_GUID);
+		pSound->PlayOnceAt(collisionInfo1.Position, glm::vec3(0.0f), 0.15f, 1.0f);
+
 		levelHit = true;
 	}
 
@@ -226,7 +231,7 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 
 
-	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
+	constexpr const float PROJECTILE_INITAL_SPEED = 30.0f;
 
 	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
 	glm::quat playerRotation = playerRotationComponent.Quaternion;

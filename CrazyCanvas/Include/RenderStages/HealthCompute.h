@@ -94,6 +94,7 @@ private:
 	LambdaEngine::Buffer*	m_pHealthBuffer			= nullptr;
 	LambdaEngine::Buffer*	m_pCopyBuffer			= nullptr;
 	LambdaEngine::Buffer*	m_pVertexCountBuffer	= nullptr;
+	LambdaEngine::Buffer*	m_pStagingBuffer		= nullptr;
 
 	LambdaEngine::TArray<LambdaEngine::DescriptorSet*> m_DrawArgsDescriptorSets;
 

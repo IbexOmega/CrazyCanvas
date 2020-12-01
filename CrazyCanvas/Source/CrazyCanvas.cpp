@@ -7,6 +7,7 @@
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
 #include "Resources/ResourceManager.h"
+#include "Resources/ResourceCatalog.h"
 
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
@@ -15,6 +16,7 @@
 #include "RenderStages/PlayerRenderer.h"
 #include "RenderStages/MeshPaintUpdater.h"
 #include "RenderStages/HealthCompute.h"
+#include "RenderStages/FirstPersonWeaponRenderer.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -44,6 +46,10 @@
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/GameOverGUI.h"
+#include "GUI/EscapeMenuGUI.h"
+#include "GUI/PromptGUI.h"
+#include "GUI/KillFeedGUI.h"
+#include "GUI/ScoreBoardGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
@@ -65,13 +71,41 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
 
+	const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
+
 	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
 	{
-		ClientSystem::Init(pGameName);
+		ClientSystemDesc desc = {};
+		desc.Name					= pGameName;
+		desc.PoolSize				= 8196;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 3.0f;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(5);
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+
+		ClientSystem::Init(desc);
 	}
 	else if (stateStr == "server")
 	{
-		ServerSystem::Init(pGameName);
+		ServerSystemDesc desc = {};
+		desc.Name					= pGameName;
+		desc.PoolSize				= 8196;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 3.0f;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(5);
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+		desc.MaxClients				= 10;
+
+		ServerSystem::Init(desc);
+	}
+
+	if (!ResourceCatalog::Init())
+	{
+		LOG_ERROR("Failed to Load Resource Catalog Resources");
 	}
 
 	if (!RegisterGUIComponents())
@@ -106,12 +140,12 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	else
 	{
 		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
+		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
 	}
-
 
 	RenderSystem::GetInstance().InitRenderGraphs();
 
-	LoadRendererResources();
+	InitRendererResources();
 
 	if (stateStr == "crazycanvas")
 	{
@@ -180,15 +214,19 @@ bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
 	Noesis::RegisterComponent<GameOverGUI>();
+	Noesis::RegisterComponent<EscapeMenuGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
+	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
+	Noesis::RegisterComponent<KillFeedGUI>();
+	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
 	return true;
 }
 
-bool CrazyCanvas::LoadRendererResources()
+bool CrazyCanvas::InitRendererResources()
 {
 	using namespace LambdaEngine;
 
@@ -198,8 +236,8 @@ bool CrazyCanvas::LoadRendererResources()
 		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
 			"Skybox/daytime.hdr",
 			EFormat::FORMAT_R16G16B16A16_SFLOAT,
-			768,
-			false);
+			512,
+			true);
 
 		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
 		TextureView*	pCubeTextureView	= ResourceManager::GetTextureView(cubemapTexID);
@@ -217,10 +255,8 @@ bool CrazyCanvas::LoadRendererResources()
 
 	// For Mesh painting in RenderGraph
 	{
-		GUID_Lambda brushMaskID = ResourceManager::LoadTextureFromFile("MeshPainting/BrushMaskV3.png", EFormat::FORMAT_R8G8B8A8_UNORM, false, false);
-
-		Texture* pTexture = ResourceManager::GetTexture(brushMaskID);
-		TextureView* pTextureView = ResourceManager::GetTextureView(brushMaskID);
+		Texture* pTexture = ResourceManager::GetTexture(ResourceCatalog::BRUSH_MASK_GUID);
+		TextureView* pTextureView = ResourceManager::GetTextureView(ResourceCatalog::BRUSH_MASK_GUID);
 		Sampler* pNearestSampler = Sampler::GetNearestSampler();
 
 		ResourceUpdateDesc cubeTextureUpdateDesc = {};

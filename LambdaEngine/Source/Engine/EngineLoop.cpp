@@ -50,7 +50,7 @@
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
-#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
+#include "Game/ECS/ComponentOwners/Misc/InheritanceComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
 
@@ -101,26 +101,6 @@ namespace LambdaEngine
 				}
 			}
 		}
-	}
-
-	bool EngineLoop::InitComponentOwners()
-	{
-		if (!MeshPaintComponentOwner::GetInstance()->Init())
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	bool EngineLoop::ReleaseComponentOwners()
-	{
-		if (!MeshPaintComponentOwner::GetInstance()->Release())
-		{
-			return false;
-		}
-
-		return true;
 	}
 
 	bool EngineLoop::InitSystems()
@@ -187,6 +167,8 @@ namespace LambdaEngine
 		StateManager::GetInstance()->Tick(delta);
 		AudioSystem::GetInstance().Tick(delta);
 		ECSCore::GetInstance()->Tick(delta);
+
+		InheritanceComponentOwner::GetInstance()->Tick();
 
 		// Game
 		Game::Get().Tick(delta);
@@ -349,7 +331,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!InitComponentOwners())
+		if (!InheritanceComponentOwner::GetInstance()->Init())
 		{
 			return false;
 		}
@@ -425,12 +407,14 @@ namespace LambdaEngine
 		}
 
 		EventQueue::UnregisterAll();
-		ECSCore::Release();
 
-		if (!ReleaseComponentOwners())
+		//Needs to be released before ECSCore to prevent it from deleting parent/child entities
+		if (!InheritanceComponentOwner::GetInstance()->Release())
 		{
 			return false;
 		}
+
+		ECSCore::Release();
 
 		if (!ThreadPool::Release())
 		{

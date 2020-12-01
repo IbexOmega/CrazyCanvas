@@ -124,6 +124,36 @@
                 "unbounded_array": false,
                 "texture_type": "TEXTURE_2D"
             }
+        },
+        {
+            "name": "PLAYER_HEALTH_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "should_synchronize": true,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "VERTEX_COUNT_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "should_synchronize": true,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {}
+        },
+        {
+            "name": "HIT_POINTS_BUFFER",
+            "type": "BUFFER",
+            "back_buffer_bound": false,
+            "should_synchronize": true,
+            "sub_resource_count": 1,
+            "editable": true,
+            "external": true,
+            "type_params": {}
         }
     ],
     "resource_state_groups": [
@@ -183,6 +213,24 @@
                     "removable": false,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": ""
+                },
+                {
+                    "name": "PLAYER_HEALTH_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "VERTEX_COUNT_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
+                },
+                {
+                    "name": "HIT_POINTS_BUFFER",
+                    "removable": false,
+                    "binding_type": "CONSTANT_BUFFER",
+                    "src_stage": ""
                 }
             ]
         },
@@ -202,8 +250,8 @@
     },
     "render_stages": [
         {
-            "name": "RENDER_STAGE_MESH_UNWRAP",
-            "type": "GRAPHICS",
+            "name": "RENDER_STAGE_MESH_PAINT_UPDATER",
+            "type": "COMPUTE",
             "custom_renderer": true,
             "allow_overriding_of_binding_types": false,
             "trigger_type": "EVERY",
@@ -215,20 +263,8 @@
             "x_dim_var": 1.0,
             "y_dim_var": 1.0,
             "z_dim_var": 1.0,
-            "draw_type": "SCENE_INSTANCES",
-            "depth_test_enabled": false,
-            "alpha_blend_enabled": false,
-            "cull_mode": "CULL_MODE_BACK",
-            "polygon_mode": "POLYGON_MODE_FILL",
-            "primitive_topology": "PRIMITIVE_TOPOLOGY_TRIANGLE_LIST",
             "shaders": {
-                "task_shader": "",
-                "mesh_shader": "",
-                "vertex_shader": "",
-                "geometry_shader": "",
-                "hull_shader": "",
-                "domain_shader": "",
-                "pixel_shader": ""
+                "shader": ""
             },
             "resource_states": [
                 {
@@ -240,7 +276,7 @@
                     "src_stage": "EXTERNAL_RESOURCES"
                 },
                 {
-                    "name": "PER_FRAME_BUFFER",
+                    "name": "HIT_POINTS_BUFFER",
                     "removable": true,
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
@@ -253,6 +289,50 @@
                     "draw_args_include_mask": 1,
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                }
+            ]
+        },
+        {
+            "name": "COMPUTE_HEALTH",
+            "type": "COMPUTE",
+            "custom_renderer": true,
+            "allow_overriding_of_binding_types": true,
+            "trigger_type": "EVERY",
+            "frame_delay": 0,
+            "frame_offset": 0,
+            "x_dim_type": "RELATIVE",
+            "y_dim_type": "RELATIVE",
+            "z_dim_type": "CONSTANT",
+            "x_dim_var": 1.0,
+            "y_dim_var": 1.0,
+            "z_dim_var": 1.0,
+            "shaders": {
+                "shader": ""
+            },
+            "resource_states": [
+                {
+                    "name": "SCENE_DRAW_ARGS",
+                    "removable": true,
+                    "draw_args_include_mask": 32,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_R",
+                    "src_stage": "RENDER_STAGE_MESH_PAINT_UPDATER"
+                },
+                {
+                    "name": "PLAYER_HEALTH_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "UNORDERED_ACCESS_W",
+                    "src_stage": "EXTERNAL_RESOURCES"
+                },
+                {
+                    "name": "VERTEX_COUNT_BUFFER",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "CONSTANT_BUFFER",
                     "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]

@@ -21,11 +21,11 @@ namespace LambdaEngine
 	* Managed Shader Module
 	*/
 	ManagedShaderModule::operator ShaderModuleDesc() const noexcept
-	{ 
+	{
 		ShaderModuleDesc desc = {};
 		desc.pShader			= ResourceManager::GetShader(ShaderGUID);
 		desc.ShaderConstants	= ShaderConstants;
-		
+
 		return desc;
 	}
 
@@ -36,7 +36,7 @@ namespace LambdaEngine
 	{
 		GraphicsPipelineStateDesc desc = { };
 		desc.DebugName			= DebugName;
-		
+
 		desc.InputAssembly		= InputAssembly;
 		desc.InputLayout		= InputLayout;
 		desc.DepthStencilState	= DepthStencilState;
@@ -49,17 +49,17 @@ namespace LambdaEngine
 
 		desc.pRenderPass		= RenderPass.Get();
 		desc.pPipelineLayout	= PipelineLayout.Get();
-		
+
 		// Vertex-Shader Pipeline
 		desc.VertexShader		= VertexShader;
 		desc.HullShader			= HullShader;
 		desc.DomainShader		= DomainShader;
 		desc.GeometryShader		= GeometryShader;
-		
+
 		// Mesh-Shader Pipeline
 		desc.MeshShader			= MeshShader;
 		desc.TaskShader			= TaskShader;
-		
+
 		// Common-Shader Pipeline
 		desc.PixelShader		= PixelShader;
 
@@ -75,7 +75,7 @@ namespace LambdaEngine
 		desc.DebugName			= DebugName;
 		desc.pPipelineLayout	= PipelineLayout.Get();
 		desc.Shader				= Shader;
-		
+
 		return desc;
 	}
 
@@ -89,7 +89,7 @@ namespace LambdaEngine
 		desc.MaxRecursionDepth	= MaxRecursionDepth;
 		desc.RaygenShader		= RaygenShader;
 		desc.pPipelineLayout	= PipelineLayout.Get();
-		
+
 		desc.MissShaders.Resize(MissShaders.GetSize());
 		for (uint32 i = 0; i < MissShaders.GetSize(); i++)
 		{
@@ -136,14 +136,14 @@ namespace LambdaEngine
 		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateGraphicsPipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
-			uint64 pipelineIndex = s_CurrentPipelineIndex++;
-			s_GraphicsPipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			s_GraphicsPipelineStateDescriptions[pipelineIndex]	= *pDesc;
 			s_PipelineStates[pipelineIndex] 					= pPipelineState;
 			return pipelineIndex;
 		}
 		else
 		{
-			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
@@ -154,14 +154,14 @@ namespace LambdaEngine
 		PipelineState* pPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
-			uint64 pipelineIndex = s_CurrentPipelineIndex++;
-			s_ComputePipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			s_ComputePipelineStateDescriptions[pipelineIndex]	= *pDesc;
 			s_PipelineStates[pipelineIndex] 					= pPipelineState;
 			return pipelineIndex;
 		}
 		else
 		{
-			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
@@ -172,14 +172,14 @@ namespace LambdaEngine
 		PipelineState*	pPipelineState	= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 		if (pPipelineState)
 		{
-			uint64 pipelineIndex = s_CurrentPipelineIndex++;
-			s_RayTracingPipelineStateDescriptions[pipelineIndex] 	= *pDesc;
+			const uint64 pipelineIndex = s_CurrentPipelineIndex++;
+			s_RayTracingPipelineStateDescriptions[pipelineIndex]	= *pDesc;
 			s_PipelineStates[pipelineIndex] 						= pPipelineState;
 			return pipelineIndex;
 		}
 		else
 		{
-			D_LOG_ERROR("[PipelineStateManager]: PipelineState is nullptr");
+			LOG_DEBUG("PipelineState is nullptr");
 			return 0;
 		}
 	}
@@ -190,12 +190,12 @@ namespace LambdaEngine
 		if (it != s_PipelineStates.end())
 		{
 			VALIDATE(it->second != nullptr);
-			
+
 			switch (it->second->GetType())
 			{
-			case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:			s_GraphicsPipelineStateDescriptions.erase(id);		break;
-			case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:			s_ComputePipelineStateDescriptions.erase(id);		break;
-			case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:		s_RayTracingPipelineStateDescriptions.erase(id);	break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		s_GraphicsPipelineStateDescriptions.erase(id);		break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		s_ComputePipelineStateDescriptions.erase(id);		break;
+			case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	s_RayTracingPipelineStateDescriptions.erase(id);	break;
 			}
 
 			s_PipelineStates.erase(id);
@@ -224,16 +224,15 @@ namespace LambdaEngine
 		for (auto it = s_PipelineStates.begin(); it != s_PipelineStates.end(); it++)
 		{
 			PipelineState* pNewPipelineState = nullptr;
-			
 			VALIDATE(it->second != nullptr);
-			
+
 			switch (it->second->GetType())
 			{
 				case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:
 				{
 					const ManagedGraphicsPipelineStateDesc* pPipelineDesc = &s_GraphicsPipelineStateDescriptions[it->first];
 					GraphicsPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
-					
+
 					pNewPipelineState = RenderAPI::GetDevice()->CreateGraphicsPipelineState(&pipelineDesc);
 					break;
 				}
@@ -241,7 +240,7 @@ namespace LambdaEngine
 				{
 					const ManagedComputePipelineStateDesc* pPipelineDesc = &s_ComputePipelineStateDescriptions[it->first];
 					ComputePipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
-					
+
 					pNewPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
 					break;
 				}
@@ -250,7 +249,7 @@ namespace LambdaEngine
 					const ManagedRayTracingPipelineStateDesc* pPipelineDesc = &s_RayTracingPipelineStateDescriptions[it->first];
 					RayTracingPipelineStateDesc pipelineDesc = pPipelineDesc->GetDesc();
 
-					pNewPipelineState			= RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
+					pNewPipelineState = RenderAPI::GetDevice()->CreateRayTracingPipelineState(&pipelineDesc);
 					break;
 				}
 			}

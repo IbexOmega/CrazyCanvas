@@ -16,9 +16,10 @@ namespace LambdaEngine
 	uint32 PacketManagerBase::EnqueueSegmentReliable(NetworkSegment* pSegment, IPacketListener* pListener)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockSegmentsToSend);
+		ASSERT(pSegment != nullptr);
 		uint32 reliableUID = m_Statistics.RegisterReliableSegmentSent();
 		uint32 UID = EnqueueSegment(pSegment, reliableUID);
-		m_SegmentsWaitingForAck.insert({ reliableUID, SegmentInfo{ pSegment, pListener, EngineLoop::GetTimeSinceStart()} });
+		m_SegmentsWaitingForAck.insert({ reliableUID, SegmentInfo{ pSegment, pListener, UINT64_MAX, 0} });
 		return UID;
 	}
 
@@ -30,7 +31,7 @@ namespace LambdaEngine
 
 	uint32 PacketManagerBase::EnqueueSegment(NetworkSegment* pSegment, uint32 reliableUID)
 	{
-		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment();
+		pSegment->GetHeader().UID = m_Statistics.RegisterUniqueSegment(pSegment->GetType());
 		pSegment->GetHeader().ReliableUID = reliableUID;
 		InsertSegment(pSegment);
 		return pSegment->GetHeader().UID;
@@ -53,19 +54,24 @@ namespace LambdaEngine
 
 		m_QueueIndex = (m_QueueIndex + 1) % 2;
 
-		Timestamp timestamp = EngineLoop::GetTimeSinceStart();
-
 		while (!segments.empty())
 		{
 			Bundle bundle;
-			uint32 bundleUID = pTransceiver->Transmit(&m_SegmentPool, segments, bundle.ReliableUIDs, m_IPEndPoint, &m_Statistics);
+			uint32 seq = pTransceiver->Transmit(&m_SegmentPool, segments, bundle.ReliableUIDs, m_IPEndPoint, &m_Statistics);
 
 			if (!bundle.ReliableUIDs.empty())
 			{
-				bundle.Timestamp = timestamp;
-
 				std::scoped_lock<SpinLock> lock2(m_LockBundles);
-				m_Bundles.insert({ bundleUID, bundle });
+
+				bundle.Timestamp = EngineLoop::GetTimeSinceStart();
+
+				for (uint32 reliableID : bundle.ReliableUIDs)
+				{
+					m_SegmentsWaitingForAck[reliableID].LastSent = bundle.Timestamp;
+				}
+
+				m_Bundles.insert({ seq, bundle });
+				//LOG_WARNING("Adding bundle with SEQ: %d", seq);
 			}
 		}
 	}
@@ -81,12 +87,12 @@ namespace LambdaEngine
 
 	void PacketManagerBase::DeleteOldBundles()
 	{
-		Timestamp maxAllowedTime = m_Statistics.GetPing() * 100;
-		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
+		static const Timestamp& maxAllowedTime = Timestamp::Seconds(2);
 
 		TArray<uint32> bundlesToDelete;
 
 		std::scoped_lock<SpinLock> lock(m_LockBundles);
+		Timestamp currentTime = EngineLoop::GetTimeSinceStart();
 		for (auto& pair : m_Bundles)
 		{
 			if (currentTime - pair.second.Timestamp > maxAllowedTime)
@@ -95,8 +101,11 @@ namespace LambdaEngine
 			}
 		}
 
-		for (uint32 UID : bundlesToDelete)
-			m_Bundles.erase(UID);
+		for (uint32 seq : bundlesToDelete)
+		{
+			//LOG_WARNING("Removing bundle with SEQ: %d", seq);
+			m_Bundles.erase(seq);
+		}
 	}
 
 	void PacketManagerBase::Tick(Timestamp delta)
@@ -114,6 +123,11 @@ namespace LambdaEngine
 	SegmentPool* PacketManagerBase::GetSegmentPool()
 	{
 		return &m_SegmentPool;
+	}
+
+	NetworkStatistics* PacketManagerBase::GetStatistics()
+	{
+		return &m_Statistics;
 	}
 
 	const NetworkStatistics* PacketManagerBase::GetStatistics() const
@@ -148,7 +162,7 @@ namespace LambdaEngine
 	bool PacketManagerBase::QueryBegin(PacketTransceiverBase* pTransceiver, TArray<NetworkSegment*>& segmentsReturned, bool& hasDiscardedResends)
 	{
 		TArray<NetworkSegment*> segments;
-		TArray<uint32> acks;
+		TSet<uint32> acks;
 
 		if (!pTransceiver->ReceiveEnd(&m_SegmentPool, segments, acks, &m_Statistics))
 			return false;
@@ -156,11 +170,8 @@ namespace LambdaEngine
 		segmentsReturned.Clear();
 		segmentsReturned.Reserve(segments.GetSize());
 
-		//LOG_MESSAGE("PING %fms", GetStatistics()->GetPing().AsMilliSeconds());
-
 		HandleAcks(acks);
-		hasDiscardedResends = FindSegmentsToReturn(segments, segmentsReturned);
-		return true;
+		return FindSegmentsToReturn(segments, segmentsReturned, hasDiscardedResends);
 	}
 
 	/*
@@ -168,7 +179,7 @@ namespace LambdaEngine
 	* Notifies the listener that the packet was succesfully delivered.
 	* Removes the packet and returns it to the pool.
 	*/
-	void PacketManagerBase::HandleAcks(const TArray<uint32>& ackedPackets)
+	void PacketManagerBase::HandleAcks(const TSet<uint32>& ackedPackets)
 	{
 		TArray<uint32> ackedReliableUIDs;
 		GetReliableUIDsFromAckedPackets(ackedPackets, ackedReliableUIDs);
@@ -204,7 +215,7 @@ namespace LambdaEngine
 	/*
 	* Finds all Reliable Segment UIDs corresponding to the acks from physical packets
 	*/
-	void PacketManagerBase::GetReliableUIDsFromAckedPackets(const TArray<uint32>& ackedPackets, TArray<uint32>& ackedReliableUIDs)
+	void PacketManagerBase::GetReliableUIDsFromAckedPackets(const TSet<uint32>& ackedPackets, TArray<uint32>& ackedReliableUIDs)
 	{
 		ackedReliableUIDs.Reserve(128);
 		std::scoped_lock<SpinLock> lock(m_LockBundles);
@@ -224,9 +235,13 @@ namespace LambdaEngine
 				m_Bundles.erase(iterator);
 				timestamps++;
 			}
+			/*else
+			{
+				LOG_WARNING("Could not find bundle with SEQ: %d", ack);
+			}*/
 		}
 
-		if (timestamp != 0)
+		if (timestamps > 0)
 		{
 			timestamp /= timestamps;
 			RegisterRTT(EngineLoop::GetTimeSinceStart() - timestamp);
@@ -251,8 +266,8 @@ namespace LambdaEngine
 
 	void PacketManagerBase::RegisterRTT(Timestamp rtt)
 	{
-		static const double scalar1 = 1.0f / 5.0f;
-		static const double scalar2 = 1.0f - scalar1;
-		m_Statistics.m_Ping = (uint64)((rtt.AsNanoSeconds() * scalar1) + (m_Statistics.GetPing().AsNanoSeconds() * scalar2));
+		static constexpr float64 scalar1 = 1.0 / 20.0;
+		static constexpr float64 scalar2 = 1.0 - scalar1;
+		m_Statistics.m_Ping = rtt.AsMilliSeconds() * scalar1 + m_Statistics.GetPing() * scalar2;
 	}
 }

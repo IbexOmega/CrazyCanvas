@@ -1,0 +1,45 @@
+#version 460
+#extension GL_GOOGLE_include_directive : enable
+#extension GL_EXT_shader_explicit_arithmetic_types : enable
+
+#include "../Helpers.glsl"
+#include "MCTables.glsl"
+
+#define GOO_FACTOR 1.06
+
+layout(local_size_x_id = 0, local_size_y = 1, local_size_z = 1) in;
+
+layout(push_constant) uniform PushConstants
+{
+	vec4 SpherePositions[SPHERES_PER_GRID];
+	uint GridWidth; // The grid is cubic, i.e. the corner count is GridWidth^3
+} u_PC;
+
+layout(binding = 0, set = 0) restrict writeonly buffer Densities
+{
+	float Val[];
+} b_Densities;
+
+void main()
+{
+	const uint threadID = gl_GlobalInvocationID.x;
+	const uint gridWidthSquared = u_PC.GridWidth * u_PC.GridWidth;
+	if (threadID >= gridWidthSquared * u_PC.GridWidth)
+	{
+		return;
+	}
+
+	// Use threadID to calculate the corner's position
+	const uvec3 cellID = { threadID % u_PC.GridWidth, (threadID / u_PC.GridWidth) % u_PC.GridWidth, threadID / gridWidthSquared };
+	const vec3 position = cellID / vec3(float(u_PC.GridWidth - 1));
+
+	float density = 0.0;
+	for (uint sphereIdx = 0; sphereIdx < SPHERES_PER_GRID; sphereIdx++)
+	{
+		const vec4 positionRadius = u_PC.SpherePositions[sphereIdx];
+		const vec3 distanceVec = position - positionRadius.xyz;
+		density += (positionRadius.w * positionRadius.w) / pow(dot(distanceVec, distanceVec), GOO_FACTOR);
+	}
+
+	b_Densities.Val[threadID] = density;
+}

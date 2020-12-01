@@ -25,6 +25,7 @@ public:
 	~SavedServerGUI();
 
 	void AddServer(Noesis::Grid* pParentGrid, ServerInfo& serverInfo);
+	void RemoveServer(ServerInfo& serverInfo);
 	
 	void UpdateServerInfo(const ServerInfo& serverInfo);
 

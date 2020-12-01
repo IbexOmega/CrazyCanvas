@@ -8,6 +8,7 @@
 #include "Rendering/RenderAPI.h"
 #include "Multiplayer/ClientHelper.h"
 #include "Multiplayer/ServerHelper.h"
+#include "RenderStages/MeshPaintUpdater.h"
 
 /*
 * MeshPaintHandler
@@ -65,6 +66,8 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 {
 	using namespace LambdaEngine;
 
+	UNREFERENCED_VARIABLE(delta);
+
 	// To ensure the hit point is added in the main thread to the render graph
 	// it is done in the tick function.
 
@@ -76,7 +79,7 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		UnwrapData dummyData = {};
 		dummyData.TargetPosition.w = 0.f;
-		size_t size = sizeof(UnwrapData);
+		uint32 size = uint32(sizeof(UnwrapData));
 		for (uint32 i = 0; i < 10; i++)
 		{
 			uint32 step = i * size;
@@ -145,8 +148,9 @@ void MeshPaintHandler::ResetClient()
 
 void MeshPaintHandler::ResetServer(LambdaEngine::Entity entity)
 {
-	// s_ServerResets.EmplaceBack(entity);
-	LOG_WARNING("[MeshPaintHandler]: Reseting entities on server is currently not implmeneted with vertex painting!");
+	using namespace LambdaEngine;
+
+	MeshPaintUpdater::ClearServer(entity);
 }
 
 bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEvent)

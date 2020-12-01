@@ -22,13 +22,25 @@ public:
 	virtual void OnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 	virtual void OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1) = 0;
 
+	static void StaticOnPlayerFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+	{
+		VALIDATE(s_pInstance != nullptr);
+		s_pInstance->OnPlayerFlagCollision(entity0, entity1);
+	}
+
+	static void StaticOnDeliveryPointFlagCollision(LambdaEngine::Entity entity0, LambdaEngine::Entity entity1)
+	{
+		VALIDATE(s_pInstance != nullptr);
+		s_pInstance->OnDeliveryPointFlagCollision(entity0, entity1);
+	}
+
 protected:
-	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
+	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
 	{
 		UNREFERENCED_VARIABLE(componentAccesses);
 	}
 
-	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
+	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
 	{
 		UNREFERENCED_VARIABLE(componentAccesses);
 	}
@@ -37,22 +49,22 @@ protected:
 	virtual void FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
 public:
-	FORCEINLINE static FlagSystemBase* GetInstance() 
-	{ 
-		return s_Instance; 
+	FORCEINLINE static FlagSystemBase* GetInstance()
+	{
+		return s_pInstance;
 	}
 
 protected:
 	static void CalculateAttachedFlagPosition(
-		glm::vec3& flagPosition, 
-		glm::quat& flagRotation, 
-		const glm::vec3& flagOffset, 
-		const glm::vec3& parentPosition, 
+		glm::vec3& flagPosition,
+		glm::quat& flagRotation,
+		const glm::vec3& flagOffset,
+		const glm::vec3& parentPosition,
 		const glm::quat parentRotation);
 
 protected:
 	LambdaEngine::IDVector m_Flags;
 
 private:
-	inline static FlagSystemBase* s_Instance = nullptr;
+	inline static FlagSystemBase* s_pInstance = nullptr;
 };

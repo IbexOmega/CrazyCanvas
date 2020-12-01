@@ -134,23 +134,23 @@ namespace LambdaEngine
 		// Application and instance
 		if (!InitInstance(pDesc))
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Instance could not be initialized!");
+			LOG_ERROR("Vulkan Instance could not be initialized!");
 			return false;
 		}
 		else
 		{
-			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Instance initialized!");
+			LOG_MESSAGE("Vulkan Instance initialized!");
 		}
 
 		// Logical and physical device
 		if (!InitDevice(pDesc))
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Vulkan Device could not be initialized!");
+			LOG_ERROR("Vulkan Device could not be initialized!");
 			return false;
 		}
 		else
 		{
-			LOG_MESSAGE("[GraphicsDeviceVK]: Vulkan Device initialized!");
+			LOG_MESSAGE("Vulkan Device initialized!");
 		}
 
 		// FrameBufferCache
@@ -159,12 +159,12 @@ namespace LambdaEngine
 		// Allocators
 		if (!InitAllocators())
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Could not create deviceallocators!");
+			LOG_ERROR("Could not create deviceallocators!");
 			return false;
 		}
 		else
 		{
-			LOG_MESSAGE("[GraphicsDeviceVK]: Created vulkan allocators!");
+			LOG_MESSAGE("Created vulkan allocators!");
 		}
 
 		// Setup desc
@@ -172,10 +172,10 @@ namespace LambdaEngine
 		m_Desc				= *pDesc;
 		m_Desc.RenderApi	= "Vulkan";
 		m_Desc.AdapterName	= properties.deviceName;
-		m_Desc.ApiVersion	= 
-			std::to_string(VK_VERSION_MAJOR(properties.apiVersion)) + "." + 
+		m_Desc.ApiVersion	=
+			std::to_string(VK_VERSION_MAJOR(properties.apiVersion)) + "." +
 			std::to_string(VK_VERSION_MINOR(properties.apiVersion)) + "." +
-			std::to_string(VK_VERSION_PATCH(properties.apiVersion)) + "(" + 
+			std::to_string(VK_VERSION_PATCH(properties.apiVersion)) + "(" +
 			std::to_string(properties.apiVersion) + ")";
 		m_Desc.DriverVersion =
 			std::to_string(VK_VERSION_MAJOR(properties.driverVersion)) + "." +
@@ -252,7 +252,7 @@ namespace LambdaEngine
 	{
 		VALIDATE(m_pTextureAllocator != nullptr);
 		VALIDATE(pAllocation != nullptr);
-		
+
 		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
 		if (alignedSize >= LARGE_TEXTURE_ALLOCATION_SIZE)
 		{
@@ -292,7 +292,7 @@ namespace LambdaEngine
 		if (pAllocation->pBlock != nullptr)
 		{
 			DeviceAllocatorVK* pAllocator = pAllocation->pAllocator;
-			
+
 			VALIDATE(pAllocator != nullptr);
 			VALIDATE(pAllocator != m_pTextureAllocator);
 
@@ -313,7 +313,7 @@ namespace LambdaEngine
 		if (pAllocation->pBlock != nullptr)
 		{
 			DeviceAllocatorVK* pAllocator = pAllocation->pAllocator;
-			
+
 			VALIDATE(pAllocator != nullptr);
 			VALIDATE(pAllocator != m_pTextureAllocator);
 
@@ -344,11 +344,11 @@ namespace LambdaEngine
 		if (result == VK_SUCCESS)
 		{
 			m_UsedAllocations++;
-			D_LOG_INFO("[GraphicsDeviceVK]: Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+			LOG_DEBUG("Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 		}
 		else
 		{
-			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to allocate memory");
+			LOG_VULKAN_ERROR(result, "Failed to allocate memory");
 		}
 
 		return result;
@@ -361,7 +361,7 @@ namespace LambdaEngine
 		vkFreeMemory(Device, deviceMemory, nullptr);
 
 		m_UsedAllocations--;
-		D_LOG_INFO("[GraphicsDeviceVK]: Freed memoryblock. Allocations %u/%u", m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+		LOG_DEBUG("Freed memoryblock. Allocations %u/%u", m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 	}
 
 	void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
@@ -1015,14 +1015,14 @@ namespace LambdaEngine
 		{
 			if (!SetEnabledValidationLayers())
 			{
-				LOG_ERROR("[GraphicsDeviceVK]: Validation Layers not supported");
+				LOG_ERROR("Validation Layers not supported");
 				return false;
 			}
 		}
 
 		if (!SetEnabledInstanceExtensions())
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Required Instance Extensions not supported");
+			LOG_ERROR("Required Instance Extensions not supported");
 			return false;
 		}
 
@@ -1036,7 +1036,7 @@ namespace LambdaEngine
 		appInfo.engineVersion		= VK_MAKE_VERSION(1, 0, 0);
 		appInfo.apiVersion			= VK_API_VERSION_1_2;
 
-		LOG_MESSAGE("[GraphicsDeviceVK]: Requsted API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(appInfo.apiVersion), VK_VERSION_MINOR(appInfo.apiVersion), VK_VERSION_PATCH(appInfo.apiVersion), appInfo.apiVersion);
+		LOG_MESSAGE("Requsted API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(appInfo.apiVersion), VK_VERSION_MINOR(appInfo.apiVersion), VK_VERSION_PATCH(appInfo.apiVersion), appInfo.apiVersion);
 
 		VkInstanceCreateInfo instanceCreateInfo = {};
 		instanceCreateInfo.sType					= VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -1083,7 +1083,7 @@ namespace LambdaEngine
 		VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &Instance);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to create Vulkan Instance!");
+			LOG_VULKAN_ERROR(result, "Failed to create Vulkan Instance!");
 			return false;
 		}
 
@@ -1099,7 +1099,7 @@ namespace LambdaEngine
 			result = vkCreateDebugUtilsMessengerEXT(Instance, &createInfo, nullptr, &m_DebugMessenger);
 			if (result != VK_SUCCESS)
 			{
-				LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to set up Debug Messenger!");
+				LOG_VULKAN_ERROR(result, "Failed to set up Debug Messenger!");
 				return false;
 			}
 		}
@@ -1111,13 +1111,13 @@ namespace LambdaEngine
 	{
 		if (!InitPhysicalDevice())
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Could not initialize Physical Device!");
+			LOG_ERROR("Could not initialize Physical Device!");
 			return false;
 		}
 
 		if (!InitLogicalDevice(pDesc))
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Could not initialize Logical Device!");
+			LOG_ERROR("Could not initialize Logical Device!");
 			return false;
 		}
 
@@ -1138,7 +1138,7 @@ namespace LambdaEngine
 		vkEnumeratePhysicalDevices(Instance, &deviceCount, nullptr);
 		if (deviceCount == 0)
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: No Vulkan supported devices found");
+			LOG_ERROR("No Vulkan supported devices found");
 			return false;
 		}
 
@@ -1155,7 +1155,7 @@ namespace LambdaEngine
 		// Check if the best candidate is suitable at all
 		if (physicalDeviceCandidates.rbegin()->first <= 0)
 		{
-			LOG_ERROR("[GraphicsDeviceVK]: Failed to find a suitable GPU!");
+			LOG_ERROR("Failed to find a suitable GPU!");
 			return false;
 		}
 
@@ -1176,8 +1176,8 @@ namespace LambdaEngine
 		vkGetPhysicalDeviceFeatures(PhysicalDevice, &m_DeviceFeaturesVk);
 
 
-		LOG_MESSAGE("[GraphicsDeviceVK]: Chosen device: %s", deviceProperties.deviceName);
-		LOG_MESSAGE("[GraphicsDeviceVK]: API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(deviceProperties.apiVersion), VK_VERSION_MINOR(deviceProperties.apiVersion), VK_VERSION_PATCH(deviceProperties.apiVersion), deviceProperties.apiVersion);
+		LOG_MESSAGE("Chosen device: %s", deviceProperties.deviceName);
+		LOG_MESSAGE("API Version: %u.%u.%u (%u)", VK_VERSION_MAJOR(deviceProperties.apiVersion), VK_VERSION_MINOR(deviceProperties.apiVersion), VK_VERSION_PATCH(deviceProperties.apiVersion), deviceProperties.apiVersion);
 		return true;
 	}
 
@@ -1267,6 +1267,7 @@ namespace LambdaEngine
 		enabledDeviceFeatures10.shaderInt16						= supportedDeviceFeatures10.shaderInt16;
 		enabledDeviceFeatures10.tessellationShader				= supportedDeviceFeatures10.tessellationShader;
 		enabledDeviceFeatures10.geometryShader					= supportedDeviceFeatures10.geometryShader;
+		enabledDeviceFeatures10.samplerAnisotropy				= supportedDeviceFeatures10.samplerAnisotropy;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
 		enabledDeviceFeatures2.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -1295,12 +1296,12 @@ namespace LambdaEngine
 		VkResult result = vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &Device);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[GraphicsDeviceVK]: Failed to create logical device!");
+			LOG_VULKAN_ERROR(result, "Failed to create logical device!");
 			return false;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[GraphicsDeviceVK]: Created Device");
+			LOG_DEBUG("Created Device");
 			return true;
 		}
 	}
@@ -1391,7 +1392,7 @@ namespace LambdaEngine
 		{
 			for (const ValidationLayer& requiredValidationLayer : requiredValidationLayers)
 			{
-				LOG_ERROR("[GraphicsDeviceVK]: Required Validation Layer %s not supported", requiredValidationLayer.Name);
+				LOG_ERROR("Required Validation Layer %s not supported", requiredValidationLayer.Name);
 			}
 
 			return false;
@@ -1401,7 +1402,7 @@ namespace LambdaEngine
 		{
 			for (const ValidationLayer& optionalValidationLayer : optionalValidationLayers)
 			{
-				LOG_WARNING("[GraphicsDeviceVK]: Optional Validation Layer %s not supported", optionalValidationLayer.Name);
+				LOG_WARNING("Optional Validation Layer %s not supported", optionalValidationLayer.Name);
 			}
 		}
 
@@ -1447,7 +1448,7 @@ namespace LambdaEngine
 		{
 			for (const Extension& requiredInstanceExtension : requiredInstanceExtensions)
 			{
-				LOG_ERROR("[GraphicsDeviceVK]: Required Instance Extension %s not supported", requiredInstanceExtension.Name);
+				LOG_ERROR("Required Instance Extension %s not supported", requiredInstanceExtension.Name);
 			}
 
 			return false;
@@ -1457,7 +1458,7 @@ namespace LambdaEngine
 		{
 			for (const Extension& optionalInstanceExtension : optionalInstanceExtensions)
 			{
-				LOG_WARNING("[GraphicsDeviceVK]: Optional Instance Extension %s not supported", optionalInstanceExtension.Name);
+				LOG_WARNING("Optional Instance Extension %s not supported", optionalInstanceExtension.Name);
 			}
 		}
 
@@ -1583,7 +1584,7 @@ namespace LambdaEngine
 		{
 			for (const Extension& optionalDeviceExtension : optionalDeviceExtensions)
 			{
-				LOG_WARNING("[GraphicsDeviceVK]: Optional Device Extension %s not supported", optionalDeviceExtension.Name);
+				LOG_WARNING("Optional Device Extension %s not supported", optionalDeviceExtension.Name);
 			}
 		}
 	}
@@ -1668,7 +1669,7 @@ namespace LambdaEngine
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkCmdPushDescriptorSetKHR);
 		}
-		
+
 		// Timeline semaphores
 		if (IsDeviceExtensionEnabled(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME))
 		{
@@ -1750,9 +1751,9 @@ namespace LambdaEngine
 	}
 
 	VKAPI_ATTR VkBool32 VKAPI_CALL GraphicsDeviceVK::DebugCallback(
-		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
-		VkDebugUtilsMessageTypeFlagsEXT messageType, 
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData)
 	{
 		UNREFERENCED_VARIABLE(messageType);

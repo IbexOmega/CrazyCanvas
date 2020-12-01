@@ -155,7 +155,7 @@ namespace LambdaEngine
 		s_pCopyCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("ResourceLoader Copy CommandAllocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 		if (s_pCopyCommandAllocator == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Could not create Copy CommandAllocator");
+			LOG_ERROR("Could not create Copy CommandAllocator");
 			return false;
 		}
 
@@ -167,7 +167,7 @@ namespace LambdaEngine
 		s_pCopyCommandList = RenderAPI::GetDevice()->CreateCommandList(s_pCopyCommandAllocator, &commandListDesc);
 		if (s_pCopyCommandList == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Could not create Copy CommandList");
+			LOG_ERROR("Could not create Copy CommandList");
 			return false;
 		}
 
@@ -178,14 +178,14 @@ namespace LambdaEngine
 		s_pCopyFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
 		if (s_pCopyFence == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Could not create Copy Fence");
+			LOG_ERROR("Could not create Copy Fence");
 			return false;
 		}
 
 		s_pComputeCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("ResourceLoader Compute Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 		if (s_pComputeCommandAllocator == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Could not create Compute CommandAllocator");
+			LOG_ERROR("Could not create Compute CommandAllocator");
 			return false;
 		}
 
@@ -195,7 +195,7 @@ namespace LambdaEngine
 		s_pComputeCommandList = RenderAPI::GetDevice()->CreateCommandList(s_pComputeCommandAllocator, &commandListDesc);
 		if (s_pComputeCommandList == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Could not create Compute CommandList");
+			LOG_ERROR("Could not create Compute CommandList");
 			return false;
 		}
 
@@ -204,7 +204,7 @@ namespace LambdaEngine
 		s_pComputeFence = RenderAPI::GetDevice()->CreateFence(&fenceDesc);
 		if (s_pComputeFence == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Could not create Compute Fence");
+			LOG_ERROR("Could not create Compute Fence");
 			return false;
 		}
 
@@ -243,10 +243,10 @@ namespace LambdaEngine
 	* Assimp Parsing
 	*/
 	static LoadedTexture* LoadAssimpTexture(
-		SceneLoadingContext& context, 
-		const aiScene* pScene, 
-		const aiMaterial* pMaterial, 
-		aiTextureType type, 
+		SceneLoadingContext& context,
+		const aiScene* pScene,
+		const aiMaterial* pMaterial,
+		aiTextureType type,
 		uint32 index)
 	{
 		if (pMaterial->GetTextureCount(type) > index)
@@ -407,7 +407,7 @@ namespace LambdaEngine
 			aiProcess_OptimizeMeshes			|
 			aiProcess_FindInvalidData;
 
-		SceneLoadRequest loadRequest = 
+		SceneLoadRequest loadRequest =
 		{
 			.Filepath					= ConvertSlashes(filepath),
 			.AssimpFlags				= assimpFlags,
@@ -465,7 +465,7 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded Mesh \"%s\"", filepath.c_str());
+		LOG_DEBUG("Loaded Mesh \"%s\"", filepath.c_str());
 
 		// Find the largest and delete the ones not used
 		uint32 biggest	= 0;
@@ -544,15 +544,17 @@ namespace LambdaEngine
 			meshes.Clear();
 		}
 
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded Animations \"%s\"", filepath.c_str());
+		LOG_DEBUG("Loaded Animations \"%s\"", filepath.c_str());
 		return animations;
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromMemory(
-		const Vertex* pVertices, 
-		uint32 numVertices, 
-		const uint32* pIndices, 
-		uint32 numIndices)
+		const String& name,
+		const Vertex* pVertices,
+		uint32 numVertices,
+		const uint32* pIndices,
+		uint32 numIndices,
+		bool useMeshletCache)
 	{
 		Mesh* pMesh = DBG_NEW Mesh();
 		pMesh->Vertices.Resize(numVertices);
@@ -561,17 +563,25 @@ namespace LambdaEngine
 		pMesh->Indices.Resize(numVertices);
 		memcpy(pMesh->Indices.GetData(), pIndices, sizeof(uint32) * numIndices);
 
-		MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+		if (useMeshletCache)
+		{
+			LoadMeshletsFromCache(name, pMesh);
+		}
+		else
+		{
+			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+		}
+
 		return pMesh;
 	}
 
 	Texture* ResourceLoader::LoadTextureArrayFromFile(
-		const String& name, 
-		const String& dir, 
-		const String* pFilenames, 
-		uint32 count, 
-		EFormat format, 
-		bool generateMips, 
+		const String& name,
+		const String& dir,
+		const String* pFilenames,
+		uint32 count,
+		EFormat format,
+		bool generateMips,
 		bool linearFilteringMips)
 	{
 		int32 texWidth	= 0;
@@ -595,13 +605,13 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceLoader]: Texture format not supported for \"%s\"", filepath.c_str());
+				LOG_ERROR("Texture format not supported for \"%s\"", filepath.c_str());
 				return nullptr;
 			}
 
 			if (pPixels == nullptr)
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", filepath.c_str());
+				LOG_ERROR("Failed to load texture file: \"%s\"", filepath.c_str());
 				return nullptr;
 			}
 
@@ -613,14 +623,14 @@ namespace LambdaEngine
 		if (format == EFormat::FORMAT_R8G8B8A8_UNORM)
 		{
 			pTexture = LoadTextureArrayFromMemory(
-				name, 
-				stbi_pixels.GetData(), 
-				stbi_pixels.GetSize(), 
-				texWidth, 
-				texHeight, 
-				format, 
-				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, 
-				generateMips, 
+				name,
+				stbi_pixels.GetData(),
+				stbi_pixels.GetSize(),
+				texWidth,
+				texHeight,
+				format,
+				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE,
+				generateMips,
 				linearFilteringMips);
 		}
 		else if (format == EFormat::FORMAT_R16_UNORM)
@@ -651,14 +661,14 @@ namespace LambdaEngine
 			}
 
 			pTexture = LoadTextureArrayFromMemory(
-				name, 
-				pixels.GetData(), 
-				pixels.GetSize(), 
-				texWidth, 
-				texHeight, 
-				format, 
-				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE, 
-				generateMips, 
+				name,
+				pixels.GetData(),
+				pixels.GetSize(),
+				texWidth,
+				texHeight,
+				format,
+				FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE,
+				generateMips,
 				linearFilteringMips);
 
 			for (uint32 i = 0; i < pixels.GetSize(); i++)
@@ -677,9 +687,9 @@ namespace LambdaEngine
 	}
 
 	Texture* ResourceLoader::LoadTextureCubeFromPanoramaFile(
-		const String& name, 
+		const String& name,
 		const String& dir,
-		const String& filename, 
+		const String& filename,
 		uint32 size,
 		EFormat format,
 		bool generateMips)
@@ -695,17 +705,17 @@ namespace LambdaEngine
 		TUniquePtr<float[]> pixels = TUniquePtr<float[]>(stbi_loadf(filepath.c_str(), &texWidth, &texHeight, &bpp, STBI_rgb_alpha));
 		if (!pixels)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", filepath.c_str());
+			LOG_ERROR("Failed to load texture file: \"%s\"", filepath.c_str());
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
+		LOG_DEBUG("Loaded Texture \"%s\"", filepath.c_str());
 
 		// Create texture for panorama image
 		TextureDesc panoramaDesc;
 		panoramaDesc.DebugName		= name + " Staging-Panorama";
-		panoramaDesc.Flags			=	
-			FTextureFlag::TEXTURE_FLAG_COPY_DST | 
+		panoramaDesc.Flags			=
+			FTextureFlag::TEXTURE_FLAG_COPY_DST |
 			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
 		panoramaDesc.Depth			= 1;
 		panoramaDesc.ArrayCount		= 1;
@@ -720,7 +730,7 @@ namespace LambdaEngine
 		TSharedRef<Texture> panoramaTexture = RenderAPI::GetDevice()->CreateTexture(&panoramaDesc);
 		if (!panoramaTexture)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create panorama texture");
+			LOG_ERROR("Failed to create panorama texture");
 			return nullptr;
 		}
 
@@ -735,14 +745,14 @@ namespace LambdaEngine
 		panoramaViewDesc.MiplevelCount	= panoramaDesc.Miplevels;
 		panoramaViewDesc.Miplevel		= 0;
 		panoramaViewDesc.pTexture		= panoramaTexture.Get();
-		
+
 		TSharedRef<TextureView> panoramaTextureView = RenderAPI::GetDevice()->CreateTextureView(&panoramaViewDesc);
 		if (!panoramaTextureView)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create panorama textureview");
+			LOG_ERROR("Failed to create panorama textureview");
 			return nullptr;
 		}
-		
+
 		// Staging buffer
 		const uint64 textureSize = texWidth * texHeight * 4ULL * 4ULL;
 		BufferDesc bufferDesc = { };
@@ -754,7 +764,7 @@ namespace LambdaEngine
 		TSharedRef<Buffer> stagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		if (!stagingBuffer)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create staging buffer for \"%s\"", name.c_str());
+			LOG_ERROR("Failed to create staging buffer for \"%s\"", name.c_str());
 			return nullptr;
 		}
 
@@ -763,6 +773,9 @@ namespace LambdaEngine
 		memcpy(pTextureDataDst, pixels.Get(), textureSize);
 		stagingBuffer->Unmap();
 
+		// Miplevels
+		const uint32 mipLevels = generateMips ? std::max<uint32>(uint32(std::log2(size)), 1u) : 1u;
+
 		// Create texturecube
 		TextureDesc textureCubeDesc;
 		textureCubeDesc.DebugName	= name;
@@ -770,27 +783,29 @@ namespace LambdaEngine
 		textureCubeDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 		textureCubeDesc.ArrayCount	= 6;
 		textureCubeDesc.Depth		= 1;
-		textureCubeDesc.Flags		= 
+		textureCubeDesc.Flags		=
+			FTextureFlag::TEXTURE_FLAG_COPY_SRC |
+			FTextureFlag::TEXTURE_FLAG_COPY_DST |
 			FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE |
 			FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS |
 			FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
 		textureCubeDesc.Format		= format;
 		textureCubeDesc.Width		= size;
 		textureCubeDesc.Height		= size;
-		textureCubeDesc.Miplevels	= 1;
+		textureCubeDesc.Miplevels	= mipLevels;
 		textureCubeDesc.SampleCount	= 1;
 
 		TSharedRef<Texture> skybox = RenderAPI::GetDevice()->CreateTexture(&textureCubeDesc);
 		if (!skybox)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create skybox texture");
+			LOG_ERROR("Failed to create skybox texture");
 			return nullptr;
 		}
 
 		// Create textureview
 		TextureViewDesc skyboxViewDesc;
 		skyboxViewDesc.DebugName		= name + " Staging-Skybox-View";
-		skyboxViewDesc.Flags			= 
+		skyboxViewDesc.Flags			=
 			FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE |
 			FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
 		skyboxViewDesc.Type				= ETextureViewType::TEXTURE_VIEW_TYPE_CUBE;
@@ -804,18 +819,18 @@ namespace LambdaEngine
 		TSharedRef<TextureView> skyboxTextureView = RenderAPI::GetDevice()->CreateTextureView(&skyboxViewDesc);
 		if (!skyboxTextureView)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create skybox textureview");
+			LOG_ERROR("Failed to create skybox textureview");
 			return nullptr;
 		}
 
 		// Write DescriptorSet
 		Sampler* pNearestSampler = Sampler::GetNearestSampler();
 		s_pCubeMapGenDescriptorSet->WriteTextureDescriptors(
-			&panoramaTextureView, 
-			&pNearestSampler, 
-			ETextureState::TEXTURE_STATE_GENERAL, 
-			0, 1, 
-			EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, 
+			&panoramaTextureView,
+			&pNearestSampler,
+			ETextureState::TEXTURE_STATE_GENERAL,
+			0, 1,
+			EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
 			true);
 		s_pCubeMapGenDescriptorSet->WriteTextureDescriptors(
 			&skyboxTextureView,
@@ -874,10 +889,10 @@ namespace LambdaEngine
 			ETextureState::TEXTURE_STATE_GENERAL);
 
 		s_pComputeCommandList->SetConstantRange(
-			s_pCubeMapGenPipelineLayout, 
-			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
-			&size, 
-			4, 
+			s_pCubeMapGenPipelineLayout,
+			FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+			&size,
+			4,
 			0);
 
 		s_pComputeCommandList->BindComputePipeline(s_pCubeMapGenPipelineState);
@@ -904,7 +919,7 @@ namespace LambdaEngine
 			nullptr, 0,
 			s_pComputeFence, s_ComputeSignalValue))
 		{
-			LOG_ERROR("[ResourceLoader]: Texture could not be created as commandlist could not be executed for \"%s\"", name.c_str());
+			LOG_ERROR("Texture could not be created as commandlist could not be executed for \"%s\"", name.c_str());
 			return nullptr;
 		}
 		else
@@ -914,17 +929,51 @@ namespace LambdaEngine
 
 		RenderAPI::GetComputeQueue()->Flush();
 
+		if (generateMips)
+		{
+			// Start commandlist
+			const uint64 copyWaitValue = s_CopySignalValue - 1;
+			s_pCopyFence->Wait(copyWaitValue, UINT64_MAX);
+
+			s_pCopyCommandAllocator->Reset();
+			s_pCopyCommandList->Begin(nullptr);
+
+			s_pCopyCommandList->GenerateMips(
+				skybox.Get(),
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+				true);
+
+			s_pCopyCommandList->End();
+
+			if (!RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
+				&s_pCopyCommandList, 1,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+				nullptr, 0,
+				s_pCopyFence, s_CopySignalValue))
+			{
+				LOG_ERROR("Texture could not be created as commandlist could not be executed for \"%s\"", name.c_str());
+				return nullptr;
+			}
+			else
+			{
+				s_CopySignalValue++;
+			}
+
+			RenderAPI::GetGraphicsQueue()->Flush();
+		}
+
 		// Adds a ref, this will be removed when sharedptr gets destroyed
 		return skybox.GetAndAddRef();
 	}
 
 	Texture* ResourceLoader::LoadCubeTexturesArrayFromFile(
-		const String& name, 
-		const String& dir, 
-		const String* pFilenames, 
-		uint32 count, 
-		EFormat format, 
-		bool generateMips, 
+		const String& name,
+		const String& dir,
+		const String* pFilenames,
+		uint32 count,
+		EFormat format,
+		bool generateMips,
 		bool linearFilteringMips)
 	{
 		int texWidth	= 0;
@@ -945,18 +994,18 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_ERROR("[ResourceLoader]: Texture format not supported for \"%s\"", filepath.c_str());
+				LOG_ERROR("Texture format not supported for \"%s\"", filepath.c_str());
 				return nullptr;
 			}
 
 			if (pPixels == nullptr)
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to load texture file: \"%s\"", filepath.c_str());
+				LOG_ERROR("Failed to load texture file: \"%s\"", filepath.c_str());
 				return nullptr;
 			}
 
 			stbi_pixels[i] = pPixels;
-			D_LOG_MESSAGE("[ResourceLoader]: Loaded Texture \"%s\"", filepath.c_str());
+			LOG_DEBUG("Loaded Texture \"%s\"", filepath.c_str());
 		}
 
 		Texture* pTexture = nullptr;
@@ -964,14 +1013,14 @@ namespace LambdaEngine
 		{
 			const uint32 flags = FTextureFlag::TEXTURE_FLAG_CUBE_COMPATIBLE | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
 			pTexture = LoadTextureArrayFromMemory(
-				name, 
-				stbi_pixels.GetData(), 
-				stbi_pixels.GetSize(), 
-				texWidth, 
-				texHeight, 
-				format, 
-				flags, 
-				generateMips, 
+				name,
+				stbi_pixels.GetData(),
+				stbi_pixels.GetSize(),
+				texWidth,
+				texHeight,
+				format,
+				flags,
+				generateMips,
 				linearFilteringMips);
 		}
 
@@ -984,14 +1033,14 @@ namespace LambdaEngine
 	}
 
 	Texture* ResourceLoader::LoadTextureArrayFromMemory(
-		const String& name, 
-		const void* const * ppData, 
-		uint32 arrayCount, 
-		uint32 width, 
-		uint32 height, 
-		EFormat format, 
-		uint32 usageFlags, 
-		bool generateMips, 
+		const String& name,
+		const void* const * ppData,
+		uint32 arrayCount,
+		uint32 width,
+		uint32 height,
+		EFormat format,
+		uint32 usageFlags,
+		bool generateMips,
 		bool linearFilteringMips)
 	{
 		uint32_t miplevels = 1u;
@@ -1016,7 +1065,7 @@ namespace LambdaEngine
 		Texture* pTexture = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 		if (pTexture == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create texture for \"%s\"", name.c_str());
+			LOG_ERROR("Failed to create texture for \"%s\"", name.c_str());
 			return nullptr;
 		}
 
@@ -1031,7 +1080,7 @@ namespace LambdaEngine
 		Buffer* pTextureData = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		if (pTextureData == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to create copy buffer for \"%s\"", name.c_str());
+			LOG_ERROR("Failed to create copy buffer for \"%s\"", name.c_str());
 			return nullptr;
 		}
 
@@ -1056,8 +1105,8 @@ namespace LambdaEngine
 		transitionToCopyDstBarrier.ArrayCount				= textureDesc.ArrayCount;
 
 		s_pCopyCommandList->PipelineTextureBarriers(
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
 			&transitionToCopyDstBarrier, 1);
 
 		for (uint32 i = 0; i < arrayCount; i++)
@@ -1087,9 +1136,9 @@ namespace LambdaEngine
 		if (generateMips)
 		{
 			s_pCopyCommandList->GenerateMips(
-				pTexture, 
-				ETextureState::TEXTURE_STATE_COPY_DST, 
-				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
+				pTexture,
+				ETextureState::TEXTURE_STATE_COPY_DST,
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 				linearFilteringMips);
 		}
 		else
@@ -1109,20 +1158,20 @@ namespace LambdaEngine
 			transitionToShaderReadBarrier.ArrayCount			= textureDesc.ArrayCount;
 
 			s_pCopyCommandList->PipelineTextureBarriers(
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
 				&transitionToShaderReadBarrier, 1);
 		}
 
 		s_pCopyCommandList->End();
 
 		if (!RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
-			&s_pCopyCommandList, 1, 
-			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY, 
+			&s_pCopyCommandList, 1,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
 			nullptr, 0,
 			s_pCopyFence, s_CopySignalValue))
 		{
-			LOG_ERROR("[ResourceLoader]: Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
+			LOG_ERROR("Texture could not be created as command list could not be executed for \"%s\"", name.c_str());
 			SAFERELEASE(pTextureData);
 
 			return nullptr;
@@ -1152,13 +1201,13 @@ namespace LambdaEngine
 		{
 			if (!ReadDataFromFile(file, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", file.c_str());
+				LOG_ERROR("Failed to open shader file \"%s\"", file.c_str());
 				return nullptr;
 			}
 
 			if (!CompileGLSLToSPIRV(file, reinterpret_cast<char*>(pShaderRawSource), stage, &sourceSPIRV, nullptr))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
+				LOG_ERROR("Failed to compile GLSL to SPIRV for \"%s\"", file.c_str());
 				return nullptr;
 			}
 		}
@@ -1166,7 +1215,7 @@ namespace LambdaEngine
 		{
 			if (!ReadDataFromFile(file, "rb", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", file.c_str());
+				LOG_ERROR("Failed to open shader file \"%s\"", file.c_str());
 				return nullptr;
 			}
 
@@ -1190,10 +1239,10 @@ namespace LambdaEngine
 	}
 
 	Shader* ResourceLoader::LoadShaderFromMemory(
-		const String& source, 
-		const String& name, 
-		FShaderStageFlag stage, 
-		EShaderLang lang, 
+		const String& source,
+		const String& name,
+		FShaderStageFlag stage,
+		EShaderLang lang,
 		const String& entryPoint)
 	{
 		TArray<uint32> sourceSPIRV;
@@ -1201,7 +1250,7 @@ namespace LambdaEngine
 		{
 			if (!CompileGLSLToSPIRV("", source.c_str(), stage, &sourceSPIRV, nullptr))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV");
+				LOG_ERROR("Failed to compile GLSL to SPIRV");
 				return nullptr;
 			}
 		}
@@ -1233,7 +1282,7 @@ namespace LambdaEngine
 			stage == FShaderStageFlag::SHADER_STAGE_FLAG_INTERSECT_SHADER ||
 			stage == FShaderStageFlag::SHADER_STAGE_FLAG_MISS_SHADER)
 		{
-			VALIDATE_MSG(false, "[ResourceLoader]: Unsupported shader stage because GLSLang can't get their shit together");
+			VALIDATE_MSG(false, "Unsupported shader stage because GLSLang can't get their shit together");
 		}
 
 		const String file = ConvertSlashes(filepath);
@@ -1243,7 +1292,7 @@ namespace LambdaEngine
 
 		if (!ReadDataFromFile(file, "r", &pShaderRawSource, &shaderRawSourceSize))
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", file.c_str());
+			LOG_ERROR("Failed to open shader file \"%s\"", file.c_str());
 			return nullptr;
 		}
 
@@ -1274,19 +1323,19 @@ namespace LambdaEngine
 		{
 			if (!ReadDataFromFile(path, "r", &pShaderRawSource, &shaderRawSourceSize))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to open shader file \"%s\"", path.c_str());
+				LOG_ERROR("Failed to open shader file \"%s\"", path.c_str());
 				return false;
 			}
 
 			if (!CompileGLSLToSPIRV(path, reinterpret_cast<char*>(pShaderRawSource), stage, nullptr, pReflection))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to compile GLSL to SPIRV for \"%s\"", path.c_str());
+				LOG_ERROR("Failed to compile GLSL to SPIRV for \"%s\"", path.c_str());
 				return false;
 			}
 		}
 		else if (lang == EShaderLang::SHADER_LANG_SPIRV)
 		{
-			LOG_ERROR("[ResourceLoader]: CreateShaderReflection currently not supported for SPIRV source language");
+			LOG_ERROR("CreateShaderReflection currently not supported for SPIRV source language");
 			return false;
 		}
 
@@ -1303,11 +1352,11 @@ namespace LambdaEngine
 		ISoundEffect3D* pSound = AudioAPI::GetDevice()->Create3DSoundEffect(&soundDesc);
 		if (pSound == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());
+			LOG_ERROR("Failed to initialize sound \"%s\"", filepath.c_str());
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded 3D Sound \"%s\"", filepath.c_str());
+		LOG_DEBUG("Loaded 3D Sound \"%s\"", filepath.c_str());
 
 		return pSound;
 	}
@@ -1320,11 +1369,11 @@ namespace LambdaEngine
 		ISoundEffect2D* pSound = AudioAPI::GetDevice()->Create2DSoundEffect(&soundDesc);
 		if (pSound == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to initialize sound \"%s\"", filepath.c_str());
+			LOG_ERROR("Failed to initialize sound \"%s\"", filepath.c_str());
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded 2D Sound \"%s\"", filepath.c_str());
+		LOG_DEBUG("Loaded 2D Sound \"%s\"", filepath.c_str());
 
 		return pSound;
 	}
@@ -1339,11 +1388,11 @@ namespace LambdaEngine
 		IMusic* pSound = AudioAPI::GetDevice()->CreateMusic(&musicDesc);
 		if (pSound == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to initialize music \"%s\"", filepath.c_str());
+			LOG_ERROR("Failed to initialize music \"%s\"", filepath.c_str());
 			return nullptr;
 		}
 
-		D_LOG_MESSAGE("[ResourceLoader]: Loaded Music \"%s\"", filepath.c_str());
+		LOG_DEBUG("Loaded Music \"%s\"", filepath.c_str());
 
 		return pSound;
 	}
@@ -1354,7 +1403,7 @@ namespace LambdaEngine
 		FILE* pFile = fopen(path.c_str(), pMode);
 		if (pFile == nullptr)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to load file \"%s\"", path.c_str());
+			LOG_ERROR("Failed to load file \"%s\"", path.c_str());
 			return false;
 		}
 
@@ -1368,7 +1417,7 @@ namespace LambdaEngine
 		const int32 read = int32(fread(pData, 1, length, pFile));
 		if (read == 0)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to read file \"%s\"", path.c_str());
+			LOG_ERROR("Failed to read file \"%s\"", path.c_str());
 			fclose(pFile);
 			return false;
 		}
@@ -1439,9 +1488,9 @@ namespace LambdaEngine
 			{
 				pushConstantRange
 			};
-			pPipelineLayoutDesc.DescriptorSetLayouts = 
-			{ 
-				descriptorSetLayoutDesc 
+			pPipelineLayoutDesc.DescriptorSetLayouts =
+			{
+				descriptorSetLayoutDesc
 			};
 
 			s_pCubeMapGenPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pPipelineLayoutDesc);
@@ -1450,11 +1499,11 @@ namespace LambdaEngine
 				LOG_ERROR("Failed to create CubeMapGen PipelineLayout");
 				return false;
 			}
-			
+
 			s_pCubeMapGenDescriptorSet	= RenderAPI::GetDevice()->CreateDescriptorSet(
-				"CubemapGen DescriptorSet", 
-				s_pCubeMapGenPipelineLayout, 
-				0, 
+				"CubemapGen DescriptorSet",
+				s_pCubeMapGenPipelineLayout,
+				0,
 				s_pCubeMapGenDescriptorHeap);
 			if (!s_pCubeMapGenDescriptorSet)
 			{
@@ -1465,8 +1514,8 @@ namespace LambdaEngine
 			// Create Shaders
 			s_pCubeMapGenShader = LoadShaderFromFile(
 				String(SHADER_DIR) + "Skybox/CubemapGen.comp",
-				FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, 
-				EShaderLang::SHADER_LANG_GLSL, 
+				FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER,
+				EShaderLang::SHADER_LANG_GLSL,
 				"main");
 			if (!s_pCubeMapGenShader)
 			{
@@ -1477,9 +1526,9 @@ namespace LambdaEngine
 			ComputePipelineStateDesc computePipelineStateDesc = { };
 			computePipelineStateDesc.DebugName			= "CubemapGen PipelineState";
 			computePipelineStateDesc.pPipelineLayout	= s_pCubeMapGenPipelineLayout;
-			computePipelineStateDesc.Shader				= 
-			{ 
-				.pShader = s_pCubeMapGenShader 
+			computePipelineStateDesc.Shader				=
+			{
+				.pShader = s_pCubeMapGenShader
 			};
 
 			s_pCubeMapGenPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
@@ -1545,7 +1594,7 @@ namespace LambdaEngine
 			vertex.PositionXYZPaintBitsW.x = pMeshAI->mVertices[vertexIdx].x;
 			vertex.PositionXYZPaintBitsW.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.PositionXYZPaintBitsW.z = pMeshAI->mVertices[vertexIdx].z;
-			vertex.PositionXYZPaintBitsW.w = glm::uintBitsToFloat(0);
+			vertex.PositionXYZPaintBitsW.w = glm::uintBitsToFloat(UINT32_MAX);
 
 			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.PositionXYZPaintBitsW.x));
 			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.PositionXYZPaintBitsW.y));
@@ -1664,7 +1713,7 @@ namespace LambdaEngine
 				{
 					const aiNode* pChild	= pParent->mChildren[i];
 					const aiNode* pNode		= FindNodeInScene(nodeName, pChild);
-					
+
 					// If child contains the node -> Break and return
 					if (pNode)
 					{
@@ -1702,21 +1751,21 @@ namespace LambdaEngine
 		for (uint32 boneIndex = 0; boneIndex < numBones; boneIndex++)
 		{
 			Joint& joint = pSkeleton->Joints[boneIndex];
-			
+
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			joint.Name = pBoneAI->mName.C_Str();
-			
+
 			auto it = pSkeleton->JointMap.find(joint.Name);
 			if (it != pSkeleton->JointMap.end())
 			{
-				LOG_ERROR("[ResourceLoader] Multiple bones with the same name");
+				LOG_ERROR("Multiple bones with the same name");
 				return;
 			}
 			else
 			{
 				pSkeleton->JointMap[joint.Name] = (unsigned char)boneIndex;
 			}
-			
+
 			joint.InvBindTransform = AssimpToGLMMat4(pBoneAI->mOffsetMatrix);
 		}
 
@@ -1844,7 +1893,7 @@ namespace LambdaEngine
 		for (VertexJointData& joint : pMesh->VertexJointData)
 		{
 			const float32 weight3 = 1.0f - (joint.Weight0 + joint.Weight1 + joint.Weight2);
-			LOG_WARNING("JointData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f", 
+			LOG_WARNING("JointData: [0] ID=%d, weight=%.4f [1] ID=%d, weight=%.4f [2] ID=%d, weight=%.4f [3] ID=%d, weight=%.4f",
 				joint.JointID0, joint.Weight0,
 				joint.JointID1, joint.Weight1,
 				joint.JointID2, joint.Weight2,
@@ -1875,7 +1924,7 @@ namespace LambdaEngine
 			pSkeleton->RootNodeTransform = rootTransform;
 		}
 
-		LOG_INFO("[ResourceLoader]: Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+		LOG_INFO("Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
@@ -2010,7 +2059,7 @@ namespace LambdaEngine
 		{
 			aiNodeAnim* pChannel = pAnimationAI->mChannels[channelIndex];
 			pAnimation->Channels[channelIndex].Name = pChannel->mNodeName.C_Str();
-			
+
 			pAnimation->Channels[channelIndex].Positions.Resize(pChannel->mNumPositionKeys);
 			for (uint32 i = 0; i < pChannel->mNumPositionKeys; i++)
 			{
@@ -2042,10 +2091,10 @@ namespace LambdaEngine
 
 		context.pAnimations->EmplaceBack(pAnimation);
 
-		LOG_INFO("[ResourceLoader]: Loaded animation \"%s\", NumChannels=%u, Duration=%.4f ticks, TicksPerSecond=%.4f", 
+		LOG_INFO("Loaded animation \"%s\", NumChannels=%u, Duration=%.4f ticks, TicksPerSecond=%.4f",
 			pAnimation->Name.GetString().c_str(),
 			pAnimation->Channels.GetSize(),
-			pAnimation->DurationInTicks, 
+			pAnimation->DurationInTicks,
 			pAnimation->TicksPerSecond);
 	}
 
@@ -2064,11 +2113,11 @@ namespace LambdaEngine
 		glm::mat4 glmMat = AssimpToGLMMat4(pNode->mTransformation);
 		for (uint32 i = 0; i < 4; i++)
 		{
-			LOG_INFO("%s [%.4f, %.4f, %.4f, %.4f]", 
-				postfix.c_str(), 
-				glmMat[i][0], 
-				glmMat[i][1], 
-				glmMat[i][2], 
+			LOG_INFO("%s [%.4f, %.4f, %.4f, %.4f]",
+				postfix.c_str(),
+				glmMat[i][0],
+				glmMat[i][1],
+				glmMat[i][2],
 				glmMat[i][3]);
 		}
 #endif
@@ -2087,7 +2136,7 @@ namespace LambdaEngine
 		size_t lastPathDivisor = filepath.find_last_of("/\\");
 		if (lastPathDivisor == String::npos)
 		{
-			LOG_WARNING("[ResourceLoader]: Failed to load scene '%s'. No parent directory found...", filepath.c_str());
+			LOG_WARNING("Failed to load scene '%s'. No parent directory found...", filepath.c_str());
 			return false;
 		}
 
@@ -2095,11 +2144,11 @@ namespace LambdaEngine
 		const aiScene* pScene = importer.ReadFile(filepath, sceneLoadRequest.AssimpFlags);
 		if (!pScene || pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !pScene->mRootNode)
 		{
-			LOG_ERROR("[ResourceLoader]: Failed to load scene '%s'. Error: %s", filepath.c_str(), importer.GetErrorString());
+			LOG_ERROR("Failed to load scene '%s'. Error: %s", filepath.c_str(), importer.GetErrorString());
 			return false;
 		}
 
-		SceneLoadingContext context = 
+		SceneLoadingContext context =
 		{
 			.Filename					= filepath.substr(lastPathDivisor + 1),
 			.DirectoryPath				= filepath.substr(0, lastPathDivisor + 1),
@@ -2128,7 +2177,7 @@ namespace LambdaEngine
 				{
 					string = *static_cast<aiString*>(pMetaData->mValues[i].mData);
 				}
-				
+
 				LOG_INFO("    [%s]=%s", pMetaData->mKeys[i].C_Str(), string.C_Str());
 			}
 		}
@@ -2300,7 +2349,7 @@ namespace LambdaEngine
 							const glm::mat4 skinTransform = AssimpToGLMMat4(pNode->mTransformation);
 							pSkeleton->SkinTransform			= skinTransform;
 							pSkeleton->InverseGlobalTransform	= pSkeleton->InverseGlobalTransform * skinTransform * meshTransform;
-						
+
 							//pMesh->BoundingBox.Scale(skinTransform);
 						}
 					}
@@ -2350,10 +2399,10 @@ namespace LambdaEngine
 	}
 
 	bool ResourceLoader::CompileGLSLToSPIRV(
-		const String& filepath, 
-		const char* pSource, 
-		FShaderStageFlags stage, 
-		TArray<uint32>* pSourceSPIRV, 
+		const String& filepath,
+		const char* pSource,
+		FShaderStageFlags stage,
+		TArray<uint32>* pSourceSPIRV,
 		ShaderReflection* pReflection)
 	{
 		std::string source			= std::string(pSource);
@@ -2388,7 +2437,7 @@ namespace LambdaEngine
 		//std::string preprocessedGLSL;
 		//if (!shader.preprocess(pResources, defaultVersion, ENoProfile, false, false, messages, &preprocessedGLSL, includer))
 		//{
-		//	LOG_ERROR("[ResourceLoader]: GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+		//	LOG_ERROR("GLSL Preprocessing failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 		//	return false;
 		//}
 
@@ -2399,7 +2448,7 @@ namespace LambdaEngine
 		{
 			const char* pShaderInfoLog = shader.getInfoLog();
 			const char* pShaderDebugInfo = shader.getInfoDebugLog();
-			LOG_ERROR("[ResourceLoader]: GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), pShaderInfoLog, pShaderDebugInfo);
+			LOG_ERROR("GLSL Parsing failed for: \"%s\"\n%s\n%s", filepath.c_str(), pShaderInfoLog, pShaderDebugInfo);
 			return false;
 		}
 
@@ -2408,13 +2457,13 @@ namespace LambdaEngine
 
 		if (!program.link(messages))
 		{
-			LOG_ERROR("[ResourceLoader]: GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
+			LOG_ERROR("GLSL Linking failed for: \"%s\"\n%s\n%s", filepath.c_str(), shader.getInfoLog(), shader.getInfoDebugLog());
 			return false;
 		}
 
 		glslang::TIntermediate* pIntermediate = program.getIntermediate(shaderType);
 
-		
+
 
 		if (pSourceSPIRV != nullptr)
 		{
@@ -2429,7 +2478,7 @@ namespace LambdaEngine
 		{
 			if (!CreateShaderReflection(pIntermediate, stage, pReflection))
 			{
-				LOG_ERROR("[ResourceLoader]: Failed to Create Shader Reflection");
+				LOG_ERROR("Failed to Create Shader Reflection");
 				return false;
 			}
 		}
@@ -2452,5 +2501,56 @@ namespace LambdaEngine
 		pReflection->NumUniforms			= glslangReflection.getNumUniforms();
 
 		return true;
+	}
+
+	void ResourceLoader::LoadMeshletsFromCache(const String& name, Mesh* pMesh)
+	{
+		struct MeshletCacheHeader
+		{
+			uint32 MeshletCount;
+			uint32 PrimitiveIndexCount;
+			uint32 UniqueIndexCount;
+		};
+
+		const String meshletCachePath = MESHLET_CACHE_DIR + name;
+
+		std::fstream file;
+		file.open(meshletCachePath, std::fstream::in | std::fstream::binary);
+
+		// If file doesn't exist, create it. Otherwise, load meshlets from file to memory.
+		if (!file)
+		{
+			file.open(meshletCachePath, std::fstream::out | std::fstream::binary);
+
+			MeshFactory::GenerateMeshlets(pMesh, MAX_VERTS, MAX_PRIMS);
+
+			const MeshletCacheHeader header =
+			{
+				.MeshletCount = pMesh->Meshlets.GetSize(),
+				.PrimitiveIndexCount = pMesh->PrimitiveIndices.GetSize(),
+				.UniqueIndexCount = pMesh->UniqueIndices.GetSize()
+			};
+
+			file.write((const char*)&header, sizeof(MeshletCacheHeader));
+
+			file.write((const char*)pMesh->Meshlets.GetData(), header.MeshletCount * sizeof(Meshlet));
+			file.write((const char*)pMesh->PrimitiveIndices.GetData(), header.PrimitiveIndexCount * sizeof(PackedTriangle));
+			file.write((const char*)pMesh->UniqueIndices.GetData(), header.UniqueIndexCount * sizeof(uint32));
+		}
+		else
+		{
+			MeshletCacheHeader header;
+			file.read((char*)&header, sizeof(MeshletCacheHeader));
+
+			pMesh->Meshlets.Resize(header.MeshletCount);
+			pMesh->PrimitiveIndices.Resize(header.PrimitiveIndexCount);
+			pMesh->UniqueIndices.Resize(header.UniqueIndexCount);
+
+			file.read((char*)pMesh->Meshlets.GetData(), header.MeshletCount * sizeof(Meshlet));
+			file.read((char*)pMesh->PrimitiveIndices.GetData(), header.PrimitiveIndexCount * sizeof(PackedTriangle));
+			file.read((char*)pMesh->UniqueIndices.GetData(), header.UniqueIndexCount * sizeof(uint32));
+		}
+
+		file.close();
 	}
 }

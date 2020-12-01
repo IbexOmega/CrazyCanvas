@@ -73,8 +73,7 @@ SRayHitDescription CalculateHitData()
 	float dist = 1.f;
 	GetVec4ToPackedPaintInfoAndDistance(position, paintInfo4, paintDist, packedPaintInfo, dist);
 
-	uint materialIndex		= (gl_InstanceCustomIndexEXT & 0xFF00) >> 8;
-	uint paintMaskIndex		= gl_InstanceCustomIndexEXT & 0xFF;
+	uint materialIndex		= gl_InstanceCustomIndexEXT & 0xFF;
 
 	vec3 shadingNormal		= texture(u_NormalMaps[materialIndex], texCoord).xyz;
 	shadingNormal			= normalize(shadingNormal * 2.0f - 1.0f);
@@ -109,11 +108,11 @@ void main()
 	float roughness			= 		materialParameters.Roughness * sampledMaterial.g;
 	float metallic			= 		materialParameters.Metallic * sampledMaterial.b * float(paintDescription.Interpolation == 0.0f);
 
-	s_PrimaryPayload.HitPosition		= hitDescription.Position;
-	s_PrimaryPayload.Normal				= mix(hitDescription.Normal, paintDescription.Normal, paintDescription.Interpolation);
-	s_PrimaryPayload.Albedo				= mix(albedo, paintDescription.Albedo, paintDescription.Interpolation);
-	s_PrimaryPayload.AO					= ao;
-	s_PrimaryPayload.Roughness			= mix(roughness, paintDescription.Roughness, paintDescription.Interpolation);
-	s_PrimaryPayload.Metallic			= metallic;
-	s_PrimaryPayload.Distance			= gl_HitTEXT;
+	s_PrimaryPayload.HitPosition	= hitDescription.Position;
+	s_PrimaryPayload.Normal			= mix(hitDescription.Normal, paintDescription.Normal, paintDescription.Interpolation);
+	s_PrimaryPayload.Albedo			= mix(albedo, paintDescription.Albedo, paintDescription.Interpolation);
+	s_PrimaryPayload.AO				= ao;
+	s_PrimaryPayload.Roughness		= mix(roughness, paintDescription.Roughness, paintDescription.Interpolation);
+	s_PrimaryPayload.Metallic		= metallic;
+	s_PrimaryPayload.Distance		= gl_HitTEXT;
 }

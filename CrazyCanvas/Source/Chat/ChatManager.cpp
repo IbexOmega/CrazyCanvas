@@ -35,13 +35,26 @@ void ChatManager::Release()
 NetworkSegment* ChatManager::MakePacket(IClient* pClient, const ChatMessage& message)
 {
 	NetworkSegment* pPacket = pClient->GetFreePacket(PacketType::CHAT_MESSAGE);
-	BinaryEncoder encoder(pPacket);
-	encoder.WriteBool(message.IsRecap);
-	encoder.WriteUInt64(message.UID);
-	encoder.WriteUInt8(message.Team);
-	encoder.WriteString(message.Name);
-	encoder.WriteString(message.Message);
+	if (pPacket)
+	{
+		BinaryEncoder encoder(pPacket);
+		encoder.WriteBool(message.IsRecap);
+		encoder.WriteUInt64(message.UID);
+		encoder.WriteUInt8(message.Team);
+		encoder.WriteString(message.Name);
+		encoder.WriteString(message.Message);
+	}
 	return pPacket;
+}
+
+void ChatManager::RenotifyAllChatMessages()
+{
+	for (ChatMessage& message : m_ChatHistory)
+	{
+		message.IsRecap = true;
+		ChatEvent event(message);
+		EventQueue::SendEventImmediate(event);
+	}
 }
 
 void ChatManager::SendChatMessage(String message)
@@ -53,9 +66,11 @@ void ChatManager::SendChatMessage(String message)
 		{
 			ClientRemoteBase* pClientRemoteBase = pServer->GetClients().begin()->second;
 			const ChatMessage& chatMessage = { false, UINT64_MAX, UINT8_MAX, "Server", message };
-			NetworkSegment* pPacket = MakePacket(pClientRemoteBase, chatMessage);
 			m_ChatHistory.PushBack(chatMessage);
-			pClientRemoteBase->SendReliableBroadcast(pPacket, nullptr, true);
+			NetworkSegment* pPacket = MakePacket(pClientRemoteBase, chatMessage);
+
+			if (pPacket)
+				pClientRemoteBase->SendReliableBroadcast(pPacket, nullptr, true);
 
 			ChatEvent event(chatMessage);
 			EventQueue::SendEventImmediate(event);
@@ -71,9 +86,11 @@ void ChatManager::SendChatMessage(String message)
 
 			IClient* pClient = ClientSystem::GetInstance().GetClient();
 			const ChatMessage& chatMessage = { false, pPlayer->GetUID(), pPlayer->GetTeam(), pPlayer->GetName(), message };
-			NetworkSegment* pPacket = MakePacket(pClient, chatMessage);
 			m_ChatHistory.PushBack(chatMessage);
-			pClient->SendReliable(pPacket);
+			NetworkSegment* pPacket = MakePacket(pClient, chatMessage);
+
+			if(pPacket)
+				pClient->SendReliable(pPacket);
 
 			ChatEvent event(chatMessage);
 			EventQueue::SendEventImmediate(event);
@@ -120,7 +137,9 @@ bool ChatManager::OnPacketReceived(const NetworkSegmentReceivedEvent& event)
 					{
 						ClientRemoteBase* pClientRemoteBase = (ClientRemoteBase*)event.pClient;
 						NetworkSegment* pPacket = MakePacket(pClientRemoteBase, chatMessage);
-						pClientRemoteBase->SendReliableBroadcast(pPacket, nullptr, true);
+
+						if(pPacket)
+							pClientRemoteBase->SendReliableBroadcast(pPacket, nullptr, true);
 					}
 				}
 			}
@@ -148,7 +167,9 @@ bool ChatManager::OnClientConnected(const ClientConnectedEvent& event)
 		{
 			message.IsRecap = true;
 			NetworkSegment* pPacket = MakePacket(pClient, message);
-			pClient->SendReliable(pPacket);
+
+			if(pPacket)
+				pClient->SendReliable(pPacket);
 		}
 	}
 	return false;

@@ -83,6 +83,12 @@ float GeometryGGX(float NdotV, float roughness)
 	return NdotV / ((NdotV * (1.0f - k_Direct)) + k_Direct);
 }
 
+float GeometryGGXIBL(float NdotV, float roughness)
+{
+	float K = (roughness * roughness) / 2.0f;
+	return NdotV / (NdotV * (1.0f - K) + K);
+}
+
 /*
 	Smith Geometry-Function
 */
@@ -94,12 +100,61 @@ float Geometry(vec3 normal, vec3 viewDir, vec3 lightDirection, float roughness)
 	return GeometryGGX(NdotV, roughness) * GeometryGGX(NdotL, roughness);
 }
 
+float GeometryIBL(vec3 normal, vec3 viewDir, vec3 lightDirection, float roughness)
+{
+	float NdotV = max(dot(normal, viewDir), 0.0f);
+	float NdotL = max(dot(normal, lightDirection), 0.0f);
+
+	return GeometryGGXIBL(NdotV, roughness) * GeometryGGXIBL(NdotL, roughness);
+}
+
 /*
 	Smith Geometry-Function
 */
 float GeometryOpt(float NdotV, float NdotL, float roughness)
 {
 	return GeometryGGX(NdotV, roughness) * GeometryGGX(NdotL, roughness);
+}
+
+/*
+* http://holger.dammertz.org/stuff/notes_HammersleyOnHemisphere.html
+* efficient VanDerCorpus calculation.
+*/
+float RadicalInverse_VdC(uint bits)
+{
+	bits = (bits << 16u) | (bits >> 16u);
+	bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+	bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+	bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+	bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+	return float(bits) * 2.3283064365386963e-10; // 0x100000000
+}
+
+vec2 Hammersley(uint I, uint N)
+{
+	return vec2(float(I) / float(N), RadicalInverse_VdC(I));
+}
+
+vec3 ImportanceSampleGGX(vec2 Xi, vec3 N, float roughness)
+{
+	float A = roughness * roughness;
+	float phi		= 2.0f * PI * Xi.x;
+	float cosTheta	= sqrt((1.0f - Xi.y) / (1.0f + (A * A - 1.0f) * Xi.y));
+	float sinTheta	= sqrt(1.0f - cosTheta * cosTheta);
+	
+	// From spherical coordinates to cartesian coordinates
+	vec3 H;
+	H.x = cos(phi) * sinTheta;
+	H.y = sin(phi) * sinTheta;
+	H.z = cosTheta;
+	
+	// From tangent-space vector to world-space sample vector
+	vec3 up			= abs(N.z) < 0.999f ? vec3(0.0f, 0.0f, 1.0f) : vec3(1.0f, 0.0f, 0.0f);
+	vec3 tangent	= normalize(cross(up, N));
+	vec3 bitangent	= cross(N, tangent);
+	
+	vec3 sampleVec = tangent * H.x + bitangent * H.y + N * H.z;
+	return normalize(sampleVec);
 }
 
 vec3 GammaCorrection(vec3 color, float gamma)
@@ -141,8 +196,6 @@ bool IsSameHemisphere(vec3 w_0, vec3 w_1)
 	return w_0.z * w_1.z > 0.0f;
 }
 
-
-
 vec2 DirToOct(vec3 normal)
 {
 	vec2 p = normal.xy * (1.0f / dot(abs(normal), vec3(1.0f)));
@@ -179,7 +232,7 @@ float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
 #define ONE_NINTH 0.1111111
 float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir, sampler2D shadowMap)
 {
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords.xy = (projCoords.xy * 0.5 + 0.5);
 	projCoords.y = 1.0 - projCoords.y;
 
@@ -191,9 +244,9 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
-	float bias = max(0.001 * (1.0 - dot(fragNormal, -lightDir)), 0.004);
+	float bias = max(0.01 * (1.0 - dot(fragNormal, lightDir)), 0.001);
 	float shadow = 0.0;
-    
+	
 	vec2 texelSize = 1.0 / textureSize(shadowMap, 0); // Todo: send in shadowMap width as pushback constant
 	for(int x = -1; x <= 1; ++x)
 	{
@@ -201,17 +254,17 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
 		{
 			float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
 			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
-		}    
+		}
 	}
 	
 	shadow *= ONE_NINTH;
 
-    return shadow;
+	return shadow;
 }
 
 float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, float viewDistance, vec3 normal, samplerCube shadowMap, float farPlane)
 {
-    vec3 fragToLight  = fragPos - lightPos;
+	vec3 fragToLight  = fragPos - lightPos;
 	float currentDepth = length(fragToLight);
 	vec3 lightDir = fragToLight / currentDepth;
 
@@ -229,7 +282,7 @@ float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, float viewDistance, vec3
 	}
 	shadow /= float(samples);  
 
-    return shadow;
+	return shadow;
 }
 
 float CalculateLuminance(vec3 color)

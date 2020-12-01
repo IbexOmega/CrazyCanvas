@@ -42,7 +42,8 @@ void PlayerRemoteSystem::Init()
 				{ RW, RotationComponent::Type() },
 				{ R, PacketComponent<PacketPlayerAction>::Type() },
 				{ RW, PacketComponent<PacketPlayerActionResponse>::Type() },
-			}
+			},
+			.OnEntityRemoval = std::bind_front(&PlayerRemoteSystem::OnEntityRemoved, this)
 		}
 	};
 	systemReg.Phase = 0;
@@ -89,7 +90,7 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 					rotationComponent.Dirty = true;
 				}
 
-				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity);
+				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity, gameState.HoldingFlag);
 				CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, netPosComponent, velocityComponent);
 
 				physx::PxControllerState playerControllerState;
@@ -122,4 +123,9 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 			CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, netPosComponent, velocityComponent);
 		}
 	}
+}
+
+void PlayerRemoteSystem::OnEntityRemoved(LambdaEngine::Entity entity)
+{
+	m_CurrentGameStates.erase(entity);
 }
