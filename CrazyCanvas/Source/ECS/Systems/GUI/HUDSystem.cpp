@@ -17,7 +17,6 @@
 #include "Application/API/Events/EventQueue.h"
 
 #include "Lobby/PlayerManagerClient.h"
-#include "..\..\..\..\Include\ECS\Systems\GUI\HUDSystem.h"
 
 
 using namespace LambdaEngine;
