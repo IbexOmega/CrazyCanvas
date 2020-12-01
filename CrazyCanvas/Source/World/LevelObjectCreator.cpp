@@ -1404,7 +1404,7 @@ bool LevelObjectCreator::FindTeamIndex(const LambdaEngine::String& objectName, u
 	size_t teamIndexPos = objectName.find("TEAM");
 	if (teamIndexPos != String::npos)
 	{
-		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4));
+		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4)) - 1;
 		return true;
 	}
 
