@@ -74,6 +74,7 @@ public:
 
 public:
 	static bool Init();
+	static void Release();
 
 	FORCEINLINE static WeaponSystem& GetInstance()
 	{

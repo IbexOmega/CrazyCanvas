@@ -54,6 +54,11 @@ bool WeaponSystem::Init()
 	return s_Instance->InitInternal();
 }
 
+void WeaponSystem::Release()
+{
+	s_Instance.Reset();
+}
+
 void WeaponSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg)
 {
 	using namespace LambdaEngine;
