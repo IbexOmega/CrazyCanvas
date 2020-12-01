@@ -126,6 +126,7 @@ bool MultiplayerGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent&
 	serverInfo.IsOnline		= true;
 
 	pDecoder->ReadUInt8(serverInfo.Players);
+	pDecoder->ReadUInt8(serverInfo.MaxPlayers);
 	pDecoder->ReadString(serverInfo.Name);
 	pDecoder->ReadString(serverInfo.MapName);
 	int32 clientHostID = pDecoder->ReadInt32();

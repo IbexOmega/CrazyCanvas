@@ -110,6 +110,6 @@ void SavedServerGUI::UpdateServerInfo(const ServerInfo& serverInfo)
 	pName->SetText(serverInfo.Name.c_str());
 	pMapName->SetText(serverInfo.IsOnline ? serverInfo.MapName.c_str() : "-");
 	pPing->SetText((serverInfo.IsOnline ? std::to_string(serverInfo.Ping) + " ms" : "-").c_str());
-	pPlayerCount->SetText(serverInfo.IsOnline ? std::to_string(serverInfo.Players).c_str() : "-");
+	pPlayerCount->SetText(serverInfo.IsOnline ? (std::to_string(serverInfo.Players) + "/" + std::to_string(serverInfo.MaxPlayers)).c_str() : "-");
 	pBrush->SetColor(serverInfo.IsOnline ? Color::Green() : Color::Red());
 }

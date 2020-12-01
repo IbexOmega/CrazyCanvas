@@ -25,7 +25,7 @@ layout(location = 9) out vec3 out_ViewDirection;
 // Mesh painting
 layout(location = 10) out vec4 out_PaintInfo4;
 layout(location = 11) out float out_PaintDist;
-layout(location = 12) out vec3 out_ModelPosition;
+layout(location = 12) out vec3 out_LocalPosition;
 
 void main()
 {
@@ -54,7 +54,7 @@ void main()
 	
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	out_PaintDist 			= vertex.Normal.w;
-	out_ModelPosition		= vertex.Position.xyz;
+	out_LocalPosition		= vec3(vertex.Tangent.x, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 	gl_Position = out_ClipPosition;

@@ -23,6 +23,7 @@ layout(location = 9) in flat uint	in_InstanceIndex;
 layout(location = 10) in vec3 		in_ViewDirection;
 layout(location = 11) in vec4		in_PaintInfo4;
 layout(location = 12) in float 		in_PaintDist;
+layout(location = 13) in vec3 		in_LocalPosition;
 	
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 { 
@@ -65,8 +66,8 @@ void main()
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 	uint packedPaintInfo = 0;
 	float dist = 1.f;
-	GetVec4ToPackedPaintInfoAndDistance(in_WorldPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, dist);
+	GetVec4ToPackedPaintInfoAndDistance(in_LocalPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_LocalPosition, tangent, bitangent, packedPaintInfo, dist);
 
 	shadingNormal = mix(shadingNormal, paintDescription.Normal + shadingNormal * 0.2f, paintDescription.Interpolation);
 

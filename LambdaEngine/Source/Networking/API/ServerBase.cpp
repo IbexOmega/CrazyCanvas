@@ -127,6 +127,24 @@ namespace LambdaEngine
 		return nullptr;
 	}
 
+	void ServerBase::SetTimeout(Timestamp time)
+	{
+		std::scoped_lock<SpinLock> lock(m_LockClients);
+		for (auto& pair : m_Clients)
+		{
+			pair.second->SetTimeout(time);
+		}
+	}
+
+	void ServerBase::ResetTimeout()
+	{
+		std::scoped_lock<SpinLock> lock(m_LockClients);
+		for (auto& pair : m_Clients)
+		{
+			pair.second->ResetTimeout();
+		}
+	}
+
 	void ServerBase::OnClientAskForTermination(ClientRemoteBase* pClient)
 	{
 		std::scoped_lock<SpinLock> lock(m_LockClientVectors);

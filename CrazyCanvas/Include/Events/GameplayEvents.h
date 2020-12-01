@@ -146,3 +146,60 @@ public:
 
 	const LambdaEngine::Entity WeaponOwnerEntity;
 };
+
+struct WeaponReloadStartedEvent : public LambdaEngine::Event
+{
+public:
+	inline WeaponReloadStartedEvent(const LambdaEngine::Entity weaponOwnerEntity) :
+		WeaponOwnerEntity(weaponOwnerEntity)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Started to reload a weapon. EntitiyID=%u", WeaponOwnerEntity);
+	}
+
+	DECLARE_EVENT_TYPE(WeaponReloadStartedEvent);
+
+	const LambdaEngine::Entity WeaponOwnerEntity;
+};
+
+struct WeaponReloadCanceledEvent : public LambdaEngine::Event
+{
+public:
+	inline WeaponReloadCanceledEvent(const LambdaEngine::Entity weaponOwnerEntity) :
+		WeaponOwnerEntity(weaponOwnerEntity)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Canceled to reload a weapon. EntitiyID=%u", WeaponOwnerEntity);
+	}
+
+	DECLARE_EVENT_TYPE(WeaponReloadCanceledEvent);
+
+	const LambdaEngine::Entity WeaponOwnerEntity;
+};
+
+struct SpectatePlayerEvent : public LambdaEngine::Event
+{
+public:
+	inline SpectatePlayerEvent(const LambdaEngine::String& name) :
+		PlayerName(name)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Spectating player " +  PlayerName);
+	}
+
+	DECLARE_EVENT_TYPE(SpectatePlayerEvent);
+
+	const LambdaEngine::String& PlayerName;
+};

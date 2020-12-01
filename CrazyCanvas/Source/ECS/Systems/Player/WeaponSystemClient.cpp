@@ -2,6 +2,8 @@
 #include "ECS/Components/Player/Player.h"
 #include "ECS/ECSCore.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
@@ -18,6 +20,16 @@
 /*
 * WeaponSystemClients
 */
+
+WeaponSystemClient::WeaponSystemClient()
+{
+	LambdaEngine::EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &WeaponSystemClient::OnPlayerAliveUpdated);
+}
+
+WeaponSystemClient::~WeaponSystemClient()
+{
+	LambdaEngine::EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &WeaponSystemClient::OnPlayerAliveUpdated);
+}
 
 void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
 {
@@ -99,8 +111,10 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
 		
 		const bool hasAmmo		= (waterAmmo->second.first > 0) || (paintAmmo->second.first > 0);
+		const bool hasFullAmmo	= (waterAmmo->second.first >= 50) && (paintAmmo->second.first >= 50);
 		const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
 		const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
+
 		if (!hasAmmo && !isReloading)
 		{
 			StartReload(weaponComponent, playerActions);
@@ -109,7 +123,7 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
 		{ 
 			// Reload if we are not reloading
-			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
+			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading && !hasFullAmmo)
 			{
 				StartReload(weaponComponent, playerActions);
 			}
@@ -152,6 +166,34 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_3D_GUID);
 		pSound->PlayOnceAt(position, velocity, 0.25f, 1.0f);
 	}
+}
+
+bool WeaponSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+
+	if (event.pPlayer == pPlayer)
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+		for (Entity weaponEntity : m_WeaponEntities)
+		{
+			WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
+
+			if (weaponComponent.WeaponOwner == pPlayer->GetEntity())
+			{
+				for (auto& ammo : weaponComponent.WeaponTypeAmmo)
+				{
+					ammo.second.first = AMMO_CAPACITY;
+				}				
+			}
+		}
+	}
+	return false;
 }
 
 bool WeaponSystemClient::InitInternal()
@@ -219,6 +261,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		if (isReloading)
 		{
 			AbortReload(weaponComponent);
+
 		}
 
 		//Calculate Weapon Fire Properties (Position, Velocity and Team)

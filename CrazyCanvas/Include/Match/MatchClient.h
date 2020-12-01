@@ -34,7 +34,6 @@ protected:
 	bool OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTeamScored>& event);
 	bool OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<PacketDeleteLevelObject>& event);
 	bool OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMatchStart>& event);
-	bool OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event);
 	bool OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event);
 	bool OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event);
 

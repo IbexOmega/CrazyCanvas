@@ -23,6 +23,7 @@ struct ServerInfo
 	std::string MapName;
 
 	uint8 Players		= 0;
+	uint8 MaxPlayers	= 0;
 	uint16 Ping			= UINT16_MAX;
 	uint64 ServerUID	= UINT64_MAX;
 	bool IsLAN			= false;
@@ -33,12 +34,12 @@ struct ServerInfo
 
 	bool operator==(const ServerInfo& other) const
 	{
-		return Name == other.Name && MapName == other.MapName && Players == other.Players && Ping == other.Ping && EndPoint == other.EndPoint && ServerUID == other.ServerUID;
+		return Name == other.Name && MapName == other.MapName && Players == other.Players && MaxPlayers == other.MaxPlayers && Ping == other.Ping && EndPoint == other.EndPoint && ServerUID == other.ServerUID;
 	}
 
 	bool operator!=(const ServerInfo& other) const
 	{
-		return Name != other.Name || MapName != other.MapName || Players != other.Players || Ping != other.Ping || EndPoint != other.EndPoint || ServerUID != other.ServerUID;
+		return Name != other.Name || MapName != other.MapName || Players != other.Players || MaxPlayers != other.MaxPlayers || Ping != other.Ping || EndPoint != other.EndPoint || ServerUID != other.ServerUID;
 	}
 
 	ServerInfo& operator=(const ServerInfo& other)
@@ -48,6 +49,7 @@ struct ServerInfo
 			Name		= other.Name;
 			MapName		= other.MapName;
 			Players		= other.Players;
+			MaxPlayers	= other.MaxPlayers;
 			Ping		= other.Ping;
 			LastUpdate	= other.LastUpdate;
 			EndPoint	= other.EndPoint;

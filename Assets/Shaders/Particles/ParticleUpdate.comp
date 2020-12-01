@@ -121,8 +121,7 @@ void main()
 
 		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
 
-        // If we will skip to bounce the particles, this should not be named Bounciness. If not, this should be removed.
-		if(particle.Bounciness > 1.5f)
+		if(particle.ShouldStop > 0.5f)
 		{
 			particle.Velocity = vec3(0.f);
 		}
@@ -149,6 +148,7 @@ void main()
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
 			particle.TileIndex = emitter.FirstAnimationIndex;
+			particle.ShouldStop = 0.f;
 		}
 
 		// uncomment for animation, but this will remove random offset of tileindex per particle
