@@ -102,6 +102,7 @@ void PlaySessionState::Init()
 	{
 		//Called to tell the server we are ready to load the match
 		PlayerManagerClient::SetLocalPlayerStateLoading();
+		m_CamSystem.Init();
 	}
 
 	CommonApplication::Get()->SetMouseVisibility(false);
@@ -115,15 +116,6 @@ void PlaySessionState::Init()
 	m_AudioEffectHandler.Init();
 	m_MeshPaintHandler.Init();
 	m_MultiplayerClient.InitInternal();
-
-	if (m_Singleplayer)
-	{
-		SingleplayerInitializer::Setup();
-	}
-	else
-	{
-		m_CamSystem.Init();
-	}
 
 	// Init Systems
 	m_HUDSystem.Init();
@@ -153,6 +145,11 @@ void PlaySessionState::InternalInit()
 
 	m_MatchLoaded = true;
 	TryFinishMatchLoading();
+
+	if (m_Singleplayer)
+	{
+		SingleplayerInitializer::Setup();
+	}
 }
 
 void PlaySessionState::TryFinishMatchLoading()
