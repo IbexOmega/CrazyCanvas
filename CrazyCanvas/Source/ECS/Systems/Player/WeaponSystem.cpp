@@ -245,8 +245,10 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	
 	const glm::vec3 yOffset = glm::vec3(0, weaponOffsetComponent.Offset.y, 0);
 	const glm::vec3 xOffset = glm::vec3(weaponOffsetComponent.Offset.x, 0, 0);
+	const glm::vec3 right = glm::normalize(GetRight(playerRotationComponent.Quaternion));
+	const glm::vec3 forward = glm::normalize(GetForward(playerRotationComponent.Quaternion));
 
-	position		= playerPositionComponent.Position + playerRotation * yOffset + GetRight(playerRotationComponent.Quaternion) * xOffset + GetForward(playerRotationComponent.Quaternion) * 0.25f;
+	position		= playerPositionComponent.Position + playerRotation * yOffset + right * xOffset + forward * 0.25f;
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
 	
 	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
