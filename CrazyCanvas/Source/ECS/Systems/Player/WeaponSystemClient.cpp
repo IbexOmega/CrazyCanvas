@@ -2,6 +2,8 @@
 #include "ECS/Components/Player/Player.h"
 #include "ECS/ECSCore.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
@@ -18,6 +20,16 @@
 /*
 * WeaponSystemClients
 */
+
+WeaponSystemClient::WeaponSystemClient()
+{
+	LambdaEngine::EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &WeaponSystemClient::OnPlayerAliveUpdated);
+}
+
+WeaponSystemClient::~WeaponSystemClient()
+{
+	LambdaEngine::EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &WeaponSystemClient::OnPlayerAliveUpdated);
+}
 
 void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
 {
@@ -154,6 +166,34 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 	}
 }
 
+bool WeaponSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+
+	if (event.pPlayer == pPlayer)
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+		for (Entity weaponEntity : m_WeaponEntities)
+		{
+			WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
+
+			if (weaponComponent.WeaponOwner == pPlayer->GetEntity())
+			{
+				for (auto& ammo : weaponComponent.WeaponTypeAmmo)
+				{
+					ammo.second.first = AMMO_CAPACITY;
+				}				
+			}
+		}
+	}
+	return false;
+}
+
 bool WeaponSystemClient::InitInternal()
 {
 	using namespace LambdaEngine;
@@ -219,6 +259,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		if (isReloading)
 		{
 			AbortReload(weaponComponent);
+
 		}
 
 		//Calculate Weapon Fire Properties (Position, Velocity and Team)

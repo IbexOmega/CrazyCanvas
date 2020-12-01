@@ -5,7 +5,7 @@
 
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/Player.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -30,6 +30,8 @@ HUDSystem::~HUDSystem()
 
 	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
+	EventQueue::UnregisterEventHandler<WeaponReloadStartedEvent>(this, &HUDSystem::OnWeaponReloadStartedEvent);
+	EventQueue::UnregisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
@@ -99,6 +101,8 @@ void HUDSystem::Init()
 
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::RegisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
+	EventQueue::RegisterEventHandler<WeaponReloadStartedEvent>(this, &HUDSystem::OnWeaponReloadStartedEvent);
+	EventQueue::RegisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
@@ -139,7 +143,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 	for (Entity player : m_PlayerEntities)
 	{
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
-		m_HUDGUI->UpdateScore();
+
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
 
 		{
@@ -196,6 +200,8 @@ void HUDSystem::FixedTick(Timestamp delta)
 		}
 	}
 
+
+
 	static bool activeButtonChanged = false;
 	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
@@ -208,7 +214,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 		activeButtonChanged = false;
 	}
 
-	m_HUDGUI->UpdateKillFeedTimer(delta);
+	m_HUDGUI->FixedTick(delta);
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -245,11 +251,52 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT);
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER);
+				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
 			}
 		}
 	}
+	return false;
+}
+
+bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+		for (Entity playerWeapon : m_WeaponEntities)
+		{
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			{
+				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
+				HUDSystem::PromptMessage("Reloading", true);
+			}
+		}
+	}
+	return false;
+}
+
+bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+		for (Entity playerWeapon : m_WeaponEntities)
+		{
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			{
+				m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
+			}
+		}
+	}
+
 	return false;
 }
 
@@ -281,18 +328,39 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 		else
 			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), "Server", event.pPlayer->GetTeam());
 
-	if (pPlayer == PlayerManagerClient::GetPlayerLocal() && pPlayer->IsDead())
+	if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 	{
-		if (event.pPlayerKiller)
+		if (pPlayer->IsDead())
 		{
-			String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
-			HUDSystem::PromptMessage(promptText);
+
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+			for (Entity playerWeapon : m_WeaponEntities)
+			{
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (pPlayer->GetEntity() == weaponComponent.WeaponOwner && m_HUDGUI)
+				{
+					m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
+				}
+			}
+
+			m_HUDGUI->ShowHUD(false);
+
+			if (event.pPlayerKiller)
+			{
+				String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
+				HUDSystem::PromptMessage(promptText, false);
+			}
+			else
+			{
+				String promptText = "You Were Killed By The Server";
+				HUDSystem::PromptMessage(promptText, false);
+			}
 		}
 		else
-		{
-			String promptText = "You Were Killed By The Server";
-			HUDSystem::PromptMessage(promptText);
-		}
+			m_HUDGUI->ShowHUD(true);
 	}
 
 	return false;
@@ -317,7 +385,7 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 	else
 		promptText = "Team " + std::to_string(packet.TeamIndex + 1) + " Scored!";
 
-	HUDSystem::PromptMessage(promptText);
+	HUDSystem::PromptMessage(promptText, false, packet.TeamIndex);
 
 	return false;
 }
@@ -423,7 +491,7 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 	return false;
 }
 
-void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage)
+void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
 {
-	s_pHudsystemInstance->m_HUDGUI->DisplayPrompt(promtMessage);
+	s_pHudsystemInstance->m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
 }

@@ -16,6 +16,7 @@
 #include "Match/Match.h"
 
 #include "Teams/TeamHelper.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 /*
 * HealthSystemClient
@@ -118,8 +119,8 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<ChildComponent>* pChildComponents = pECS->GetComponentArray<ChildComponent>();
 
-		PositionComponent positionComponent = pECS->GetComponent<PositionComponent>(playerEntity);
-		TeamComponent teamComponent			= pECS->GetComponent<TeamComponent>(playerEntity);
+		const PositionComponent positionComponent	= pECS->GetComponent<PositionComponent>(playerEntity);
+		const TeamComponent teamComponent			= pECS->GetComponent<TeamComponent>(playerEntity);
 
 		Entity entity = pECS->CreateEntity();
 
@@ -169,12 +170,12 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 			for (const std::string& tag : tags)
 			{
 				Entity childEntity = childComponent.GetEntityWithTag(tag);
-				PaintMaskRenderer::ResetServer(childEntity);
+				MeshPaintHandler::ResetServer(childEntity);
 			}
 		}
 
 		// Reset player
-		PaintMaskRenderer::ResetServer(event.pPlayer->GetEntity());
+		MeshPaintHandler::ResetServer(event.pPlayer->GetEntity());
 	}
 
 	return true;

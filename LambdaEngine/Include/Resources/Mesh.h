@@ -22,14 +22,30 @@ namespace LambdaEngine
 {
 	struct Vertex
 	{
-		alignas(16) glm::vec3 Position;
-		alignas(16) glm::vec3 Normal;
+		alignas(16) glm::vec4 PositionXYZPaintBitsW = { 0.0f, 0.0f, 0.0f, glm::uintBitsToFloat(0) };
+		alignas(16) glm::vec4 NormalXYZPaintDistW = { 0.0f, 1.0f, 0.0f, 0.0f };
 		alignas(16) glm::vec3 Tangent;
 		alignas(16) glm::vec2 TexCoord;
 
 		bool operator==(const Vertex& other) const
 		{
-			return Position == other.Position && Normal == other.Normal && Tangent == other.Tangent && TexCoord == other.TexCoord;
+			return PositionXYZPaintBitsW == other.PositionXYZPaintBitsW && NormalXYZPaintDistW == other.NormalXYZPaintDistW && Tangent == other.Tangent && TexCoord == other.TexCoord;
+		}
+
+		/*
+		* Returns a glm::vec3 with just the position - omitting the PaintBits stored in W.
+		*/
+		glm::vec3 ExtractPosition() const
+		{
+			return { PositionXYZPaintBitsW.x, PositionXYZPaintBitsW.y, PositionXYZPaintBitsW.z };
+		}
+
+		/*
+		* Returns a glm::vec3 with just the normal - omitting the PaintDist stored in W.
+		*/
+		glm::vec3 ExtractNormal() const
+		{
+			return { NormalXYZPaintDistW.x, NormalXYZPaintDistW.y, NormalXYZPaintDistW.z };
 		}
 	};
 
@@ -201,8 +217,8 @@ namespace std
 		size_t operator()(LambdaEngine::Vertex const& vertex) const
 		{
 			return
-				((hash<glm::vec3>()(vertex.Position) ^
-				 (hash<glm::vec3>()(vertex.Normal) << 1)) >> 1) ^
+				((hash<glm::vec3>()(vertex.PositionXYZPaintBitsW) ^
+				 (hash<glm::vec3>()(vertex.NormalXYZPaintDistW) << 1)) >> 1) ^
 				 (hash<glm::vec2>()(vertex.TexCoord) << 1);
 		}
 	};

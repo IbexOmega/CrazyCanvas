@@ -63,6 +63,30 @@ HUDGUI::~HUDGUI()
 {
 }
 
+void HUDGUI::FixedTick(LambdaEngine::Timestamp delta)
+{
+
+	UpdateKillFeedTimer(delta);
+	UpdateScore();
+
+	if (m_IsReloading)
+	{
+		AnimateReload(float32(delta.AsSeconds()));
+	}
+}
+
+void HUDGUI::AnimateReload(const float32 timePassed)
+{
+	Noesis::ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
+	Noesis::ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
+
+	pWaterScale->SetScaleX(glm::clamp<float>(pWaterScale->GetScaleX() + m_WaterAmmoFactor * timePassed, 0.0f, 1.0f));
+	pPaintScale->SetScaleX(glm::clamp<float>(pPaintScale->GetScaleX() + m_PaintAmmoFactor * timePassed, 0.0f, 1.0f));
+
+	m_pWaterAmmoRect->SetRenderTransform(pWaterScale);
+	m_pPaintAmmoRect->SetRenderTransform(pPaintScale);
+}
+
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
 	UNREFERENCED_VARIABLE(pSource);
@@ -122,18 +146,34 @@ bool HUDGUI::UpdateScore()
 bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType)
 {
 	//Returns false if Out Of Ammo
+
 	std::string ammoString;
 	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
-
+	float ammoScale = 0.0f;
 	auto ammo = WeaponTypeAmmo.find(ammoType);
 
 	if (ammo != WeaponTypeAmmo.end())
 	{
 		ammoString = std::to_string(ammo->second.first) + "/" + std::to_string(ammo->second.second);
-		float ammoScale = (float)ammo->second.first / (float)ammo->second.second;
+		ammoScale = (float)ammo->second.first / (float)ammo->second.second;
 		scale->SetCenterX(0.0);
 		scale->SetCenterY(0.0);
 		scale->SetScaleX(ammoScale);
+
+		if (ammoType == EAmmoType::AMMO_TYPE_WATER)
+		{
+			m_GUIState.WaterAmmo = ammo->second.first;
+
+			m_pWaterAmmoText->SetText(ammoString.c_str());
+			m_pWaterAmmoRect->SetRenderTransform(scale);
+		}
+		else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
+		{
+			m_GUIState.PaintAmmo = ammo->second.first;
+
+			m_pPaintAmmoText->SetText(ammoString.c_str());
+			m_pPaintAmmoRect->SetRenderTransform(scale);
+		}
 	}
 	else
 	{
@@ -141,19 +181,70 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 		return false;
 	}
 
-
-	if (ammoType == EAmmoType::AMMO_TYPE_WATER)
-	{
-		m_pWaterAmmoText->SetText(ammoString.c_str());
-		m_pWaterAmmoRect->SetRenderTransform(scale);
-	}
-	else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
-	{
-		m_pPaintAmmoText->SetText(ammoString.c_str());
-		m_pPaintAmmoRect->SetRenderTransform(scale);
-	}
-
 	return true;
+}
+
+void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading)
+{
+	m_IsReloading = isReloading;
+
+	if (m_IsReloading)
+	{
+		for (auto& ammo : WeaponTypeAmmo)
+		{
+			float scale = (float)ammo.second.first / (float)ammo.second.second;
+
+			if (ammo.first == EAmmoType::AMMO_TYPE_WATER)
+				m_WaterAmmoFactor = (1.0f - scale) / m_ReloadAnimationTime;
+			else if (ammo.first == EAmmoType::AMMO_TYPE_PAINT)
+				m_PaintAmmoFactor = (1.0f - scale) / m_ReloadAnimationTime;
+		}
+	}
+	else
+	{
+		Noesis::Ptr<Noesis::ScaleTransform> scaleTransform = *new ScaleTransform();
+		std::string ammoString = std::to_string(50) + "/" + std::to_string(50);
+		scaleTransform->SetCenterX(0.0);
+		scaleTransform->SetCenterY(0.0);
+		scaleTransform->SetScaleX(1.0f);
+
+		m_pWaterAmmoText->SetText(ammoString.c_str());
+		m_pWaterAmmoRect->SetRenderTransform(scaleTransform);
+
+		m_pPaintAmmoText->SetText(ammoString.c_str());
+		m_pPaintAmmoRect->SetRenderTransform(scaleTransform);
+	}
+}
+
+void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo)
+{
+	m_IsReloading = false;
+	m_ReloadAnimationTime = 2.0f;
+	Noesis::Ptr<Noesis::ScaleTransform> waterScaleTransform = *new ScaleTransform();
+	Noesis::Ptr<Noesis::ScaleTransform> paintScaleTransform = *new ScaleTransform();
+
+	CancelSmallPrompt();
+
+	for (auto& ammo : WeaponTypeAmmo)
+	{
+		float scale = (float)ammo.second.first / (float)ammo.second.second;
+		if (ammo.first == EAmmoType::AMMO_TYPE_WATER)
+		{
+			waterScaleTransform->SetCenterX(0.0);
+			waterScaleTransform->SetCenterY(0.0);
+			waterScaleTransform->SetScaleX(scale);
+
+			m_pWaterAmmoRect->SetRenderTransform(waterScaleTransform);
+		}
+		else if (ammo.first == EAmmoType::AMMO_TYPE_PAINT)
+		{
+			paintScaleTransform->SetCenterX(0.0);
+			paintScaleTransform->SetCenterY(0.0);
+			paintScaleTransform->SetScaleX(scale);
+
+			m_pPaintAmmoRect->SetRenderTransform(paintScaleTransform);
+		}
+	}
 }
 
 
@@ -209,9 +300,7 @@ void HUDGUI::DisplayHitIndicator()
 
 void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex)
 {
-	LambdaEngine::String feedText = killer + " Killed " + killed;
-
-	m_pKillFeedGUI->AddToKillFeed(feedText, killedPlayerTeamIndex);
+	m_pKillFeedGUI->AddToKillFeed(killed, killer, killedPlayerTeamIndex);
 }
 
 void HUDGUI::UpdateKillFeedTimer(LambdaEngine::Timestamp delta)
@@ -257,6 +346,14 @@ void HUDGUI::SetWindowSize(uint32 width, uint32 height)
 	m_WindowSize = glm::vec2(width, height);
 }
 
+void HUDGUI::ShowHUD(const bool isVisible)
+{
+	if(isVisible)
+		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
+	else
+		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
+}
+
 ScoreBoardGUI* HUDGUI::GetScoreBoard() const
 {
 	return m_pScoreBoardGUI;
@@ -278,17 +375,32 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	m_pScoreBoardGUI->DisplayScoreboardMenu(true);
 }
 
-void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage)
+void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex)
 {
-	PromptGUI* pCountdownGUI = FindName<PromptGUI>("PROMPT");
-	pCountdownGUI->DisplayPrompt(promptMessage);
+	PromptGUI* pPromptGUI = nullptr;
+
+	if (isSmallPrompt)
+	{
+		pPromptGUI = FindName<PromptGUI>("SMALLPROMPT");
+		pPromptGUI->DisplaySmallPrompt(promptMessage);
+	}
+	else
+	{
+		pPromptGUI = FindName<PromptGUI>("PROMPT");
+		pPromptGUI->DisplayPrompt(promptMessage, teamIndex);
+	}
+}
+
+void HUDGUI::CancelSmallPrompt()
+{
+	PromptGUI* pPromptGUI = nullptr;
+	pPromptGUI = FindName<PromptGUI>("SMALLPROMPT");
+	pPromptGUI->CancelSmallPrompt();
 }
 
 void HUDGUI::InitGUI()
 {
 	m_GUIState.Health			= m_GUIState.MaxHealth;
-	m_GUIState.AmmoCapacity		= 50;
-	m_GUIState.Ammo				= m_GUIState.AmmoCapacity;
 
 	m_GUIState.Scores.PushBack(Match::GetScore(0));
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
@@ -308,7 +420,7 @@ void HUDGUI::InitGUI()
 
 	std::string ammoString;
 
-	ammoString	= std::to_string((int)m_GUIState.Ammo) + "/" + std::to_string((int)m_GUIState.AmmoCapacity);
+	ammoString	= std::to_string((int)m_GUIState.WaterAmmo) + "/" + std::to_string((int)m_GUIState.WaterAmmoCapacity);
 
 	m_pWaterAmmoText->SetText(ammoString.c_str());
 	m_pPaintAmmoText->SetText(ammoString.c_str());
