@@ -268,22 +268,20 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
 
-	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
+	GameOverEvent gameOverEvent(packet.WinningTeamIndex);
+	EventQueue::SendEventImmediate(gameOverEvent);
 
 	return true;
 }
 
 bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
-	UNREFERENCED_VARIABLE(event);
-
 	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
 
-	UNREFERENCED_VARIABLE(event);
-
-	if (event.pPlayer == PlayerManagerClient::GetPlayerLocal())
+	if (event.pPlayer == pPlayerLocal)
 	{
-		if (PlayerManagerClient::GetPlayerLocal()->IsDead())
+		if (pPlayerLocal->IsDead())
 		{
 			if (currentInputLayer == EInputLayer::GUI)
 			{
