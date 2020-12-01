@@ -267,6 +267,7 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	{
 		ChatManager::Clear();
 		Match::ResetMatch();
+		PlayerManagerServer::Reset();
 
 		const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
 		for (auto& pair : players)

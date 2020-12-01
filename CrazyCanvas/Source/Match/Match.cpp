@@ -22,21 +22,37 @@ bool Match::CreateMatch(const MatchDescription* pDesc)
 {
 	using namespace LambdaEngine;
 
-	std::scoped_lock<SpinLock> lock(m_Lock);
-
 	if (s_pMatchInstance)
-		return false;
+	{
+		if (!ResetMatch())
+		{
+			LOG_ERROR("Failed to reset s_pMatchInstance");
+			return false;
+		}
 
-	if (MultiplayerUtils::IsServer())
-		s_pMatchInstance = DBG_NEW MatchServer();
+		if (!s_pMatchInstance->Init(pDesc))
+		{
+			LOG_ERROR("Failed to initialize s_pMatchInstance");
+			return false;
+		}
+	}
 	else
-		s_pMatchInstance = DBG_NEW MatchClient();
-	
-	if (!s_pMatchInstance->Init(pDesc))
-		return false;
+	{
+		std::scoped_lock<SpinLock> lock(m_Lock);
+
+		if (MultiplayerUtils::IsServer())
+			s_pMatchInstance = DBG_NEW MatchServer();
+		else
+			s_pMatchInstance = DBG_NEW MatchClient();
+
+		if (!s_pMatchInstance->Init(pDesc))
+		{
+			LOG_ERROR("Failed to initialize s_pMatchInstance");
+			return false;
+		}
+	}
 
 	EventQueue::SendEvent<MatchInitializedEvent>(MatchInitializedEvent(pDesc->GameMode));
-
 	return true;
 }
 
@@ -46,10 +62,12 @@ bool Match::ResetMatch()
 
 	std::scoped_lock<SpinLock> lock(m_Lock);
 	if (s_pMatchInstance)
+	{
 		s_pMatchInstance->ResetMatch();
-	else
-		LOG_ERROR("Match::ResetMatch() Faild becouse s_pMatchInstance == nullptr");
+		return true;
+	}
 
+	LOG_ERROR("Match::ResetMatch() Faild becouse s_pMatchInstance == nullptr");
 	return false;
 }
 
