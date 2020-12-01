@@ -86,7 +86,7 @@ public:
 	void DisplayHitIndicator();
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
 	void DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex);
-	void DisplaySpecateText(const LambdaEngine::String& name, bool isSpectating);
+	void DisplaySpectateText(const LambdaEngine::String& name, bool isSpectating);
 	void CancelSmallPrompt();
 
 	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex);

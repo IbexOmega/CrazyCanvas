@@ -391,7 +391,7 @@ void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSma
 	}
 }
 
-void HUDGUI::DisplaySpecateText(const LambdaEngine::String& name, bool isSpectating)
+void HUDGUI::DisplaySpectateText(const LambdaEngine::String& name, bool isSpectating)
 {
 	if (isSpectating)
 	{
