@@ -326,7 +326,7 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 	{
 		translation->SetY(glm::clamp(windowSpacePos.y, (-m_WindowSize.y + 100) * 0.5f, (m_WindowSize.y - 100) * 0.5f));
 		translation->SetX(glm::clamp(windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
-		SetIndicatorOpacity(glm::max(0.1f, vecLength), entity);
+		SetIndicatorOpacity(glm::clamp(vecLength, 0.1f, 1.0f), entity);
 	}
 	else
 	{
