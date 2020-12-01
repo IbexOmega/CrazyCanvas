@@ -22,10 +22,10 @@ namespace LambdaEngine
 	{
 		// Create Command List
 		{
-			m_pCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Tessellator Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
+			m_pCommandAllocator = RenderAPI::GetDevice()->CreateCommandAllocator("Tessellator Command Allocator", ECommandQueueType::COMMAND_QUEUE_TYPE_GRAPHICS);
 
 			CommandListDesc commandListDesc = { };
-			commandListDesc.DebugName = "Tessellator Compute Command List";
+			commandListDesc.DebugName = "Tessellator Graphics Command List";
 			commandListDesc.CommandListType = ECommandListType::COMMAND_LIST_TYPE_PRIMARY;
 			commandListDesc.Flags = FCommandListFlag::COMMAND_LIST_FLAG_ONE_TIME_SUBMIT;
 			m_pCommandList = RenderAPI::GetDevice()->CreateCommandList(m_pCommandAllocator, &commandListDesc);
@@ -54,36 +54,30 @@ namespace LambdaEngine
 
 		// Create Pipeline Layout
 		{
+			// Original vertices
 			DescriptorBindingDesc inVerticesBinding = { };
 			inVerticesBinding.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 			inVerticesBinding.DescriptorCount = 1;
 			inVerticesBinding.Binding = 0;
-			inVerticesBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-
-			DescriptorBindingDesc inIndicesBinding = { };
-			inIndicesBinding.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
-			inIndicesBinding.DescriptorCount = 1;
-			inIndicesBinding.Binding = 1;
-			inIndicesBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			inVerticesBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 			DescriptorSetLayoutDesc inDescriptorSetLayoutDesc = { };
 			inDescriptorSetLayoutDesc.DescriptorBindings =
 			{
-				inVerticesBinding,
-				inIndicesBinding
+				inVerticesBinding
 			};
 
 			DescriptorBindingDesc outVerticesBinding = { };
 			outVerticesBinding.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 			outVerticesBinding.DescriptorCount = 1;
 			outVerticesBinding.Binding = 0;
-			outVerticesBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			outVerticesBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 			DescriptorBindingDesc outIndicesBinding = { };
 			outIndicesBinding.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 			outIndicesBinding.DescriptorCount = 1;
 			outIndicesBinding.Binding = 1;
-			outIndicesBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			outIndicesBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 			DescriptorSetLayoutDesc outDescriptorSetLayoutDesc = { };
 			outDescriptorSetLayoutDesc.DescriptorBindings =
@@ -94,7 +88,7 @@ namespace LambdaEngine
 
 			ConstantRangeDesc constantRangeDesc = {};
 			constantRangeDesc.OffsetInBytes = 0;
-			constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 			constantRangeDesc.SizeInBytes = sizeof(SPushConstantData);
 
 			PipelineLayoutDesc pPipelineLayoutDesc = { };
@@ -110,20 +104,54 @@ namespace LambdaEngine
 
 		// Create Pipeline State
 		{
-			m_ShaderGUID = ResourceManager::LoadShaderFromFile("Tessellation/Tessellator.comp", FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+			RenderPassDesc renderPassDesc = {};
+			renderPassDesc.DebugName = "Tessellator Render Pass";
+			m_RenderPass = RenderAPI::GetDevice()->CreateRenderPass(&renderPassDesc);
 
-			ComputePipelineStateDesc computePipelineStateDesc = { };
-			computePipelineStateDesc.DebugName = "Tessellator Pipeline State";
-			computePipelineStateDesc.pPipelineLayout = m_pPipelineLayout;
-			computePipelineStateDesc.Shader = { .pShader = ResourceManager::GetShader(m_ShaderGUID) };
+			ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
+			pipelineStateDesc.DebugName = "Player Renderer Pipeline Back Cull State";
+			pipelineStateDesc.RenderPass = m_RenderPass;
+			pipelineStateDesc.PipelineLayout = m_pPipelineLayout;
 
-			m_pPipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&computePipelineStateDesc);
+			pipelineStateDesc.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_PATCH_LIST;
+
+			pipelineStateDesc.RasterizerState.LineWidth = 1.f;
+			pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
+			pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
+
+			pipelineStateDesc.DepthStencilState = {};
+			pipelineStateDesc.DepthStencilState.DepthTestEnable = false;
+			pipelineStateDesc.DepthStencilState.DepthWriteEnable = false;
+
+			pipelineStateDesc.BlendState.BlendAttachmentStates =
+			{
+				{
+					EBlendOp::BLEND_OP_ADD,
+					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+					EBlendOp::BLEND_OP_ADD,
+					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+					COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
+					false
+				}
+			};
+
+			GUID_Lambda vertexShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+			GUID_Lambda controlShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.tesc", FShaderStageFlag::SHADER_STAGE_FLAG_HULL_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+			GUID_Lambda evaluationShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.tese", FShaderStageFlag::SHADER_STAGE_FLAG_DOMAIN_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
+
+			pipelineStateDesc.VertexShader.ShaderGUID = vertexShader;
+			pipelineStateDesc.HullShader.ShaderGUID = controlShader;
+			pipelineStateDesc.DomainShader.ShaderGUID = evaluationShader;
+			//pipelineStateDesc.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
+
+			m_pPipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
 		}
 	}
 
 	void MeshTessellator::Release()
 	{
-		m_pPipelineState->Release();
 		m_pInDescriptorSet->Release();
 		m_pOutDescriptorSet->Release();
 		m_pDescriptorHeap->Release();
@@ -169,6 +197,19 @@ namespace LambdaEngine
 		uint64 newVerticesMaxSize = (pushConstantData.triangleCount*12) * sizeof(Vertex);
 		uint64 newIndicesMaxSize = (pushConstantData.triangleCount * 12) * sizeof(MeshIndexType);
 
+		BeginRenderPassDesc beginRenderPassDesc = {};
+		beginRenderPassDesc.pRenderPass = m_RenderPass;
+		beginRenderPassDesc.ppRenderTargets = nullptr;
+		beginRenderPassDesc.pDepthStencil = nullptr;
+		beginRenderPassDesc.RenderTargetCount = 0;
+		beginRenderPassDesc.Width = 0;
+		beginRenderPassDesc.Height = 0;
+		beginRenderPassDesc.Flags = FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+		beginRenderPassDesc.pClearColors = nullptr;
+		beginRenderPassDesc.ClearColorCount = 0;
+		beginRenderPassDesc.Offset.x = 0;
+		beginRenderPassDesc.Offset.y = 0;
+
 		LOG_WARNING("Create buffers...");
 		static uint64 signalValue = 0;
 		{
@@ -209,10 +250,10 @@ namespace LambdaEngine
 		{
 			// In descriptor set
 			{
-				Buffer* buffers[2] = { m_pInVertexBuffer, m_pInIndicesBuffer };
-				uint64 offsets[2] = { 0, 0 };
-				uint64 sizes[2] = { m_pInVertexBuffer->GetDesc().SizeInBytes, m_pInIndicesBuffer->GetDesc().SizeInBytes };
-				m_pInDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 2, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+				Buffer* buffers[1] = { m_pInVertexBuffer };
+				uint64 offsets[1] = { 0 };
+				uint64 sizes[1] = { m_pInVertexBuffer->GetDesc().SizeInBytes };
+				m_pInDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 			}
 			
 			// Out descriptor set
@@ -225,22 +266,23 @@ namespace LambdaEngine
 		}
 		LOG_WARNING("Done");
 
-		LOG_WARNING("Dispatch...");
+		LOG_WARNING("Tessellate...");
 		{
 			m_pCommandAllocator->Reset();
 			m_pCommandList->Begin(nullptr);
+			m_pCommandList->BeginRenderPass(&beginRenderPassDesc);
 
 			// ------- Compute pipeline -------
 			m_pCommandList->BindDescriptorSetCompute(m_pInDescriptorSet, m_pPipelineLayout, 0);
 			m_pCommandList->BindDescriptorSetCompute(m_pOutDescriptorSet, m_pPipelineLayout, 1);
 
-			m_pCommandList->BindComputePipeline(m_pPipelineState);
-			m_pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, (void*)&pushConstantData, sizeof(pushConstantData), 0);
+			m_pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_pPipelineStateID));
+			m_pCommandList->SetConstantRange(m_pPipelineLayout, FShaderStageFlag::SHADER_STAGE_FLAG_ALL, (void*)&pushConstantData, sizeof(pushConstantData), 0);
+			
+			m_pCommandList->BindIndexBuffer(m_pInIndicesBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
-			// Dispatch
-			constexpr uint32 WORK_GROUP_INVOCATIONS = 32;
-			uint32 workGroupX = uint32(std::ceilf(float(pushConstantData.triangleCount) / float(WORK_GROUP_INVOCATIONS)));
-			m_pCommandList->Dispatch(workGroupX, 1U, 1U);
+			// Render
+			m_pCommandList->DrawIndexInstanced(pMesh->Indices.GetSize(), 1, 0, 0, 0);
 
 			static constexpr const PipelineMemoryBarrierDesc MEMORY_BARRIER
 			{
@@ -249,7 +291,7 @@ namespace LambdaEngine
 			};
 
 			m_pCommandList->PipelineMemoryBarriers(
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM,
 				FPipelineStageFlag::PIPELINE_STAGE_FLAG_COPY,
 				&MEMORY_BARRIER,
 				1);

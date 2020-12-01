@@ -42,7 +42,8 @@ namespace LambdaEngine
 		PipelineLayout* m_pPipelineLayout;
 		GUID_Lambda m_ShaderGUID;
 
-		PipelineState* m_pPipelineState;
+		RenderPass* m_RenderPass;
+		GUID_Lambda m_pPipelineStateID;
 
 		Buffer* m_pInVertexStagingBuffer = nullptr;
 		Buffer* m_pInVertexBuffer = nullptr;
