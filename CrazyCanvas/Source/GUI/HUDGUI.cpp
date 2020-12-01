@@ -400,7 +400,10 @@ void HUDGUI::DisplaySpectateText(const LambdaEngine::String& name, bool isSpecta
 		m_pSpectatePlayerText->SetVisibility(Visibility::Visibility_Visible);
 	}
 	else
-		m_pSpectatePlayerText->SetVisibility(Visibility::Visibility_Hidden);
+	{
+		m_pSpectatePlayerText->SetText("");
+		m_pSpectatePlayerText->SetVisibility(Visibility::Visibility_Collapsed);
+	}
 }
 
 void HUDGUI::CancelSmallPrompt()

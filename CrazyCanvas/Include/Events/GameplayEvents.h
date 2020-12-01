@@ -188,8 +188,9 @@ public:
 struct SpectatePlayerEvent : public LambdaEngine::Event
 {
 public:
-	inline SpectatePlayerEvent(const LambdaEngine::String& name) :
-		PlayerName(name)
+	inline SpectatePlayerEvent(const LambdaEngine::String& name, bool isSpectating) :
+		PlayerName(name),
+		IsSpectating(isSpectating)
 	{
 	}
 
@@ -202,4 +203,5 @@ public:
 	DECLARE_EVENT_TYPE(SpectatePlayerEvent);
 
 	const LambdaEngine::String& PlayerName;
+	bool IsSpectating;
 };
