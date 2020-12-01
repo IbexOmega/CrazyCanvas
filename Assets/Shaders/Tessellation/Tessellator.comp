@@ -104,8 +104,8 @@ void main()
         SVertex B = InterpolateVertex(v0, v1, v2, b);
         SVertex C = InterpolateVertex(v0, v1, v2, c);
 
-        A.Position.y += sin(dot(a, a));
-        B.Position.y += cos(dot(b, b));
+        //A.Position.y += sin(dot(a, a));
+        //B.Position.y += cos(dot(b, b));
 
         EmitVertex(v0, triangleIndex, 0);
         EmitVertex(A, triangleIndex, 1);
