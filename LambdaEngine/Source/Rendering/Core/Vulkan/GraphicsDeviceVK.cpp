@@ -1265,6 +1265,8 @@ namespace LambdaEngine
 		enabledDeviceFeatures10.pipelineStatisticsQuery			= supportedDeviceFeatures10.pipelineStatisticsQuery;
 		enabledDeviceFeatures10.imageCubeArray					= supportedDeviceFeatures10.imageCubeArray;
 		enabledDeviceFeatures10.shaderInt16						= supportedDeviceFeatures10.shaderInt16;
+		enabledDeviceFeatures10.tessellationShader				= supportedDeviceFeatures10.tessellationShader;
+		enabledDeviceFeatures10.geometryShader					= supportedDeviceFeatures10.geometryShader;
 		enabledDeviceFeatures10.samplerAnisotropy				= supportedDeviceFeatures10.samplerAnisotropy;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};

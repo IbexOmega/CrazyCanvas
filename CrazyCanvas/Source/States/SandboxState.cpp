@@ -112,7 +112,7 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[0]
+			.LevelHash = levelHashes[9]
 		};
 
 		Match::CreateMatch(&matchDescription);
@@ -130,10 +130,11 @@ void SandboxState::Init()
 		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
 	}
 
+	/*
 	// Load character
 	{
 		GUID_Lambda characterMeshGUID;
-		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
+		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID, false);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -165,7 +166,7 @@ void SandboxState::Init()
 	// Sphere grid
 	{
 		GUID_Lambda sphereMeshGUID;
-		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
+		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID, false);
 		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
 
 		uint32 gridRadius = 5;
@@ -210,7 +211,7 @@ void SandboxState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		GUID_Lambda robotMeshGUID;
-		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", robotMeshGUID, animations);
+		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", robotMeshGUID, animations, false);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
@@ -416,7 +417,7 @@ void SandboxState::Init()
 
 			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 		}
-	}
+	}*/
 
 	// Emitter
 	{
@@ -458,7 +459,7 @@ void SandboxState::Init()
 	{
 		GUID_Lambda meshGUID;
 		TArray<GUID_Lambda> animations;
-		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations, false);
 	}
 
 	if constexpr (IMGUI_ENABLED)

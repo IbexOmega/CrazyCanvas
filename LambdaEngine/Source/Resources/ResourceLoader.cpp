@@ -28,6 +28,8 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 
+#include "Resources/MeshTessellator.h"
+
 #include <cstdio>
 
 #include <assimp/Importer.hpp>
@@ -418,18 +420,20 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponents,
 			.pMaterials					= &materials,
 			.pTextures					= &textures,
-			.AnimationsOnly 			= false
+			.AnimationsOnly 			= false,
+			.ShouldTessellate			= true
 		};
 
 		return LoadSceneWithAssimp(loadRequest);
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromFile(
-		const String& filepath,
-		TArray<LoadedMaterial*>* pMaterials,
-		TArray<LoadedTexture*>* pTextures,
-		TArray<Animation*>* pAnimations,
-		int32 assimpFlags)
+		const String& filepath, 
+		TArray<LoadedMaterial*>* pMaterials, 
+		TArray<LoadedTexture*>* pTextures, 
+		TArray<Animation*>* pAnimations, 
+		int32 assimpFlags, 
+		bool shouldTessellate)
 	{
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
@@ -452,7 +456,8 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponent,
 			.pMaterials					= pMaterials,
 			.pTextures					= pTextures,
-			.AnimationsOnly 			= false
+			.AnimationsOnly 			= false,
+			.ShouldTessellate			= shouldTessellate
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -519,7 +524,8 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponent,
 			.pMaterials					= nullptr,
 			.pTextures					= nullptr,
-			.AnimationsOnly				= true
+			.AnimationsOnly				= true,
+			.ShouldTessellate			= false
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -2154,7 +2160,8 @@ namespace LambdaEngine
 			.MeshComponents				= sceneLoadRequest.MeshComponents,
 			.pAnimations				= sceneLoadRequest.pAnimations,
 			.pMaterials					= sceneLoadRequest.pMaterials,
-			.pTextures					= sceneLoadRequest.pTextures
+			.pTextures					= sceneLoadRequest.pTextures,
+			.ShouldTessellate			= sceneLoadRequest.ShouldTessellate
 		};
 
 		// Metadata
@@ -2319,6 +2326,11 @@ namespace LambdaEngine
 
 					LoadVertices(pMesh, pMeshAI);
 					LoadIndices(pMesh, pMeshAI);
+
+					if (context.ShouldTessellate && pMeshAI->mNumBones == 0)
+					{
+						MeshTessellator::GetInstance().Tessellate(pMesh);
+					}
 
 					if (context.pMaterials)
 					{
