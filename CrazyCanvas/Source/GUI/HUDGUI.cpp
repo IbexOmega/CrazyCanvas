@@ -511,7 +511,7 @@ void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint
 
 	if (teamIndex != UINT8_MAX)
 	{
-		glm::vec3 teamColor = TeamHelper::GetTeamColor(teamIndex);
+		const glm::vec3& teamColor = TeamHelper::GetTeamColor(teamIndex);
 		Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
 		brush->SetColor(color);
 	}
@@ -566,6 +566,6 @@ void HUDGUI::SetIndicatorOpacity(float32 value, Entity entity)
 	auto indicator = m_ProjectedElements.find(entity);
 	VALIDATE(indicator != m_ProjectedElements.end())
 
-	Noesis::Ellipse* target = (Noesis::Ellipse*)indicator->second->GetChildren()->Get(0);
-	target->GetFill()->SetOpacity(value);
+	Noesis::Ellipse* pTarget = (Noesis::Ellipse*)indicator->second->GetChildren()->Get(0);
+	pTarget->GetFill()->SetOpacity(value);
 }

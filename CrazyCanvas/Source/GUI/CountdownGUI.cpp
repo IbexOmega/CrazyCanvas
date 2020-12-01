@@ -15,7 +15,7 @@ CountdownGUI::CountdownGUI()
 
 	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
 
-	glm::vec3 promptColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
+	const glm::vec3& promptColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
 	Noesis::Color color(promptColor.r, promptColor.g, promptColor.b);
 
 	pBrush->SetColor(color);

@@ -177,7 +177,7 @@ void SpectateCameraSystem::SpectatePlayer()
 				Entity nextPlayer = m_pSpectatedPlayer->GetEntity();
 				parentComponent.Parent = nextPlayer;
 
-				SpectatePlayerEvent event = SpectatePlayerEvent(m_pSpectatedPlayer->GetName());
+				SpectatePlayerEvent event(m_pSpectatedPlayer->GetName());
 				EventQueue::SendEventImmediate(event);
 			}
 		}
