@@ -40,7 +40,7 @@ public:
 	FORCEINLINE static GUID_Lambda GetMyTeamPlayerMaterialGUID() { return s_MyTeamPlayerMaterialGUID; }
 
 private:
-	inline static uint8			s_TeamIndexes[MAX_NUM_TEAMS];
+	inline static uint8			s_TeamIndexes[LambdaEngine::MAX_NUM_TEAMS];
 
 	inline static GUID_Lambda	s_PlayerTextureGUID = GUID_NONE;
 	inline static GUID_Lambda	s_TeamColorMaterialGUIDs[LambdaEngine::MAX_NUM_TEAMS];

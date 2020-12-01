@@ -324,18 +324,18 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 
 	if (clipSpacePos.z > 0)
 	{
-		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
-		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
+		translation->SetY(glm::clamp(windowSpacePos.y, (-m_WindowSize.y + 100) * 0.5f, (m_WindowSize.y - 100) * 0.5f));
+		translation->SetX(glm::clamp(windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
 		SetIndicatorOpacity(glm::max(0.1f, vecLength), entity);
 	}
 	else
 	{
 		if (-clipSpacePos.y > 0)
-			translation->SetY(m_WindowSize.y * 0.5f);
+			translation->SetY((m_WindowSize.y - 100) * 0.5f);
 		else
-			translation->SetY(-m_WindowSize.y * 0.5f);
+			translation->SetY((-m_WindowSize.y + 100) * 0.5f);
 
-		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
+		translation->SetX(glm::clamp(-windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
 	}
 	
 	TranslateIndicator(translation, entity);

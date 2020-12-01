@@ -68,7 +68,7 @@ const glm::vec3& TeamHelper::GetTeamColor(uint8 teamIndex)
 
 const ImageSources& TeamHelper::GetTeamImage(uint8 teamIndex)
 {
-	VALIDATE(teamIndex < MAX_NUM_TEAMS);
+	VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
 
 	return s_AvailableImageSources[s_TeamIndexes[teamIndex]];
 }
