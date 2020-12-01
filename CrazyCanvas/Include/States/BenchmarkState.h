@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Application/API/Events/NetworkEvents.h"
+#include "Events/PacketEvents.h"
 #include "Game/State.h"
 #include "ECS/Entity.h"
 #include "ECS/Systems/Player/BenchmarkSystem.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "EventHandlers/AudioEffectHandler.h"
-#include "MeshPaint/MeshPaintHandler.h"
 #include "World/Level.h"
 
 #include "Multiplayer/Packet/PacketCreateLevelObject.h"
@@ -46,5 +46,4 @@ private:
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
-	MeshPaintHandler m_MeshPaintHandler;
 };

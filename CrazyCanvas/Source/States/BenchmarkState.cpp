@@ -78,7 +78,6 @@ void BenchmarkState::Init()
 
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
-	m_MeshPaintHandler.Init();
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &BenchmarkState::OnWeaponFired);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &BenchmarkState::OnPacketCreateLevelObjectReceived);
 
@@ -283,7 +282,6 @@ void BenchmarkState::Init()
 void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 {
 	LambdaEngine::GPUProfiler::Get()->Tick(delta);
-	m_MeshPaintHandler.Tick(delta);
 
 	if (LambdaEngine::TrackSystem::GetInstance().HasReachedEnd(m_Camera))
 	{

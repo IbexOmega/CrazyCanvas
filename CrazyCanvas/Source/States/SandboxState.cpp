@@ -91,7 +91,6 @@ void SandboxState::Init()
 
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
-	m_MeshPaintHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
 	// Initialize Systems
@@ -550,8 +549,6 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 	LambdaEngine::Profiler::Tick(delta);
 
 	m_MultiplayerClient.TickMainThreadInternal(delta);
-
-	m_MeshPaintHandler.Tick(delta);
 
 	if constexpr (IMGUI_ENABLED)
 	{

@@ -100,7 +100,6 @@ void PlaySessionState::Init()
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
-	m_MeshPaintHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
 	// Load Match
@@ -150,7 +149,6 @@ void PlaySessionState::Tick(Timestamp delta)
 	}
 
 	m_MultiplayerClient.TickMainThreadInternal(delta);
-	m_MeshPaintHandler.Tick(delta);
 }
 
 void PlaySessionState::FixedTick(Timestamp delta)

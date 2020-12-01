@@ -183,6 +183,7 @@ CrazyCanvas::~CrazyCanvas()
 		LOG_ERROR("Level Manager Release Failed");
 	}
 
+	m_MeshPaintHandler.Release();
 	ChatManager::Release();
 	PlayerManagerBase::Release();
 	PacketType::Release();
@@ -267,6 +268,8 @@ bool CrazyCanvas::InitRendererResources()
 
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
+
+	m_MeshPaintHandler.Init();
 
 	return true;
 }

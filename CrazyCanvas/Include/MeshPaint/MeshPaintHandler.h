@@ -43,6 +43,7 @@ public:
 
 	void Init();
 	void Tick(LambdaEngine::Timestamp delta);
+	void Release();
 
 public:
 	/* Adds a hitpoint to draw out a splash at
