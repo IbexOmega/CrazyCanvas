@@ -30,8 +30,6 @@ bool PromptGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent,
 
 void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const uint8 teamIndex)
 {
-	//ToDo: Create new TextBlock
-
 	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
 
 	if (teamIndex != UINT8_MAX)

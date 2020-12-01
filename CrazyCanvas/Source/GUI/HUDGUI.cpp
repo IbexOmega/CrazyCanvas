@@ -324,18 +324,18 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 
 	if (clipSpacePos.z > 0)
 	{
-		translation->SetY(glm::clamp(windowSpacePos.y, -m_WindowSize.y * 0.5f, m_WindowSize.y * 0.5f));
-		translation->SetX(glm::clamp(windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
-		SetIndicatorOpacity(glm::max(0.1f, vecLength), entity);
+		translation->SetY(glm::clamp(windowSpacePos.y, (-m_WindowSize.y + 100) * 0.5f, (m_WindowSize.y - 100) * 0.5f));
+		translation->SetX(glm::clamp(windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
+		SetIndicatorOpacity(glm::clamp(vecLength, 0.1f, 1.0f), entity);
 	}
 	else
 	{
 		if (-clipSpacePos.y > 0)
-			translation->SetY(m_WindowSize.y * 0.5f);
+			translation->SetY((m_WindowSize.y - 100) * 0.5f);
 		else
-			translation->SetY(-m_WindowSize.y * 0.5f);
+			translation->SetY((-m_WindowSize.y + 100) * 0.5f);
 
-		translation->SetX(glm::clamp(-windowSpacePos.x, -m_WindowSize.x * 0.5f, m_WindowSize.x * 0.5f));
+		translation->SetX(glm::clamp(-windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
 	}
 	
 	TranslateIndicator(translation, entity);
@@ -391,6 +391,18 @@ void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSma
 	}
 }
 
+void HUDGUI::DisplaySpectateText(const LambdaEngine::String& name, bool isSpectating)
+{
+	if (isSpectating)
+	{
+		LambdaEngine::String spectateText = "Spectating " + name;
+		m_pSpectatePlayerText->SetText(spectateText.c_str());
+		m_pSpectatePlayerText->SetVisibility(Visibility::Visibility_Visible);
+	}
+	else
+		m_pSpectatePlayerText->SetVisibility(Visibility::Visibility_Hidden);
+}
+
 void HUDGUI::CancelSmallPrompt()
 {
 	PromptGUI* pPromptGUI = nullptr;
@@ -407,6 +419,7 @@ void HUDGUI::InitGUI()
 
 	m_pWaterAmmoRect	= FrameworkElement::FindName<Image>("WATER_RECT");
 	m_pPaintAmmoRect	= FrameworkElement::FindName<Image>("PAINT_RECT");
+	m_pPaintDropRect	= FrameworkElement::FindName<Image>("PAINT_DROP");
 	m_pHealthRect		= FrameworkElement::FindName<Image>("HEALTH_RECT");
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
@@ -415,6 +428,14 @@ void HUDGUI::InitGUI()
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
+
+	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
+
+	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
+	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
+
+	m_pPaintAmmoRect->SetSource(pBitmap);
+	m_pPaintDropRect->SetSource(pBitmapDrop);
 
 	InitScore();
 
@@ -466,35 +487,57 @@ void HUDGUI::SetRenderStagesInactive()
 
 void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
-	Noesis::Ptr<Noesis::Rectangle> indicator = *new Noesis::Rectangle();
+	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
+
+	Noesis::Ptr<Noesis::Image> flagImage = *new Noesis::Image();
+	Noesis::Ptr<Noesis::Ellipse> ellipseIndicator = *new Noesis::Ellipse();
+
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+
+	BitmapImage* pBitmapFlag = new BitmapImage(Uri("Roller.png"));
+
+	flagImage->SetSource(pBitmapFlag);
 
 	translation->SetY(100.0f);
 	translation->SetX(100.0f);
 
-	indicator->SetRenderTransform(translation);
-	indicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+	gridIndicator->SetRenderTransform(translation);
+	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
+
+	strokeBrush->SetColor(Noesis::Color::Black());
 
 	if (teamIndex != UINT8_MAX)
 	{
-		if (localTeamIndex == teamIndex)
-			brush->SetColor(Noesis::Color::Blue());
-		else
-			brush->SetColor(Noesis::Color::Red());
+		const glm::vec3& teamColor = TeamHelper::GetTeamColor(teamIndex);
+		Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
+		brush->SetColor(color);
 	}
 	else
 		brush->SetColor(Noesis::Color::Green());
 
-	indicator->SetHeight(40);
-	indicator->SetWidth(40);
+	flagImage->SetHeight(50);
+	flagImage->SetWidth(50);
 
-	indicator->SetFill(brush);
+	gridIndicator->SetHeight(60);
+	gridIndicator->SetWidth(60);
 
-	m_ProjectedElements[entity] = indicator;
+	ellipseIndicator->SetHeight(60);
+	ellipseIndicator->SetWidth(60);
 
-	if (m_pHUDGrid->GetChildren()->Add(indicator) == -1)
+	ellipseIndicator->SetStroke(strokeBrush);
+	ellipseIndicator->SetStrokeThickness(2);
+
+	ellipseIndicator->SetFill(brush);
+
+	gridIndicator->GetChildren()->Add(ellipseIndicator);
+	gridIndicator->GetChildren()->Add(flagImage);
+
+	m_ProjectedElements[entity] = gridIndicator;
+
+	if (m_pHUDGrid->GetChildren()->Add(gridIndicator) == -1)
 	{
 		LOG_ERROR("Could not add Proj Element");
 	}
@@ -523,5 +566,6 @@ void HUDGUI::SetIndicatorOpacity(float32 value, Entity entity)
 	auto indicator = m_ProjectedElements.find(entity);
 	VALIDATE(indicator != m_ProjectedElements.end())
 
-	indicator->second->GetFill()->SetOpacity(value);
+	Noesis::Ellipse* pTarget = (Noesis::Ellipse*)indicator->second->GetChildren()->Get(0);
+	pTarget->GetFill()->SetOpacity(value);
 }

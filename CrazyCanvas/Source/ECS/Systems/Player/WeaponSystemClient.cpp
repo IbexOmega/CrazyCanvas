@@ -111,8 +111,10 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
 		
 		const bool hasAmmo		= (waterAmmo->second.first > 0) || (paintAmmo->second.first > 0);
+		const bool hasFullAmmo	= (waterAmmo->second.first >= 50) && (paintAmmo->second.first >= 50);
 		const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
 		const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
+
 		if (!hasAmmo && !isReloading)
 		{
 			StartReload(weaponComponent, playerActions);
@@ -121,7 +123,7 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
 		{ 
 			// Reload if we are not reloading
-			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
+			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading && !hasFullAmmo)
 			{
 				StartReload(weaponComponent, playerActions);
 			}

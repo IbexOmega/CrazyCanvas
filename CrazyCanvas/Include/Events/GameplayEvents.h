@@ -184,3 +184,22 @@ public:
 
 	const LambdaEngine::Entity WeaponOwnerEntity;
 };
+
+struct SpectatePlayerEvent : public LambdaEngine::Event
+{
+public:
+	inline SpectatePlayerEvent(const LambdaEngine::String& name) :
+		PlayerName(name)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Spectating player " +  PlayerName);
+	}
+
+	DECLARE_EVENT_TYPE(SpectatePlayerEvent);
+
+	const LambdaEngine::String& PlayerName;
+};

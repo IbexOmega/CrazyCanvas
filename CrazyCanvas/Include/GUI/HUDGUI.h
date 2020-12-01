@@ -23,6 +23,7 @@
 #include "NsGui/Collection.h"
 #include "NsGui/StackPanel.h"
 #include "NsGui/Rectangle.h"
+#include "NsGui/Ellipse.h"
 #include "NsGui/ObservableCollection.h"
 #include "NsGui/Button.h"
 
@@ -85,6 +86,7 @@ public:
 	void DisplayHitIndicator();
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
 	void DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex);
+	void DisplaySpectateText(const LambdaEngine::String& name, bool isSpectating);
 	void CancelSmallPrompt();
 
 	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex);
@@ -126,10 +128,13 @@ private:
 
 	Noesis::Image* m_pWaterAmmoRect				= nullptr;
 	Noesis::Image* m_pPaintAmmoRect				= nullptr;
+	Noesis::Image* m_pPaintDropRect				= nullptr;
 	Noesis::Image* m_pHealthRect				= nullptr;
 
 	Noesis::TextBlock* m_pWaterAmmoText			= nullptr;
 	Noesis::TextBlock* m_pPaintAmmoText			= nullptr;
+
+	Noesis::TextBlock* m_pSpectatePlayerText	= nullptr;
 
 	Noesis::Grid* m_pHUDGrid					= nullptr;
 
@@ -141,7 +146,7 @@ private:
 
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 
-	std::unordered_map<LambdaEngine::Entity, Noesis::Rectangle*> m_ProjectedElements;
+	std::unordered_map<LambdaEngine::Entity, Noesis::Grid*> m_ProjectedElements;
 
 	KillFeedGUI* m_pKillFeedGUI		= nullptr;
 	EscapeMenuGUI* m_pEscMenuGUI	= nullptr;

@@ -21,8 +21,6 @@
 
 using namespace LambdaEngine;
 
-HUDSystem* HUDSystem::s_pHudsystemInstance = nullptr;
-
 HUDSystem::~HUDSystem()
 {
 	m_HUDGUI.Reset();
@@ -34,6 +32,7 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::UnregisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
@@ -44,8 +43,6 @@ HUDSystem::~HUDSystem()
 
 void HUDSystem::Init()
 {
-	s_pHudsystemInstance = this;
-
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
@@ -105,6 +102,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::RegisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
@@ -272,7 +270,7 @@ bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
 			{
 				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
-				HUDSystem::PromptMessage("Reloading", true);
+				PromptMessage("Reloading", true);
 			}
 		}
 	}
@@ -351,16 +349,19 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 			if (event.pPlayerKiller)
 			{
 				String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
-				HUDSystem::PromptMessage(promptText, false);
+				PromptMessage(promptText, false);
 			}
 			else
 			{
 				String promptText = "You Were Killed By The Server";
-				HUDSystem::PromptMessage(promptText, false);
+				PromptMessage(promptText, false);
 			}
 		}
 		else
+		{
 			m_HUDGUI->ShowHUD(true);
+			m_HUDGUI->DisplaySpectateText("", false);
+		}
 	}
 
 	return false;
@@ -385,7 +386,7 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 	else
 		promptText = "Team " + std::to_string(packet.TeamIndex + 1) + " Scored!";
 
-	HUDSystem::PromptMessage(promptText, false, packet.TeamIndex);
+	PromptMessage(promptText, false, packet.TeamIndex);
 
 	return false;
 }
@@ -454,6 +455,12 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 	return false;
 }
 
+bool HUDSystem::OnSpectatePlayerEvent(const SpectatePlayerEvent& event)
+{
+	m_HUDGUI->DisplaySpectateText(event.PlayerName, true);
+	return false;
+}
+
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
@@ -493,5 +500,5 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 
 void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
 {
-	s_pHudsystemInstance->m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
+	m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
 }
