@@ -28,14 +28,18 @@ void main()
 	// Reconstrucion filter
 	vec4 finalSample = vec4(0.0f);
 	float totalWeight = 0.0f;
+
+	int index = 0;
 	for (int x = -1; x <= 1; x++)
 	{
 		for (int y = -1; y <= 1; y++)
 		{
-			const vec2	offset = vec2(x, y) / size;
-			const float weight = KERNEL[y * 3 + x];
+			const vec2	offset = vec2(x, y) * pixelSize;
+			const float weight = KERNEL[index];
 			finalSample	+= texture(u_HistoryBuffer, texcoord + offset) * weight;
 			totalWeight += weight;
+
+			index++;
 		}
 	}
 	finalSample /= totalWeight;
