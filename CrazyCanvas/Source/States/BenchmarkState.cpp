@@ -283,6 +283,7 @@ void BenchmarkState::Init()
 void BenchmarkState::Tick(LambdaEngine::Timestamp delta)
 {
 	LambdaEngine::GPUProfiler::Get()->Tick(delta);
+	m_MeshPaintHandler.Tick(delta);
 
 	if (LambdaEngine::TrackSystem::GetInstance().HasReachedEnd(m_Camera))
 	{
