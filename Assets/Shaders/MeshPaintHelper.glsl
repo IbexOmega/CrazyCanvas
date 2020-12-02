@@ -89,7 +89,7 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	SPaintDescription paintDescription;
 
 	paintDescription.Normal			= combinedNormal;
-	paintDescription.Albedo 		= /*vec3(float(1-step(1, abs(packedPaintInfo-1))), dist, float(1-step(1, abs(packedPaintInfo-2))));*/paintColorFinal;
+	paintDescription.Albedo 		= paintColorFinal;
 	paintDescription.Roughness 		= PAINT_ROUGHNESS;
 	paintDescription.Interpolation	= step(1.f, paintAmountFinal);
 
