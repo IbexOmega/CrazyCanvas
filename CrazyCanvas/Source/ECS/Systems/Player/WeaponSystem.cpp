@@ -262,9 +262,6 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
 
 	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
-	LineRenderer::UpdateLineGroup(m_debug1, { position, position+ velocity }, glm::vec3(0, 1.0, 0));
-	
-	
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 }
 
