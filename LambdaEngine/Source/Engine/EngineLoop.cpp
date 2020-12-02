@@ -311,7 +311,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!ResourceLoader::Init())
+ 		if (!ResourceLoader::Init())
 		{
 			return false;
 		}
