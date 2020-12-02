@@ -230,7 +230,6 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 			if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
 				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
-				LOG_ERROR("Entity %d fired", weaponComponent.WeaponOwner);
 			}
 		}
 	}

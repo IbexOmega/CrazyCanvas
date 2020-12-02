@@ -33,9 +33,7 @@ private:
 	void SpectatePlayer();
 
 private:
-	LambdaEngine::IDVector m_CameraEntities;
-	LambdaEngine::IDVector m_FlagSpawnEntities;
-	LambdaEngine::IDVector m_SpectatableEnteties;
+	LambdaEngine::IDVector m_SpectatableEntities;
 
 
 	LambdaEngine::Entity m_SpectatedPlayer = UINT32_MAX;

@@ -34,7 +34,7 @@ void SpectateCameraSystem::Init()
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
 		{
-			.pSubscriber = & m_SpectatableEnteties,
+			.pSubscriber = & m_SpectatableEntities,
 			.ComponentAccesses = 
 			{
 				{ NDA, SpectateComponent::Type() }
@@ -104,7 +104,7 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 
 		Entity cameraEntity = UINT32_MAX;
 
-		for (Entity entity : m_SpectatableEnteties)
+		for (Entity entity : m_SpectatableEntities)
 		{
 			if (pCameraComponents->HasComponent(entity))
 				cameraEntity = entity;		
@@ -158,8 +158,6 @@ bool SpectateCameraSystem::OnGameOver(const GameOverEvent& event)
 void SpectateCameraSystem::SpectatePlayer()
 {
 	LambdaEngine::TArray<Entity> teamPlayers;
-	//PlayerManagerClient::GetPlayersOfTeam(teamPlayers, m_LocalTeamIndex);
-
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
@@ -173,7 +171,7 @@ void SpectateCameraSystem::SpectatePlayer()
 	Entity flagSpawnEntity = UINT32_MAX;
 	Entity mapSpectatePointEntity = UINT32_MAX;
 
-	for (Entity entity : m_SpectatableEnteties)
+	for (Entity entity : m_SpectatableEntities)
 	{
 		const Player* pPlayer = PlayerManagerClient::GetPlayer(entity);
 
