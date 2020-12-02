@@ -83,10 +83,8 @@ bool SpectateCameraSystem::OnMouseButtonClicked(const MouseButtonClickedEvent& e
 		}
 		else if (event.Button == EMouseButton::MOUSE_BUTTON_LEFT)
 		{
-			LOG_ERROR("index before: %u", m_SpectatorIndex);
 			m_SpectatorIndex--;
 			SpectatePlayer();
-			LOG_ERROR("index before: %u", m_SpectatorIndex);
 		}
 	}
 
@@ -222,11 +220,10 @@ void SpectateCameraSystem::SpectatePlayer()
 			{
 				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 
-				LOG_ERROR("TeamPlayer Size: %d", teamPlayers.GetSize());
+				if (m_SpectatorIndex < 0)
+					m_SpectatorIndex = teamPlayers.GetSize() - 1;
 
-				LOG_ERROR("index before modulu: %u", m_SpectatorIndex);
 				m_SpectatorIndex = m_SpectatorIndex % teamPlayers.GetSize();
-				LOG_ERROR("index after modulu: %u", m_SpectatorIndex);
 
 				m_SpectatedPlayer = teamPlayers[m_SpectatorIndex];
 
