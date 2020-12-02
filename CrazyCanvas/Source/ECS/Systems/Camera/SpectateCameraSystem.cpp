@@ -186,8 +186,15 @@ void SpectateCameraSystem::SpectatePlayer()
 		}
 		else if (pFlagSpawnComponents->HasComponent(entity))
 		{
-			const TeamComponent& teamComponent = pTeamComponents->GetConstData(entity);
-			if (teamComponent.TeamIndex == m_LocalTeamIndex)
+			TeamComponent teamComponent = {};
+			if (pTeamComponents->GetConstIf(entity, teamComponent))
+			{
+				if (teamComponent.TeamIndex == m_LocalTeamIndex)
+				{
+					flagSpawnEntity = entity;
+				}
+			}
+			else if (flagSpawnEntity != UINT32_MAX)
 			{
 				flagSpawnEntity = entity;
 			}
