@@ -46,6 +46,11 @@ namespace LambdaEngine
 			return reinterpret_cast<uint64>(m_AccelerationStructure);
 		}
 
+		FORCEINLINE virtual uint32 GetMaxInstanceCount() const override final
+		{
+			return m_MaxInstanceCount;
+		}
+
 	private:
 		VkMemoryRequirements GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type);
 
@@ -55,5 +60,6 @@ namespace LambdaEngine
 		VkDeviceAddress				m_AccelerationStructureDeviceAddress	= 0;
 		TSharedRef<BufferVK>		m_ScratchBuffer							= nullptr;
 		AllocationVK				m_Allocation;
+		uint32						m_MaxInstanceCount;
 	};
 }

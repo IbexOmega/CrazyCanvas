@@ -19,7 +19,7 @@ uint PackPaintInfo(in uint paintInfo)
 	uint serverPainting			= uint(step(1, int(server)));
 
 	uint shouldPaint = clientPainting | serverPainting;
-	uint teamIndex = clientPainting * clientTeam + (1 - clientPainting) * serverTeam;
+	uint teamIndex = serverPainting * server + (1 - serverPainting) * client;
 	return shouldPaint*teamIndex;
 }
 

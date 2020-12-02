@@ -55,6 +55,7 @@ namespace LambdaEngine
 			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
 			geometryTypeInfo.maxPrimitiveCount	= pDesc->InstanceCount;
 			geometryTypeInfo.allowsTransforms	= VK_FALSE;
+			m_MaxInstanceCount					= pDesc->InstanceCount;
 		}
 		else
 		{
@@ -66,6 +67,7 @@ namespace LambdaEngine
 			geometryTypeInfo.maxVertexCount		= pDesc->MaxVertexCount;
 			geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
 			geometryTypeInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
+			m_MaxInstanceCount					= pDesc->MaxTriangleCount;
 		}
 
 		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;

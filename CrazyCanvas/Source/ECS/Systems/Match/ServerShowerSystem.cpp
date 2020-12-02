@@ -10,6 +10,7 @@
 #include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 ServerShowerSystem::ServerShowerSystem() {
 
@@ -27,28 +28,44 @@ void ServerShowerSystem::OnPlayerShowerCollision(LambdaEngine::Entity entity0, L
 
 	ECSCore* pECS = ECSCore::GetInstance();
 
-	ShowerComponent& showerComponent = pECS->GetComponent<ShowerComponent>(entity1);
+	const TeamComponent& playerTeamComponent = pECS->GetConstComponent<TeamComponent>(entity1);
+	ShowerComponent& playerShowerComponent = pECS->GetComponent<ShowerComponent>(entity1);
 
-	// If player has full health, do not use the shower
-	ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
-	HealthComponent& healthComponent = pHealthComponents->GetData(entity1);
-
-	if (healthComponent.CurrentHealth == START_HEALTH)
-		return;
-
-	// Check if player has recently used the shower
-	if (EngineLoop::GetTimeSinceStart() > showerComponent.ShowerAvailableTimestamp)
+	bool validCollision = false;
+	TeamComponent showerTeamComponent;
+	if (pECS->GetConstComponentIf<TeamComponent>(entity0, showerTeamComponent))
 	{
-		MeshPaintHandler::ResetServer(entity1);
-		MeshPaintHandler::ResetServer(pECS->GetComponent<ChildComponent>(entity1).GetEntityWithTag("weapon"));
-		HealthSystemServer::ResetHealth(entity1);
+		validCollision = (showerTeamComponent.TeamIndex == playerTeamComponent.TeamIndex);
+	}
+	else
+	{
+		//If the shower has no Team Component then everyone can shower in it.
+		validCollision = true;
+	}
 
-		showerComponent.ShowerAvailableTimestamp = EngineLoop::GetTimeSinceStart() + showerComponent.ShowerCooldown;
+	if (validCollision)
+	{
+		// If player has full health, do not use the shower
+		ComponentArray<HealthComponent>* pHealthComponents = pECS->GetComponentArray<HealthComponent>();
+		HealthComponent& healthComponent = pHealthComponents->GetData(entity1);
 
-		// Send package to client to reset texture
-		PacketComponent<PacketResetPlayerTexture>& packets = pECS->GetComponent<PacketComponent<PacketResetPlayerTexture>>(entity1);
-		PacketResetPlayerTexture packet = {};
-		packets.SendPacket(packet);
+		if (healthComponent.CurrentHealth == START_HEALTH)
+			return;
+
+		// Check if player has recently used the shower
+		if (EngineLoop::GetTimeSinceStart() > playerShowerComponent.ShowerAvailableTimestamp)
+		{
+			MeshPaintHandler::ResetServer(entity1);
+			MeshPaintHandler::ResetServer(pECS->GetComponent<ChildComponent>(entity1).GetEntityWithTag("weapon"));
+			HealthSystemServer::ResetHealth(entity1);
+
+			playerShowerComponent.ShowerAvailableTimestamp = EngineLoop::GetTimeSinceStart() + playerShowerComponent.ShowerCooldown;
+
+			// Send package to client to reset texture
+			PacketComponent<PacketResetPlayerTexture>& packets = pECS->GetComponent<PacketComponent<PacketResetPlayerTexture>>(entity1);
+			PacketResetPlayerTexture packet = {};
+			packets.SendPacket(packet);
+		}
 	}
 }
 
