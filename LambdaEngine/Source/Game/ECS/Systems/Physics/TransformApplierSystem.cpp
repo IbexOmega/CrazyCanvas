@@ -76,7 +76,7 @@ namespace LambdaEngine
 			const uint16 height	= window->GetHeight();
 
 			// Generate jitter
-			constexpr uint32 SAMPLES = 16;
+			constexpr uint32 SAMPLES = 8;
 			const uint64 sampleIndex = m_Tick % SAMPLES;
 			glm::vec2 jitter = Math::Hammersley2D(sampleIndex, SAMPLES);
 			jitter = (jitter * 2.0f) - 1.0f;

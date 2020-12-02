@@ -20,7 +20,7 @@ layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 
 #define TAA_HISTORY_DECAY			0.9f
 #define TAA_MOTION_AMPLIFICATION	80.0f
-#define TAA_CLIP_MODE				1
+#define TAA_CLIP_MODE				2
 #define TAA_YCoCg					0
 
 // https://software.intel.com/en-us/node/503873
@@ -249,7 +249,7 @@ void main()
 #if 0
 	{
 		const float staticFactor	= 0.97f;
-		const float movingFactor	= 0.88f;
+		const float movingFactor	= 0.92f;
 		const float historyWeight	= mix(staticFactor, movingFactor, historySample.a);
 		
 		weight = clamp(historyWeight, movingFactor, staticFactor);
@@ -257,8 +257,8 @@ void main()
 	}
 #elif 1
 	{
-		const float maxFactor	= 0.94f;
-		const float minFactor	= 0.84f;
+		const float maxFactor	= 0.97f;
+		const float minFactor	= 0.86f;
 	#if TAA_YCoCg
 		float lum0 = currentSample.r;
 		float lum1 = historySample.r;
@@ -267,7 +267,7 @@ void main()
 		float lum1 = CalculateLuminance(historySample.rgb);
 	#endif
 
-		float unbiasedDiff		= abs(lum0 - lum1) / max(lum0, max(lum1, 0.16f));
+		float unbiasedDiff		= abs(lum0 - lum1) / max(lum0, max(lum1, 0.1f));
 		float unbiasedWeight	= 1.0f - unbiasedDiff;
 		float unbiasedWeightSqr = unbiasedWeight * unbiasedWeight;
 		weight				= mix(minFactor, maxFactor, unbiasedWeightSqr);
@@ -281,7 +281,7 @@ void main()
 #endif
 
 	// Store history
-#if 0
+#if 1
 	currentSample.a = length(velocity);
 #endif
 
@@ -291,7 +291,7 @@ void main()
 	currentSample = Resolve(mix(currentSample, historySample, weight));
 
 	// Maniplulate history
-#if 0
+#if 1
 	currentSample.a = currentSample.a * TAA_HISTORY_DECAY;
 #else
 	currentSample.a = weight;
