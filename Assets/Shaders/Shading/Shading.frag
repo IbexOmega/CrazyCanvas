@@ -150,8 +150,8 @@ void main()
 		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, R, roughness * float(numberOfMips)).rgb;
 		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
 		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
-	
-		vec3 ambient	= Kd_IBL * IBL_Diffuse + IBL_Specular * ao;
+
+		vec3 ambient	= (Kd_IBL * IBL_Diffuse + IBL_Specular) * ao;
 		colorHDR		= ambient + Lo;
 	}
 
