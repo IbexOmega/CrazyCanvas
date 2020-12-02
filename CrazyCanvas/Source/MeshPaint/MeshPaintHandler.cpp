@@ -122,6 +122,11 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	}
 }
 
+void MeshPaintHandler::Release()
+{
+	m_pPointsBuffer.Reset();
+}
+
 void MeshPaintHandler::AddHitPoint(
 	const glm::vec3& position,
 	const glm::vec3& direction,

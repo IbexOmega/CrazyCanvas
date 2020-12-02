@@ -46,6 +46,8 @@
 
 #include "States/ServerState.h"
 
+#include "Game/PlayerIndexHelper.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -534,6 +536,7 @@ bool MatchServer::OnPlayerLeft(const PlayerLeftEvent& event)
 
 	Entity playerEntity = event.pPlayer->GetEntity();
 	DeleteGameLevelObject(playerEntity);
+	PlayerIndexHelper::RemovePlayerEntity(playerEntity);
 
 	return true;
 }
