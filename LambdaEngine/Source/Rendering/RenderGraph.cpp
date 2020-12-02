@@ -54,7 +54,6 @@ namespace LambdaEngine
 		VALIDATE(m_pGraphicsDevice != nullptr);
 		m_pGraphicsDevice->QueryDeviceFeatures(&m_Features);
 
-		EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &RenderGraph::OnWindowResized);
 		EventQueue::RegisterEventHandler<PreSwapChainRecreatedEvent>(this, &RenderGraph::OnPreSwapChainRecreated);
 		EventQueue::RegisterEventHandler<PostSwapChainRecreatedEvent>(this, &RenderGraph::OnPostSwapChainRecreated);
 		EventQueue::RegisterEventHandler<PipelineStatesRecompiledEvent>(this, &RenderGraph::OnPipelineStatesRecompiled);
@@ -62,7 +61,9 @@ namespace LambdaEngine
 
 	RenderGraph::~RenderGraph()
 	{
-		EventQueue::UnregisterEventHandler(this, &RenderGraph::OnWindowResized);
+		EventQueue::UnregisterEventHandler<PreSwapChainRecreatedEvent>(this, &RenderGraph::OnPreSwapChainRecreated);
+		EventQueue::UnregisterEventHandler<PostSwapChainRecreatedEvent>(this, &RenderGraph::OnPostSwapChainRecreated);
+		EventQueue::UnregisterEventHandler<PipelineStatesRecompiledEvent>(this, &RenderGraph::OnPipelineStatesRecompiled);
 
 		s_pMaterialFence->Wait(m_SignalValue - 1, UINT64_MAX);
 		SAFERELEASE(s_pMaterialFence);
@@ -1085,23 +1086,6 @@ namespace LambdaEngine
 		return false;
 	}
 
-	bool RenderGraph::OnWindowResized(const WindowResizedEvent& windowEvent)
-	{
-		if (IsEventOfType<WindowResizedEvent>(windowEvent))
-		{
-			m_WindowWidth	= (float32)windowEvent.Width;
-			m_WindowHeight	= (float32)windowEvent.Height;
-
-			UpdateRelativeParameters();
-
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
 	bool RenderGraph::OnPreSwapChainRecreated(const PreSwapChainRecreatedEvent& swapChainEvent)
 	{
 		UNREFERENCED_VARIABLE(swapChainEvent);
@@ -1135,7 +1119,10 @@ namespace LambdaEngine
 
 	bool RenderGraph::OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& swapChainEvent)
 	{
-		UNREFERENCED_VARIABLE(swapChainEvent);
+		m_WindowWidth = (float32)swapChainEvent.NewWidth;
+		m_WindowHeight = (float32)swapChainEvent.NewHeight;
+
+		UpdateRelativeParameters();
 
 		auto backBufferResourceIt = m_ResourceMap.find(RENDER_GRAPH_BACK_BUFFER_ATTACHMENT);
 
