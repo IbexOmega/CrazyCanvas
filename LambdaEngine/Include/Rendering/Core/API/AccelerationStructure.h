@@ -62,6 +62,11 @@ namespace LambdaEngine
 		*/
 		virtual uint64 GetHandle() const = 0;
 		
+		/*
+		* Returns the max number of instances/triangles set on Acceleration Structure creation depending on if it is a TLAS or a BLAS
+		*/
+		virtual uint32 GetMaxInstanceCount() const = 0;
+
 		FORCEINLINE const AccelerationStructureDesc& GetDesc() const
 		{
 			return m_Desc;
