@@ -67,7 +67,7 @@ private:
 		EPaintMode		PaintMode			= EPaintMode::NONE;
 		ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 		ETeam			Team				= ETeam::NONE;
-		bool			ClearClient			= false;
+		uint32			ClearClient			= 0;
 	};
 
 private:
