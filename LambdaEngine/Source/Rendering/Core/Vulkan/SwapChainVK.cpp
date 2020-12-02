@@ -101,6 +101,9 @@ namespace LambdaEngine
 		CommandQueueVK* pVkQueue = reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue);
 		pVkQueue->Flush();
 
+		PreSwapChainRecreatedEvent preEvent(m_Desc.Width, m_Desc.Height);
+		EventQueue::SendEventImmediate(preEvent);
+
 		ReleaseInternal();
 		ReleaseSurface();
 
@@ -115,6 +118,9 @@ namespace LambdaEngine
 		{
 			return result;
 		}
+
+		PostSwapChainRecreatedEvent postEvent(m_Desc.Width, m_Desc.Height);
+		EventQueue::SendEventImmediate(postEvent);
 
 		AquireNextBufferIndex();
 		return AquireNextImage();
@@ -568,13 +574,13 @@ namespace LambdaEngine
 		m_Desc.Height	= height;
 		m_Desc.pQueue->Flush();
 
-		PreSwapChainRecreatedEvent preEvent = {};
+		PreSwapChainRecreatedEvent preEvent(m_Desc.Width, m_Desc.Height);
 		EventQueue::SendEventImmediate(preEvent);
 		ReleaseInternal();
 
 		if (InitInternal() == VK_SUCCESS)
 		{
-			PostSwapChainRecreatedEvent postEvent = {};
+			PostSwapChainRecreatedEvent postEvent(m_Desc.Width, m_Desc.Height);
 			EventQueue::SendEventImmediate(postEvent);
 			return true;
 		}

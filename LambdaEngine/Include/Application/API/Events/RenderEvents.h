@@ -10,8 +10,10 @@ namespace LambdaEngine
 	struct PreSwapChainRecreatedEvent : public Event
 	{
 	public:
-		inline PreSwapChainRecreatedEvent()
+		inline PreSwapChainRecreatedEvent(uint32 width, uint32 height)
 			: Event()
+			, PreviousWidth(width)
+			, PreviousHeight(height)
 		{
 		}
 
@@ -22,6 +24,9 @@ namespace LambdaEngine
 			return String("PreSwapChainRecreatedEvent");
 		}
 
+	public:
+		uint32 PreviousWidth;
+		uint32 PreviousHeight;
 	};
 
 	/*
@@ -30,8 +35,10 @@ namespace LambdaEngine
 	struct PostSwapChainRecreatedEvent : public Event
 	{
 	public:
-		inline PostSwapChainRecreatedEvent()
+		inline PostSwapChainRecreatedEvent(uint32 width, uint32 height)
 			: Event()
+			, NewWidth(width)
+			, NewHeight(height)
 		{
 		}
 
@@ -42,5 +49,8 @@ namespace LambdaEngine
 			return String("PostSwapChainRecreatedEvent");
 		}
 
+	public:
+		uint32 NewWidth;
+		uint32 NewHeight;
 	};
 }
