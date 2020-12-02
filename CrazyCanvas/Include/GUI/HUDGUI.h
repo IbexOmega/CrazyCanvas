@@ -52,11 +52,11 @@ struct GameGUIState
 
 	LambdaEngine::TArray<uint32> Scores;
 
-	int32 WaterAmmo = 50;
-	int32 PaintAmmo = 50;
+	int32 WaterAmmo = 25;
+	int32 PaintAmmo = 25;
 
-	int32 WaterAmmoCapacity = 50;
-	int32 PaintAmmoCapacity = 50;
+	int32 WaterAmmoCapacity = 25;
+	int32 PaintAmmoCapacity = 25;
 };
 
 typedef std::pair<int16, const Player*> PlayerPair;

@@ -41,10 +41,11 @@ enum class ELevelObjectType : uint8
 	LEVEL_OBJECT_TYPE_PROJECTILE					= 9,
 	LEVEL_OBJECT_TYPE_KILL_PLANE					= 10,
 	LEVEL_OBJECT_TYPE_PLAYER_JAIL					= 11,
-	LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE			= 12,
-	LEVEL_OBJECT_TYPE_PARTICLE_SHOWER				= 13,
-	LEVEL_OBJECT_TYPE_TEAM_INDICATOR				= 14,
-	LEVEL_OBJECT_TYPE_STATIC_GEOMETRY_NO_COLLIDER	= 15,
+	LEVEL_OBJECT_TYPE_SPECTATE_MAP_POINT			= 12,
+	LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE			= 13,
+	LEVEL_OBJECT_TYPE_PARTICLE_SHOWER				= 14,
+	LEVEL_OBJECT_TYPE_TEAM_INDICATOR				= 15,
+	LEVEL_OBJECT_TYPE_STATIC_GEOMETRY_NO_COLLIDER	= 16,
 };
 
 /*
@@ -160,6 +161,11 @@ private:
 		const glm::vec3& translation);
 
 	static ELevelObjectType CreatePlayerJail(
+		const LambdaEngine::LevelObjectOnLoad& levelObject,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+		const glm::vec3& translation);
+
+	static ELevelObjectType CreateSpectateMapPoint(
 		const LambdaEngine::LevelObjectOnLoad& levelObject,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		const glm::vec3& translation);
