@@ -484,14 +484,14 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		uint32 width = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
-		uint32 height = m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
+		uint32 width	= m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Width;
+		uint32 height	= m_IntermediateOutputImage->GetDesc().pTexture->GetDesc().Height;
 
 		ClearColorDesc ccDesc[2];
-		ccDesc[0].Depth = 1.0f;
-		ccDesc[0].Stencil = 0;
-		ccDesc[1].Depth = 1.0f;
-		ccDesc[1].Stencil = 0;
+		ccDesc[0].Depth		= 1.0f;
+		ccDesc[0].Stencil	= 0;
+		ccDesc[1].Depth		= 1.0f;
+		ccDesc[1].Stencil	= 0;
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass = m_RenderPass.Get();
@@ -521,6 +521,52 @@ namespace LambdaEngine
 		CommandList* pCommandList = m_ppGraphicCommandLists[modFrameIndex];
 		m_ppGraphicCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
+
+		// Static vars
+		static uint64 tick			= 0;
+		static glm::vec2 jitter		= glm::vec2(0.0f);
+		static glm::vec2 prevjitter	= glm::vec2(0.0f);
+
+		// Update tick
+		tick++;
+
+		constexpr uint32 SAMPLES = 16;
+		const uint64 sampleIndex = tick % SAMPLES;
+
+		// Generate jitter
+		prevjitter = jitter;
+		jitter = Math::Hammersley2D(sampleIndex, SAMPLES);
+		jitter = (jitter * 2.0f) - 1.0f;
+		
+		glm::vec2 clipSpaceJitter = jitter / glm::vec2(float32(width), float32(height));
+		clipSpaceJitter.y = -clipSpaceJitter.y;
+
+		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, float32(width) / float32(height), 0.1f, 100.0f);
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0f), g_DefaultUp);
+
+		const glm::mat4 offset = glm::translate(glm::vec3(clipSpaceJitter, 0.0f));
+		projection = offset * projection;
+
+		// Weapon Transformations
+		FrameBuffer fb;
+		fb.PrevProjection	= fb.Projection;
+		fb.Projection		= projection;
+		fb.PrevView			= fb.View;
+		fb.View				= view;
+		fb.ViewInv			= glm::inverse(fb.View);
+		fb.ProjectionInv	= glm::inverse(fb.Projection);
+		fb.CameraPosition	= glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		fb.CameraRight		= glm::vec4(g_DefaultRight, 1.0f);
+		fb.CameraUp			= glm::vec4(g_DefaultUp, 1.0f);
+		fb.JitterDiff		= jitter - prevjitter;
+		fb.FrameIndex		= tick;
+		fb.RandomSeed		= 0;
+
+		byte* pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffer->Map());
+		memcpy(pMapping, &fb, sizeof(FrameBuffer));
+		m_FrameCopyBuffer->Unmap();
+
+		pCommandList->CopyBuffer(m_FrameCopyBuffer.Get(), 0, m_FrameBuffer.Get(), 0, sizeof(FrameBuffer));
 
 		UpdateWeaponBuffer(pCommandList, modFrameIndex);
 
@@ -597,35 +643,6 @@ namespace LambdaEngine
 		memcpy(pMapping, indices.GetData(), indicesSize);
 		m_IndexStagingBuffer->Unmap();
 		pCommandList->CopyBuffer(m_IndexStagingBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indicesSize);
-
-		// Copy Per FrameBuffer
-		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		float32 windowWidth = float32(window->GetWidth());
-		float32 windowHeight = float32(window->GetHeight());
-
-		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, windowWidth / windowHeight, 0.1f, 100.0f);
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0f), g_DefaultUp);
-
-		// Weapon Transformations
-		FrameBuffer fb = {
-			.Projection = projection,
-			.View = view,
-			.PrevProjection = glm::mat4(1.0f),
-			.PrevView = glm::mat4(1.0f),
-			.ViewInv = glm::mat4(1.0f),
-			.ProjectionInv = glm::mat4(1.0f),
-			.CameraPosition = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
-			.CameraRight = glm::vec4(g_DefaultRight, 1.0f),
-			.CameraUp = glm::vec4(g_DefaultUp, 1.0f),
-			.Jitter = glm::vec2(0, 0),
-			.FrameIndex = 0,
-			.RandomSeed = 0,
-		};
-
-		pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffer->Map());
-		memcpy(pMapping, &fb, sizeof(fb));
-		m_FrameCopyBuffer->Unmap();
-		pCommandList->CopyBuffer(m_FrameCopyBuffer.Get(), 0, m_FrameBuffer.Get(), 0, sizeof(FrameBuffer));
 
 		return true;
 	}

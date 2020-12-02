@@ -8,11 +8,14 @@
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_HistoryCopy;
 
 layout(location = 0) in vec2 in_TexCoord;
-layout(location = 0) out vec4 out_Color;
+layout(location = 0) out vec4 out_History;
+layout(location = 1) out vec4 out_Color;
 
 void main()
 {
 	// Perform blit
 	const vec2 texCoord = in_TexCoord;
-	out_Color = texture(u_HistoryCopy, texCoord);
+	vec4 color 	= texture(u_HistoryCopy, texCoord); 
+	out_History	= color;
+	out_Color 	= color; 
 }

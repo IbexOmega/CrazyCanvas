@@ -2224,10 +2224,10 @@ bool RenderSystem::InitIntegrationLUT()
 		m_PerFrameData.CamData.PrevProjection	= m_PerFrameData.CamData.Projection;
 
 		const glm::vec2 jitterDiff = (camComp.Jitter - camComp.PrevJitter);
-		m_PerFrameData.CamData.JitterDiff		= jitterDiff;
-		m_PerFrameData.CamData.View				= viewProjComp.View;
-		m_PerFrameData.CamData.Projection		= viewProjComp.Projection;
-		m_PerFrameData.CamData.ViewPortSize		= glm::vec2(camComp.Width, camComp.Height);
+		m_PerFrameData.CamData.JitterDiff	= jitterDiff;
+		m_PerFrameData.CamData.View			= viewProjComp.View;
+		m_PerFrameData.CamData.Projection	= viewProjComp.Projection;
+		m_PerFrameData.CamData.ViewPortSize	= glm::vec2(camComp.Width, camComp.Height);
 
 		glm::vec2 clipSpaceJitter = camComp.Jitter / m_PerFrameData.CamData.ViewPortSize;
 		clipSpaceJitter.y = -clipSpaceJitter.y;
