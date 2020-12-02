@@ -24,16 +24,6 @@ int main(int argc, char** argv)
 #endif
 	using namespace LambdaEngine;
 
-	TArray<uint32> nums = { 0, 1, 5, 9 };
-	bool contains = nums.Contains(5);
-	auto ja		= nums.Find(5);
-	
-	const TArray<uint32>& nums0 = nums;
-	auto ja1 = nums0.Find(5);
-	UNREFERENCED_VARIABLE(contains);
-	UNREFERENCED_VARIABLE(ja);
-	UNREFERENCED_VARIABLE(ja1);
-
 	// Set the name of the mainthread
 	PlatformThread::SetThreadName(PlatformThread::GetCurrentThreadHandle(), "MainThread");
 

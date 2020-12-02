@@ -704,6 +704,32 @@ namespace LambdaEngine
 			return End();
 		}
 
+		FORCEINLINE Iterator Find(T&& element) noexcept
+		{
+			for (Iterator it = Begin(); it != End(); it++)
+			{
+				if (*it == element)
+				{
+					return it;
+				}
+			}
+
+			return End();
+		}
+
+		FORCEINLINE ConstIterator Find(T&& element) const noexcept
+		{
+			for (ConstIterator it = Begin(); it != End(); it++)
+			{
+				if (*it == element)
+				{
+					return it;
+				}
+			}
+
+			return End();
+		}
+
 		FORCEINLINE ConstIterator Find(const T& element) const noexcept
 		{
 			for (ConstIterator it = Begin(); it != End(); it++)
