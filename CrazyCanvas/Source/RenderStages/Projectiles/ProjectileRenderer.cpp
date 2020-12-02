@@ -1,32 +1,33 @@
 #include "RenderStages/Projectiles/ProjectileRenderer.h"
 
-#include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
+#include "Application/API/Window.h"
 
 #include "ECS/Components/Player/ProjectileComponent.h"
+#include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/GameConsole.h"
 
 #include "Math/Random.h"
 
-#include "Rendering/RenderAPI.h"
-#include "Rendering/PipelineStateManager.h"
-#include "Rendering/RenderGraph.h"
+#include "Rendering/Core/API/Buffer.h"
 #include "Rendering/Core/API/CommandAllocator.h"
-#include "Rendering/Core/API/GraphicsDevice.h"
-#include "Rendering/Core/API/PipelineLayout.h"
+#include "Rendering/Core/API/CommandList.h"
+#include "Rendering/Core/API/CommandQueue.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/DescriptorSet.h"
+#include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/Core/API/PipelineLayout.h"
 #include "Rendering/Core/API/PipelineState.h"
-#include "Rendering/Core/API/CommandQueue.h"
-#include "Rendering/Core/API/CommandList.h"
-#include "Rendering/Core/API/TextureView.h"
 #include "Rendering/Core/API/RenderPass.h"
-#include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/Sampler.h"
 #include "Rendering/Core/API/Shader.h"
-#include "Rendering/Core/API/Buffer.h"
+#include "Rendering/Core/API/Texture.h"
+#include "Rendering/Core/API/TextureView.h"
 #include "Rendering/EntityMaskManager.h"
+#include "Rendering/PipelineStateManager.h"
+#include "Rendering/RenderAPI.h"
+#include "Rendering/RenderGraph.h"
 
 #include "Resources/ResourceCatalog.h"
 #include "Resources/ResourceManager.h"
@@ -51,13 +52,7 @@ bool ProjectileRenderer::Init()
 
 	if (!CreateShaders())
 	{
-		LOG_ERROR("[ProjectileRenderer]: Failed to create marching cubes shader");
-		return false;
-	}
-
-	if (!CreateCommonMesh())
-	{
-		LOG_ERROR("[ProjectileRenderer]: Failed to create common mesh");
+		LOG_ERROR("Failed to create marching cubes shader");
 		return false;
 	}
 
@@ -68,22 +63,28 @@ bool ProjectileRenderer::RenderGraphInit(const CustomRendererRenderGraphInitDesc
 {
 	if (!CreateCommandLists(pPreInitDesc))
 	{
-		LOG_ERROR("[ProjectileRenderer]: Failed to create compute command lists");
+		LOG_ERROR("Failed to create compute command lists");
 		return false;
 	}
 
 	if (!CreatePipelines())
 	{
-		LOG_ERROR("[ProjectileRenderer]: Failed to create pipeline");
+		LOG_ERROR("Failed to create pipeline");
 		return false;
 	}
 
 	if (!CreateDescriptorHeap())
 	{
-		LOG_ERROR("[ProjectileRenderer]: Failed to create descriptor heap");
+		LOG_ERROR("Failed to create descriptor heap");
 		return false;
 	}
 
+	return true;
+}
+
+bool ProjectileRenderer::RenderGraphPostInit()
+{
+	CreateMarchingCubesGrids();
 	SubscribeToProjectiles();
 
 	return true;
@@ -115,76 +116,32 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 {
 	UNREFERENCED_VARIABLE(resourceName);
 
-	for (uint32 drawArgIdx = 0; drawArgIdx < count; drawArgIdx++)
+	// There shouldn't be more draw args than marching cubes grids as each draw arg should be assigned to one grid
+	ASSERT(count <= UNIQUE_METABALLS_COUNT);
+	if (m_InitializedGridCount == UNIQUE_METABALLS_COUNT)
 	{
-		const DrawArg& drawArg = pDrawArgs[drawArgIdx];
-
-		// Projectiles should not be instanced as each one should have its own vertex buffer that can be edited.
-		ASSERT(drawArg.EntityIDs.GetSize() == 1);
-
-		const Entity entity = drawArg.EntityIDs.GetFront();
-
-		/*	A marching cubes grid will already have been created for the entity inside
-			ProjectileRenderer::OnProjectileAdded, but has UpdateDrawArgsResource been called for the entity as well? */
-		MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids.IndexID(entity);
-		if (marchingCubesGrid.DescriptorSet)
-		{
-			continue;
-		}
-
-		const uint64 gridCorners = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
-
-		const BufferDesc densityBufferDesc =
-		{
-			.DebugName		= "Projectile Density Buffer",
-			.MemoryType 	= EMemoryType::MEMORY_TYPE_GPU,
-			.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
-			.SizeInBytes	= gridCorners * sizeof(float32)
-		};
-
-		/*	Gradients can't be calculated for corners on the grid's border. Thus, gradients are calculated on the
-			'inner grid'. */
-		constexpr const uint64 innerGridWidth = GRID_WIDTH - 2;
-		constexpr const uint64 innerGridCorners = innerGridWidth * innerGridWidth * innerGridWidth;
-
-		const BufferDesc gradientBufferDesc =
-		{
-			.DebugName		= "Projectile Gradient Buffer",
-			.MemoryType 	= EMemoryType::MEMORY_TYPE_GPU,
-			.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
-			.SizeInBytes	= sizeof(glm::vec4) * innerGridCorners
-		};
-
-		marchingCubesGrid =
-		{
-			.GPUData =
-			{
-				.GridWidth = GRID_WIDTH
-			},
-			.DensityBuffer = m_pGraphicsDevice->CreateBuffer(&densityBufferDesc),
-			.GradientBuffer = m_pGraphicsDevice->CreateBuffer(&gradientBufferDesc),
-			.DescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Marching Cubes Descriptor Set", m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get())
-		};
-
-		ProjectileRenderer::RandomizeSpheres(marchingCubesGrid);
-
-		constexpr const uint32 maxTrianglesPerCell = 5;
-		constexpr const uint32 verticesPerTriangle = 3;
-
-		constexpr const uint32 cellGridWidth = GRID_WIDTH - 3;
-		constexpr const uint32 cellCount = cellGridWidth * cellGridWidth * cellGridWidth;
-		constexpr const uint32 vertexCount = cellCount * maxTrianglesPerCell * verticesPerTriangle;
-		constexpr const uint64 vertexBufferSize = vertexCount * sizeof(Vertex);
-
-		// Write descriptors
-		constexpr const uint32 descriptorCount = 3;
-		const Buffer* ppDescriptorSetBuffers[descriptorCount] = { marchingCubesGrid.DensityBuffer.Get(), marchingCubesGrid.GradientBuffer.Get(), drawArg.pVertexBuffer };
-		const uint64 pOffsets[descriptorCount] = { 0, 0, 0 };
-		const uint64 pSizes[descriptorCount] = { densityBufferDesc.SizeInBytes, gradientBufferDesc.SizeInBytes, vertexBufferSize };
-		marchingCubesGrid.DescriptorSet->WriteBufferDescriptors(ppDescriptorSetBuffers, pOffsets, pSizes, 0, descriptorCount, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-
-		drawArg.pVertexBuffer->SetName("Projectile Vertex Buffer");
+		return;
 	}
+
+	/*	An entity was assigned to a grid in ProjectileRenderer::OnProjectileAdded, find out which grid it was by
+		finding the entity in DrawArg::EntityIDs. */
+	for (uint32 gridNr = 0; gridNr < m_MarchingCubesGrids.size(); gridNr++)
+	{
+		MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids[gridNr];
+		for (uint32 drawArgIdx = 0; drawArgIdx < count; drawArgIdx++)
+		{
+			const DrawArg& drawArg = pDrawArgs[drawArgIdx];
+			if (std::any_of(drawArg.EntityIDs.begin(), drawArg.EntityIDs.end(),
+				[&](Entity entity) { return marchingCubesGrid.InstancedEntities.contains(entity); }))
+			{
+				CreateRenderResources(gridNr, drawArg);
+				m_InitializedGridCount++;
+				return;
+			}
+		}
+	}
+
+	LOG_ERROR("Failed to link a draw arg to a marching cubes grid");
 }
 
 void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool sleeping)
@@ -192,9 +149,8 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 	UNREFERENCED_VARIABLE(backBufferIndex);
 	UNREFERENCED_VARIABLE(ppFirstExecutionStage);
 	UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
-	UNREFERENCED_VARIABLE(sleeping);
 
-	if (!sleeping && !m_MarchingCubesGrids.Empty())
+	if (!sleeping && !m_ProjectileEntities.Empty())
 	{
 		RenderSystem& renderSystem = RenderSystem::GetInstance();
 		ECSCore* pECS = ECSCore::GetInstance();
@@ -203,8 +159,14 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 		const ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 
 		const glm::bvec3 rotationalAxes(true);
-		for (Entity entity : m_MarchingCubesGrids.GetIDs())
+		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
+			if (marchingCubesGrid.InstancedEntities.empty())
+			{
+				continue;
+			}
+
+			const Entity entity = *marchingCubesGrid.InstancedEntities.begin();
 			const glm::mat4 transform = RenderSystem::CreateEntityTransform(
 				pPositionComponents->GetConstData(entity),
 				pRotationComponents->GetConstData(entity),
@@ -214,7 +176,10 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 
 			renderSystem.UpdateTransformData(entity, transform);
 
-			renderSystem.RebuildBLAS(entity, m_MarchingCubesMesh, false, true);
+			constexpr const bool isAnimated = false;
+			constexpr const bool forceUniqueResource = false;
+			constexpr const bool manualResourceDeletion = true;
+			renderSystem.RebuildBLAS(entity, marchingCubesGrid.MeshGUID, isAnimated, forceUniqueResource, manualResourceDeletion);
 		}
 
 		CommandList* pCommandList = m_ComputeCommandLists[modFrameIndex].Get();
@@ -228,6 +193,11 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 		// Generate density data
 		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
+			if (marchingCubesGrid.InstancedEntities.empty())
+			{
+				continue;
+			}
+
 			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 
 			// Figure out the minimum amount of work groups to dispatch one thread for each cell
@@ -244,6 +214,11 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 
 		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
+			if (marchingCubesGrid.InstancedEntities.empty())
+			{
+				continue;
+			}
+
 			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 
 			// Figure out the minimum amount of work groups to dispatch one thread for each cell
@@ -260,6 +235,11 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 
 		for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
 		{
+			if (marchingCubesGrid.InstancedEntities.empty())
+			{
+				continue;
+			}
+
 			pCommandList->BindDescriptorSetCompute(marchingCubesGrid.DescriptorSet.Get(), m_PipelineLayout.Get(), 0);
 
 			// Figure out the minimum amount of work groups to dispatch one thread for each cell
@@ -401,29 +381,6 @@ bool ProjectileRenderer::CreateShaders()
 	return m_DensityShaderGUID != GUID_NONE && m_GradientShaderGUID != GUID_NONE && m_MeshGenShaderGUID != GUID_NONE;
 }
 
-bool ProjectileRenderer::CreateCommonMesh()
-{
-	constexpr const uint32 maxTrianglesPerCell = 5;
-	constexpr const uint32 verticesPerTriangle = 3;
-
-	constexpr const uint32 cellGridWidth = GRID_WIDTH - 3;
-	constexpr const uint32 cellCount = cellGridWidth * cellGridWidth * cellGridWidth;
-	constexpr const uint32 vertexCount = cellCount * maxTrianglesPerCell * verticesPerTriangle;
-
-	std::unique_ptr<Vertex> vertices(new Vertex[vertexCount]);
-	memset(vertices.get(), 0, sizeof(Vertex) * vertexCount);
-
-	uint32 indices[vertexCount];
-	for (uint32 i = 0; i < vertexCount; i++)
-	{
-		indices[i] = vertexCount - 1 - i;
-	}
-
-	constexpr const bool useMeshletCache = false;
-	m_MarchingCubesMesh = ResourceManager::LoadMeshFromMemory("Marching Cubes Common Mesh", vertices.get(), vertexCount, indices, vertexCount, useMeshletCache);
-	return m_MarchingCubesMesh != GUID_NONE;
-}
-
 bool ProjectileRenderer::CreateDescriptorHeap()
 {
 	DescriptorHeapInfo descriptorCountDesc = {};
@@ -553,6 +510,95 @@ bool ProjectileRenderer::CreatePipelines()
 	return m_PipelineDensityGen.Get() && m_PipelineMeshGen.Get();
 }
 
+void ProjectileRenderer::CreateMarchingCubesGrids()
+{
+	/*	'Load' the first mesh to generate meshlets for it. Then duplicate the same mesh for the other instances.
+		The duplication is only done in GPU memory. I.e. it is assumed that it is safe to have multiple GUIDs pointing
+		at the same mesh, since it won't be edited on the CPU. */
+	constexpr const uint32 maxTrianglesPerCell = 5;
+	constexpr const uint32 verticesPerTriangle = 3;
+
+	constexpr const uint32 cellGridWidth = GRID_WIDTH - 3;
+	constexpr const uint32 cellCount = cellGridWidth * cellGridWidth * cellGridWidth;
+	constexpr const uint32 vertexCount = cellCount * maxTrianglesPerCell * verticesPerTriangle;
+
+	std::unique_ptr<Vertex> vertices(new Vertex[vertexCount]);
+	memset(vertices.get(), 0, sizeof(Vertex) * vertexCount);
+
+	uint32 indices[vertexCount];
+	for (uint32 i = 0; i < vertexCount; i++)
+	{
+		indices[i] = vertexCount - 1 - i;
+	}
+
+	constexpr const bool useMeshletCache = true;
+	GUID_Lambda meshGUID = ResourceManager::LoadMeshFromMemory("Marching Cubes Mesh 0", vertices.get(), vertexCount, indices, vertexCount, useMeshletCache);
+	Mesh* pOriginalMesh = ResourceManager::GetMesh(meshGUID);
+
+	for (uint32 gridNr = 0; gridNr < m_MarchingCubesGrids.size(); gridNr++)
+	{
+		const String meshName = "Marching Cubes Mesh " + std::to_string(gridNr);
+		if (gridNr != 0)
+		{
+			meshGUID = ResourceManager::RegisterMesh(meshName, pOriginalMesh);
+		}
+
+		m_MarchingCubesGrids[gridNr] =
+		{
+			.GPUData =
+			{
+				.GridWidth = GRID_WIDTH
+			},
+			.MeshGUID = meshGUID
+		};
+	}
+}
+
+void ProjectileRenderer::CreateRenderResources(uint32 gridNr, const LambdaEngine::DrawArg& drawArg)
+{
+	const uint64 gridCorners = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
+	const BufferDesc densityBufferDesc =
+	{
+		.DebugName		= "Projectile Density Buffer",
+		.MemoryType 	= EMemoryType::MEMORY_TYPE_GPU,
+		.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
+		.SizeInBytes	= gridCorners * sizeof(float32)
+	};
+
+	/*	Gradients can't be calculated for corners on the grid's border. Thus, gradients are calculated on the
+		'inner grid'. */
+	constexpr const uint64 innerGridWidth = GRID_WIDTH - 2;
+	constexpr const uint64 innerGridCorners = innerGridWidth * innerGridWidth * innerGridWidth;
+
+	const BufferDesc gradientBufferDesc =
+	{
+		.DebugName		= "Projectile Gradient Buffer",
+		.MemoryType 	= EMemoryType::MEMORY_TYPE_GPU,
+		.Flags			= FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER,
+		.SizeInBytes	= sizeof(glm::vec4) * innerGridCorners
+	};
+
+	MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids[gridNr];
+	marchingCubesGrid.DensityBuffer = m_pGraphicsDevice->CreateBuffer(&densityBufferDesc);
+	marchingCubesGrid.GradientBuffer = m_pGraphicsDevice->CreateBuffer(&gradientBufferDesc);
+	marchingCubesGrid.DescriptorSet = m_pGraphicsDevice->CreateDescriptorSet("Marching Cubes Descriptor Set " + std::to_string(gridNr), m_PipelineLayout.Get(), 0, m_DescriptorHeap.Get());
+
+	constexpr const uint32 maxTrianglesPerCell = 5;
+	constexpr const uint32 verticesPerTriangle = 3;
+
+	constexpr const uint32 cellGridWidth = GRID_WIDTH - 3;
+	constexpr const uint32 cellCount = cellGridWidth * cellGridWidth * cellGridWidth;
+	constexpr const uint32 vertexCount = cellCount * maxTrianglesPerCell * verticesPerTriangle;
+	constexpr const uint64 vertexBufferSize = vertexCount * sizeof(Vertex);
+
+	// Write descriptors
+	constexpr const uint32 descriptorCount = 3;
+	const Buffer* ppDescriptorSetBuffers[descriptorCount] = { marchingCubesGrid.DensityBuffer.Get(), marchingCubesGrid.GradientBuffer.Get(), drawArg.pVertexBuffer };
+	const uint64 pOffsets[descriptorCount] = { 0, 0, 0 };
+	const uint64 pSizes[descriptorCount] = { densityBufferDesc.SizeInBytes, gradientBufferDesc.SizeInBytes, vertexBufferSize };
+	marchingCubesGrid.DescriptorSet->WriteBufferDescriptors(ppDescriptorSetBuffers, pOffsets, pSizes, 0, descriptorCount, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+}
+
 void ProjectileRenderer::SubscribeToProjectiles()
 {
 	EntitySubscriberRegistration subscriberReg =
@@ -562,10 +608,10 @@ void ProjectileRenderer::SubscribeToProjectiles()
 				.pSubscriber = &m_ProjectileEntities,
 				.ComponentAccesses =
 				{
-					{NDA, ProjectileComponent::Type()},
-					{NDA, PositionComponent::Type()},
-					{NDA, RotationComponent::Type()},
-					{NDA, ScaleComponent::Type()}
+					{ NDA, ProjectileComponent::Type() },
+					{ NDA, PositionComponent::Type() },
+					{ NDA, RotationComponent::Type() },
+					{ NDA, ScaleComponent::Type() }
 				},
 				.OnEntityAdded = std::bind_front(&ProjectileRenderer::OnProjectileCreated, this),
 				.OnEntityRemoval = std::bind_front(&ProjectileRenderer::OnProjectileRemoval, this)
@@ -578,8 +624,15 @@ void ProjectileRenderer::SubscribeToProjectiles()
 
 void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 {
-	// Add an undefined grid, it will be populated when CustomRenderer::UpdateDrawArgsResource is called
-	m_MarchingCubesGrids.PushBack({}, entity);
+	MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids[m_NextMarchingCubesGrid];
+	if (marchingCubesGrid.InstancedEntities.empty())
+	{
+		/*	The grid was previously unused. This is a good opportunity to randomize its spheres so it will have a new
+			look when it is visible again. */
+		RandomizeSpheres(marchingCubesGrid);
+	}
+
+	marchingCubesGrid.InstancedEntities.insert(entity);
 
 	// Fetch the material to use
 	const ECSCore* pECS = ECSCore::GetInstance();
@@ -592,13 +645,24 @@ void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 		projectileMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(teamComponent.TeamIndex);
 	}
 
-	RenderSystem& renderSystem = RenderSystem::GetInstance();
-	renderSystem.AddRenderableEntity(entity, m_MarchingCubesMesh, projectileMaterialGUID, RenderSystem::CreateEntityTransform(entity, glm::bvec3(true)), false, true);
+	const glm::mat4 transform = RenderSystem::CreateEntityTransform(entity, glm::bvec3(true));
+	constexpr const bool isAnimated = false;
+	constexpr const bool forceUniqueResource = false;
+	constexpr const bool manualResourceDeletion = true;
+	RenderSystem::GetInstance().AddRenderableEntity(
+		entity,
+		marchingCubesGrid.MeshGUID,
+		projectileMaterialGUID,
+		transform,
+		isAnimated,
+		forceUniqueResource,
+		manualResourceDeletion);
 }
 
 void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 {
-	m_MarchingCubesGrids.Pop(entity);
+	MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids[m_NextMarchingCubesGrid];
+	marchingCubesGrid.InstancedEntities.erase(entity);
 
 	RenderSystem& renderSystem = RenderSystem::GetInstance();
 	renderSystem.RemoveRenderableEntity(entity);

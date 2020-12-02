@@ -1098,7 +1098,8 @@ bool RenderSystem::InitIntegrationLUT()
 		GUID_Lambda materialGUID,
 		const glm::mat4& transform,
 		bool isAnimated,
-		bool forceUniqueResource)
+		bool forceUniqueResource,
+		bool manualResourceDeletion)
 	{
 		uint32 extensionGroupIndex = 0;
 		uint32 texturesPerExtensionGroup = 0;
@@ -1106,7 +1107,7 @@ bool RenderSystem::InitIntegrationLUT()
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
 		const uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
-		MeshKey meshKey = MeshKey(meshGUID, entity, isAnimated, entityMask, forceUniqueResource);
+		MeshKey meshKey = MeshKey(meshGUID, entity, isAnimated, entityMask, forceUniqueResource, manualResourceDeletion);
 
 		static uint64 drawArgBufferOffset = 0;
 
@@ -1696,55 +1697,9 @@ bool RenderSystem::InitIntegrationLUT()
 		}
 
 		// Unload Mesh, Todo: Should we always do this?
-		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
+		if (meshAndInstancesIt->second.EntityIDs.IsEmpty() && !meshAndInstancesIt->first.ManualResourceDeletion)
 		{
-			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorSet);
-			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
-
-			DeleteDeviceResource(meshAndInstancesIt->second.pVertexBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pIndexBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pUniqueIndices);
-			DeleteDeviceResource(meshAndInstancesIt->second.pPrimitiveIndices);
-			DeleteDeviceResource(meshAndInstancesIt->second.pMeshlets);
-			DeleteDeviceResource(meshAndInstancesIt->second.pRasterInstanceBuffer);
-
-			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
-			{
-				VALIDATE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
-				DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
-
-				VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
-				DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
-
-				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
-				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
-
-				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
-				DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
-
-				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
-				DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
-			}
-
-			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
-			{
-				DeleteDeviceResource(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
-			}
-
-			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
-				{
-					return pMeshEntry == &meshAndInstancesIt->second;
-				});
-
-			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end())
-				m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
-
-			if (m_RayTracingEnabled)
-			{
-				m_pASBuilder->ReleaseBLAS(meshAndInstancesIt->second.BLASIndex);
-			}
-
-			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
+			DeleteMeshResources(meshAndInstancesIt);
 		}
 	}
 
@@ -1797,12 +1752,12 @@ bool RenderSystem::InitIntegrationLUT()
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 	}
 
-	void RenderSystem::RebuildBLAS(Entity entity, GUID_Lambda meshGUID, bool isAnimated, bool forceUniqueResources)
+	void RenderSystem::RebuildBLAS(Entity entity, GUID_Lambda meshGUID, bool isAnimated, bool forceUniqueResources, bool manualResourceDeletion)
 	{
 		if (m_RayTracingEnabled)
 		{
-			MeshKey key(meshGUID, entity, isAnimated, EntityMaskManager::FetchEntityMask(entity), forceUniqueResources);
 
+			MeshKey key(meshGUID, entity, isAnimated, EntityMaskManager::FetchEntityMask(entity), forceUniqueResources, manualResourceDeletion);
 			auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 			if (meshEntryIt != m_MeshAndInstancesMap.end())
 			{
@@ -1821,6 +1776,57 @@ bool RenderSystem::InitIntegrationLUT()
 		}
 	}
 
+	void RenderSystem::DeleteMeshResources(MeshAndInstancesMap::iterator meshAndInstancesIt)
+	{
+		m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorSet);
+		m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
+
+		DeleteDeviceResource(meshAndInstancesIt->second.pVertexBuffer);
+		DeleteDeviceResource(meshAndInstancesIt->second.pIndexBuffer);
+		DeleteDeviceResource(meshAndInstancesIt->second.pUniqueIndices);
+		DeleteDeviceResource(meshAndInstancesIt->second.pPrimitiveIndices);
+		DeleteDeviceResource(meshAndInstancesIt->second.pMeshlets);
+		DeleteDeviceResource(meshAndInstancesIt->second.pRasterInstanceBuffer);
+
+		if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
+		{
+			VALIDATE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
+
+			VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
+			DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
+
+			VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
+
+			VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
+
+			VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
+		}
+
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		{
+			DeleteDeviceResource(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
+		}
+
+		auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
+			{
+				return pMeshEntry == &meshAndInstancesIt->second;
+			});
+
+		if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end())
+			m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
+
+		if (m_RayTracingEnabled)
+		{
+			m_pASBuilder->ReleaseBLAS(meshAndInstancesIt->second.BLASIndex);
+		}
+
+		m_MeshAndInstancesMap.erase(meshAndInstancesIt);
+	}
+
 	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
 	{
 #ifdef RENDER_SYSTEM_DEBUG
@@ -1834,8 +1840,18 @@ bool RenderSystem::InitIntegrationLUT()
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
+		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
+		constexpr const bool isAnimated = false;
+		constexpr const bool forceUniqueResource = false;
+		constexpr const bool manualResourceDeletion = false;
+		AddRenderableEntity(
+			entity,
+			meshComp.MeshGUID,
+			meshComp.MaterialGUID,
+			transform,
+			isAnimated,
+			forceUniqueResource,
+			manualResourceDeletion);
 	}
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
@@ -1851,8 +1867,18 @@ bool RenderSystem::InitIntegrationLUT()
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
+		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
+		constexpr const bool isAnimated = true;
+		constexpr const bool forceUniqueResource = false;
+		constexpr const bool manualResourceDeletion = false;
+		AddRenderableEntity(
+			entity,
+			meshComp.MeshGUID,
+			meshComp.MaterialGUID,
+			transform,
+			isAnimated,
+			forceUniqueResource,
+			manualResourceDeletion);
 	}
 
 	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
@@ -1872,7 +1898,17 @@ bool RenderSystem::InitIntegrationLUT()
 		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
 		transform = transform * animationAttachedComponent.Transform;
 
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
+		constexpr const bool isAnimated = false;
+		constexpr const bool forceUniqueResource = false;
+		constexpr const bool manualResourceDeletion = false;
+		AddRenderableEntity(
+			entity,
+			meshComp.MeshGUID,
+			meshComp.MaterialGUID,
+			transform,
+			isAnimated,
+			forceUniqueResource,
+			manualResourceDeletion);
 	}
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
@@ -1895,14 +1931,16 @@ bool RenderSystem::InitIntegrationLUT()
 			forceUniqueResources = true;
 		}
 
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
+		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
+		constexpr const bool manualResourceDeletion = false;
 		AddRenderableEntity(
 			entity,
 			meshComp.MeshGUID,
 			meshComp.MaterialGUID,
 			transform,
 			pAnimationComponents->HasComponent(entity),
-			forceUniqueResources);
+			forceUniqueResources,
+			manualResourceDeletion);
 	}
 
 	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
@@ -2271,7 +2309,9 @@ bool RenderSystem::InitIntegrationLUT()
 		if (animationComp.IsPaused)
 			return;
 
-		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity), false);
+		constexpr const bool forceUniqueResources = false;
+		constexpr const bool manualResourceDeletion = false;
+		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity), forceUniqueResources, manualResourceDeletion);
 
 		auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 		if (meshEntryIt != m_MeshAndInstancesMap.end())

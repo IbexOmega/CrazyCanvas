@@ -169,9 +169,9 @@ namespace LambdaEngine
 		}
 
 		if (!CreateRenderStages(
-			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, 
-			pDesc->pRenderGraphStructureDesc->ShaderConstants, 
-			pDesc->CustomRenderers, 
+			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions,
+			pDesc->pRenderGraphStructureDesc->ShaderConstants,
+			pDesc->CustomRenderers,
 			requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
@@ -179,7 +179,7 @@ namespace LambdaEngine
 		}
 
 		if (!CreateSynchronizationStages(
-			pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions, 
+			pDesc->pRenderGraphStructureDesc->SynchronizationStageDescriptions,
 			requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Synchronization Stages", pDesc->Name.c_str());
@@ -268,9 +268,9 @@ namespace LambdaEngine
 		}
 
 		if (!CreateRenderStages(
-			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions, 
-			pDesc->pRenderGraphStructureDesc->ShaderConstants, 
-			pDesc->CustomRenderers, 
+			pDesc->pRenderGraphStructureDesc->RenderStageDescriptions,
+			pDesc->pRenderGraphStructureDesc->ShaderConstants,
+			pDesc->CustomRenderers,
 			requiredDrawArgMasks))
 		{
 			LOG_ERROR("[RenderGraph]: Render Graph \"%s\" failed to create Render Stages", pDesc->Name.c_str());
@@ -1736,9 +1736,9 @@ namespace LambdaEngine
 	}
 
 	bool RenderGraph::CreateRenderStages(
-		const TArray<RenderStageDesc>& renderStages, 
-		const THashTable<String, RenderGraphShaderConstants>& shaderConstants, 
-		const TArray<CustomRenderer*>& customRenderers, 
+		const TArray<RenderStageDesc>& renderStages,
+		const THashTable<String, RenderGraphShaderConstants>& shaderConstants,
+		const TArray<CustomRenderer*>& customRenderers,
 		TSet<DrawArgMaskDesc>& requiredDrawArgMasks)
 	{
 		m_RenderStageCount = (uint32)renderStages.GetSize();
@@ -2291,7 +2291,7 @@ namespace LambdaEngine
 
 					if (imGuiRenderStageIt == m_DebugRenderers.End())
 					{
-						
+
 						ImGuiRendererDesc imguiRendererDesc = {};
 						imguiRendererDesc.BackBufferCount	= m_BackBufferCount;
 						imguiRendererDesc.VertexBufferSize	= MEGA_BYTE(8);
@@ -3658,6 +3658,7 @@ namespace LambdaEngine
 
 					PipelineBufferBarrierDesc bufferBarrierTemplate = drawBufferBarriers.GetFront();
 					PipelineTextureBarrierDesc textureBarrierTemplate = drawTextureBarriers.GetFront();
+					bool repushTextureBarrier = true;
 
 					if (pDesc->ExternalDrawArgsUpdate.Count != 0)
 					{
@@ -3735,6 +3736,8 @@ namespace LambdaEngine
 						// For draw arg extensions
 						if (pDrawArg->HasExtensions)
 						{
+							repushTextureBarrier = false;
+
 							uint32 numExtensionGroups = pDrawArg->InstanceCount;
 							for (uint32 i = 0; i < numExtensionGroups; i++)
 							{
@@ -3762,6 +3765,11 @@ namespace LambdaEngine
 								}
 							}
 						}
+					}
+
+					if (repushTextureBarrier)
+					{
+						drawTextureBarriers.PushBack(textureBarrierTemplate);
 					}
 				}
 			}

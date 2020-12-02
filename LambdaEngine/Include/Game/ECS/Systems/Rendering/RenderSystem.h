@@ -82,12 +82,13 @@ namespace LambdaEngine
 		public:
 			MeshKey() = default;
 
-			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask, bool forceUniqueResources)
+			inline MeshKey(GUID_Lambda meshGUID, Entity entityID, bool isAnimated, uint32 entityMask, bool forceUniqueResources, bool manualResourceDeletion)
 				: MeshGUID(meshGUID)
 				, IsAnimated(isAnimated)
 				, ForceUniqueResources(forceUniqueResources)
 				, EntityID(entityID)
 				, EntityMask(entityMask)
+				, ManualResourceDeletion(manualResourceDeletion)
 			{
 				GetHash();
 			}
@@ -127,13 +128,14 @@ namespace LambdaEngine
 					return false;
 				}
 
-				return true;
+				return ManualResourceDeletion == other.ManualResourceDeletion;
 			}
 
 		public:
 			GUID_Lambda		MeshGUID;
 			bool			IsAnimated;
 			bool			ForceUniqueResources;
+			bool			ManualResourceDeletion;
 			Entity			EntityID;
 			uint32			EntityMask;
 			mutable size_t	Hash = 0;
@@ -315,7 +317,8 @@ namespace LambdaEngine
 			GUID_Lambda materialGUID,
 			const glm::mat4& transform,
 			bool animated,
-			bool forceUniqueResource);
+			bool forceUniqueResource,
+			bool manualResourceDeletion);
 
 		void RemoveRenderableEntity(Entity entity);
 
@@ -335,7 +338,9 @@ namespace LambdaEngine
 			const glm::bvec3& rotationalAxes);
 
 		void UpdateTransformData(Entity entity, const glm::mat4& transform);
-		void RebuildBLAS(Entity entity, GUID_Lambda meshGUID, bool isAnimated, bool forceUniqueResources);
+		void RebuildBLAS(Entity entity, GUID_Lambda meshGUID, bool isAnimated, bool forceUniqueResources, bool manualResourceDeletion);
+
+		void DeleteMeshResources(MeshAndInstancesMap::iterator meshAndInstancesIt);
 
 		/*
 		* Set Paintmask colors (index 2 -> Team 1 & index 1 -> team 2)
