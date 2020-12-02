@@ -141,17 +141,17 @@ void main()
 		vec3 Ks_IBL	= F_IBL;
 		vec3 Kd_IBL	= vec3(1.0f) - Ks_IBL;
 		Kd_IBL		*= (1.0f - metallic);
-	
-		vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
+
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, -N).rgb;
 		vec3 IBL_Diffuse	= irradiance * albedo;
 	
-		const float numberOfMips = 7.0;
 		vec3 R					= reflect(-V, N);
+		const float numberOfMips = 7.0;
 		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, R, roughness * float(numberOfMips)).rgb;
 		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
 		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
 	
-		vec3 ambient	= mix((Kd_IBL * IBL_Diffuse + IBL_Specular), 0.4 * albedo, inShadowDirLight) * ao;
+		vec3 ambient	= mix((Kd_IBL * IBL_Diffuse + IBL_Specular), 0.4 * albedo, 0) * ao;
 		colorHDR		= ambient + Lo;
 	}
 

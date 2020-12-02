@@ -236,7 +236,7 @@ bool CrazyCanvas::InitRendererResources()
 	{
 		// Test Skybox
 		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
-			"Skybox/cartoonskybox-blue.jpg",
+			"Skybox/daytime.hdr",
 			EFormat::FORMAT_R16G16B16A16_SFLOAT,
 			512,
 			true);
