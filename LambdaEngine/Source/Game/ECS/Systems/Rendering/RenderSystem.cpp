@@ -595,16 +595,13 @@ namespace LambdaEngine
 		for (Entity entity : m_DirectionalLightEntities.GetIDs())
 		{
 			const auto& dirLight = pDirLightComponents->GetConstData(entity);
-			const auto& position = pPositionComponents->GetConstData(entity);
-			const auto& rotation = pRotationComponents->GetConstData(entity);
-
-			const glm::vec3 playerDirection = GetForward(rotation.Quaternion);
-			if (dirLight.Dirty || rotation.Dirty || position.Dirty)
+			const auto& playerPosition = pPositionComponents->GetConstData(entity);
+			
+			if (dirLight.Dirty || playerPosition.Dirty)
 			{
 				UpdateDirectionalLight(
 					dirLight.ColorIntensity,
-					// Specific settings for map, I know its ugly
-					glm::vec3(position.Position.x * 0.2, 0.0f, position.Position.z) + glm::normalize(glm::vec3(playerDirection.x * 0.3f, 0.0f, playerDirection.z* 0.7)) * dirLight.FrustumHeight*0.85f,
+					glm::vec3(playerPosition.Position.x, 0.0f, playerPosition.Position.z),
 					dirLight.Rotation,
 					dirLight.FrustumWidth,
 					dirLight.FrustumHeight,
