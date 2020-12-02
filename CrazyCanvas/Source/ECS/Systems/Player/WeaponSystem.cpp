@@ -237,16 +237,6 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	constexpr const float PROJECTILE_INITAL_SPEED = 30.0f;
 
 	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
-	glm::quat playerRotationX = playerRotationComponent.Quaternion;
-	playerRotationX.y = 0;
-	playerRotationX.z = 0;
-	playerRotationX = glm::normalize(playerRotationX);
-	
-	glm::quat playerRotationY = playerRotationComponent.Quaternion;
-	playerRotationY.x = 0;
-	playerRotationY.z = 0;
-	playerRotationY = glm::normalize(playerRotationY);
-
 	const glm::vec3 right = glm::normalize(GetRight(playerRotationComponent.Quaternion));
 	const glm::vec3 up = glm::normalize(g_DefaultUp);
 	const glm::vec3 forward = glm::normalize(GetForward(playerRotationComponent.Quaternion));
