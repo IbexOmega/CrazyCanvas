@@ -44,22 +44,8 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(deltaTime);
 
-	// TEMP REMOVE
-	static bool pressed = false;
-	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_F) && !pressed)
-	{
-		for (Entity entity : m_HealthEntities)
-			HealthCompute::QueueHealthCalculation(entity);
-		pressed = true;
-	}
-	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_F) && pressed)
-	{
-		pressed = false;
-	}
-
 	for (Entity entity : m_HealthEntities)
 		HealthCompute::QueueHealthCalculation(entity);
-
 
 	// More threadsafe
 	{
@@ -80,24 +66,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			m_DeferredResets.Clear();
 		}
 	}
-
-	// TEMP REMOVE
-	static bool p = false;
-	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_G) && !p)
-	{
-		TArray<uint32> healths = HealthCompute::GetHealths();
-		for (auto health : healths)
-		{
-			LOG_WARNING("Health: %u", health);
-		}
-		LOG_WARNING("VertexCount: %u", HealthCompute::GetVertexCount());
-		p = true;
-	}
-	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_G) && p)
-	{
-		p = false;
-	}
-
 
 	// Update health
 	if (!m_HitInfoToProcess.IsEmpty() && PlayerIndexHelper::GetNumOfIndices() > 0)
