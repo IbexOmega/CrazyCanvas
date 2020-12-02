@@ -119,10 +119,10 @@ namespace LambdaEngine
 				pStatistics->SetReceivedSequenceBits(pStatistics->GetReceivedSequenceBits() | (1ULL << deltaShift));
 			}
 		}
-		else
+		/*else
 		{
 			LOG_ERROR("[PacketTransceiverUDP]: Latest SEQ already set to received SEQ [%lu]", sequence);
-		}
+		}*/
 	}
 
 	void PacketTransceiverUDP::ProcessAcks(uint32 ack, uint64 ackBits, NetworkStatistics* pStatistics, TSet<uint32>& newAcks)

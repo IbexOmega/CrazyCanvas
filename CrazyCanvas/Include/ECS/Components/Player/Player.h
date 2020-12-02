@@ -1,7 +1,7 @@
 #pragma once
 #include "ECS/Component.h"
 
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
 
 #include "Game/ECS/Components/Physics/Transform.h"

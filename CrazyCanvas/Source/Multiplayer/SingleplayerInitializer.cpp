@@ -20,6 +20,9 @@ namespace LambdaEngine
 		using namespace LambdaEngine;
 
 		MultiplayerUtils::SetIsSingleplayer(true);
+
+		PlayerManagerClient::Reset();
+		PlayerManagerClient::RegisterLocalPlayer("Singleplayer", true);
 	}
 
 	void SingleplayerInitializer::Release()
@@ -33,8 +36,6 @@ namespace LambdaEngine
 		{
 			ClientSystem& clientSystem = ClientSystem::GetInstance();
 			ClientBase* pClient = clientSystem.GetClient();
-
-			PlayerManagerClient::RegisterLocalPlayer("Singleplayer", true);
 
 			PacketCreateLevelObject packet;
 			packet.LevelObjectType = ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER;

@@ -41,7 +41,6 @@ MatchClient::MatchClient()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -62,7 +61,6 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -253,16 +251,6 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 	return true;
 }
 
-bool MatchClient::OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event)
-{
-	UNREFERENCED_VARIABLE(event);
-	//Makes sure we have finished loading everything....
-
-	PlayerManagerClient::SetLocalPlayerStateLoaded();
-
-	return true;
-}
-
 bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event)
 {
 	UNREFERENCED_VARIABLE(event);
@@ -282,8 +270,6 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
 
-	ResetMatch();
-
 	return true;
 }
 
@@ -295,27 +281,30 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 
 	UNREFERENCED_VARIABLE(event);
 
-	if (PlayerManagerClient::GetPlayerLocal()->IsDead())
+	if (event.pPlayer == PlayerManagerClient::GetPlayerLocal())
 	{
-		if (currentInputLayer == EInputLayer::GUI)
+		if (PlayerManagerClient::GetPlayerLocal()->IsDead())
 		{
-			Input::PopInputMode();
-			Input::PushInputMode(EInputLayer::DEAD);
-			Input::PushInputMode(EInputLayer::GUI);
+			if (currentInputLayer == EInputLayer::GUI)
+			{
+				Input::PopInputMode();
+				Input::PushInputMode(EInputLayer::DEAD);
+				Input::PushInputMode(EInputLayer::GUI);
+			}
+			else
+				Input::PushInputMode(EInputLayer::DEAD);
 		}
 		else
-			Input::PushInputMode(EInputLayer::DEAD);
-	}
-	else
-	{
-		if (currentInputLayer == EInputLayer::GUI)
 		{
-			Input::PopInputMode();
-			Input::PushInputMode(EInputLayer::GAME);
-			Input::PushInputMode(EInputLayer::GUI);
+			if (currentInputLayer == EInputLayer::GUI)
+			{
+				Input::PopInputMode();
+				Input::PushInputMode(EInputLayer::GAME);
+				Input::PushInputMode(EInputLayer::GUI);
+			}
+			else
+				Input::PushInputMode(EInputLayer::GAME);
 		}
-		else
-			Input::PushInputMode(EInputLayer::GAME);
 	}
 
 	return false;

@@ -35,12 +35,12 @@ public:
 	}
 
 protected:
-	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
+	virtual void InternalAddAdditionalRequiredFlagComponents(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
 	{
 		UNREFERENCED_VARIABLE(componentAccesses);
 	}
 
-	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses) 
+	virtual void InternalAddAdditionalAccesses(LambdaEngine::TArray<LambdaEngine::ComponentAccess>& componentAccesses)
 	{
 		UNREFERENCED_VARIABLE(componentAccesses);
 	}
@@ -49,17 +49,17 @@ protected:
 	virtual void FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime) = 0;
 
 public:
-	FORCEINLINE static FlagSystemBase* GetInstance() 
-	{ 
+	FORCEINLINE static FlagSystemBase* GetInstance()
+	{
 		return s_pInstance;
 	}
 
 protected:
 	static void CalculateAttachedFlagPosition(
-		glm::vec3& flagPosition, 
-		glm::quat& flagRotation, 
-		const glm::vec3& flagOffset, 
-		const glm::vec3& parentPosition, 
+		glm::vec3& flagPosition,
+		glm::quat& flagRotation,
+		const glm::vec3& flagOffset,
+		const glm::vec3& parentPosition,
 		const glm::quat parentRotation);
 
 protected:

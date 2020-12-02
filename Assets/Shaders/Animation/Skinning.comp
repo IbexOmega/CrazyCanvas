@@ -30,7 +30,7 @@ layout(binding = 0, set = 0) restrict readonly buffer OriginalVertices
 	SVertex Val[]; 
 } b_OriginalVertices;
 
-layout(binding = 1, set = 0) restrict writeonly	buffer SkinnedVertices
+layout(binding = 1, set = 0) restrict buffer SkinnedVertices
 { 
 	SVertex Val[]; 
 } b_SkinnedVertices;
@@ -66,13 +66,21 @@ void main()
 	mat4 transform = joint0 + joint1 + joint2 + joint3;
 
 	SVertex vertex	= b_OriginalVertices.Val[gl_GlobalInvocationID.x];
-	vertex.Position	= transform * vec4(vertex.Position.xyz, 1.0f);
-	vertex.Normal	= transform * vec4(vertex.Normal.xyz, 0.0f);
-	vertex.Tangent	= transform * vec4(vertex.Tangent.xyz, 0.0f);
+	vertex.Position.xyz	= (transform * vec4(vertex.Position.xyz, 1.0f)).xyz;
+	vertex.Normal.xyz	= (transform * vec4(vertex.Normal.xyz, 0.0f)).xyz;
+	vertex.Tangent.xyz	= (transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz;
 
 #if PASSTHROUGH
 	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = b_OriginalVertices.Val[gl_GlobalInvocationID.x];
 #else
+	SVertex skinnedVertex = b_SkinnedVertices.Val[gl_GlobalInvocationID.x];
+	vertex.Position.w = skinnedVertex.Position.w;
+	vertex.Normal.w = skinnedVertex.Normal.w;
+
+	// Store the vertex's original position to use when applying paint on the players.
+	SVertex originalVertex = b_OriginalVertices.Val[gl_GlobalInvocationID.x];
+	vertex.Tangent.w = originalVertex.Position.x;
+	vertex.TexCoord.zw = originalVertex.Position.yz;
 	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = vertex;
 #endif
 }

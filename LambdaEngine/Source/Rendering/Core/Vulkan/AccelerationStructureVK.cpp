@@ -8,7 +8,7 @@
 
 namespace LambdaEngine
 {
-	AccelerationStructureVK::AccelerationStructureVK(const GraphicsDeviceVK* pDevice) 
+	AccelerationStructureVK::AccelerationStructureVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
 		, m_Allocation()
 	{
@@ -46,12 +46,12 @@ namespace LambdaEngine
 		VkAccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
 		geometryTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
 		geometryTypeInfo.pNext = nullptr;
-		
+
 		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
 		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP)
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-			
+
 			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
 			geometryTypeInfo.maxPrimitiveCount	= pDesc->InstanceCount;
 			geometryTypeInfo.allowsTransforms	= VK_FALSE;
@@ -77,11 +77,11 @@ namespace LambdaEngine
 		{
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkCreateAccelerationStructureKHR failed for \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "vkCreateAccelerationStructureKHR failed for \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkCreateAccelerationStructureKHR failed");
+				LOG_VULKAN_ERROR(result, "vkCreateAccelerationStructureKHR failed");
 			}
 
 			return false;
@@ -103,7 +103,7 @@ namespace LambdaEngine
 
 		if (!m_pDevice->AllocateAccelerationStructureMemory(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
 		{
-			LOG_ERROR("[AccelerationStructureVK]: Failed to allocate memory");
+			LOG_ERROR("Failed to allocate memory");
 			return false;
 		}
 
@@ -117,11 +117,11 @@ namespace LambdaEngine
 		{
 			if (m_Desc.DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR failed for \"%s\"", m_Desc.DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "vkBindAccelerationStructureMemoryKHR failed for \"%s\"", m_Desc.DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[AccelerationStructureVK]: vkBindAccelerationStructureMemoryKHR");
+				LOG_VULKAN_ERROR(result, "vkBindAccelerationStructureMemoryKHR");
 			}
 
 			return false;
@@ -136,11 +136,11 @@ namespace LambdaEngine
 
 		if (!m_Desc.DebugName.empty())
 		{
-			D_LOG_MESSAGE("[AccelerationStructureVK]: Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.DebugName.c_str(), memoryRequirements.size);
+			LOG_DEBUG("Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.DebugName.c_str(), memoryRequirements.size);
 		}
 		else
 		{
-			D_LOG_MESSAGE("[AccelerationStructureVK]: Acceleration Structure created with size of %u bytes", memoryRequirements.size);
+			LOG_DEBUG("Acceleration Structure created with size of %u bytes", memoryRequirements.size);
 		}
 
 		VkMemoryRequirements scratchMemoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);

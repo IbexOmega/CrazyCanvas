@@ -173,7 +173,7 @@ namespace LambdaEngine
 				{
 					for (auto it = bindingDescriptors.Begin(); it != bindingDescriptors.End(); it++)
 					{
-						if ((*it).binding	!= vkInputBindingDesc.binding	|| 
+						if ((*it).binding	!= vkInputBindingDesc.binding	||
 							(*it).inputRate	!= vkInputBindingDesc.inputRate	||
 							(*it).stride	!= vkInputBindingDesc.stride)
 						{
@@ -268,28 +268,28 @@ namespace LambdaEngine
 		{
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed for %s", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "vkCreateGraphicsPipelines failed for %s", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[GraphicsPipelineStateVK]: vkCreateGraphicsPipelines failed");
+				LOG_VULKAN_ERROR(result, "vkCreateGraphicsPipelines failed");
 			}
-			
+
 			return false;
 		}
 		else
 		{
 			SetName(pDesc->DebugName);
-			
+
 			if (!pDesc->DebugName.empty())
 			{
-				D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline for %s", pDesc->DebugName.c_str());
+				LOG_DEBUG("Created Pipeline for %s", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				D_LOG_MESSAGE("[GraphicsPipelineStateVK]: Created Pipeline");
+				LOG_DEBUG("Created Pipeline");
 			}
-			
+
 			return true;
 		}
 	}
@@ -299,7 +299,7 @@ namespace LambdaEngine
 		m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_Pipeline), VK_OBJECT_TYPE_PIPELINE);
 		m_DebugName = debugName;
 	}
-	
+
 	void GraphicsPipelineStateVK::CreateShaderStageInfo(const ShaderModuleDesc* pShaderModule, TArray<VkPipelineShaderStageCreateInfo>& shaderStagesInfos,
 		TArray<VkSpecializationInfo>& shaderStagesSpecializationInfos, TArray<TArray<VkSpecializationMapEntry>>& shaderStagesSpecializationMaps)
 	{

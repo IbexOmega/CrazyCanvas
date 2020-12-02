@@ -128,7 +128,7 @@ namespace LambdaEngine
 
 	void PacketManagerUDP::ResendOrDeleteSegments()
 	{
-		static float64 minMillis = 5.0f;
+		static float64 minMillis = 10.0f;
 		float64 pingMillis = m_Statistics.GetPing() * (float64)m_ResendRTTMultiplier;
 		if (pingMillis < minMillis)
 			pingMillis = minMillis;

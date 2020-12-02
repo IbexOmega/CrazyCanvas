@@ -93,7 +93,7 @@ void main()
 			// Set position to be at the intersection point.
 			float tHit = rayQueryGetIntersectionTEXT(rayQuery, true);
 			particle.Transform[3].xyz = origin + max(tHit-tMin*2.f, 0.f)*direction;
-			particle.Bounciness = 2.f; // This is used for telling the ParticleUpdate.comp that this particle should stop.
+			particle.ShouldStop = 1.f;
 			particle.Velocity = vec3(0.f);
 		}
 

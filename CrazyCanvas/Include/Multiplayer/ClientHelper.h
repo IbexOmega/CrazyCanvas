@@ -6,6 +6,8 @@
 #include "Networking/API/IPacketListener.h"
 #include "Networking/API/IPAddress.h"
 
+#include "Time/API/Timestamp.h"
+
 class ClientHelper
 {
 	DECL_STATIC_CLASS(ClientHelper);
@@ -17,6 +19,9 @@ public:
 	static void AddNetworkDiscoveryTarget(LambdaEngine::IPAddress* pAddress);
 	static void RemoveNetworkDiscoveryTarget(LambdaEngine::IPAddress* pAddress);
 	static void Disconnect(const LambdaEngine::String& reason);
+
+	static void SetTimeout(LambdaEngine::Timestamp time);
+	static void ResetTimeout();
 };
 
 template<class T>

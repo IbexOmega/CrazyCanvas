@@ -40,6 +40,8 @@ namespace LambdaEngine
 		virtual NetworkStatistics* GetStatistics() override;
 		virtual IClientRemoteHandler* GetHandler() override;
 		virtual uint64 GetUID() const override;
+		virtual void SetTimeout(Timestamp time) override;
+		virtual void ResetTimeout() override;
 
 		bool SendUnreliableBroadcast(NetworkSegment* pPacket, bool excludeMySelf = false);
 		bool SendReliableBroadcast(NetworkSegment* pPacket, IPacketListener* pListener = nullptr, bool excludeMySelf = false);
@@ -102,6 +104,7 @@ namespace LambdaEngine
 		SpinLock m_Lock;
 		Timestamp m_PingInterval;
 		Timestamp m_PingTimeout;
+		Timestamp m_PingTimeoutDefault;
 		Timestamp m_LastPingTimestamp;
 		std::atomic_bool m_TerminationRequested;
 		std::atomic_bool m_TerminationApproved;

@@ -50,7 +50,6 @@
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
-#include "Game/ECS/ComponentOwners/Rendering/MeshPaintComponentOwner.h"
 #include "Game/ECS/ComponentOwners/Misc/InheritanceComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -332,11 +331,6 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!MeshPaintComponentOwner::GetInstance()->Init())
-		{
-			return false;
-		}
-
 		if (!InheritanceComponentOwner::GetInstance()->Init())
 		{
 			return false;
@@ -421,11 +415,6 @@ namespace LambdaEngine
 		}
 
 		ECSCore::Release();
-
-		if (!MeshPaintComponentOwner::GetInstance()->Release())
-		{
-			return false;
-		}
 
 		if (!ThreadPool::Release())
 		{

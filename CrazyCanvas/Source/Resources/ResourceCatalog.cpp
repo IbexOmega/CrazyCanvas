@@ -25,7 +25,7 @@ bool ResourceCatalog::Init()
 
 	//Player
 	{
-		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", PLAYER_MESH_GUID, PLAYER_IDLE_GUIDs);
+		ResourceManager::LoadMeshFromFile("Player/Idle.glb", PLAYER_MESH_GUID, PLAYER_IDLE_GUIDs);
 
 #ifdef USE_ALL_ANIMATIONS
 		PLAYER_RUN_GUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
@@ -62,6 +62,7 @@ bool ResourceCatalog::Init()
 	//Weapon
 	{
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", WEAPON_MESH_GUID, WEAPON_MATERIAL_GUID);
+		ResourceManager::LoadMeshFromFile("Gun/GunFirstPerson.glb", WEAPON_FIRST_PERSON_MESH_GUID);
 
 		// Soundeffects
 		WEAPON_SOUND_GUNFIRE_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/Shootsound.mp3");

@@ -50,7 +50,6 @@ namespace LambdaEngine
 	class CommandAllocator;
 	// Custom Renderers
 	class LineRenderer;
-	class PaintMaskRenderer;
 	class ParticleRenderer;
 	class ParticleUpdater;
 	class ParticleCollider;
@@ -63,7 +62,6 @@ namespace LambdaEngine
 
 	class LAMBDA_API RenderSystem : public System
 	{
-		friend class PaintMaskRenderer;
 		DECL_REMOVE_COPY(RenderSystem);
 		DECL_REMOVE_MOVE(RenderSystem);
 
@@ -75,6 +73,10 @@ namespace LambdaEngine
 			uint32		ExtensionGroupIndex			= 0;
 			uint32		TexturesPerExtensionGroup	= 0;
 			uint32		MeshletCount				= 0;
+			uint32		TeamIndex					= 0;
+			uint32		PlayerIndex					= 0;
+			uint32		Padding1					= 0;
+			uint32		Padding2					= 0;
 		};
 
 		struct MeshKey
@@ -170,7 +172,8 @@ namespace LambdaEngine
 			Buffer* pMeshlets				= nullptr;
 			uint32	MeshletCount			= 0;
 
-			TArray<DrawArgExtensionGroup*>	ExtensionGroups;
+			uint32	ExtensionGroupCount		= 1;
+			uint32	TexturesPerExtensionGroup = 0;
 			bool	HasExtensionData		= false;
 			uint32	DrawArgsMask			= 0x0;
 
@@ -411,7 +414,7 @@ namespace LambdaEngine
 		void DeleteDeviceResource(DeviceChild* pDeviceResource);
 		void CleanBuffers();
 		void CreateDrawArgs(TArray<DrawArg>& drawArgs, const DrawArgMaskDesc& requestedMaskDesc) const;
-		void WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry);
+		void WriteDrawArgExtensionData(MeshEntry& meshEntry);
 
 		void UpdateBuffers();
 		void UpdateAnimationBuffers(AnimationComponent& animationComp, MeshEntry& meshEntry);
@@ -520,8 +523,8 @@ namespace LambdaEngine
 		TSharedRef<DescriptorHeap>	m_AnimationDescriptorHeap;
 
 		// Pending/Dirty
-		bool						m_MaterialsPropertiesBufferDirty			= false;
-		bool						m_MaterialsResourceDirty					= false;
+		bool						m_MaterialsPropertiesBufferDirty			= true;
+		bool						m_MaterialsResourceDirty					= true;
 		bool						m_LightsResourceDirty						= false;
 		bool						m_PerFrameResourceDirty						= true;
 		bool						m_PaintMaskColorsResourceDirty				= true;
@@ -538,7 +541,6 @@ namespace LambdaEngine
 		// Custom Renderers
 		LineRenderer*				m_pLineRenderer			= nullptr;
 		LightRenderer*				m_pLightRenderer		= nullptr;
-		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;
 		ParticleUpdater*			m_pParticleUpdater		= nullptr;
 		ParticleCollider*			m_pParticleCollider		= nullptr;

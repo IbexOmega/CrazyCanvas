@@ -89,6 +89,10 @@ struct SInstance
 	uint ExtensionGroupIndex;
 	uint TexturesPerExtensionGroup;
 	uint MeshletCount;
+	uint TeamIndex;
+	uint PlayerIndex;
+	uint Padding1;
+	uint Padding2;
 };
 
 struct SIndirectArg
@@ -183,7 +187,7 @@ struct SParticle
 	float BeginRadius;
 	float EndRadius;
 	float FrictionFactor;
-	float Bounciness;
+	float ShouldStop;
 	float Padding1;
 };
 

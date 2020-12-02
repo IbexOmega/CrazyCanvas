@@ -35,7 +35,7 @@ namespace LambdaEngine
 		TArray<DeviceChild*> removedDeviceChildren;
 		if (!Build(pCommandList, removedDeviceChildren, pDesc))
 		{
-			LOG_ERROR("[SBTVK]: Failed to build SBT");
+			LOG_ERROR("Failed to build SBT");
 			return false;
 		}
 
@@ -46,11 +46,11 @@ namespace LambdaEngine
 
 		if (!pDesc->DebugName.empty())
 		{
-			D_LOG_MESSAGE("[SBTVK]: Created SBT %s", pDesc->DebugName.c_str());
+			LOG_DEBUG("Created SBT %s", pDesc->DebugName.c_str());
 		}
 		else
 		{
-			D_LOG_MESSAGE("[SBTVK]: Created SBT");
+			LOG_DEBUG("Created SBT");
 		}
 
 		return true;
@@ -66,7 +66,7 @@ namespace LambdaEngine
 
 		void* pMapped;
 		m_NumShaderRecords = pDesc->SBTRecords.GetSize();
-		
+
 		uint64 newShaderRecordsBufferSize = m_NumShaderRecords * sizeof(SBTRecord);
 
 		if (m_pShaderRecordsBuffer == nullptr || newShaderRecordsBufferSize > m_pShaderRecordsBuffer->GetDesc().SizeInBytes)
@@ -107,7 +107,7 @@ namespace LambdaEngine
 		VkDeviceSize missSBTOffset			= AlignUp(hitSBTOffset + hitSBTSize, shaderGroupBaseAlignment);
 		VkDeviceSize missSize				= pRayTracingPipelineVK->MissShaderCount() * VkDeviceSize(shaderGroupHandleSize);
 		VkDeviceSize missStride				= shaderGroupHandleSize;
-		
+
 		uint64 shaderHandleStorageSize		= missGroupHandleOffset + missSize;
 		uint64 sbtSize						= missSBTOffset + missSize;
 		uint32 shaderGroupCount				= 1 + pRayTracingPipelineVK->HitShaderCount() + pRayTracingPipelineVK->MissShaderCount();
@@ -131,13 +131,13 @@ namespace LambdaEngine
 		{
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "vkGetRayTracingShaderGroupHandlesKHR failed for \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[RayTracingPipelineStateVK]: vkGetRayTracingShaderGroupHandlesKHR failed");
+				LOG_VULKAN_ERROR(result, "vkGetRayTracingShaderGroupHandlesKHR failed");
 			}
-			
+
 			return false;
 		}
 		m_pShaderHandleStorageBuffer->Unmap();

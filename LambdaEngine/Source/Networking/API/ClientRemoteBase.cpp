@@ -22,8 +22,9 @@ namespace LambdaEngine
 	ClientRemoteBase::ClientRemoteBase(const ClientRemoteDesc& desc) :
 		m_pServer(desc.Server),
 		m_PingInterval(desc.PingInterval),
-		m_PingTimeout(desc.PingTimeout),
+		m_PingTimeoutDefault(desc.PingTimeout),
 		m_UsePingSystem(desc.UsePingSystem),
+		m_PingTimeout(desc.PingTimeout),
 		m_pHandler(nullptr),
 		m_State(STATE_CONNECTING),
 		m_LastPingTimestamp(0),
@@ -243,6 +244,17 @@ namespace LambdaEngine
 	uint64 ClientRemoteBase::GetUID() const
 	{
 		return GetPacketManager()->GetStatistics()->GetSalt();
+	}
+
+	void ClientRemoteBase::SetTimeout(Timestamp time)
+	{
+		m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
+		m_PingTimeout = time;
+	}
+
+	void ClientRemoteBase::ResetTimeout()
+	{
+		SetTimeout(m_PingTimeoutDefault);
 	}
 
 	void ClientRemoteBase::TransmitPackets()
