@@ -1302,8 +1302,7 @@ bool LevelObjectCreator::FindTeamIndex(const LambdaEngine::String& objectName, u
 	size_t teamIndexPos = objectName.find("TEAM");
 	if (teamIndexPos != String::npos)
 	{
-		// + 1 since the glb map has different naming structure
-		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4)) + 1;
+		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4));
 		return true;
 	}
 

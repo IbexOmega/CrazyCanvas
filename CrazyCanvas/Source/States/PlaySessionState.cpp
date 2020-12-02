@@ -69,7 +69,7 @@ PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool 
 
 	// Update Team colors and materials
 	TeamHelper::SetTeamColor(1, gameSettings.TeamColor1);
-	TeamHelper::SetTeamColor(1, gameSettings.TeamColor2);
+	TeamHelper::SetTeamColor(2, gameSettings.TeamColor2);
 
 	// Set Team Paint colors
 	auto& renderSystem = RenderSystem::GetInstance();

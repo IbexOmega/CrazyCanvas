@@ -411,7 +411,7 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 	ComboBox* pSettingTeam1Color = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_CHANGE_TEAM_1_COLOR) + "_host").c_str());
 	if (pSettingTeam1Color)
 	{
-		pSettingTeam1Color->SetSelectedIndex(packet.TeamColor1 - 1);
+		pSettingTeam1Color->SetSelectedIndex(packet.TeamColor1);
 		TextBlock* pBox = (TextBlock*)pSettingTeam1Color->GetSelectedItem();
 		pSettingTeam1Color->SetBackground(pBox->GetBackground());
 	}
@@ -419,7 +419,7 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 	ComboBox* pSettingTeam2Color = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_CHANGE_TEAM_2_COLOR) + "_host").c_str());
 	if (pSettingTeam2Color)
 	{
-		pSettingTeam2Color->SetSelectedIndex(packet.TeamColor2 - 1);
+		pSettingTeam2Color->SetSelectedIndex(packet.TeamColor2);
 		TextBlock* pBox = (TextBlock*)pSettingTeam2Color->GetSelectedItem();
 		pSettingTeam2Color->SetBackground(pBox->GetBackground());
 	}
@@ -465,7 +465,7 @@ void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const 
 
 	// Add setting client text (default value is set as content)
 	// Temporary until Rectangle can be adjusted to fit parent
-	AddTextBoxWithColor(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientTextStyle", "\t\t\t\t", TeamHelper::GetAvailableColor(defaultIndex + 1));
+	AddTextBoxWithColor(settingKey + "_client", m_pSettingsClientStackPanel, "SettingsClientTextStyle", "\t\t\t\t", TeamHelper::GetAvailableColor(defaultIndex));
 
 	// Add setting combobox for colors
 	Ptr<ComboBox> settingComboBox = *new ComboBox();
@@ -638,12 +638,12 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 		if (setting == SETTING_CHANGE_TEAM_1_COLOR)
 		{
 			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
-			m_pGameSettings->TeamColor1 = (uint8)indexSelected + 1;
+			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
 		}
 		else
 		{
 			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
-			m_pGameSettings->TeamColor2 = (uint8)indexSelected + 1;
+			m_pGameSettings->TeamColor2 = (uint8)indexSelected;
 		}
 
 		pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
