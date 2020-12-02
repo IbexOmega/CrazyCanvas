@@ -71,7 +71,6 @@ namespace LambdaEngine
 				resourceStatesByHalfAttributeIndex,
 				resourceStateLinksByLinkIndex,
 				renderStageWeightsByName,
-				UINT32_MAX,
 				0))
 			{
 				LOG_ERROR("[RenderGraphParser]: Failed to recursively weight Render Stages");
@@ -895,7 +894,6 @@ namespace LambdaEngine
 		const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex,
 		const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex,
 		THashTable<String, int32>& renderStageWeightsByName,
-		uint32 currentDrawArgsIncludeMask,
 		uint32 currentDrawArgsExcludeMask)
 	{
 		TSet<String> parentRenderStageNames;
@@ -921,16 +919,14 @@ namespace LambdaEngine
 
 						if (prevResourceStateIt != resourceStatesByHalfAttributeIndex.end())
 						{
-							uint32 nextDrawArgsIncludeMask = currentDrawArgsIncludeMask;
 							uint32 nextDrawArgsExcludeMask = currentDrawArgsExcludeMask;
 
 							if (resourceStateIt->second.ResourceType == ERenderGraphResourceType::SCENE_DRAW_ARGS)
 							{
 								//Check if Draw Buffers, if it, check if mask are overlapping
-								nextDrawArgsIncludeMask = nextDrawArgsIncludeMask & prevResourceStateIt->second.DrawArgsIncludeMask;
 								nextDrawArgsExcludeMask = nextDrawArgsExcludeMask & prevResourceStateIt->second.DrawArgsIncludeMask;
 
-								if (nextDrawArgsIncludeMask == 0 || nextDrawArgsExcludeMask > 0)
+								if (nextDrawArgsExcludeMask > 0)
 									continue;
 							}
 
@@ -947,7 +943,6 @@ namespace LambdaEngine
 										resourceStatesByHalfAttributeIndex,
 										resourceStateLinksByLinkIndex,
 										renderStageWeightsByName,
-										nextDrawArgsIncludeMask,
 										nextDrawArgsExcludeMask);
 
 									parentRenderStageNames.insert(parentRenderStageIt->first);

@@ -1301,6 +1301,8 @@ bool LevelObjectCreator::CreateProjectile(
 	projectileComp.Owner	= desc.WeaponOwner;
 	projectileComp.Angle	= desc.Angle;
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
+	EntityMaskManager::AddExtensionToEntity(projectileEntity, ProjectileComponent::Type(), nullptr);
+
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
 	const glm::vec3 normVelocity = glm::normalize(desc.InitalVelocity);
@@ -1336,16 +1338,9 @@ bool LevelObjectCreator::CreateProjectile(
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		glm::vec4 particleColor(1.0f);
-		if (desc.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
+		glm::vec4 particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
+		if (desc.AmmoType == EAmmoType::AMMO_TYPE_WATER)
 		{
-			GUID_Lambda projectileMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(desc.TeamIndex);
-			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = projectileMaterialGUID });
-			particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
-		}
-		else
-		{
-			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
 			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 		}
 
