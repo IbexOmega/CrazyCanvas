@@ -63,6 +63,8 @@ void SpectateCameraSystem::Init()
 
 void SpectateCameraSystem::Tick(LambdaEngine::Timestamp deltaTime)
 {
+
+	UNREFERENCED_VARIABLE(deltaTime);
 	//After tomorrow I will add a neat rotation to the camera upon death. dont have time to fix it now
 	/*if (m_IsGameOver)
 	{
@@ -148,6 +150,9 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 
 bool SpectateCameraSystem::OnGameOver(const GameOverEvent& event)
 {
+
+	UNREFERENCED_VARIABLE(event);
+
 	m_IsGameOver = true;
 
 	SpectatePlayer();
