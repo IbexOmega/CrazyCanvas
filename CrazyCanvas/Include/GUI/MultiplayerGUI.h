@@ -61,7 +61,7 @@ private:
 	bool CheckServerStatus();
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
-	bool StartUpServer(const std::string& applicationName, const std::string& commandLine);
+	bool StartUpServer(const std::string& commandLine);
 
 	void HandleServerInfo(ServerInfo& serverInfo, bool forceSave = false);
 
