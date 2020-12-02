@@ -12,6 +12,7 @@ namespace LambdaEngine
 {
 	GUIRenderTarget::GUIRenderTarget()
 	{
+		ZERO_MEMORY(m_ppRenderTargets, sizeof(m_ppRenderTargets));
 	}
 
 	GUIRenderTarget::~GUIRenderTarget()

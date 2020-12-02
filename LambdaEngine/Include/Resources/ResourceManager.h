@@ -38,16 +38,6 @@ namespace LambdaEngine
 
 	class LAMBDA_API ResourceManager
 	{
-		struct MaterialLoadDesc
-		{
-			GUID_Lambda AlbedoMapGUID				= GUID_NONE;
-			GUID_Lambda NormalMapGUID				= GUID_NONE;
-			GUID_Lambda AOMapGUID					= GUID_NONE;
-			GUID_Lambda MetallicMapGUID				= GUID_NONE;
-			GUID_Lambda RoughnessMapGUID			= GUID_NONE;
-			GUID_Lambda AOMetallicRoughnessMapGUID	= GUID_NONE;
-		};
-
 		struct ShaderLoadDesc
 		{
 			String				Filepath	= "";
@@ -57,6 +47,16 @@ namespace LambdaEngine
 		};
 
 	public:
+		struct MaterialLoadDesc
+		{
+			GUID_Lambda AlbedoMapGUID = GUID_NONE;
+			GUID_Lambda NormalMapGUID = GUID_NONE;
+			GUID_Lambda AOMapGUID = GUID_NONE;
+			GUID_Lambda MetallicMapGUID = GUID_NONE;
+			GUID_Lambda RoughnessMapGUID = GUID_NONE;
+			GUID_Lambda AOMetallicRoughnessMapGUID = GUID_NONE;
+		};
+
 		DECL_STATIC_CLASS(ResourceManager);
 
 		static bool Init();
@@ -320,15 +320,16 @@ namespace LambdaEngine
 		static GUID_Lambda GetSoundEffect3DGUID(const String& name);
 		static GUID_Lambda GetSoundEffect2DGUID(const String& name);
 
-		static Mesh*			GetMesh(GUID_Lambda guid);
-		static Material*		GetMaterial(GUID_Lambda guid);
-		static Animation*		GetAnimation(GUID_Lambda guid);
-		static Texture*			GetTexture(GUID_Lambda guid);
-		static TextureView*		GetTextureView(GUID_Lambda guid);
-		static Shader*			GetShader(GUID_Lambda guid);
-		static ISoundEffect3D*	GetSoundEffect3D(GUID_Lambda guid);
-		static ISoundEffect2D*	GetSoundEffect2D(GUID_Lambda guid);
-		static IMusic*			GetMusic(GUID_Lambda guid);
+		static Mesh*				GetMesh(GUID_Lambda guid);
+		static Material*			GetMaterial(GUID_Lambda guid);
+		static MaterialLoadDesc		GetMaterialDesc(GUID_Lambda guid);
+		static Animation*			GetAnimation(GUID_Lambda guid);
+		static Texture*				GetTexture(GUID_Lambda guid);
+		static TextureView*			GetTextureView(GUID_Lambda guid);
+		static Shader*				GetShader(GUID_Lambda guid);
+		static ISoundEffect3D*		GetSoundEffect3D(GUID_Lambda guid);
+		static ISoundEffect2D*		GetSoundEffect2D(GUID_Lambda guid);
+		static IMusic*				GetMusic(GUID_Lambda guid);
 
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetMeshNamesMap()			{ return s_MaterialNamesToGUIDs; }
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetMaterialNamesMap()		{ return s_MaterialNamesToGUIDs; }

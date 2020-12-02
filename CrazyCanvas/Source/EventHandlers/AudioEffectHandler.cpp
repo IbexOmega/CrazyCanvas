@@ -18,7 +18,6 @@ AudioEffectHandler::~AudioEffectHandler()
 	if (!MultiplayerUtils::IsServer())
 	{
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerAliveUpdatedEvent);
-		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerConnected);
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnPlayerHit);
 		EventQueue::UnregisterEventHandler(this, &AudioEffectHandler::OnWindowFocusChanged);
 	}
@@ -35,12 +34,10 @@ void AudioEffectHandler::Init()
 			m_pEnemyHitSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::SOUND_EFFECT_SPLASH0_3D_GUID);
 
 			// Load 2D sounds
-			m_pConnectSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::SOUND_EFFECT_PLAYER_CONNECTED_2D_GUID);
 			m_pHitSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::SOUND_EFFECT_SPLASH1_2D_GUID);
 		}
 		// Register callbacks
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerAliveUpdatedEvent);
-		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerConnected);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnPlayerHit);
 		EventQueue::RegisterEventHandler(this, &AudioEffectHandler::OnWindowFocusChanged);
 
@@ -67,21 +64,6 @@ bool AudioEffectHandler::OnPlayerAliveUpdatedEvent(const PlayerAliveUpdatedEvent
 				m_pPlayerKilledSound->PlayOnceAt(positionComponent.Position, glm::vec3(0.0f), 0.5f);
 			}
 		}
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-bool AudioEffectHandler::OnPlayerConnected(const PlayerConnectedEvent& event)
-{
-	UNREFERENCED_VARIABLE(event);
-
-	if (m_HasFocus)
-	{
-		m_pConnectSound->PlayOnce();
 		return true;
 	}
 	else

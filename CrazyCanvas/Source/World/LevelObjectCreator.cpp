@@ -24,6 +24,8 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
+#include "Game/PlayerIndexHelper.h"
+
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Match/ShowerSystemBase.h"
@@ -136,6 +138,28 @@ bool LevelObjectCreator::Init()
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
+		}
+		
+		//Team Indicator
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_INDICATOR_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateTeamIndicator;
+		}
+
+		//No collider/paint Object
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "NO_COLLIDER_"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateNoColliderObject;
 		}
 	}
 
@@ -329,6 +353,86 @@ bool LevelObjectCreator::CreateLevelObjectOfType(
 		LOG_ERROR("Failed to create special object, no create function could be found");
 		return false;
 	}
+}
+
+ELevelObjectType LevelObjectCreator::CreateNoColliderObject(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	for (auto& meshComp : levelObject.MeshComponents)
+	{
+		Entity entity = pECS->CreateEntity();
+		Mesh* pMesh = ResourceManager::GetMesh(meshComp.MeshGUID);
+
+		pECS->AddComponent<PositionComponent>(entity, { true, pMesh->DefaultPosition + translation }),
+		pECS->AddComponent<ScaleComponent>(entity, { true, pMesh->DefaultScale }),
+		pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
+		pECS->AddComponent<MeshComponent>(entity, meshComp);
+
+		createdEntities.PushBack(entity);
+	}
+
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_STATIC_GEOMETRY_NO_COLLIDER;
+}
+
+ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::LevelObjectOnLoad& levelObject, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, const glm::vec3& translation)
+{
+	using namespace LambdaEngine;
+
+	TeamComponent teamComponent = {};
+
+	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
+	{
+		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Team Indicator, defaulting to 0...");
+		teamComponent.TeamIndex = 0;
+	}
+	 
+	// Modify material of mesh component to represent team color
+	glm::vec3 teamColor = TeamHelper::GetTeamColor(teamComponent.TeamIndex);
+
+	TArray<MeshComponent> meshComponents = levelObject.MeshComponents;
+	createdEntities.Reserve(meshComponents.GetSize());
+
+	for (auto& meshComp : meshComponents)
+	{
+		// Recreate material with team color
+		ResourceManager::MaterialLoadDesc loadDesc = ResourceManager::GetMaterialDesc(meshComp.MaterialGUID);
+		Material* pMaterial = ResourceManager::GetMaterial(meshComp.MaterialGUID);
+		MaterialProperties materialProperties = {};
+		materialProperties = pMaterial->Properties;
+		materialProperties.Albedo = glm::vec4(teamColor, 1.0f);
+
+		// Create Unique Material Name
+		const std::string strFlag = "_INCLUDEMESH_";
+		size_t startPos = levelObject.Name.find(strFlag);
+		size_t endPos = levelObject.Name.find(".");
+		std::string materialName;
+		if (startPos != std::string::npos && endPos != std::string::npos)
+		{
+			startPos = startPos + strFlag.size();
+			materialName = levelObject.Name.substr(startPos, endPos - startPos);
+		}
+		else
+		{
+			materialName = levelObject.Name;
+		}
+
+		GUID_Lambda teamMaterialGUID = ResourceManager::LoadMaterialFromMemory(
+			"TeamIndicator Color Material " + materialName,
+			loadDesc.AlbedoMapGUID		!= GUID_NONE ? loadDesc.AlbedoMapGUID  : GUID_TEXTURE_DEFAULT_COLOR_MAP,
+			loadDesc.NormalMapGUID		!= GUID_NONE ? loadDesc.NormalMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			loadDesc.AOMapGUID			!= GUID_NONE ? loadDesc.AOMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			loadDesc.MetallicMapGUID	!= GUID_NONE ? loadDesc.MetallicMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			loadDesc.RoughnessMapGUID	!= GUID_NONE ? loadDesc.RoughnessMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+			materialProperties);
+
+		meshComp.MaterialGUID = teamMaterialGUID;
+		Entity entity = CreateStaticGeometry(meshComp, translation);
+		createdEntities.PushBack(entity);
+	}
+
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_TEAM_INDICATOR;
 }
 
 ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
@@ -826,6 +930,8 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
+	PlayerIndexHelper::AddPlayerEntity(playerEntity);
+
 
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
@@ -1054,7 +1160,7 @@ bool LevelObjectCreator::CreatePlayer(
 			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
 			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
 			soundInstanceDesc.Position		= pPlayerDesc->Position;
-			soundInstanceDesc.Volume		= 1.0f;
+			soundInstanceDesc.Volume		= 2.0f;
 
 			AudibleComponent audibleComponent = {};
 			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);

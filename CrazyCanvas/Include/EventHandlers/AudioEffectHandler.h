@@ -27,7 +27,6 @@ public:
 
 private:
 	bool OnPlayerAliveUpdatedEvent(const PlayerAliveUpdatedEvent& event);
-	bool OnPlayerConnected(const PlayerConnectedEvent& event);
 	bool OnPlayerHit(const PlayerHitEvent& event);
 	bool OnWindowFocusChanged(const LambdaEngine::WindowFocusChangedEvent& event);
 
@@ -38,7 +37,6 @@ private:
 	
 	// 2D sounds
 	LambdaEngine::ISoundEffect2D* m_pHitSound			= nullptr;
-	LambdaEngine::ISoundEffect2D* m_pConnectSound		= nullptr;
 	
 	bool m_HasFocus = false;
 };

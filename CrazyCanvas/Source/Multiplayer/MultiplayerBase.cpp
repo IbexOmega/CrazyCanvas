@@ -17,6 +17,7 @@ MultiplayerBase::~MultiplayerBase()
 		LOG_ERROR("Match Release Failed");
 	}
 
+	WeaponSystem::Release();
 	HealthSystem::Release();
 }
 

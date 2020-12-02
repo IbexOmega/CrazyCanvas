@@ -631,8 +631,6 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	{
 		TextBlock* pBox = (TextBlock*)pComboBox->GetSelectedItem();
 		SolidColorBrush* pBoxColorBrush = static_cast<SolidColorBrush*>(pBox->GetBackground());
-		pComboBox->SetBackground(pBoxColorBrush);
-
 		SolidColorBrush* pLabelColorBrush = nullptr;
 
 		if (setting == SETTING_CHANGE_TEAM_1_COLOR)
@@ -646,8 +644,9 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 			m_pGameSettings->TeamColor2 = (uint8)indexSelected;
 		}
 
+		pComboBox->SetBackground(pBoxColorBrush);
 		pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
-			
+
 		m_pChatPanel->GetChildren()->Clear();
 		ChatManager::RenotifyAllChatMessages();
 	}

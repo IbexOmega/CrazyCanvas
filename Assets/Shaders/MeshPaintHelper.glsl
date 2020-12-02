@@ -3,12 +3,12 @@
 
 #define PAINT_NOISE_SCALE			2.0f
 #define PAINT_DELTA_NOISE			0.0003f
-#define PAINT_BUMPINESS	        	15.0f
+#define PAINT_BUMPINESS	        	50.0f
 #define PAINT_BORDER_DELTA_NOISE	0.0005f
 #define PAINT_BORDER_BUMPINESS	    15.0f
 #define PAINT_BORDER_FREQUENCY	    10.0f
 #define PAINT_BORDER_AMPLITUDE	    0.4f
-#define PAINT_ROUGHNESS	        	0.01f
+#define PAINT_ROUGHNESS	        	0.1f
 
 #include "Noise.glsl"
 #include "MeshPaintFunc.glsl"
