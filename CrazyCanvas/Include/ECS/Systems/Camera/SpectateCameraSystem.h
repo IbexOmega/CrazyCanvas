@@ -39,7 +39,7 @@ private:
 	LambdaEngine::Entity m_SpectatedPlayer = UINT32_MAX;
 
 	uint8 m_LocalTeamIndex;
-	uint8 m_SpectatorIndex = 0;
+	int8 m_SpectatorIndex = 0;
 
 	bool m_InSpectateView = false;
 	bool m_IsGameOver = false;
