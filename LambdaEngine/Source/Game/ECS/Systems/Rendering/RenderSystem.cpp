@@ -1137,8 +1137,6 @@ bool RenderSystem::InitIntegrationLUT()
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 
-		PlayerIndexHelper::AddPlayerEntity(entity);
-
 		bool forceUniqueResources = false;
 		if (MultiplayerUtils::IsServer())
 		{
