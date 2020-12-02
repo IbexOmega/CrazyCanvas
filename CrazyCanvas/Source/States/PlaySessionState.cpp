@@ -68,13 +68,13 @@ PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool 
 	}
 
 	// Update Team colors and materials
-	TeamHelper::SetTeamColor(0, gameSettings.TeamColor0);
 	TeamHelper::SetTeamColor(1, gameSettings.TeamColor1);
+	TeamHelper::SetTeamColor(2, gameSettings.TeamColor2);
 
 	// Set Team Paint colors
 	auto& renderSystem = RenderSystem::GetInstance();
-	renderSystem.SetPaintMaskColor(2, TeamHelper::GetTeamColor(0));
 	renderSystem.SetPaintMaskColor(1, TeamHelper::GetTeamColor(1));
+	renderSystem.SetPaintMaskColor(2, TeamHelper::GetTeamColor(2));
 
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &PlaySessionState::OnClientDisconnected);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &PlaySessionState::OnPacketMatchReadyReceived);
@@ -114,7 +114,6 @@ void PlaySessionState::Init()
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
-	m_MeshPaintHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
 	// Init Systems
@@ -168,7 +167,6 @@ void PlaySessionState::Tick(Timestamp delta)
 	}
 
 	m_MultiplayerClient.TickMainThreadInternal(delta);
-	m_MeshPaintHandler.Tick(delta);
 }
 
 void PlaySessionState::FixedTick(Timestamp delta)

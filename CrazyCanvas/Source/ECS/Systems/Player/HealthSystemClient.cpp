@@ -149,7 +149,6 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 				.RadiusRandomness = 0.5f,
 				.BeginRadius = 0.2f,
 				.FrictionFactor = 0.f,
-				.Bounciness = 0.f,
 				.RandomStartIndex = true,
 				.AnimationCount = 1,
 				.FirstAnimationIndex = 6,
@@ -162,7 +161,7 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 			glm::vec3(0.0f, -1.0f, 0.0f),
 			EPaintMode::PAINT,
 			ERemoteMode::CLIENT,
-			((teamComponent.TeamIndex == 0) ? ETeam::BLUE : ETeam::RED),
+			ETeam(teamComponent.TeamIndex == 1),
 			0);
 
 		m_ParticleEmitters.PushBack(entity);

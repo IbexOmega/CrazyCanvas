@@ -18,8 +18,6 @@
 
 #include "EventHandlers/AudioEffectHandler.h"
 
-#include "MeshPaint/MeshPaintHandler.h"
-
 #include <NsCore/Ptr.h>
 #include <NsGui/IView.h>
 
@@ -78,5 +76,4 @@ private:
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
-	MeshPaintHandler m_MeshPaintHandler;
 };

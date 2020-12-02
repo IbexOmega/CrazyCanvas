@@ -85,7 +85,7 @@ void GameOverGUI::SetWinningTeam(uint8 winningTeamIndex)
 
 	m_pWinningTeamText->SetForeground(pBrush);
 
-	LambdaEngine::String gameOvertext = winningTeamIndex == 0 ? "Team 1 won this round" : "Team 2 won this round";
+	LambdaEngine::String gameOvertext = winningTeamIndex == 1 ? "Team 1 won this round" : "Team 2 won this round";
 
 	m_pWinningTeamText->SetText(gameOvertext.c_str());
 
