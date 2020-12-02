@@ -69,8 +69,8 @@ private:
 
 	Noesis::Grid* m_pScoreboardGrid = nullptr;
 
-	Noesis::StackPanel* m_pBlueTeamStackPanel = nullptr;
-	Noesis::StackPanel* m_pRedTeamStackPanel = nullptr;
+	Noesis::StackPanel* m_pTeam1StackPanel = nullptr;
+	Noesis::StackPanel* m_pTeam2StackPanel = nullptr;
 
 	LambdaEngine::THashTable<uint64, Noesis::Grid*> m_PlayerGrids;
 

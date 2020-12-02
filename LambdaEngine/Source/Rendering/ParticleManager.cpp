@@ -176,8 +176,7 @@ namespace LambdaEngine
 		if (emitterComp.Active)
 		{
 			// Check if active
-			auto emitterEntity = m_RepeatEmitters.find(entity);
-			if (emitterEntity != m_RepeatEmitters.end())
+			if (m_RepeatEmitters.contains(entity))
 			{
 				EmitterID id = m_EntityToEmitterID[entity];
 
@@ -211,7 +210,7 @@ namespace LambdaEngine
 				ParticleEmitterInstance newEmitterInstance;
 				EmitterID emitterID = m_Emitters.GetSize();
 				m_Emitters.PushBack(newEmitterInstance);
-				
+
 				if (ActivateEmitterInstance(emitterID, positionComp, rotationComp, emitterComp))
 				{
 					// If not onetime emitter the emitter needs to be tracked for updating
@@ -629,7 +628,7 @@ namespace LambdaEngine
 	{
 		auto& emitterInstance = m_Emitters[emitterID];
 		UpdateEmitterInstanceData(emitterInstance, positionComp, rotationComp, emitterComp);
-		
+
 		if (emitterInstance.ParticleChunk.Size > 0)
 		{
 			if (!AllocateParticleChunk(emitterInstance.ParticleChunk))
@@ -739,7 +738,7 @@ namespace LambdaEngine
 				m_DirtyParticleChunks.PushBack(ParticleChunk{.Offset = offset, .Size = size});
 			}
 			FreeParticleChunk(emitterInstance.ParticleChunk);
-			
+
 			// Replace removed emitter with last emitter
 			ReplaceRemovedEmitterWithLast(removeIndex);
 
