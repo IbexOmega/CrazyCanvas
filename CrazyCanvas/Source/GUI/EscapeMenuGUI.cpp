@@ -48,6 +48,8 @@ void EscapeMenuGUI::InitGUI()
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &EscapeMenuGUI::KeyboardCallback);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &EscapeMenuGUI::MouseButtonCallback);
+
+	SetDefaultSettings();
 }
 
 bool EscapeMenuGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)

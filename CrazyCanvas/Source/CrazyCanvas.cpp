@@ -13,10 +13,11 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/EntityMaskManager.h"
 
-#include "RenderStages/PlayerRenderer.h"
 #include "RenderStages/MeshPaintUpdater.h"
 #include "RenderStages/HealthCompute.h"
 #include "RenderStages/FirstPersonWeaponRenderer.h"
+#include "RenderStages/PlayerRenderer.h"
+#include "RenderStages/Projectiles/ProjectileRenderer.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -131,19 +132,21 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	PacketType::Init();
 	PacketTranscoderSystem::GetInstance().Init();
 
-	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW MeshPaintUpdater());
+	RenderSystem& renderSystem = RenderSystem::GetInstance();
+	renderSystem.AddCustomRenderer(DBG_NEW MeshPaintUpdater());
 
 	if (stateStr == "server")
 	{
-		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW HealthCompute());
+		renderSystem.AddCustomRenderer(DBG_NEW HealthCompute());
 	}
 	else
 	{
-		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
-		RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
+		renderSystem.AddCustomRenderer(DBG_NEW PlayerRenderer());
+		renderSystem.AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
+		renderSystem.AddCustomRenderer(DBG_NEW ProjectileRenderer(RenderAPI::GetDevice()));
 	}
 
-	RenderSystem::GetInstance().InitRenderGraphs();
+	renderSystem.InitRenderGraphs();
 
 	InitRendererResources();
 
@@ -236,7 +239,7 @@ bool CrazyCanvas::InitRendererResources()
 	{
 		// Test Skybox
 		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
-			"Skybox/daytime.hdr",
+			"Skybox/cartoonskybox-blue.jpg",
 			EFormat::FORMAT_R16G16B16A16_SFLOAT,
 			512,
 			true);
@@ -286,6 +289,8 @@ bool CrazyCanvas::BindComponentTypeMasks()
 
 	// Used to calculate health on the server for players only
 	EntityMaskManager::BindTypeToExtensionDesc(HealthComponent::Type(),	{ 0 }, false, 0x20);	// Bit = 0x20
+
+	EntityMaskManager::BindTypeToExtensionDesc(ProjectileComponent::Type(), { 0 }, false, 0x40);	// Bit = 0x40
 
 	EntityMaskManager::Finalize();
 

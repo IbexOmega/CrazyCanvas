@@ -84,7 +84,7 @@ namespace LambdaEngine
 		//extensionGroup.pExtensions[0].ExtensionID = extensionFlag;
 		groupEntry.Mask = s_DefaultMask;
 
-		if (!inverted) 
+		if (!inverted)
 			groupEntry.Mask |= extensionFlag;
 
 		RenderMaskComponent renderMaskComponent;

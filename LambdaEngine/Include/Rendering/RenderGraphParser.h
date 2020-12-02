@@ -34,7 +34,6 @@ namespace LambdaEngine
 			const THashTable<int32, EditorRenderGraphResourceState>& resourceStatesByHalfAttributeIndex,
 			const THashTable<int32, EditorRenderGraphResourceLink>& resourceStateLinksByLinkIndex,
 			THashTable<String, int32>& renderStageWeightsByName,
-			uint32 currentIncludeDrawArgsMask,
 			uint32 currentExcludeDrawArgsMask);
 
 		static bool FindAndCreateSynchronization(

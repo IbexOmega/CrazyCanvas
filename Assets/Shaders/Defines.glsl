@@ -43,16 +43,16 @@ const float MAX_TEMPORAL_FRAMES = 256.0f;
 // Used in PointShadowDepthTest for PCF soft shadows
 const vec3 sampleOffsetDirections[20] = vec3[]
 (
-   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+   vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1),
    vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
    vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
    vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
    vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
-);  
+);
 
 struct SPositions
 {
-	vec3 WorldPos; 
+	vec3 WorldPos;
 	vec3 ViewPos;
 };
 
@@ -102,7 +102,7 @@ struct SIndirectArg
 	uint	FirstIndex;
 	int		VertexOffset;
 	uint	FirstInstance;
-	
+
 	uint	MaterialIndex;
 };
 

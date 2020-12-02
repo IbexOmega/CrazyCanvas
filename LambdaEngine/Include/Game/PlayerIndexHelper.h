@@ -12,8 +12,7 @@ namespace LambdaEngine
 		/*
 		*	Converts the entity ID to a player index to be used for indexing in lists.
 		*	Creates an index if the entity has not been previously added.
-		*	Return: Returns a valid index of max size player count. If entity was not
-		*			an entity, UINT32_MAX will be returned.
+		*	Return: Returns a valid index of max size player count. If entity was not an entity, UINT32_MAX will be returned.
 		*/
 		static uint32 GetPlayerIndex(Entity entity);
 
@@ -37,8 +36,18 @@ namespace LambdaEngine
 		*/
 		static void RemovePlayerEntity(Entity entity);
 
+		/*
+		*	Gets how many entities have a mapped index
+		*/
+		static uint32 GetNumOfIndices() { return s_Entities.GetSize(); };
+
+		/*
+		*	Returns true if the given entity has a mapped index
+		*/
+		static bool IsEntityValid(Entity entity);
+
 	private:
-		static TArray<Entity> m_Entities;
-		static uint32 m_MaxPlayers;
+		static TArray<Entity> s_Entities;
+		static uint32 s_MaxPlayers;
 	};
 }

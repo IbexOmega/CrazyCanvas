@@ -121,6 +121,7 @@ void main()
 
 		F0 = mix(F0, albedo, metallic);
 
+		float inShadowDirLight = 0.0f;
 		// Directional Light
 		{
 			vec3 lightDir	= normalize(lightBuffer.DirL_Direction);
@@ -129,9 +130,9 @@ void main()
 			float NdotL = max(dot(normal, lightDir), 0.0f);
 
 			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(worldPos, 1.0f);
-			float inShadow 			= DirShadowDepthTest(fragPosLight, normal, lightBuffer.DirL_Direction, u_DirLShadowMap);
+			inShadowDirLight			= DirShadowDepthTest(fragPosLight, normal, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance	= outgoingRadiance * (1.0 - inShadow);
+			vec3 incomingRadiance	= outgoingRadiance * (1.0 - inShadowDirLight);
 
 			float NDF   = Distribution(normal, halfwayDir, roughness);
 			float G     = Geometry(normal, viewDir, lightDir, roughness);
@@ -198,7 +199,7 @@ void main()
 		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
 		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
 	
-		vec3 ambient	= (IBL_Diffuse + IBL_Specular) * ao;
+		vec3 ambient	= mix((IBL_Diffuse + IBL_Specular), 0.4 * albedo, inShadowDirLight) * ao;
 		vec3 colorHDR	= bounceDarkening * (ambient + Lo);
 
 		float luminance = CalculateLuminance(colorHDR);

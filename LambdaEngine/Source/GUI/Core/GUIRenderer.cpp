@@ -805,21 +805,26 @@ namespace LambdaEngine
 		{
 			if (m_pCurrentRenderTarget && m_pCurrentRenderTarget->GetRenderPass())
 			{
-				BeginRenderPassDesc beginRenderPass = {};
-				beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
-				beginRenderPass.ppRenderTargets		= m_pCurrentRenderTarget->GetRenderTargets();
-				beginRenderPass.RenderTargetCount	= 2; // The rendertarget + resolve target
-				beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
-				beginRenderPass.Width				= m_pCurrentRenderTarget->GetWidth();
-				beginRenderPass.Height				= m_pCurrentRenderTarget->GetHeight();
-				beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-				beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
-				beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
-				beginRenderPass.Offset.x			= 0;
-				beginRenderPass.Offset.y			= 0;
+				TextureView** ppTextureViews = m_pCurrentRenderTarget->GetRenderTargets();
 
-				pCommandList->BeginRenderPass(&beginRenderPass);
-				m_IsInRenderPass = true;
+				if (ppTextureViews[0] != nullptr && ppTextureViews[1] != nullptr)
+				{
+					BeginRenderPassDesc beginRenderPass = {};
+					beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
+					beginRenderPass.ppRenderTargets		= ppTextureViews;
+					beginRenderPass.RenderTargetCount	= 2; // The rendertarget + resolve target
+					beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
+					beginRenderPass.Width				= m_pCurrentRenderTarget->GetWidth();
+					beginRenderPass.Height				= m_pCurrentRenderTarget->GetHeight();
+					beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+					beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
+					beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
+					beginRenderPass.Offset.x			= 0;
+					beginRenderPass.Offset.y			= 0;
+
+					pCommandList->BeginRenderPass(&beginRenderPass);
+					m_IsInRenderPass = true;
+				}
 			}
 			
 			m_TileBegun = true;

@@ -38,16 +38,6 @@ namespace LambdaEngine
 
 	class LAMBDA_API ResourceManager
 	{
-		struct MaterialLoadDesc
-		{
-			GUID_Lambda AlbedoMapGUID				= GUID_NONE;
-			GUID_Lambda NormalMapGUID				= GUID_NONE;
-			GUID_Lambda AOMapGUID					= GUID_NONE;
-			GUID_Lambda MetallicMapGUID				= GUID_NONE;
-			GUID_Lambda RoughnessMapGUID			= GUID_NONE;
-			GUID_Lambda AOMetallicRoughnessMapGUID	= GUID_NONE;
-		};
-
 		struct ShaderLoadDesc
 		{
 			String				Filepath	= "";
@@ -57,6 +47,16 @@ namespace LambdaEngine
 		};
 
 	public:
+		struct MaterialLoadDesc
+		{
+			GUID_Lambda AlbedoMapGUID = GUID_NONE;
+			GUID_Lambda NormalMapGUID = GUID_NONE;
+			GUID_Lambda AOMapGUID = GUID_NONE;
+			GUID_Lambda MetallicMapGUID = GUID_NONE;
+			GUID_Lambda RoughnessMapGUID = GUID_NONE;
+			GUID_Lambda AOMetallicRoughnessMapGUID = GUID_NONE;
+		};
+
 		DECL_STATIC_CLASS(ResourceManager);
 
 		static bool Init();
@@ -145,6 +145,13 @@ namespace LambdaEngine
 			bool useMeshletCache = false);
 
 		/**
+		 * Register a new mesh that already contains all desired data
+		 * @param name	Name of the mesh to register
+		 * @param pMesh	A mesh that already contains all desired data
+		*/
+		static GUID_Lambda RegisterMesh(const String& name, Mesh* pMesh);
+
+		/*
 		* Load a material from memory
 		* @param name				A name given to the material
 		* @param albedoMap
@@ -313,15 +320,16 @@ namespace LambdaEngine
 		static GUID_Lambda GetSoundEffect3DGUID(const String& name);
 		static GUID_Lambda GetSoundEffect2DGUID(const String& name);
 
-		static Mesh*			GetMesh(GUID_Lambda guid);
-		static Material*		GetMaterial(GUID_Lambda guid);
-		static Animation*		GetAnimation(GUID_Lambda guid);
-		static Texture*			GetTexture(GUID_Lambda guid);
-		static TextureView*		GetTextureView(GUID_Lambda guid);
-		static Shader*			GetShader(GUID_Lambda guid);
-		static ISoundEffect3D*	GetSoundEffect3D(GUID_Lambda guid);
-		static ISoundEffect2D*	GetSoundEffect2D(GUID_Lambda guid);
-		static IMusic*			GetMusic(GUID_Lambda guid);
+		static Mesh*				GetMesh(GUID_Lambda guid);
+		static Material*			GetMaterial(GUID_Lambda guid);
+		static MaterialLoadDesc		GetMaterialDesc(GUID_Lambda guid);
+		static Animation*			GetAnimation(GUID_Lambda guid);
+		static Texture*				GetTexture(GUID_Lambda guid);
+		static TextureView*			GetTextureView(GUID_Lambda guid);
+		static Shader*				GetShader(GUID_Lambda guid);
+		static ISoundEffect3D*		GetSoundEffect3D(GUID_Lambda guid);
+		static ISoundEffect2D*		GetSoundEffect2D(GUID_Lambda guid);
+		static IMusic*				GetMusic(GUID_Lambda guid);
 
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetMeshNamesMap()			{ return s_MaterialNamesToGUIDs; }
 		FORCEINLINE static std::unordered_map<String, GUID_Lambda>& GetMaterialNamesMap()		{ return s_MaterialNamesToGUIDs; }
@@ -361,7 +369,6 @@ namespace LambdaEngine
 			LoadedMaterial* pLoadedMaterial,
 			MaterialLoadDesc& materialLoadConfig);
 
-		static GUID_Lambda RegisterMesh(const String& name, Mesh* pMesh);
 		static GUID_Lambda RegisterMaterial(const String& name, Material* pMaterial);
 		static GUID_Lambda RegisterAnimation(const String& name, Animation* pAnimation);
 		static GUID_Lambda RegisterTexture(Texture* pTexture);

@@ -416,15 +416,12 @@ namespace LambdaEngine
 			}
 
 			// Other Custom Renderers constructed in game
-			if (!m_GameSpecificCustomRenderers.IsEmpty())
+			for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
 			{
-				for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
+				if (pCustomRenderer)
 				{
-					if (pCustomRenderer)
-					{
-						pCustomRenderer->Init();
-						renderGraphDesc.CustomRenderers.PushBack(pCustomRenderer);
-					}
+					pCustomRenderer->Init();
+					renderGraphDesc.CustomRenderers.PushBack(pCustomRenderer);
 				}
 			}
 
@@ -1101,189 +1098,15 @@ bool RenderSystem::InitIntegrationLUT()
 		return transform;
 	}
 
-	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
-
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
-	}
-
-	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
-
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, true, false);
-	}
-
-	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
-		auto& animationAttachedComponent = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
-
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
-		transform = transform * animationAttachedComponent.Transform;
-
-		AddRenderableEntity(entity, meshComp.MeshGUID, meshComp.MaterialGUID, transform, false, false);
-	}
-
-	void RenderSystem::OnPlayerEntityAdded(Entity entity)
-	{
-		ECSCore* pECSCore = ECSCore::GetInstance();
-		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
-		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
-
-		PlayerIndexHelper::AddPlayerEntity(entity);
-
-		bool forceUniqueResources = false;
-		if (MultiplayerUtils::IsServer())
-		{
-			forceUniqueResources = true;
-		}
-
-		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
-		AddRenderableEntity(
-			entity,
-			meshComp.MeshGUID,
-			meshComp.MaterialGUID,
-			transform,
-			pAnimationComponents->HasComponent(entity),
-			forceUniqueResources);
-	}
-
-	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
-	{
-		if (!m_DirectionalExist)
-		{
-			ECSCore* pECSCore = ECSCore::GetInstance();
-
-			const auto& dirLight = pECSCore->GetConstComponent<DirectionalLightComponent>(entity);
-			const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
-			const auto& rotation = pECSCore->GetConstComponent<RotationComponent>(entity);
-
-			UpdateDirectionalLight(
-				dirLight.ColorIntensity,
-				position.Position,
-				rotation.Quaternion,
-				dirLight.FrustumWidth,
-				dirLight.FrustumHeight,
-				dirLight.FrustumZNear,
-				dirLight.FrustumZFar
-			);
-
-			m_DirectionalExist = true;
-			m_LightsBufferDirty = true;
-		}
-		else
-		{
-			LOG_WARNING("Multiple directional lights not supported!");
-		}
-	}
-
-	void RenderSystem::OnPointLightEntityAdded(Entity entity)
-	{
-		const ECSCore* pECSCore = ECSCore::GetInstance();
-		const auto& pointLight	= pECSCore->GetConstComponent<PointLightComponent>(entity);
-		const auto& position	= pECSCore->GetConstComponent<PositionComponent>(entity);
-
-		const uint32 pointLightIndex = m_PointLights.GetSize();
-		m_EntityToPointLight[entity] = pointLightIndex;
-		m_PointLightToEntity[pointLightIndex] = entity;
-
-		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
-
-		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
-		{
-			m_PointLights.GetBack().TextureIndex = pointLightIndex;
-		}
-		else
-		{
-			// Check for free texture index instead of creating new index
-			const uint32 textureIndex = m_FreeTextureIndices.GetBack();
-			m_FreeTextureIndices.PopBack();
-
-			m_PointLights.GetBack().TextureIndex = textureIndex;
-		}
-	}
-
-	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
-	{
-		UNREFERENCED_VARIABLE(entity);
-
-		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
-		m_DirectionalExist = false;
-		m_LightsResourceDirty = true;
-	}
-
-	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
-	{
-		if (m_PointLights.IsEmpty())
-			return;
-
-		const uint32 lastIndex		= m_PointLights.GetSize() - 1U;
-		const uint32 lastEntity		= m_PointLightToEntity[lastIndex];
-		const uint32 currentIndex	= m_EntityToPointLight[entity];
-
-		const uint32 freeTexIndex	= m_PointLights[currentIndex].TextureIndex;
-		m_PointLights[currentIndex] = m_PointLights[lastIndex];
-
-		m_EntityToPointLight[lastEntity]	= currentIndex;
-		m_PointLightToEntity[currentIndex]	= lastEntity;
-
-		m_PointLightToEntity.erase(lastIndex);
-		m_EntityToPointLight.erase(entity);
-		m_PointLights.PopBack();
-
-		if (!m_RemoveTexturesOnDeletion)
-		{
-			// Free Texture for new point lights
-			m_FreeTextureIndices.PushBack(freeTexIndex);
-		}
-		else
-		{
-			// Update all point lights shadowmaps to handle removal of texture
-			for (uint32 i = 0; i < m_PointLights.GetSize(); i++)
-			{
-					LightUpdateData lightUpdateData = {};
-					lightUpdateData.PointLightIndex = i;
-					lightUpdateData.TextureIndex = m_PointLights[i].TextureIndex;
-					m_PointLightTextureUpdateQueue.PushBack(lightUpdateData);
-			}
-
-			m_PointLightsDirty = true;
-		}
-
-		m_LightsBufferDirty = true;
-	}
-
-	void RenderSystem::OnGlobalLightProbeEntityAdded(Entity entity)
-	{
-		UNREFERENCED_VARIABLE(entity);
-		m_GlobalLightProbeNeedsUpdate = true;
-	}
-
-	void RenderSystem::OnGlobalLightProbeEntityRemoved(Entity entity)
-	{
-		UNREFERENCED_VARIABLE(entity);
-		m_GlobalLightProbeNeedsUpdate = true;
-	}
-
-	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
-	{
-		m_ParticleManager.OnEmitterEntityRemoved(entity);
-	}
-
 	void RenderSystem::AddRenderableEntity(
 		Entity entity,
 		GUID_Lambda meshGUID,
 		GUID_Lambda materialGUID,
 		const glm::mat4& transform,
 		bool isAnimated,
-		bool forceUniqueResource)
+		bool isMorphable,
+		bool forceUniqueResource,
+		bool manualResourceDeletion)
 	{
 #ifdef RENDER_SYSTEM_DEBUG
 		if (!m_RenderableEntities.insert(entity).second)
@@ -1298,7 +1121,7 @@ bool RenderSystem::InitIntegrationLUT()
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
 		const uint32 entityMask = EntityMaskManager::FetchEntityMask(entity);
-		MeshKey meshKey = MeshKey(meshGUID, entity, isAnimated, entityMask, forceUniqueResource);
+		MeshKey meshKey = MeshKey(meshGUID, entity, isAnimated, entityMask, forceUniqueResource, manualResourceDeletion);
 
 		static uint64 drawArgBufferOffset = 0;
 
@@ -1575,7 +1398,7 @@ bool RenderSystem::InitIntegrationLUT()
 						meshEntry.VertexCount,
 						sizeof(Vertex),
 						meshEntry.IndexCount,
-						isAnimated);
+						isAnimated || isMorphable);
 				}
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert(std::make_pair(meshKey, meshEntry)).first;
@@ -1846,56 +1669,348 @@ bool RenderSystem::InitIntegrationLUT()
 		}
 
 		// Unload Mesh, Todo: Should we always do this?
-		if (meshAndInstancesIt->second.EntityIDs.IsEmpty())
+		if (meshAndInstancesIt->second.EntityIDs.IsEmpty() && !meshAndInstancesIt->first.ManualResourceDeletion)
 		{
-			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorSet);
-			m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
-
-			DeleteDeviceResource(meshAndInstancesIt->second.pVertexBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pIndexBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pUniqueIndices);
-			DeleteDeviceResource(meshAndInstancesIt->second.pPrimitiveIndices);
-			DeleteDeviceResource(meshAndInstancesIt->second.pMeshlets);
-			DeleteDeviceResource(meshAndInstancesIt->second.pRasterInstanceBuffer);
-
-			if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
-			{
-				VALIDATE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
-				DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
-
-				VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
-				DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
-
-				VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
-				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
-
-				VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
-				DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
-
-				VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
-				DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
-			}
-
-			for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
-			{
-				DeleteDeviceResource(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
-			}
-
-			auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
-				{
-					return pMeshEntry == &meshAndInstancesIt->second;
-				});
-
-			if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end())
-				m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
-
-			if (m_RayTracingEnabled)
-			{
-				m_pASBuilder->ReleaseBLAS(meshAndInstancesIt->second.BLASIndex);
-			}
-
-			m_MeshAndInstancesMap.erase(meshAndInstancesIt);
+			DeleteMeshResources(meshAndInstancesIt);
 		}
+	}
+
+	void RenderSystem::UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
+	{
+		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+			return;
+
+		const glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+
+		UpdateTransformData(entity, transform);
+	}
+
+	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
+	{
+		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+			return;
+
+		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
+		transform = transform * additionalTransform;
+
+		UpdateTransformData(entity, transform);
+	}
+
+	void RenderSystem::UpdateTransformData(Entity entity, const glm::mat4& transform)
+	{
+		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
+		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
+		{
+			LOG_ERROR("Tried to update transform of an entity which is not registered");
+			return;
+		}
+
+		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
+		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
+		{
+			LOG_ERROR("Tried to update transform of an entity which has no MeshAndInstancesMap entry");
+			return;
+		}
+
+		if (m_RayTracingEnabled)
+		{
+			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceKeyIt->second.InstanceIndex];
+			m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
+		}
+
+		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
+		pRasterInstanceToUpdate->PrevTransform	= pRasterInstanceToUpdate->Transform;
+		pRasterInstanceToUpdate->Transform		= transform;
+		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
+	}
+
+	void RenderSystem::RebuildBLAS(Entity entity, GUID_Lambda meshGUID, bool isAnimated, bool forceUniqueResources, bool manualResourceDeletion)
+	{
+		if (m_RayTracingEnabled)
+		{
+
+			MeshKey key(meshGUID, entity, isAnimated, EntityMaskManager::FetchEntityMask(entity), forceUniqueResources, manualResourceDeletion);
+			auto meshEntryIt = m_MeshAndInstancesMap.find(key);
+			if (meshEntryIt != m_MeshAndInstancesMap.end())
+			{
+				MeshEntry* pMeshEntry = &meshEntryIt->second;
+
+				m_pASBuilder->BuildTriBLAS(
+					pMeshEntry->BLASIndex,
+					0U,
+					pMeshEntry->pVertexBuffer,
+					pMeshEntry->pIndexBuffer,
+					pMeshEntry->VertexCount,
+					sizeof(Vertex),
+					pMeshEntry->IndexCount,
+					true);
+			}
+		}
+	}
+
+	void RenderSystem::DeleteMeshResources(MeshAndInstancesMap::iterator meshAndInstancesIt)
+	{
+		m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorSet);
+		m_pRenderGraph->DrawArgDescriptorSetQueueForRelease(meshAndInstancesIt->second.pDrawArgDescriptorExtensionsSet);
+
+		DeleteDeviceResource(meshAndInstancesIt->second.pVertexBuffer);
+		DeleteDeviceResource(meshAndInstancesIt->second.pIndexBuffer);
+		DeleteDeviceResource(meshAndInstancesIt->second.pUniqueIndices);
+		DeleteDeviceResource(meshAndInstancesIt->second.pPrimitiveIndices);
+		DeleteDeviceResource(meshAndInstancesIt->second.pMeshlets);
+		DeleteDeviceResource(meshAndInstancesIt->second.pRasterInstanceBuffer);
+
+		if (meshAndInstancesIt->second.pAnimatedVertexBuffer)
+		{
+			VALIDATE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
+
+			VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
+			DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
+
+			VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
+
+			VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
+
+			VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
+			DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
+		}
+
+		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
+		{
+			DeleteDeviceResource(meshAndInstancesIt->second.ppRasterInstanceStagingBuffers[b]);
+		}
+
+		auto dirtyRasterInstanceToRemove = std::find_if(m_DirtyRasterInstanceBuffers.begin(), m_DirtyRasterInstanceBuffers.end(), [meshAndInstancesIt](const MeshEntry* pMeshEntry)
+			{
+				return pMeshEntry == &meshAndInstancesIt->second;
+			});
+
+		if (dirtyRasterInstanceToRemove != m_DirtyRasterInstanceBuffers.end())
+			m_DirtyRasterInstanceBuffers.erase(dirtyRasterInstanceToRemove);
+
+		if (m_RayTracingEnabled)
+		{
+			m_pASBuilder->ReleaseBLAS(meshAndInstancesIt->second.BLASIndex);
+		}
+
+		m_MeshAndInstancesMap.erase(meshAndInstancesIt);
+	}
+
+	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+
+		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
+		constexpr const bool isAnimated = false;
+		constexpr const bool isMorphable = false;
+		constexpr const bool forceUniqueResource = false;
+		constexpr const bool manualResourceDeletion = false;
+		AddRenderableEntity(
+			entity,
+			meshComp.MeshGUID,
+			meshComp.MaterialGUID,
+			transform,
+			isAnimated,
+			isMorphable,
+			forceUniqueResource,
+			manualResourceDeletion);
+	}
+
+	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+
+		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
+		constexpr const bool isAnimated = true;
+		constexpr const bool isMorphable = false;
+		constexpr const bool forceUniqueResource = false;
+		constexpr const bool manualResourceDeletion = false;
+		AddRenderableEntity(
+			entity,
+			meshComp.MeshGUID,
+			meshComp.MaterialGUID,
+			transform,
+			isAnimated,
+			isMorphable,
+			forceUniqueResource,
+			manualResourceDeletion);
+	}
+
+	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+		auto& animationAttachedComponent = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
+
+		glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
+		transform = transform * animationAttachedComponent.Transform;
+
+		constexpr const bool isAnimated = false;
+		constexpr const bool isMorphable = false;
+		constexpr const bool forceUniqueResource = false;
+		constexpr const bool manualResourceDeletion = false;
+		AddRenderableEntity(
+			entity,
+			meshComp.MeshGUID,
+			meshComp.MaterialGUID,
+			transform,
+			isAnimated,
+			isMorphable,
+			forceUniqueResource,
+			manualResourceDeletion);
+	}
+
+	void RenderSystem::OnPlayerEntityAdded(Entity entity)
+	{
+		ECSCore* pECSCore = ECSCore::GetInstance();
+		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
+		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
+
+		bool forceUniqueResources = false;
+		if (MultiplayerUtils::IsServer())
+		{
+			forceUniqueResources = true;
+		}
+
+		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
+		constexpr const bool isMorphable = false;
+		constexpr const bool manualResourceDeletion = false;
+		AddRenderableEntity(
+			entity,
+			meshComp.MeshGUID,
+			meshComp.MaterialGUID,
+			transform,
+			pAnimationComponents->HasComponent(entity),
+			isMorphable,
+			forceUniqueResources,
+			manualResourceDeletion);
+	}
+
+	void RenderSystem::OnDirectionalEntityAdded(Entity entity)
+	{
+		if (!m_DirectionalExist)
+		{
+			ECSCore* pECSCore = ECSCore::GetInstance();
+
+			const auto& dirLight = pECSCore->GetConstComponent<DirectionalLightComponent>(entity);
+			const auto& position = pECSCore->GetConstComponent<PositionComponent>(entity);
+			const auto& rotation = pECSCore->GetConstComponent<RotationComponent>(entity);
+
+			UpdateDirectionalLight(
+				dirLight.ColorIntensity,
+				position.Position,
+				rotation.Quaternion,
+				dirLight.FrustumWidth,
+				dirLight.FrustumHeight,
+				dirLight.FrustumZNear,
+				dirLight.FrustumZFar
+			);
+
+			m_DirectionalExist = true;
+			m_LightsBufferDirty = true;
+		}
+		else
+		{
+			LOG_WARNING("Multiple directional lights not supported!");
+		}
+	}
+
+	void RenderSystem::OnDirectionalEntityRemoved(Entity entity)
+	{
+		UNREFERENCED_VARIABLE(entity);
+
+		m_LightBufferData.DirL_ColorIntensity = glm::vec4(0.f);
+		m_DirectionalExist = false;
+		m_LightsResourceDirty = true;
+	}
+
+	void RenderSystem::OnPointLightEntityAdded(Entity entity)
+	{
+		const ECSCore* pECSCore = ECSCore::GetInstance();
+		const auto& pointLight	= pECSCore->GetConstComponent<PointLightComponent>(entity);
+		const auto& position	= pECSCore->GetConstComponent<PositionComponent>(entity);
+
+		const uint32 pointLightIndex = m_PointLights.GetSize();
+		m_EntityToPointLight[entity] = pointLightIndex;
+		m_PointLightToEntity[pointLightIndex] = entity;
+
+		m_PointLights.PushBack(PointLight{.ColorIntensity = pointLight.ColorIntensity, .Position = position.Position});
+
+		if (m_RemoveTexturesOnDeletion || m_FreeTextureIndices.IsEmpty())
+		{
+			m_PointLights.GetBack().TextureIndex = pointLightIndex;
+		}
+		else
+		{
+			// Check for free texture index instead of creating new index
+			const uint32 textureIndex = m_FreeTextureIndices.GetBack();
+			m_FreeTextureIndices.PopBack();
+
+			m_PointLights.GetBack().TextureIndex = textureIndex;
+		}
+	}
+
+	void RenderSystem::OnPointLightEntityRemoved(Entity entity)
+	{
+		if (m_PointLights.IsEmpty())
+			return;
+
+		const uint32 lastIndex		= m_PointLights.GetSize() - 1U;
+		const uint32 lastEntity		= m_PointLightToEntity[lastIndex];
+		const uint32 currentIndex	= m_EntityToPointLight[entity];
+
+		const uint32 freeTexIndex	= m_PointLights[currentIndex].TextureIndex;
+		m_PointLights[currentIndex] = m_PointLights[lastIndex];
+
+		m_EntityToPointLight[lastEntity]	= currentIndex;
+		m_PointLightToEntity[currentIndex]	= lastEntity;
+
+		m_PointLightToEntity.erase(lastIndex);
+		m_EntityToPointLight.erase(entity);
+		m_PointLights.PopBack();
+
+		if (!m_RemoveTexturesOnDeletion)
+		{
+			// Free Texture for new point lights
+			m_FreeTextureIndices.PushBack(freeTexIndex);
+		}
+		else
+		{
+			// Update all point lights shadowmaps to handle removal of texture
+			for (uint32 i = 0; i < m_PointLights.GetSize(); i++)
+			{
+					LightUpdateData lightUpdateData = {};
+					lightUpdateData.PointLightIndex = i;
+					lightUpdateData.TextureIndex = m_PointLights[i].TextureIndex;
+					m_PointLightTextureUpdateQueue.PushBack(lightUpdateData);
+			}
+
+			m_PointLightsDirty = true;
+		}
+
+		m_LightsBufferDirty = true;
+	}
+
+	void RenderSystem::OnGlobalLightProbeEntityAdded(Entity entity)
+	{
+		UNREFERENCED_VARIABLE(entity);
+		m_GlobalLightProbeNeedsUpdate = true;
+	}
+
+	void RenderSystem::OnGlobalLightProbeEntityRemoved(Entity entity)
+	{
+		UNREFERENCED_VARIABLE(entity);
+		m_GlobalLightProbeNeedsUpdate = true;
+	}
+
+	void RenderSystem::OnEmitterEntityRemoved(Entity entity)
+	{
+		m_ParticleManager.OnEmitterEntityRemoved(entity);
 	}
 
 	void RenderSystem::UpdateParticleEmitter(
@@ -2141,7 +2256,9 @@ bool RenderSystem::InitIntegrationLUT()
 		if (animationComp.IsPaused)
 			return;
 
-		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity), false);
+		constexpr const bool forceUniqueResources = false;
+		constexpr const bool manualResourceDeletion = false;
+		MeshKey key(meshComp.MeshGUID, entity, true, EntityMaskManager::FetchEntityMask(entity), forceUniqueResources, manualResourceDeletion);
 
 		auto meshEntryIt = m_MeshAndInstancesMap.find(key);
 		if (meshEntryIt != m_MeshAndInstancesMap.end())
@@ -2164,55 +2281,6 @@ bool RenderSystem::InitIntegrationLUT()
 					true);
 			}
 		}
-	}
-
-	void RenderSystem::UpdateTransform(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
-	{
-		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
-			return;
-
-		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
-
-		UpdateTransformData(entity, transform);
-	}
-
-	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
-	{
-		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
-			return;
-
-		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
-		transform = transform * additionalTransform;
-
-		UpdateTransformData(entity, transform);
-	}
-
-	void RenderSystem::UpdateTransformData(Entity entity, const glm::mat4& transform)
-	{
-		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
-		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
-		{
-			LOG_ERROR("Tried to update transform of an entity which is not registered");
-			return;
-		}
-
-		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
-		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
-		{
-			LOG_ERROR("Tried to update transform of an entity which has no MeshAndInstancesMap entry");
-			return;
-		}
-
-		if (m_RayTracingEnabled)
-		{
-			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceKeyIt->second.InstanceIndex];
-			m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
-		}
-
-		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
-		pRasterInstanceToUpdate->PrevTransform	= pRasterInstanceToUpdate->Transform;
-		pRasterInstanceToUpdate->Transform		= transform;
-		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 	}
 
 	void RenderSystem::UpdateCamera(const glm::vec3& position, const glm::quat& rotation, const CameraComponent& camComp, const ViewProjectionMatricesComponent& viewProjComp)
@@ -2508,7 +2576,7 @@ bool RenderSystem::InitIntegrationLUT()
 		{
 			//Raster Instances
 			{
-				uint32 requiredBufferSize = pDirtyInstanceBufferEntry->RasterInstances.GetSize() * sizeof(Instance);
+				uint32 requiredBufferSize = glm::max<uint32>(pDirtyInstanceBufferEntry->RasterInstances.GetSize() * sizeof(Instance), 1);
 
 				Buffer* pStagingBuffer = pDirtyInstanceBufferEntry->ppRasterInstanceStagingBuffers[m_ModFrameIndex];
 
@@ -2526,10 +2594,6 @@ bool RenderSystem::InitIntegrationLUT()
 					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 					pDirtyInstanceBufferEntry->ppRasterInstanceStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
 				}
-
-				void* pMapped = pStagingBuffer->Map();
-				memcpy(pMapped, pDirtyInstanceBufferEntry->RasterInstances.GetData(), requiredBufferSize);
-				pStagingBuffer->Unmap();
 
 				if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pRasterInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
@@ -2557,7 +2621,14 @@ bool RenderSystem::InitIntegrationLUT()
 						EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 				}
 
-				pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pRasterInstanceBuffer, 0, requiredBufferSize);
+				if (!pDirtyInstanceBufferEntry->RasterInstances.IsEmpty())
+				{
+					void* pMapped = pStagingBuffer->Map();
+					memcpy(pMapped, pDirtyInstanceBufferEntry->RasterInstances.GetData(), requiredBufferSize);
+					pStagingBuffer->Unmap();
+
+					pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pRasterInstanceBuffer, 0, requiredBufferSize);
+				}
 			}
 		}
 

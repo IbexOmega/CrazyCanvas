@@ -654,6 +654,25 @@ namespace LambdaEngine
 		return guid;
 	}
 
+	GUID_Lambda ResourceManager::RegisterMesh(const String& name, Mesh* pResource)
+	{
+		VALIDATE(pResource != nullptr);
+
+		GUID_Lambda guid = GUID_NONE;
+		Mesh** ppMappedResource = nullptr;
+
+		//Spinlock
+		{
+			guid						= s_NextFreeGUID++;
+			ppMappedResource			= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshGUIDsToNames[guid]	= name;
+			s_MeshNamesToGUIDs[name]	= guid;
+		}
+
+		(*ppMappedResource) = pResource;
+		return guid;
+	}
+
 	GUID_Lambda ResourceManager::LoadMaterialFromMemory(
 		const String& name,
 		GUID_Lambda albedoMap,
@@ -1323,7 +1342,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadMesh(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto meshIt = s_Meshes.find(guid);
@@ -1392,7 +1411,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadMaterial(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto materialIt = s_Materials.find(guid);
@@ -1460,7 +1479,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadAnimation(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto animationIt = s_Animations.find(guid);
@@ -1509,7 +1528,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadTexture(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto textureIt = s_Textures.find(guid);
@@ -1567,7 +1586,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadShader(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto shaderIt = s_Shaders.find(guid);
@@ -1616,7 +1635,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadSoundEffect3D(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto soundEffectIt = s_SoundEffects3D.find(guid);
@@ -1665,7 +1684,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadSoundEffect2D(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto soundEffectIt = s_SoundEffects2D.find(guid);
@@ -1714,7 +1733,7 @@ namespace LambdaEngine
 	bool ResourceManager::UnloadMusic(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto musicIt = s_Music.find(guid);
@@ -1763,7 +1782,7 @@ namespace LambdaEngine
 	bool ResourceManager::DecrementTextureMaterialRef(GUID_Lambda guid)
 	{
 		//Don't release default resources
-		if (guid >= SMALLEST_UNRESERVED_GUID)
+		if (guid < SMALLEST_UNRESERVED_GUID)
 			return true;
 
 		auto textureRefIt = s_TextureMaterialRefs.find(guid);
@@ -1856,6 +1875,22 @@ namespace LambdaEngine
 
 		LOG_DEBUG("[ResourceManager]: GetMaterial called with invalid GUID %u", guid);
 		return nullptr;
+	}
+
+	ResourceManager::MaterialLoadDesc ResourceManager::GetMaterialDesc(GUID_Lambda guid)
+	{
+
+		auto it = s_MaterialLoadConfigurations.find(guid);
+		if (it != s_MaterialLoadConfigurations.end())
+		{
+			return it->second;
+		}
+
+		LOG_DEBUG("GetMaterialDesc called with invalid GUID %u", guid);
+
+		// Return empty 
+		ResourceManager::MaterialLoadDesc materialLoadDesc = {};
+		return materialLoadDesc;
 	}
 
 	Animation* ResourceManager::GetAnimation(GUID_Lambda guid)
@@ -2117,25 +2152,6 @@ namespace LambdaEngine
 		GUID_Lambda guid = RegisterMaterial(name, pMaterialToBeRegistered);
 		s_MaterialLoadConfigurations[guid] = materialLoadConfig;
 
-		return guid;
-	}
-
-	GUID_Lambda ResourceManager::RegisterMesh(const String& name, Mesh* pResource)
-	{
-		VALIDATE(pResource != nullptr);
-
-		GUID_Lambda guid = GUID_NONE;
-		Mesh** ppMappedResource = nullptr;
-
-		//Spinlock
-		{
-			guid						= s_NextFreeGUID++;
-			ppMappedResource			= &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshGUIDsToNames[guid]	= name;
-			s_MeshNamesToGUIDs[name]	= guid;
-		}
-
-		(*ppMappedResource) = pResource;
 		return guid;
 	}
 
