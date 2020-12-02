@@ -755,6 +755,12 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 		const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
+
+		TeamComponent teamComponent;
+		if (FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
+		{
+			pECS->AddComponent<TeamComponent>(entity, teamComponent);
+		}
 	}
 
 	createdEntities.PushBack(entity);
