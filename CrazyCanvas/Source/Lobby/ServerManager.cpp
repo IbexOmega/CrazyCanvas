@@ -25,7 +25,7 @@ void ServerManager::Init()
 
 	for (ServerInfo& serverInfo : serverInfos)
 	{
-		serverInfo.ServerUID == Random::UInt64();
+		serverInfo.ServerUID = Random::UInt64();
 		AddOrUpdateServer(s_ServersWAN, serverInfo);
 		ClientHelper::AddNetworkDiscoveryTarget(serverInfo.EndPoint.GetAddress());
 	}

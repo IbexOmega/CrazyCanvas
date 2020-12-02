@@ -40,6 +40,8 @@
 #include <wchar.h>
 #include <windows.h>
 #include <Lmcons.h>
+#include <Psapi.h>
+#include "Utilities/StringUtilities.h"
 
 #define SERVER_ITEM_COLUMNS 5
 
