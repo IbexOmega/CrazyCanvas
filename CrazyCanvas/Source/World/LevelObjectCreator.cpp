@@ -718,7 +718,7 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 				.Velocity = 2.0,
 				.Acceleration = 0.0,
 				.Gravity = -7.f,
-				.LifeTime = 1.2f,
+				.LifeTime = 1.5f,
 				.RadiusRandomness = 0.5f,
 				.BeginRadius = 0.2f,
 				.FrictionFactor = 0.f,
