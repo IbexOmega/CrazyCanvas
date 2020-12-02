@@ -28,7 +28,6 @@
 
 #include "Resources/ResourceCatalog.h"
 
-
 #include "Rendering/LineRenderer.h"
 
 
@@ -105,6 +104,9 @@ void WeaponSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration
 			m_YAngle = input.Arguments[0].Value.Float32;
 		});
 
+	LOG_MESSAGE("SET DEBUG");
+	m_debug1 = LineRenderer::AddLineGroup({ glm::vec3(0, 0, 0), glm::vec3(1.0, 0.0, 0.0) }, glm::vec3(1.0, 0, 0));
+	m_debug2 = LineRenderer::AddLineGroup({ glm::vec3(0, 0, 0), glm::vec3(1.0, 0.0, 0.0) }, glm::vec3(0.0, 1.0, 0));
 }
 
 void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint8 playerTeam, uint32 angle)
@@ -243,20 +245,33 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	constexpr const float PROJECTILE_INITAL_SPEED = 30.0f;
 
 	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
-	glm::quat playerRotation = playerRotationComponent.Quaternion;
-	playerRotation.x = 0;
-	playerRotation.z = 0;
-	playerRotation = glm::normalize(playerRotation);
+	glm::quat playerRotationX = playerRotationComponent.Quaternion;
+	playerRotationX.y = 0;
+	playerRotationX.z = 0;
+	playerRotationX = glm::normalize(playerRotationX);
 	
+	glm::quat playerRotationY = playerRotationComponent.Quaternion;
+	playerRotationY.x = 0;
+	playerRotationY.z = 0;
+	playerRotationY = glm::normalize(playerRotationY);
+
 	const glm::vec3 yOffset = glm::vec3(0, weaponOffsetComponent.Offset.y, 0);
 	const glm::vec3 xOffset = glm::vec3(weaponOffsetComponent.Offset.x, 0, 0);
+
 	const glm::vec3 right = glm::normalize(GetRight(playerRotationComponent.Quaternion));
+	const glm::vec3 up = glm::normalize(g_DefaultUp);
 	const glm::vec3 forward = glm::normalize(GetForward(playerRotationComponent.Quaternion));
 
-	position		= playerPositionComponent.Position + playerRotation * yOffset + right * xOffset + forward * 0.25f;
+
+	position = playerPositionComponent.Position +
+		up * yOffset.y +
+		right * xOffset.x;
+
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
-	
+
 	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
+	glm::vec3 zeroPoint = glm::vec3{ playerPositionComponent.Position.x, position.y, playerPositionComponent.Position.z } + forward * m_ZeroDist;
+	LineRenderer::UpdateLineGroup(m_debug1, { position, position+ zeroPoint }, glm::vec3(0, 1.0, 0));
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 }
 

@@ -109,4 +109,6 @@ private:
 private:
 	float	m_ZeroDist	= 8.0f;
 	float	m_YAngle	= 5.0f;
+	uint32 m_debug1;
+	uint32 m_debug2;
 };
