@@ -168,8 +168,8 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 		LOG_INFO("FlagsToWin: %hhu", packet.FlagsToWin);
 		LOG_INFO("Visible:    %s", packet.Visible ? "True" : "False");
 		LOG_INFO("ChangeTeam: %s\n", packet.ChangeTeam ? "True" : "False");
-		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor0 );
-		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor1 );
+		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor1 );
+		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor2 );
 	}
 	else
 	{

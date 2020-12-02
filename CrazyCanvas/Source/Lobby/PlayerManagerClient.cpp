@@ -78,6 +78,11 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 	Player* pPlayer = HandlePlayerJoined(packet.UID, packet);
 	pPlayer->m_IsHost = isHost;
 
+	if (name == "Singleplayer")
+	{
+		pPlayer->m_Team = 1;
+	}
+
 	if (isHost)
 	{
 		PlayerHostUpdatedEvent event(pPlayer);

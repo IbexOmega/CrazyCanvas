@@ -354,8 +354,8 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("Team Index not found for Player Spawn, defaulting to 0...");
-		teamComponent.TeamIndex = 0;
+		LOG_ERROR("Team Index not found for Player Spawn, defaulting to 1...");
+		teamComponent.TeamIndex = 1;
 	}
 
 	pECS->AddComponent<TeamComponent>(entity, teamComponent);
@@ -509,8 +509,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("Team Index not found for Flag Delivery Point, defaulting to 0...");
-		teamComponent.TeamIndex = 0;
+		LOG_ERROR("Team Index not found for Flag Delivery Point, defaulting to 1...");
+		teamComponent.TeamIndex = 1;
 	}
 
 	pECS->AddComponent<TeamComponent>(entity, teamComponent);
@@ -680,7 +680,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	GUID_Lambda flagMaterialGUID = ResourceCatalog::FLAG_COMMON_MATERIAL_GUID;
 
-	if (pFlagDesc->TeamIndex != UINT8_MAX)
+	if (pFlagDesc->TeamIndex != 0)
 	{
 		pECS->AddComponent<TeamComponent>(flagEntity, { .TeamIndex = pFlagDesc->TeamIndex });
 		flagMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pFlagDesc->TeamIndex);
