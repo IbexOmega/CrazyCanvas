@@ -358,10 +358,7 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 			}
 		}
 		else
-		{
 			m_HUDGUI->ShowHUD(true);
-			m_HUDGUI->DisplaySpectateText("", false);
-		}
 	}
 
 	return false;
@@ -457,13 +454,14 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 
 bool HUDSystem::OnSpectatePlayerEvent(const SpectatePlayerEvent& event)
 {
-	m_HUDGUI->DisplaySpectateText(event.PlayerName, true);
+	m_HUDGUI->DisplaySpectateText(event.PlayerName, event.IsSpectating);
 	return false;
 }
 
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
+	Input::PushInputMode(EInputLayer::GUI);
 
 	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
 
@@ -488,6 +486,8 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 		if (flags > mostFlags.first || (flags == mostFlags.first && mostFlags.second->GetUID() < pPlayer->GetUID()))
 			mostFlags = std::make_pair(flags, pPlayer);
 	}
+
+	m_HUDGUI->DisplayGameOverGrid(event.WinningTeamIndex, mostKills, mostDeaths, mostFlags);
 
 	return false;
 }

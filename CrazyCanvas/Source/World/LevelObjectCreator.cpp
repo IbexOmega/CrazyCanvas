@@ -24,6 +24,8 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
+#include "Game/PlayerIndexHelper.h"
+
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Match/ShowerSystemBase.h"
@@ -928,6 +930,8 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
+	PlayerIndexHelper::AddPlayerEntity(playerEntity);
+
 
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
@@ -1156,7 +1160,7 @@ bool LevelObjectCreator::CreatePlayer(
 			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
 			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
 			soundInstanceDesc.Position		= pPlayerDesc->Position;
-			soundInstanceDesc.Volume		= 1.0f;
+			soundInstanceDesc.Volume		= 2.0f;
 
 			AudibleComponent audibleComponent = {};
 			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
@@ -1399,7 +1403,7 @@ bool LevelObjectCreator::FindTeamIndex(const LambdaEngine::String& objectName, u
 	size_t teamIndexPos = objectName.find("TEAM");
 	if (teamIndexPos != String::npos)
 	{
-		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4)) - 1;
+		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4));
 		return true;
 	}
 

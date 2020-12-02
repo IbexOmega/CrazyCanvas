@@ -162,16 +162,19 @@ namespace LambdaEngine
 			if (parentComponent.Attached)
 			{
 				AnimationAttachedComponent& animationAttachedComponent = pAnimationAttachedComponents->GetData(entity);
-				AnimationComponent& parentAnimationComponent = pAnimationComponents->GetData(parentComponent.Parent);
+				AnimationComponent parentAnimationComponent;
 
-				if (auto jointIndexIt = parentAnimationComponent.Pose.pSkeleton->JointMap.find(animationAttachedComponent.JointName);
-					jointIndexIt != parentAnimationComponent.Pose.pSkeleton->JointMap.end())
+				if (pAnimationComponents->GetIf(parentComponent.Parent, parentAnimationComponent))
 				{
-					animationAttachedComponent.Transform = parentAnimationComponent.Pose.GlobalTransforms[jointIndexIt->second];
-				}
-				else
-				{
-					LOG_ERROR("[AnimationSystem]: Joint %s could not be found for Attached Animation Component", animationAttachedComponent.JointName.c_str());
+					if (auto jointIndexIt = parentAnimationComponent.Pose.pSkeleton->JointMap.find(animationAttachedComponent.JointName);
+						jointIndexIt != parentAnimationComponent.Pose.pSkeleton->JointMap.end())
+					{
+						animationAttachedComponent.Transform = parentAnimationComponent.Pose.GlobalTransforms[jointIndexIt->second];
+					}
+					else
+					{
+						LOG_ERROR("[AnimationSystem]: Joint %s could not be found for Attached Animation Component", animationAttachedComponent.JointName.c_str());
+					}
 				}
 			}
 		}
