@@ -62,8 +62,8 @@ void KillFeedGUI::AddToKillFeed(const LambdaEngine::String& killed, const Lambda
 	Noesis::Ptr<Noesis::SolidColorBrush> killedFeedBrush = *new Noesis::SolidColorBrush();
 	Noesis::Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
 
-	uint8 killerPlayerIndex = killedPlayerTeamIndex == 0 ? 1 : 0;
-	uint8 killedPlayerIndex = killedPlayerTeamIndex == 0 ? 0 : 1;
+	uint8 killerPlayerIndex = killedPlayerTeamIndex == 1 ? 2 : 1;
+	uint8 killedPlayerIndex = killedPlayerTeamIndex;
 
 	glm::vec3 killerTeamColor = TeamHelper::GetTeamColor(killerPlayerIndex);
 	glm::vec3 killedTeamColor = TeamHelper::GetTeamColor(killedPlayerIndex);

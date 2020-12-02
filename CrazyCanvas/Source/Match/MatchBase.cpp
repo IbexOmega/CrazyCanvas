@@ -58,10 +58,11 @@ void MatchBase::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 bool MatchBase::SetScore(uint8 teamIndex, uint32 score)
 {
-	VALIDATE(teamIndex < m_Scores.GetSize());
-	if (m_Scores[teamIndex] != score)
+	uint32 index = teamIndex - 1;
+	VALIDATE(index < m_Scores.GetSize());
+	if (m_Scores[index] != score)
 	{
-		m_Scores[teamIndex] = score;
+		m_Scores[index] = score;
 		return true;
 	}
 	return false;
