@@ -121,12 +121,12 @@ namespace LambdaEngine
 				bindingVk.descriptorCount		= binding.DescriptorCount;
 				bindingVk.pImmutableSamplers	= binding.ImmutableSamplers.IsEmpty() ? nullptr : (immutableSamplers.GetData() + immutableSamplerOffset);
 				bindingVk.stageFlags			= ConvertShaderStageMask(binding.ShaderStageMask);
-				
+
 				immutableSamplerOffset += binding.ImmutableSamplers.GetSize();
 
 				layoutBindings.EmplaceBack(bindingVk);
 				m_DescriptorCounts.EmplaceBack(heapInfo);
-				
+
 				VkFlags bindingFlags = 0;
 
 				if (binding.Flags & FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND)
@@ -164,20 +164,20 @@ namespace LambdaEngine
 			VkResult result = vkCreateDescriptorSetLayout(m_pDevice->Device, &createInfo, nullptr, &layout);
 			if (result != VK_SUCCESS)
 			{
-				LOG_VULKAN_ERROR(result, "[PipelineLayoutVK]: Failed to create DescriptorSetLayout");
+				LOG_VULKAN_ERROR(result, "Failed to create DescriptorSetLayout");
 				return false;
 			}
 			else
 			{
-				D_LOG_MESSAGE("[PipelineLayoutVK]: Created DescriptorSetLayout");
-				
+				LOG_DEBUG("Created DescriptorSetLayout");
+
 				m_DescriptorSetLayouts.EmplaceBack(layout);
 				layoutBindings.Clear();
 				layoutBindingFlags.Clear();
 				immutableSamplers.Clear();
 			}
 		}
-		
+
 #ifdef LAMBDA_DEVELOPMENT
 		// Check limits
 		DescriptorHeapInfo totalCount = {};
@@ -185,19 +185,19 @@ namespace LambdaEngine
 		{
 			totalCount += heapInfo;
 		}
-		
+
 		VkPhysicalDeviceLimits limits = m_pDevice->GetDeviceLimits();
 		VALIDATE(totalCount.UnorderedAccessTextureDescriptorCount	< limits.maxPerStageDescriptorStorageImages);
 		VALIDATE(totalCount.UnorderedAccessBufferDescriptorCount	< limits.maxPerStageDescriptorStorageBuffers);
 		VALIDATE(totalCount.ConstantBufferDescriptorCount			< limits.maxPerStageDescriptorUniformBuffers);
-		
+
 		const uint32 totalSamplerDescriptorCount = totalCount.TextureCombinedSamplerDescriptorCount + totalCount.SamplerDescriptorCount;
 		VALIDATE(totalSamplerDescriptorCount < limits.maxPerStageDescriptorSamplers);
 
 		const uint32 totalTextureDescriptorCount = totalCount.TextureCombinedSamplerDescriptorCount + totalCount.TextureDescriptorCount;
 		VALIDATE(totalTextureDescriptorCount < limits.maxPerStageDescriptorSampledImages);
 #endif
-		
+
 		VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo = { };
 		pipelineLayoutCreateInfo.sType					= VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 		pipelineLayoutCreateInfo.pNext					= nullptr;
@@ -212,11 +212,11 @@ namespace LambdaEngine
 		{
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_VULKAN_ERROR(result, "[PipelineLayoutVK]: Failed to create PipelineLayout \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_ERROR(result, "Failed to create PipelineLayout \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_VULKAN_ERROR(result, "[PipelineLayoutVK]: Failed to create PipelineLayout");
+				LOG_VULKAN_ERROR(result, "Failed to create PipelineLayout");
 			}
 
 			return false;
@@ -228,11 +228,11 @@ namespace LambdaEngine
 
 			if (!pDesc->DebugName.empty())
 			{
-				D_LOG_MESSAGE("[PipelineLayoutVK]: Created PipelineLayout \"%s\"", pDesc->DebugName.c_str());
+				LOG_DEBUG("Created PipelineLayout \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				D_LOG_MESSAGE("[PipelineLayoutVK]: Created PipelineLayout");
+				LOG_DEBUG("Created PipelineLayout");
 			}
 		}
 

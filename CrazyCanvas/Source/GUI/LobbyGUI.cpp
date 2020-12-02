@@ -82,6 +82,7 @@ void LobbyGUI::InitGUI()
 
 void LobbyGUI::AddPlayer(const Player& player)
 {
+	// TODO: Make sure team is correct (might have to change to == 1)
 	StackPanel* pPanel = player.GetTeam() == 0 ? m_pTeam1StackPanel : m_pTeam2StackPanel;
 
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
@@ -107,12 +108,13 @@ void LobbyGUI::AddPlayer(const Player& player)
 	RegisterName(uid + "_checkmark", image);
 	Style* pStyle = FrameworkElement::FindResource<Style>("CheckmarkImageStyle");
 	image->SetStyle(pStyle);
-	image->SetVisibility(Visibility::Visibility_Hidden);
+	image->SetVisibility(Visibility::Visibility_Visible);
 	playerGrid->GetChildren()->Add(image);
 
 	pPanel->GetChildren()->Add(playerGrid);
 
 	UpdatePlayersLabel();
+	UpdatePlayerReady(player);
 }
 
 void LobbyGUI::RemovePlayer(const Player& player)
@@ -150,6 +152,11 @@ void LobbyGUI::UpdatePlayerPing(const Player& player)
 	if (pPingLabel)
 	{
 		pPingLabel->SetContent(std::to_string(player.GetPing()).c_str());
+	}
+
+	if (PlayerManagerClient::GetPlayerLocal() == &player)
+	{
+		UpdatePlayersLabel();
 	}
 }
 
@@ -197,7 +204,7 @@ void LobbyGUI::UpdatePlayerReady(const Player& player)
 	Image* pImage = FrameworkElement::FindName<Image>((uid + "_checkmark").c_str());
 	if (pImage)
 	{
-		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Hidden);
+		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Collapsed);
 	}
 }
 
@@ -549,6 +556,10 @@ bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
 			TrySendChatMessage();
 			return true;
 		}
+	}
+	else if(event.Key == EKey::KEY_SPACE)
+	{
+		UpdatePlayersLabel();
 	}
 	return false;
 }

@@ -28,6 +28,10 @@
 
 #include "Resources/ResourceCatalog.h"
 
+
+#include "Rendering/LineRenderer.h"
+
+
 /*
 * WeaponSystem
 */
@@ -95,6 +99,7 @@ void WeaponSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration
 		{
 			m_YAngle = input.Arguments[0].Value.Float32;
 		});
+
 }
 
 void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint8 playerTeam, uint32 angle)
@@ -209,6 +214,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 
 	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
 	{
+		// TODO: Make it do this (ETeam)(projectileTeam+1); (Or fix team index in whole project)
 		const ETeam team = (projectileTeam == 0) ? ETeam::BLUE : ETeam::RED;
 		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team, angle);
 		EventQueue::SendEventImmediate(hitEvent);
@@ -229,17 +235,22 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 
-
-	constexpr const float PROJECTILE_INITAL_SPEED = 13.0f;
+	constexpr const float PROJECTILE_INITAL_SPEED = 30.0f;
 
 	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
 	glm::quat playerRotation = playerRotationComponent.Quaternion;
 	playerRotation.x = 0;
 	playerRotation.z = 0;
 	playerRotation = glm::normalize(playerRotation);
+	
+	const glm::vec3 yOffset = glm::vec3(0, weaponOffsetComponent.Offset.y, 0);
+	const glm::vec3 xOffset = glm::vec3(weaponOffsetComponent.Offset.x, 0, 0);
+	const glm::vec3 right = glm::normalize(GetRight(playerRotationComponent.Quaternion));
+	const glm::vec3 forward = glm::normalize(GetForward(playerRotationComponent.Quaternion));
 
-	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.5f;
+	position		= playerPositionComponent.Position + playerRotation * yOffset + right * xOffset + forward * 0.25f;
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
+	
 	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 }
@@ -256,11 +267,17 @@ void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent
 	}
 
 	weaponComponent.ReloadClock = weaponComponent.ReloadTime;
+
+	WeaponReloadStartedEvent reloadStartedEvent(weaponComponent.WeaponOwner);
+	LambdaEngine::EventQueue::SendEventImmediate(reloadStartedEvent);
 }
 
 void WeaponSystem::AbortReload(WeaponComponent& weaponComponent)
 {
 	weaponComponent.ReloadClock = 0;
+
+	WeaponReloadCanceledEvent reloadCancelEvent(weaponComponent.WeaponOwner);
+	LambdaEngine::EventQueue::SendEventImmediate(reloadCancelEvent);
 }
 
 glm::vec3 WeaponSystem::CalculateZeroingDirection(
@@ -270,9 +287,9 @@ glm::vec3 WeaponSystem::CalculateZeroingDirection(
 	float32 zeroingDistance)
 {
 	using namespace LambdaEngine;
-
-	glm::vec3 zeroPoint = glm::vec3{playerPos.x, weaponPos.y, playerPos.z} + glm::normalize(GetForward(playerDirection)) * zeroingDistance;
+	glm::vec3 zeroPoint = glm::vec3{ playerPos.x, weaponPos.y, playerPos.z } + glm::normalize(GetForward(playerDirection)) * zeroingDistance;
 	glm::vec3 fireDirection = glm::normalize(zeroPoint - weaponPos);
+
 	glm::quat directionQuat = glm::identity<glm::quat>();
 	SetForward(directionQuat, fireDirection);
 	return glm::rotate(GetForward(glm::normalize(directionQuat)), glm::radians(m_YAngle), GetRight(glm::normalize(directionQuat)));

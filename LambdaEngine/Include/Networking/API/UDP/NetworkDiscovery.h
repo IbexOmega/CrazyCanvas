@@ -24,15 +24,15 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(NetworkDiscovery);
 
-		static bool EnableServer(const String& nameOfGame, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler, uint16 portOfBroadcastServer = 4450);
+		static bool EnableServer(const String& nameOfGame, uint16 portOfGameServer, INetworkDiscoveryServer* pHandler, uint16 portOfBroadcastServer = 4445);
 		static void DisableServer();
 		static bool IsServerEnabled();
 
-		static bool EnableClient(const String& nameOfGame, INetworkDiscoveryClient* pHandler, uint16 portOfBroadcastServer = 4450, Timestamp searchInterval = Timestamp::Seconds(1));
+		static bool EnableClient(const String& nameOfGame, INetworkDiscoveryClient* pHandler, uint16 portOfBroadcastServer = 4445, Timestamp searchInterval = Timestamp::Seconds(1));
 		static void DisableClient();
 		static bool IsClientEnabled();
-		static void AddTarget(IPAddress* pAddress, uint16 portOfBroadcastServer = 4450);
-		static void RemoveTarget(IPAddress* pAddress, uint16 portOfBroadcastServer = 4450);
+		static void AddTarget(IPAddress* pAddress, uint16 portOfBroadcastServer = 4445);
+		static void RemoveTarget(IPAddress* pAddress, uint16 portOfBroadcastServer = 4445);
 		static const TSet<IPEndPoint>& GetTargets();
 
 	private:

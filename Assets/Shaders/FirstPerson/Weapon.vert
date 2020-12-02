@@ -4,6 +4,7 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "../Defines.glsl"
+#include "../MeshPaintFunc.glsl"
 
 struct SWeaponData
 {
@@ -28,11 +29,14 @@ layout(location = 7) out vec4 out_PrevClipPosition;
 layout(location = 8) out flat uint out_ExtensionIndex;
 layout(location = 9) out flat uint out_InstanceIndex;
 layout(location = 10) out vec3 out_ViewDirection;
+layout(location = 11) out vec4 out_PaintInfo4;
+layout(location = 12) out float out_PaintDist;
+layout(location = 13) out vec3 out_LocalPosition;
 
 void main()
 {
 	SVertex vertex					= b_Vertices.val[gl_VertexIndex];
-    SInstance instance				= b_Instances.val[gl_InstanceIndex];
+	SInstance instance				= b_Instances.val[gl_InstanceIndex];
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SWeaponData weaponData			= u_WeaponData.val;
 
@@ -53,8 +57,11 @@ void main()
 	out_Bitangent			= bitangent;
 	out_TexCoord			= vertex.TexCoord.xy;
 	out_PrevClipPosition	= perFrameBuffer.Projection * perFrameBuffer.View * prevWorldPosition;
-    out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
+	out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
+	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
+	out_PaintDist 			= vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
+	out_LocalPosition		= vec3(vertex.Tangent.x, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 

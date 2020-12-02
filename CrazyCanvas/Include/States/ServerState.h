@@ -16,7 +16,7 @@
 #include "Multiplayer/MultiplayerServer.h"
 #include "Multiplayer/Packet/PacketGameSettings.h"
 
-#include "EventHandlers/MeshPaintHandler.h"
+#include "MeshPaint/MeshPaintHandler.h"
 
 class Level;
 
@@ -45,7 +45,9 @@ private:
 	bool OnServerStateEvent(const ServerStateEvent& event);
 	bool OnPlayerLeftEvent(const PlayerLeftEvent& event);
 	bool OnGameOverEvent(const GameOverEvent& event);
+
 	void SetState(EServerState state);
+	void TryLoadMatch();
 
 public:
 	static EServerState GetState();

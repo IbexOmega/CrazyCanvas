@@ -59,6 +59,22 @@ public:
 private:
 	Player();
 
+public:
+	static inline constexpr const char* GameStateToString(EGameState gameState)
+	{
+		switch (gameState)
+		{
+		case EGameState::GAME_STATE_LOBBY:		return "Lobby";
+		case EGameState::GAME_STATE_SETUP:		return "Setup";
+		case EGameState::GAME_STATE_LOADING:	return "Loading";
+		case EGameState::GAME_STATE_LOADED:		return "Loaded";
+		case EGameState::GAME_STATE_COUNTDOWN:	return "Countdown";
+		case EGameState::GAME_STATE_PLAYING:	return "Playing";
+		case EGameState::GAME_STATE_GAME_OVER:	return "Gameover";
+		default: return "NONE";
+		}
+	}
+
 private:
 	LambdaEngine::String m_Name;
 	LambdaEngine::Entity m_Entity;

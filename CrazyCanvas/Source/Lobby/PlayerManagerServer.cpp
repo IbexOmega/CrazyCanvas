@@ -15,6 +15,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#include "States/ServerState.h"
+
 using namespace LambdaEngine;
 
 Timestamp PlayerManagerServer::s_Timer;
@@ -161,7 +163,7 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 			if (player.m_State != packet.State)
 			{
 				player.m_State = packet.State;
-				
+
 				ServerHelper::SendBroadcast(packet, nullptr, pClient);
 
 				PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
@@ -172,22 +174,20 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 		{
 			if (player.IsHost())
 			{
-				ServerHelper::SetIgnoreNewClients(true);
-
 				for (auto& pair : s_Players)
 				{
 					Player& p = pair.second;
+					p.m_State = packet.State;
+
 					if (p != player)
 					{
-						p.m_State = packet.State;
 						packet.UID = p.m_UID;
-
 						ServerHelper::SendBroadcast(packet);
-
-						PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
-						EventQueue::SendEventImmediate(playerStateUpdatedEvent);
 					}
 				}
+				
+				PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
+				EventQueue::SendEventImmediate(playerStateUpdatedEvent);
 			}
 		}
 	}
@@ -222,7 +222,7 @@ bool PlayerManagerServer::OnPacketPlayerReadyReceived(const PacketReceivedEvent<
 void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 {
 	bool wasHost = HandlePlayerLeft(pClient->GetUID());
-	
+
 	PacketLeave packet;
 	packet.UID = pClient->GetUID();
 	ServerHelper::SendBroadcast(packet, nullptr, pClient);
@@ -230,6 +230,23 @@ void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 	if (wasHost && !s_Players.empty())
 	{
 		SetPlayerHost(&(s_Players.begin()->second));
+	}
+
+	if (s_Players.size() < 2 || ServerState::GetState() != SERVER_STATE_LOBBY)
+		return;
+
+	TArray<const Player*> playersTeam0;
+	TArray<const Player*> playersTeam1;
+	GetPlayersOfTeam(playersTeam0, 0);
+	GetPlayersOfTeam(playersTeam1, 1);
+	int32 delta = playersTeam0.GetSize() - playersTeam1.GetSize();
+	if (glm::abs(delta) >= 2)
+	{
+		Player* pPlayer = &(s_Players.begin()->second);
+		pPlayer->m_Team = delta > 0 ? 1 : 0;
+		PacketPlayerScore packetPlayerScore;
+		FillPacketPlayerScore(&packetPlayerScore, pPlayer);
+		ServerHelper::SendBroadcast(packetPlayerScore, nullptr, pClient);
 	}
 }
 

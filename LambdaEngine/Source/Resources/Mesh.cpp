@@ -10,10 +10,10 @@ namespace LambdaEngine
 	{
 		Vertex vertices[4] =
 		{
-			{ glm::vec3(-1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f) },
-			{ glm::vec3(-1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f) },
-			{ glm::vec3( 1.0f, 0.0f,  1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f) },
-			{ glm::vec3( 1.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f) }
+			{ glm::vec4(-1.0f, 0.0f, -1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
+			{ glm::vec4(-1.0f, 0.0f,  1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f) },
+			{ glm::vec4( 1.0f, 0.0f,  1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+			{ glm::vec4( 1.0f, 0.0f, -1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f) }
 		};
 
 		uint32 indices[6] =
@@ -77,7 +77,7 @@ namespace LambdaEngine
 		std::hash<glm::vec3> hasher;
 		for (uint32 i = 0; i < vertexCount; i++)
 		{
-			size_t hash = hasher(pVertices[i].Position);
+			size_t hash = hasher(pVertices[i].ExtractPosition());
 
 			auto it = uniquePositions.find(hash);
 			if (it != uniquePositions.end())
@@ -155,9 +155,9 @@ namespace LambdaEngine
 
 				glm::vec3 n0;
 				{
-					glm::vec3 p0 = pVertices[i0].Position;
-					glm::vec3 p1 = pVertices[i1].Position;
-					glm::vec3 p2 = pVertices[i2].Position;
+					glm::vec3 p0 = pVertices[i0].ExtractPosition();
+					glm::vec3 p1 = pVertices[i1].ExtractPosition();
+					glm::vec3 p2 = pVertices[i2].ExtractPosition();
 					glm::vec3 e0 = p0 - p1;
 					glm::vec3 e1 = p1 - p2;
 					n0 = glm::normalize(glm::cross(e0, e1));
@@ -168,9 +168,9 @@ namespace LambdaEngine
 					EdgeEntry* pPrev = pFoundPrev;
 					for (EdgeEntry* pCurrent = pFound; pCurrent != nullptr; pPrev = pCurrent, pCurrent = pCurrent->pNext)
 					{
-						glm::vec3 p0 = pVertices[pCurrent->i0].Position;
-						glm::vec3 p1 = pVertices[pCurrent->i1].Position;
-						glm::vec3 p2 = pVertices[pCurrent->i2].Position;
+						glm::vec3 p0 = pVertices[pCurrent->i0].ExtractPosition();
+						glm::vec3 p1 = pVertices[pCurrent->i1].ExtractPosition();
+						glm::vec3 p2 = pVertices[pCurrent->i2].ExtractPosition();
 						glm::vec3 e0 = p0 - p1;
 						glm::vec3 e1 = p1 - p2;
 						glm::vec3 n1 = glm::normalize(glm::cross(e0, e1));
@@ -404,9 +404,9 @@ namespace LambdaEngine
 
 				glm::vec3 points[3] =
 				{
-					pVertices[tri[0]].Position,
-					pVertices[tri[1]].Position,
-					pVertices[tri[2]].Position,
+					pVertices[tri[0]].ExtractPosition(),
+					pVertices[tri[1]].ExtractPosition(),
+					pVertices[tri[2]].ExtractPosition(),
 				};
 
 				positions.PushBack(points[0]);
@@ -461,9 +461,9 @@ namespace LambdaEngine
 
 					glm::vec3 triVerts[3] =
 					{
-						pVertices[triIndices[0]].Position,
-						pVertices[triIndices[1]].Position,
-						pVertices[triIndices[2]].Position,
+						pVertices[triIndices[0]].ExtractPosition(),
+						pVertices[triIndices[1]].ExtractPosition(),
+						pVertices[triIndices[2]].ExtractPosition(),
 					};
 
 					candidates[i].second = ComputeMeshletScore(*pCurr, normal, triIndices, triVerts);

@@ -221,9 +221,9 @@ namespace LambdaEngine
 		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
 		{
 			PxShape* pShape = CreateShape(
-				shapeCreateInfo, 
-				collisionInfo.Position.Position, 
-				collisionInfo.Scale.Scale, 
+				shapeCreateInfo,
+				collisionInfo.Position.Position,
+				collisionInfo.Scale.Scale,
 				collisionInfo.Rotation.Quaternion);
 
 			if (pShape != nullptr)
@@ -245,9 +245,9 @@ namespace LambdaEngine
 		for (const ShapeCreateInfo& shapeCreateInfo : collisionInfo.Shapes)
 		{
 			PxShape* pShape = CreateShape(
-				shapeCreateInfo, 
-				collisionInfo.Position.Position, 
-				collisionInfo.Scale.Scale, 
+				shapeCreateInfo,
+				collisionInfo.Position.Position,
+				collisionInfo.Scale.Scale,
 				collisionInfo.Rotation.Quaternion);
 
 			if (pShape != nullptr)
@@ -263,8 +263,8 @@ namespace LambdaEngine
 	}
 
 	CharacterColliderComponent PhysicsSystem::CreateCharacterCapsule(
-		const CharacterColliderCreateInfo& characterColliderInfo, 
-		float32 height, 
+		const CharacterColliderCreateInfo& characterColliderInfo,
+		float32 height,
 		float32 radius)
 	{
 		PxCapsuleControllerDesc controllerDesc = {};
@@ -276,7 +276,7 @@ namespace LambdaEngine
 	}
 
 	CharacterColliderComponent PhysicsSystem::CreateCharacterBox(
-		const CharacterColliderCreateInfo& characterColliderInfo, 
+		const CharacterColliderCreateInfo& characterColliderInfo,
 		const glm::vec3& halfExtents)
 	{
 		PxBoxControllerDesc controllerDesc = {};
@@ -294,7 +294,7 @@ namespace LambdaEngine
 
 		for (const Vertex& vertex : vertices)
 		{
-			squareRadius = std::max(squareRadius, glm::length2(vertex.Position));
+			squareRadius = std::max(squareRadius, glm::length2(vertex.ExtractPosition()));
 		}
 
 		return std::sqrtf(squareRadius);
@@ -311,7 +311,7 @@ namespace LambdaEngine
 
 		for (const Vertex& vertex : vertices)
 		{
-			const glm::vec3& position = vertex.Position;
+			const glm::vec3& position = vertex.ExtractPosition();
 			squareRadiusXZ = std::max(squareRadiusXZ, glm::length2(glm::vec3(position.x, 0.0f, position.z)));
 			halfHeight = std::max(halfHeight, std::abs(position.y));
 		}
@@ -352,9 +352,9 @@ namespace LambdaEngine
 	}
 
 	PxShape* PhysicsSystem::CreateShape(
-		const ShapeCreateInfo& shapeCreateInfo, 
-		const glm::vec3& position, 
-		const glm::vec3& scale, 
+		const ShapeCreateInfo& shapeCreateInfo,
+		const glm::vec3& position,
+		const glm::vec3& scale,
 		const glm::quat& rotation) const
 	{
 		PxShape* pShape = nullptr;
@@ -415,7 +415,7 @@ namespace LambdaEngine
 			filterData.word1 = (PxU32)shapeCreateInfo.CollisionMask;
 			filterData.word2 = (PxU32)shapeCreateInfo.EntityID;
 			pShape->setSimulationFilterData(filterData);
-			
+
 			filterData.word2 = 0;
 			pShape->setQueryFilterData(filterData);
 
@@ -525,7 +525,7 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(entity);
 
 		PxRigidDynamic* pActor = characterColliderComponent.pController->getActor();
-		
+
 		TArray<PxShape*> pxShapes(pActor->getNbShapes());
 		pActor->getShapes(pxShapes.GetData(), pxShapes.GetSize());
 
@@ -618,7 +618,7 @@ namespace LambdaEngine
 	}
 
 	StaticCollisionComponent PhysicsSystem::FinalizeStaticCollisionActor(
-		const CollisionCreateInfo& collisionInfo, 
+		const CollisionCreateInfo& collisionInfo,
 		const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
@@ -633,7 +633,7 @@ namespace LambdaEngine
 	}
 
 	DynamicCollisionComponent PhysicsSystem::FinalizeDynamicCollisionActor(
-		const DynamicCollisionCreateInfo& collisionInfo, 
+		const DynamicCollisionCreateInfo& collisionInfo,
 		const glm::quat& additionalRotation)
 	{
 		const glm::vec3& position = collisionInfo.Position.Position;
@@ -651,7 +651,7 @@ namespace LambdaEngine
 	}
 
 	CharacterColliderComponent PhysicsSystem::FinalizeCharacterController(
-		const CharacterColliderCreateInfo& characterColliderInfo, 
+		const CharacterColliderCreateInfo& characterColliderInfo,
 		PxControllerDesc& controllerDesc)
 	{
 		/*	For information about PhysX character controllers in general:
@@ -748,8 +748,8 @@ namespace LambdaEngine
 	}
 
 	void PhysicsSystem::CollisionCallbacks(
-		const std::array<PxRigidActor*, 2>& actors, 
-		const std::array<PxShape*, 2>& shapes, 
+		const std::array<PxRigidActor*, 2>& actors,
+		const std::array<PxShape*, 2>& shapes,
 		const TArray<PxContactPairPoint>& contactPoints) const
 	{
 		ActorUserData* pActorUserDatas[2] =

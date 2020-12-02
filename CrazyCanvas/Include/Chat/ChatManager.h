@@ -24,6 +24,7 @@ public:
 
 	static void SendChatMessage(LambdaEngine::String message);
 	static void RenotifyAllChatMessages();
+	static void Clear();
 
 private:
 	static void Init();

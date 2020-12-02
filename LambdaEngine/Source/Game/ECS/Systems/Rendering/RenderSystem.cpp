@@ -28,6 +28,7 @@
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Rendering/ParticleRenderer.h"
@@ -42,6 +43,7 @@
 #include "Engine/EngineConfig.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
+#include "Game/PlayerIndexHelper.h"
 
 namespace LambdaEngine
 {
@@ -197,7 +199,8 @@ namespace LambdaEngine
 
 			systemReg.SubscriberRegistration.AdditionalAccesses =
 			{
-				{ R, MeshPaintComponent::Type() }
+				{ R, MeshPaintComponent::Type() },
+				{ R, TeamComponent::Type() }
 			};
 
 			RegisterSystem(TYPE_NAME(RenderSystem), systemReg);
@@ -220,7 +223,7 @@ namespace LambdaEngine
 			m_SwapChain = RenderAPI::GetDevice()->CreateSwapChain(&swapChainDesc);
 			if (!m_SwapChain)
 			{
-				LOG_ERROR("[Renderer]: SwapChain is nullptr after initializaiton");
+				LOG_ERROR("SwapChain is nullptr after initializaiton");
 				return false;
 			}
 
@@ -353,7 +356,7 @@ namespace LambdaEngine
 			if (!RenderGraphSerializer::LoadAndParse(&renderGraphStructure, renderGraphName, IMGUI_ENABLED, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER)))
 			{
 
-				LOG_ERROR("[RenderSystem]: Failed to Load RenderGraph, loading Default...");
+				LOG_ERROR("Failed to Load RenderGraph, loading Default...");
 
 				renderGraphStructure = {};
 				RenderGraphSerializer::LoadAndParse(&renderGraphStructure, "", true, EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_LINE_RENDERER));
@@ -425,7 +428,7 @@ namespace LambdaEngine
 			m_pRenderGraph = DBG_NEW RenderGraph(RenderAPI::GetDevice());
 			if (!m_pRenderGraph->Init(&renderGraphDesc, m_RequiredDrawArgs))
 			{
-				LOG_ERROR("[RenderSystem]: Failed to initialize RenderGraph");
+				LOG_ERROR("Failed to initialize RenderGraph");
 				return false;
 			}
 		}
@@ -594,12 +597,15 @@ namespace LambdaEngine
 			const auto& dirLight = pDirLightComponents->GetConstData(entity);
 			const auto& position = pPositionComponents->GetConstData(entity);
 			const auto& rotation = pRotationComponents->GetConstData(entity);
+
+			const glm::vec3 playerDirection = GetForward(rotation.Quaternion);
 			if (dirLight.Dirty || rotation.Dirty || position.Dirty)
 			{
 				UpdateDirectionalLight(
 					dirLight.ColorIntensity,
-					position.Position,
-					rotation.Quaternion,
+					// Specific settings for map, I know its ugly
+					glm::vec3(position.Position.x * 0.2, 0.0f, position.Position.z) + glm::normalize(glm::vec3(playerDirection.x * 0.3f, 0.0f, playerDirection.z* 0.7)) * dirLight.FrustumHeight*0.85f,
+					dirLight.Rotation,
 					dirLight.FrustumWidth,
 					dirLight.FrustumHeight,
 					dirLight.FrustumZNear,
@@ -795,7 +801,7 @@ namespace LambdaEngine
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
 		{
-			LOG_ERROR("[Renderer]: Failed to set new RenderGraph %s", name.c_str());
+			LOG_ERROR("Failed to set new RenderGraph %s", name.c_str());
 		}
 
 		m_DirtyDrawArgs						= m_RequiredDrawArgs;
@@ -812,7 +818,7 @@ namespace LambdaEngine
 	{
 		if (!pCustomRenderer)
 		{
-			LOG_WARNING("[RenderSystem]: AddCustomRenderer failed - CustomRenderer not constructed");
+			LOG_WARNING("AddCustomRenderer failed - CustomRenderer not constructed");
 			return;
 		}
 		m_GameSpecificCustomRenderers.PushBack(pCustomRenderer);
@@ -826,7 +832,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderSystem]: SetRenderStageSleeping failed - Rendergraph not initilised");
+			LOG_WARNING("SetRenderStageSleeping failed - Rendergraph not initilised");
 		}
 
 	}
@@ -840,7 +846,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_WARNING("[RenderSystem]: SetPaintMaskColor index out of range, colors unchanged");
+			LOG_WARNING("SetPaintMaskColor index out of range, colors unchanged");
 		}
 	}
 
@@ -856,7 +862,7 @@ bool RenderSystem::InitIntegrationLUT()
 			ECommandQueueType::COMMAND_QUEUE_TYPE_COMPUTE);
 		if (!commandAllocator)
 		{
-			LOG_ERROR("[RenderSystem]: Could not create GenIntegrationLUT CommandAllocator");
+			LOG_ERROR("Could not create GenIntegrationLUT CommandAllocator");
 			DEBUGBREAK();
 			return false;
 		}
@@ -869,7 +875,7 @@ bool RenderSystem::InitIntegrationLUT()
 		TSharedRef<CommandList> commandList = RenderAPI::GetDevice()->CreateCommandList(commandAllocator.Get(), &commandListDesc);
 		if (!commandList)
 		{
-			LOG_ERROR("[RenderSystem]: Could not create GenIntegrationLUT CommandList");
+			LOG_ERROR("Could not create GenIntegrationLUT CommandList");
 			DEBUGBREAK();
 			return false;
 		}
@@ -882,7 +888,7 @@ bool RenderSystem::InitIntegrationLUT()
 		TSharedRef<DescriptorHeap> descriptorHeap = RenderAPI::GetDevice()->CreateDescriptorHeap(&descriptorHeapDesc);
 		if (!descriptorHeap)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT DescriptorHeap");
+			LOG_ERROR("Failed to create GenIntegrationLUT DescriptorHeap");
 			DEBUGBREAK();
 			return false;
 		}
@@ -913,7 +919,7 @@ bool RenderSystem::InitIntegrationLUT()
 		TSharedRef<PipelineLayout> pipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 		if (!pipelineLayout)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineLayout");
+			LOG_ERROR("Failed to create GenIntegrationLUT PipelineLayout");
 			DEBUGBREAK();
 			return false;
 		}
@@ -925,7 +931,7 @@ bool RenderSystem::InitIntegrationLUT()
 			descriptorHeap.Get());
 		if (!pipelineLayout)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineLayout");
+			LOG_ERROR("Failed to create GenIntegrationLUT PipelineLayout");
 			DEBUGBREAK();
 			return false;
 		}
@@ -937,7 +943,7 @@ bool RenderSystem::InitIntegrationLUT()
 			"main");
 		if (!shader)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT Shader");
+			LOG_ERROR("Failed to create GenIntegrationLUT Shader");
 			DEBUGBREAK();
 			return false;
 		}
@@ -950,7 +956,7 @@ bool RenderSystem::InitIntegrationLUT()
 		TSharedRef<PipelineState> pipelineState = RenderAPI::GetDevice()->CreateComputePipelineState(&pipelineDesc);
 		if (!pipelineState)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create GenIntegrationLUT PipelineState");
+			LOG_ERROR("Failed to create GenIntegrationLUT PipelineState");
 			DEBUGBREAK();
 			return false;
 		}
@@ -976,7 +982,7 @@ bool RenderSystem::InitIntegrationLUT()
 		m_IntegrationLUT = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 		if (!m_IntegrationLUT)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create IntegrationLUT");
+			LOG_ERROR("Failed to create IntegrationLUT");
 			DEBUGBREAK();
 			return false;
 		}
@@ -997,7 +1003,7 @@ bool RenderSystem::InitIntegrationLUT()
 		m_IntegrationLUTView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 		if (!m_IntegrationLUTView)
 		{
-			LOG_ERROR("[RenderSystem] Failed to create IntegrationLUT View");
+			LOG_ERROR("Failed to create IntegrationLUT View");
 			DEBUGBREAK();
 			return false;
 		}
@@ -1050,7 +1056,7 @@ bool RenderSystem::InitIntegrationLUT()
 			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
 			nullptr, 0, nullptr, 0))
 		{
-			LOG_ERROR("[RenderSystem] Failed to execute commandlist");
+			LOG_ERROR("Failed to execute commandlist");
 			DEBUGBREAK();
 			return false;
 		}
@@ -1102,8 +1108,15 @@ bool RenderSystem::InitIntegrationLUT()
 		bool forceUniqueResource,
 		bool manualResourceDeletion)
 	{
+#ifdef RENDER_SYSTEM_DEBUG
+		if (!m_RenderableEntities.insert(entity).second)
+		{
+			LOG_ERROR("Renderable Entity added without being removed %u", entity);
+			CheckWhereEntityAlreadyRegistered(entity);
+		}
+#endif
+
 		uint32 extensionGroupIndex = 0;
-		uint32 texturesPerExtensionGroup = 0;
 		uint32 materialIndex = UINT32_MAX;
 		MeshAndInstancesMap::iterator meshAndInstancesIt;
 
@@ -1115,10 +1128,23 @@ bool RenderSystem::InitIntegrationLUT()
 		bool hasExtensionData = false;
 		DrawArgExtensionGroup* pExtensionGroup = nullptr;
 
+		uint32 teamIndex = 0;
+		const ECSCore* pECSCore = ECSCore::GetInstance();
+		const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
+		if (pTeamComponents->HasComponent(entity))
+		{
+			LOG_WARNING("[RenderSystem] TODO: Change TeamComponent to use 0 as \"No Team\"! For now just add 1 to the team index before sending it to shaders");
+			// TODO: Fix team index
+			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex);
+			teamIndex = (teamIndex == 0) ? 2 : 1;
+		}
+
 		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())
 		{
 			pExtensionGroup		= EntityMaskManager::GetExtensionGroup(entity);
-			hasExtensionData	= pExtensionGroup->TotalTextureCount > 0;
+
+			if (pExtensionGroup != nullptr)
+				hasExtensionData	= pExtensionGroup->TotalTextureCount > 0;
 		}
 
 		//Get meshAndInstancesIterator
@@ -1441,53 +1467,21 @@ bool RenderSystem::InitIntegrationLUT()
 			m_MaterialInstanceCounts[materialIndex]++;
 		}
 
+		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
+
 		//Add Extension Group
 		if (hasExtensionData)
 		{
 			//Check that this extension group has the same number of total textures as the ones already registered in this MeshEntry
-			if (!meshAndInstancesIt->second.ExtensionGroups.IsEmpty())
+			if (meshAndInstancesIt->second.TexturesPerExtensionGroup > 0)
 			{
-				VALIDATE(meshAndInstancesIt->second.ExtensionGroups[0]->TotalTextureCount == pExtensionGroup->TotalTextureCount);
+				VALIDATE(meshAndInstancesIt->second.TexturesPerExtensionGroup == pExtensionGroup->TotalTextureCount);
 			}
 
-			extensionGroupIndex			= meshAndInstancesIt->second.ExtensionGroups.GetSize() + 1; // + 1 because we have a "Default" Extension at bottom
-			texturesPerExtensionGroup	= pExtensionGroup->TotalTextureCount;
+			extensionGroupIndex										= meshAndInstancesIt->second.ExtensionGroupCount++;
+			meshAndInstancesIt->second.TexturesPerExtensionGroup	= pExtensionGroup->TotalTextureCount;
 
-			meshAndInstancesIt->second.ExtensionGroups.PushBack(pExtensionGroup);
-
-			WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
-		}
-
-		// Update resource for the entity mesh paint textures that is used for ray tracing
-		bool hasPaintMask = false;
-		if (m_RayTracingEnabled)
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			const ComponentArray<MeshPaintComponent>* pMeshPaintComponents = pECS->GetComponentArray<MeshPaintComponent>();
-			if (pMeshPaintComponents->HasComponent(entity))
-			{
-				hasPaintMask = true;
-				const auto& comp = pECS->GetComponent<MeshPaintComponent>(entity);
-
-				Texture* pTexture			= comp.pTexture;
-				TextureView* pTextureView	= comp.pTextureView;
-
-				// If the texture has not been added before, update resource
-				auto paintMaskTexturesIt = std::find(m_PaintMaskTextures.begin(), m_PaintMaskTextures.end(), pTexture);
-				if (paintMaskTexturesIt == m_PaintMaskTextures.end())
-				{
-					if (m_PaintMaskTextures.IsEmpty())
-					{
-						m_PaintMaskTextures.PushBack(ResourceManager::GetTexture(GUID_TEXTURE_DEFAULT_MASK_MAP));
-						m_PaintMaskTextureViews.PushBack(ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP));
-					}
-
-					m_PaintMaskTextures.PushBack(pTexture);
-					m_PaintMaskTextureViews.PushBack(pTextureView);
-
-					m_RayTracingPaintMaskTexturesResourceDirty = true;
-				}
-			}
+			WriteDrawArgExtensionData(meshAndInstancesIt->second);
 		}
 
 		InstanceKey instanceKey = {};
@@ -1500,13 +1494,7 @@ bool RenderSystem::InitIntegrationLUT()
 			RayTracedComponent rayTracedComponent = {};
 			ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent);
 
-			uint32 shiftedMaterialIndex	= (materialIndex & 0xFF) << 8;
-			uint32 paintIndex			= m_PaintMaskTextures.GetSize() - 1;
-			uint32 shiftedPaintIndex	= hasPaintMask ? (std::max(0u, paintIndex)) & 0xFF : 0;
-
-			uint32 customIndex =
-				shiftedMaterialIndex |
-				shiftedPaintIndex;
+			uint32 customIndex = materialIndex & 0xFF;
 			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
 			ASInstanceDesc asInstanceDesc =
@@ -1520,11 +1508,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
 
-			if (hasPaintMask)
-			{
-				m_PaintMaskASInstanceIndices[paintIndex].PushBack(asInstanceIndex);
-			}
-
 			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
 		}
 
@@ -1533,11 +1516,10 @@ bool RenderSystem::InitIntegrationLUT()
 		instance.PrevTransform				= transform;
 		instance.MaterialIndex				= materialIndex;
 		instance.ExtensionGroupIndex		= extensionGroupIndex;
-		instance.TexturesPerExtensionGroup	= texturesPerExtensionGroup;
+		instance.TexturesPerExtensionGroup	= meshAndInstancesIt->second.TexturesPerExtensionGroup;
 		instance.MeshletCount				= meshAndInstancesIt->second.MeshletCount;
+		instance.TeamIndex					= teamIndex;
 		meshAndInstancesIt->second.RasterInstances.PushBack(instance);
-
-		meshAndInstancesIt->second.EntityIDs.PushBack(entity);
 
 		m_DirtyRasterInstanceBuffers.insert(&meshAndInstancesIt->second);
 
@@ -1560,14 +1542,14 @@ bool RenderSystem::InitIntegrationLUT()
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to remove entity which does not exist");
+			LOG_ERROR("Tried to remove entity which does not exist");
 			return;
 		}
 
 		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
 		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to remove entity which has no MeshAndInstancesMap entry");
+			LOG_ERROR("Tried to remove entity which has no MeshAndInstancesMap entry");
 			return;
 		}
 
@@ -1654,8 +1636,9 @@ bool RenderSystem::InitIntegrationLUT()
 			// extensionGroupIndex == 0 means the mesh instance does not have an extension
 			if (extensionGroupIndex != 0)
 			{
-				// -1 because we have one default
 				extensionGroupIndex--;
+
+				meshAndInstancesIt->second.ExtensionGroupCount--;
 
 				// Set the last entity to use the extension group at the previous removed entity position.
 				Entity swappedEntityID = meshAndInstancesIt->second.EntityIDs.GetBack();
@@ -1663,16 +1646,7 @@ bool RenderSystem::InitIntegrationLUT()
 				Instance& instance = rasterInstances[instanceKey.InstanceIndex];
 				instance.ExtensionGroupIndex = extensionGroupIndex;
 
-				// Remove the group in the list and replace it with the last group.
-				TArray<DrawArgExtensionGroup*>& extensionGroups = meshAndInstancesIt->second.ExtensionGroups;
-				uint32 texturesPerExtensionGroup = extensionGroups[0]->ExtensionCount;
-				extensionGroups[extensionGroupIndex] = extensionGroups.GetBack();
-				extensionGroups.PopBack();
-
-				// Remove data from the storage.
-				EntityMaskManager::RemoveAllExtensionsFromEntity(entity);
-
-				WriteDrawArgExtensionData(texturesPerExtensionGroup, meshAndInstancesIt->second);
+				WriteDrawArgExtensionData(meshAndInstancesIt->second);
 			}
 		}
 
@@ -1730,14 +1704,14 @@ bool RenderSystem::InitIntegrationLUT()
 		THashTable<GUID_Lambda, InstanceKey>::iterator instanceKeyIt = m_EntityIDsToInstanceKey.find(entity);
 		if (instanceKeyIt == m_EntityIDsToInstanceKey.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which is not registered");
+			LOG_ERROR("Tried to update transform of an entity which is not registered");
 			return;
 		}
 
 		MeshAndInstancesMap::iterator meshAndInstancesIt = m_MeshAndInstancesMap.find(instanceKeyIt->second.MeshKey);
 		if (meshAndInstancesIt == m_MeshAndInstancesMap.end())
 		{
-			LOG_ERROR("[RenderSystem]: Tried to update transform of an entity which has no MeshAndInstancesMap entry");
+			LOG_ERROR("Tried to update transform of an entity which has no MeshAndInstancesMap entry");
 			return;
 		}
 
@@ -1830,14 +1804,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::OnStaticMeshEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("Static Mesh Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -1859,14 +1825,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::OnAnimatedEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("Animated Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 
@@ -1888,14 +1846,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::OnAnimationAttachedEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("Animation Attached Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto& animationAttachedComponent = pECSCore->GetComponent<AnimationAttachedComponent>(entity);
@@ -1920,14 +1870,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::OnPlayerEntityAdded(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
-		if (!m_RenderableEntities.insert(entity).second)
-		{
-			LOG_ERROR("[RenderSystem]: Player Renderable Entity added without being removed %u", entity);
-			CheckWhereEntityAlreadyRegistered(entity);
-		}
-#endif
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 		auto& meshComp = pECSCore->GetComponent<MeshComponent>(entity);
 		auto* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
@@ -2099,7 +2041,6 @@ bool RenderSystem::InitIntegrationLUT()
 		glm::mat4 lightProj = glm::ortho(-frustumWidth, frustumWidth, -frustumHeight, frustumHeight, zNear, zFar);
 		m_LightBufferData.DirL_ProjViews = lightProj * lightView;
 
-		m_pRenderGraph->TriggerRenderStage("DIRL_SHADOWMAP");
 		m_LightsBufferDirty = true;
 	}
 
@@ -2135,7 +2076,7 @@ bool RenderSystem::InitIntegrationLUT()
 				m_GlobalLightProbe.Diffuse = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 				if (!m_GlobalLightProbe.Diffuse)
 				{
-					LOG_WARNING("[RenderSystem] Failed to create diffuse lightprobe");
+					LOG_WARNING("Failed to create diffuse lightprobe");
 				}
 
 				pCommandList->TransitionBarrier(
@@ -2163,7 +2104,7 @@ bool RenderSystem::InitIntegrationLUT()
 				m_GlobalLightProbe.DiffuseView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 				if (!m_GlobalLightProbe.DiffuseView)
 				{
-					LOG_WARNING("[RenderSystem] Failed to create Diffuse lightprobe View");
+					LOG_WARNING("Failed to create Diffuse lightprobe View");
 				}
 			}
 
@@ -2196,7 +2137,7 @@ bool RenderSystem::InitIntegrationLUT()
 				m_GlobalLightProbe.Specular = RenderAPI::GetDevice()->CreateTexture(&textureDesc);
 				if (!m_GlobalLightProbe.Specular)
 				{
-					LOG_WARNING("[RenderSystem] Failed to create Specular lightprobe");
+					LOG_WARNING("Failed to create Specular lightprobe");
 				}
 
 				pCommandList->TransitionBarrier(
@@ -2223,7 +2164,7 @@ bool RenderSystem::InitIntegrationLUT()
 				m_GlobalLightProbe.SpecularView = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 				if (!m_GlobalLightProbe.SpecularView)
 				{
-					LOG_WARNING("[RenderSystem] Failed to create specular lightprobe view");
+					LOG_WARNING("Failed to create specular lightprobe view");
 				}
 
 				for (uint32 i = 0; i < mipLevels; i++)
@@ -2237,7 +2178,7 @@ bool RenderSystem::InitIntegrationLUT()
 					TSharedRef<TextureView> view = RenderAPI::GetDevice()->CreateTextureView(&textureViewDesc);
 					if (!view)
 					{
-						LOG_WARNING("[RenderSystem] Failed to create '%s'", textureViewDesc.DebugName.c_str());
+						LOG_WARNING("Failed to create '%s'", textureViewDesc.DebugName.c_str());
 					}
 					else
 					{
@@ -2409,15 +2350,7 @@ bool RenderSystem::InitIntegrationLUT()
 				drawArg.pUniqueIndicesBuffer	= meshEntryPair.second.pUniqueIndices;
 				drawArg.pPrimitiveIndices		= meshEntryPair.second.pPrimitiveIndices;
 
-				if (!meshEntryPair.second.ExtensionGroups.IsEmpty())
-				{
-					drawArg.ppExtensionGroups	= meshEntryPair.second.ExtensionGroups.GetData();
-					drawArg.HasExtensions		= meshEntryPair.second.HasExtensionData;
-				}
-				else
-				{
-					drawArg.HasExtensions = false;
-				}
+				drawArg.HasExtensions			= meshEntryPair.second.HasExtensionData;
 
 				drawArg.pDescriptorSet				= meshEntryPair.second.pDrawArgDescriptorSet;
 				drawArg.pExtensionDataDescriptorSet	= meshEntryPair.second.pDrawArgDescriptorExtensionsSet;
@@ -2427,7 +2360,7 @@ bool RenderSystem::InitIntegrationLUT()
 		}
 	}
 
-	void RenderSystem::WriteDrawArgExtensionData(uint32 texturesPerExtensionGroup, MeshEntry& meshEntry)
+	void RenderSystem::WriteDrawArgExtensionData(MeshEntry& meshEntry)
 	{
 		static TArray<TextureView*> extensionTextureViews;
 		static TArray<Sampler*> extensionSamplers;
@@ -2436,22 +2369,27 @@ bool RenderSystem::InitIntegrationLUT()
 		extensionSamplers.Clear();
 
 		TextureView* pDefaultExtensionTexture = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
-		for (uint32 t = 0; t < texturesPerExtensionGroup; t++)
+		for (uint32 t = 0; t < meshEntry.TexturesPerExtensionGroup; t++)
 		{
 			extensionTextureViews.PushBack(pDefaultExtensionTexture);
 			extensionSamplers.PushBack(Sampler::GetNearestSampler());
 		}
 
-		for (const DrawArgExtensionGroup* pExtensionGroup : meshEntry.ExtensionGroups)
+		for (Entity entity : meshEntry.EntityIDs)
 		{
-			for (uint32 e = 0; e < pExtensionGroup->ExtensionCount; e++)
-			{
-				const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
+			DrawArgExtensionGroup* pExtensionGroup = EntityMaskManager::GetExtensionGroup(entity);
 
-				for (uint32 t = 0; t < extensionData.TextureCount; t++)
+			if (pExtensionGroup != nullptr)
+			{
+				for (uint32 e = 0; e < pExtensionGroup->ExtensionCount; e++)
 				{
-					extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
-					extensionSamplers.PushBack(extensionData.ppSamplers[t]);
+					const DrawArgExtensionData& extensionData = pExtensionGroup->pExtensions[e];
+
+					for (uint32 t = 0; t < extensionData.TextureCount; t++)
+					{
+						extensionTextureViews.PushBack(extensionData.ppTextureViews[t]);
+						extensionSamplers.PushBack(extensionData.ppSamplers[t]);
+					}
 				}
 			}
 		}
@@ -2592,6 +2530,18 @@ bool RenderSystem::InitIntegrationLUT()
 			const uint32 workGroupCount = std::max<uint32>((uint32)AlignUp(vertexCount, THREADS_PER_WORKGROUP) / THREADS_PER_WORKGROUP, 1u);
 			pCommandList->Dispatch(workGroupCount, 1, 1);
 		}
+
+		static constexpr const PipelineMemoryBarrierDesc INSTANCE_BUFFER_MEMORY_BARRIER
+		{
+			.SrcMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+			.DstMemoryAccessFlags = FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_WRITE | FMemoryAccessFlag::MEMORY_ACCESS_FLAG_MEMORY_READ,
+		};
+
+		pCommandList->PipelineMemoryBarriers(
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			FPipelineStageFlag::PIPELINE_STAGE_FLAG_COMPUTE_SHADER,
+			&INSTANCE_BUFFER_MEMORY_BARRIER,
+			1);
 
 		m_AnimationsToUpdate.clear();
 	}
@@ -3156,7 +3106,7 @@ bool RenderSystem::InitIntegrationLUT()
 			if (entity == e)
 			{
 				foundEntity = true;
-				LOG_ERROR("[RenderSystem]: Previously was Static Mesh Entity", entity);
+				LOG_ERROR("Previously was Static Mesh Entity", entity);
 			}
 		}
 
@@ -3165,7 +3115,7 @@ bool RenderSystem::InitIntegrationLUT()
 			if (entity == e)
 			{
 				foundEntity = true;
-				LOG_ERROR("[RenderSystem]: Previously was Animated Entity", entity);
+				LOG_ERROR("Previously was Animated Entity", entity);
 			}
 		}
 
@@ -3174,7 +3124,7 @@ bool RenderSystem::InitIntegrationLUT()
 			if (entity == e)
 			{
 				foundEntity = true;
-				LOG_ERROR("[RenderSystem]: Previously was Animation Attached Entity", entity);
+				LOG_ERROR("Previously was Animation Attached Entity", entity);
 			}
 		}
 
@@ -3183,13 +3133,13 @@ bool RenderSystem::InitIntegrationLUT()
 			if (entity == e)
 			{
 				foundEntity = true;
-				LOG_ERROR("[RenderSystem]: Previously was Local Player Entity", entity);
+				LOG_ERROR("Previously was Local Player Entity", entity);
 			}
 		}
 
 		if (!foundEntity)
 		{
-			LOG_ERROR("[RenderSystem]: This really isn't good...", entity);
+			LOG_ERROR("This really isn't good...", entity);
 		}
 	}
 #endif

@@ -24,7 +24,7 @@ namespace LambdaEngine
 
 		const TextureVK* pTextureVk = reinterpret_cast<const TextureVK*>(pDesc->pTexture);
 		VALIDATE(pDesc->Format == pTextureVk->GetDesc().Format);
-		
+
 		VkImageViewCreateInfo createInfo = { };
 		createInfo.sType							= VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		createInfo.pNext							= nullptr;
@@ -39,7 +39,7 @@ namespace LambdaEngine
 		createInfo.subresourceRange.layerCount		= pDesc->ArrayCount;
 		createInfo.subresourceRange.baseMipLevel	= pDesc->Miplevel;
 		createInfo.subresourceRange.levelCount		= pDesc->MiplevelCount;
-		
+
 		if (pDesc->Flags & FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL)
 		{
 			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -51,7 +51,7 @@ namespace LambdaEngine
 		{
 			createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		}
-		
+
 		if (pDesc->Type == ETextureViewType::TEXTURE_VIEW_TYPE_1D)
 		{
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
@@ -76,11 +76,11 @@ namespace LambdaEngine
 		{
 			createInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
 		}
-		
+
 		VkResult result = vkCreateImageView(m_pDevice->Device, &createInfo, nullptr, &m_ImageView);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[TextureViewVK]: Failed to create view");
+			LOG_VULKAN_ERROR(result, "Failed to create view");
 			return false;
 		}
 		else
@@ -88,8 +88,8 @@ namespace LambdaEngine
 			m_Desc = *pDesc;
 			m_Desc.pTexture->AddRef();
 			SetName(pDesc->DebugName);
-		
-			D_LOG_MESSAGE("[TextureViewVK]: Created ImageView");
+
+			LOG_DEBUG("Created ImageView");
 
 			return true;
 		}

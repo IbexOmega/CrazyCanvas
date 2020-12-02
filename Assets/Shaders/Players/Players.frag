@@ -8,7 +8,6 @@
 #include "../Helpers.glsl"
 
 layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
-layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 #include "../MeshPaintHelper.glsl"
 
 layout(location = 0) in flat uint	in_MaterialSlot;
@@ -19,9 +18,13 @@ layout(location = 4) in vec3		in_Bitangent;
 layout(location = 5) in vec2		in_TexCoord;
 layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
-layout(location = 8) in flat uint	in_ExtensionIndex;
-layout(location = 9) in flat uint	in_InstanceIndex;
-layout(location = 10) in vec3 		in_ViewDirection;
+layout(location = 8) in flat uint	in_InstanceIndex;
+layout(location = 9) in vec3 		in_ViewDirection;
+
+// Mesh painting
+layout(location = 10) in vec4 		in_PaintInfo4;
+layout(location = 11) in float 		in_PaintDist;
+layout(location = 12) in vec3 		in_LocalPosition;
 
 layout(push_constant) uniform TeamIndex
 {
@@ -66,23 +69,16 @@ void main()
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex);
-	shadingNormal = mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation);
+	uint packedPaintInfo = 0;
+	float dist = 1.f;
+	GetVec4ToPackedPaintInfoAndDistance(in_LocalPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_LocalPosition, tangent, bitangent, packedPaintInfo, dist);
+	shadingNormal = mix(shadingNormal, normalize(paintDescription.Normal + shadingNormal*0.2f), paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
-	uint serverData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).r);
-	uint clientData				= floatBitsToUint(texture(u_PaintMaskTextures[in_ExtensionIndex], texCoord).g);
-	float shouldPaint 			= float((serverData & 0x1) | (clientData & 0x1));
-
-	uint clientTeam				= (clientData >> 1) & 0x7F;
-	uint serverTeam				= (serverData >> 1) & 0x7F;
-	uint clientPainting			= clientData & 0x1;
-	uint team = serverTeam;
-	
-	if (clientPainting > 0)
-		team = clientTeam;
+	float shouldPaint 			= float(step(1, packedPaintInfo));
 
 	// Darken back faces like inside of painted legs
 	float backSide = 1.0f - step(0.0f, dot(in_ViewDirection, shadingNormal));
@@ -90,7 +86,7 @@ void main()
 
 	// Only render team members and paint on enemy players
 	uint enemy = p_TeamIndex.Index;
-	bool isPainted = (shouldPaint > 0.5f);
+	bool isPainted = (shouldPaint > 0.5f) && (paintDescription.Interpolation > 0.001f);
 	if(enemy != 0 && !isPainted)
 		discard;
 
@@ -103,7 +99,6 @@ void main()
 	// PBR
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SLightsBuffer lightBuffer		= b_LightsBuffer.val;
-
 
 	vec3 storedMaterial	= vec3(
 								materialParameters.AO * sampledCombinedMaterial.b, 

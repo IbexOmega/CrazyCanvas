@@ -188,26 +188,26 @@ namespace LambdaEngine
 		m_InlineRayTracingEnabled = RenderSystem::GetInstance().IsInlineRayTracingEnabled();
 		if (!m_InlineRayTracingEnabled)
 		{
-			D_LOG_INFO("[ParticleCollider] Ray query is disabled, disable particle collisions.");
+			LOG_DEBUG("Ray query is disabled, disable particle collisions.");
 		}
 
 		if (m_InlineRayTracingEnabled)
 		{
 			if (!CreatePipelineLayout())
 			{
-				LOG_ERROR("[ParticleCollider]: Failed to create PipelineLayout");
+				LOG_ERROR("Failed to create PipelineLayout");
 				return false;
 			}
 
 			if (!CreateDescriptorSets())
 			{
-				LOG_ERROR("[ParticleCollider]: Failed to create DescriptorSet");
+				LOG_ERROR("Failed to create DescriptorSet");
 				return false;
 			}
 
 			if (!CreateShaders())
 			{
-				LOG_ERROR("[ParticleCollider]: Failed to create Shaders");
+				LOG_ERROR("Failed to create Shaders");
 				return false;
 			}
 		}
@@ -223,13 +223,13 @@ namespace LambdaEngine
 		{
 			if (!CreateCommandLists())
 			{
-				LOG_ERROR("[ParticleCollider]: Failed to create render command lists");
+				LOG_ERROR("Failed to create render command lists");
 				return false;
 			}
 
 			if (!m_UpdatePipeline.Init("Updater Compute"))
 			{
-				LOG_ERROR("[ParticleCollider]: Failed to init Updater Pipeline Context");
+				LOG_ERROR("Failed to init Updater Pipeline Context");
 				return false;
 			}
 
@@ -265,7 +265,7 @@ namespace LambdaEngine
 				descriptorUpdateDesc.FirstBinding = setBinding;
 				descriptorUpdateDesc.DescriptorCount = 1;
 
-				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] SCENE_TLAS Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("SCENE_TLAS Descriptor Set 0 Binding 6", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 			}
 		}
 	}
@@ -300,7 +300,7 @@ namespace LambdaEngine
 				descriptorUpdateDesc.DescriptorCount = count;
 				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 
-				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Particle Instance Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 			}
 			else if (resourceName == SCENE_PARTICLE_INSTANCE_BUFFER)
 			{
@@ -315,7 +315,7 @@ namespace LambdaEngine
 				descriptorUpdateDesc.DescriptorCount = count;
 				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Particle Instance Buffer Descriptor Set 0 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("Particle Instance Buffer Descriptor Set 0 Binding 1", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 			}
 			else if (resourceName == SCENE_EMITTER_INSTANCE_BUFFER)
 			{
@@ -330,7 +330,7 @@ namespace LambdaEngine
 				descriptorUpdateDesc.DescriptorCount = count;
 				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Emitter Instance Buffer Descriptor Set 0 Binding 2", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("Emitter Instance Buffer Descriptor Set 0 Binding 2", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 			}
 			else if (resourceName == SCENE_EMITTER_TRANSFORM_BUFFER)
 			{
@@ -345,7 +345,7 @@ namespace LambdaEngine
 				descriptorUpdateDesc.DescriptorCount = count;
 				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Emitter Transform Buffer Descriptor Set 0 Binding 3", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("Emitter Transform Buffer Descriptor Set 0 Binding 3", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 			}
 			else if (resourceName == SCENE_EMITTER_INDEX_BUFFER)
 			{
@@ -360,7 +360,7 @@ namespace LambdaEngine
 				descriptorUpdateDesc.DescriptorCount = count;
 				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Emitter Index Buffer Descriptor Set 0 Binding 4", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("Emitter Index Buffer Descriptor Set 0 Binding 4", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 			}
 			else if (resourceName == SCENE_PARTICLE_ALIVE_BUFFER)
 			{
@@ -375,7 +375,7 @@ namespace LambdaEngine
 				descriptorUpdateDesc.DescriptorCount = count;
 				descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 
-				m_UpdatePipeline.UpdateDescriptorSet("[ParticleCollider] Alive Particle Buffer Descriptor Set 0 Binding 5", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+				m_UpdatePipeline.UpdateDescriptorSet("Alive Particle Buffer Descriptor Set 0 Binding 5", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
 			}
 		}
 	}

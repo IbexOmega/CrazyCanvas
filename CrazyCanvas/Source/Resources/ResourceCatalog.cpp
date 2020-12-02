@@ -25,7 +25,7 @@ bool ResourceCatalog::Init()
 
 	//Player
 	{
-		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", PLAYER_MESH_GUID, PLAYER_IDLE_GUIDs);
+		ResourceManager::LoadMeshFromFile("Player/Idle.glb", PLAYER_MESH_GUID, PLAYER_IDLE_GUIDs);
 
 #ifdef USE_ALL_ANIMATIONS
 		PLAYER_RUN_GUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");

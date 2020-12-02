@@ -51,7 +51,6 @@ namespace LambdaEngine
 		uint32			AnimationCount = 0;
 		uint32			FirstAnimationIndex = 0;
 		float			FrictionFactor;
-		float			Bounciness;
 	};
 
 	struct SParticle
@@ -69,7 +68,7 @@ namespace LambdaEngine
 		float BeginRadius;
 		float EndRadius;
 		float FrictionFactor;
-		float Bounciness;
+		float ShouldStop;
 		float Padding1;
 	};
 

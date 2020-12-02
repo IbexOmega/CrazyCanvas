@@ -13,8 +13,9 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/EntityMaskManager.h"
 
+#include "RenderStages/MeshPaintUpdater.h"
+#include "RenderStages/HealthCompute.h"
 #include "RenderStages/FirstPersonWeaponRenderer.h"
-#include "RenderStages/PaintMaskRenderer.h"
 #include "RenderStages/PlayerRenderer.h"
 #include "RenderStages/Projectiles/ProjectileRenderer.h"
 #include "States/BenchmarkState.h"
@@ -33,6 +34,7 @@
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -48,6 +50,7 @@
 #include "GUI/EscapeMenuGUI.h"
 #include "GUI/PromptGUI.h"
 #include "GUI/KillFeedGUI.h"
+#include "GUI/ScoreBoardGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
@@ -75,9 +78,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		ClientSystemDesc desc = {};
 		desc.Name					= pGameName;
-		desc.PoolSize				= 8196;
+		desc.PoolSize				= 4096;
 		desc.MaxRetries				= 10;
-		desc.ResendRTTMultiplier	= 3.0f;
+		desc.ResendRTTMultiplier	= 5.0f;
 		desc.Protocol				= EProtocolParser::FromString(protocol);
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(5);
@@ -89,9 +92,9 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	{
 		ServerSystemDesc desc = {};
 		desc.Name					= pGameName;
-		desc.PoolSize				= 8196;
+		desc.PoolSize				= 4096;
 		desc.MaxRetries				= 10;
-		desc.ResendRTTMultiplier	= 3.0f;
+		desc.ResendRTTMultiplier	= 5.0f;
 		desc.Protocol				= EProtocolParser::FromString(protocol);
 		desc.PingInterval			= Timestamp::Seconds(1);
 		desc.PingTimeout			= Timestamp::Seconds(5);
@@ -130,10 +133,19 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	PacketTranscoderSystem::GetInstance().Init();
 
 	RenderSystem& renderSystem = RenderSystem::GetInstance();
-	renderSystem.AddCustomRenderer(DBG_NEW PlayerRenderer());
-	renderSystem.AddCustomRenderer(DBG_NEW ProjectileRenderer(RenderAPI::GetDevice()));
-	renderSystem.AddCustomRenderer(DBG_NEW PaintMaskRenderer());
-	renderSystem.AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
+	renderSystem.AddCustomRenderer(DBG_NEW MeshPaintUpdater());
+
+	if (stateStr == "server")
+	{
+		renderSystem.AddCustomRenderer(DBG_NEW HealthCompute());
+	}
+	else
+	{
+		renderSystem.AddCustomRenderer(DBG_NEW PlayerRenderer());
+		renderSystem.AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
+		renderSystem.AddCustomRenderer(DBG_NEW ProjectileRenderer(RenderAPI::GetDevice()));
+	}
+
 	renderSystem.InitRenderGraphs();
 
 	InitRendererResources();
@@ -207,10 +219,11 @@ bool CrazyCanvas::RegisterGUIComponents()
 	Noesis::RegisterComponent<GameOverGUI>();
 	Noesis::RegisterComponent<EscapeMenuGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
-	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
 	Noesis::RegisterComponent<KillFeedGUI>();
+	Noesis::RegisterComponent<PromptGUI>();
+	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
 	return true;
@@ -265,8 +278,15 @@ bool CrazyCanvas::BindComponentTypeMasks()
 {
 	using namespace LambdaEngine;
 
-	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
-	EntityMaskManager::BindTypeToExtensionDesc(ProjectileComponent::Type(), { 0 }, false);	// Bit = 0x20
+	// NOTE: Previous implementation had a comment that said the bitmask was 0xF, even though
+	// the value that is being set is 0x10. This seems to be assumed on other places but doesn't seem to cause
+	// any notable errors, but might have to be looked at later.
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false, 0x10);	// Bit = 0x10
+
+	// Used to calculate health on the server for players only
+	EntityMaskManager::BindTypeToExtensionDesc(HealthComponent::Type(),	{ 0 }, false, 0x20);	// Bit = 0x20
+
+	EntityMaskManager::BindTypeToExtensionDesc(ProjectileComponent::Type(), { 0 }, false, 0x40);	// Bit = 0x40
 
 	EntityMaskManager::Finalize();
 

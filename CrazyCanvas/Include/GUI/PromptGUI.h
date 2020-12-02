@@ -16,12 +16,20 @@ public:
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
-	void DisplayPrompt(const LambdaEngine::String& promptMessage);
+	void DisplayPrompt(const LambdaEngine::String& promptMessage, const uint8 teamIndex);
+	void DisplaySmallPrompt(const LambdaEngine::String& promptMessage);
+
+	void CancelSmallPrompt();
 
 private:
-	Noesis::Storyboard* m_pPromptStoryboard				= nullptr;
-	Noesis::Storyboard* m_pPromptVisibilityStoryboard	= nullptr;
-	Noesis::TextBlock* m_pPromptTextblock				= nullptr;
+	Noesis::Storyboard* m_pPromptStoryboard					= nullptr;
+	Noesis::Storyboard* m_pSmallPromptStoryboard			= nullptr;
+
+	Noesis::Storyboard* m_pPromptVisibilityStoryboard		= nullptr;
+	Noesis::Storyboard* m_pSmallPromptVisibilityStoryboard	= nullptr;
+
+	Noesis::TextBlock* m_pPromptTextblock					= nullptr;
+	Noesis::TextBlock* m_pSmallPromptTextblock				= nullptr;
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(PromptGUI, Noesis::UserControl, "CrazyCanvas.PromptGUI")
 
