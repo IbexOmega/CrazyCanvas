@@ -117,12 +117,12 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					if (ImGui::TreeNode(name.c_str()))
 					{
 						if (ImGui::Button("+"))
-							InternalSetScore((uint8)s, score + 1);
+							InternalSetScore((uint8)s + 1, score + 1);
 
 						ImGui::SameLine();
 
 						if (ImGui::Button("-"))
-							InternalSetScore((uint8)s, glm::max<int32>(score - 1, 0));
+							InternalSetScore((uint8)s + 1, glm::max<int32>(score - 1, 0));
 
 						ImGui::TreePop();
 					}
