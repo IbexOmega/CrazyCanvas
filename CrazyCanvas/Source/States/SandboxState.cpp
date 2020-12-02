@@ -125,8 +125,8 @@ void SandboxState::Init()
 
 	// Set Team Colors
 	{
-		TeamHelper::SetTeamColor(0, 3);
-		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
+		TeamHelper::SetTeamColor(1, 3);
+		RenderSystem::GetInstance().SetPaintMaskColor(1, TeamHelper::GetTeamColor(1));
 	}
 
 	// Load character
@@ -331,7 +331,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
-		pECS->AddComponent<TeamComponent>(entity, { 0 });
+		pECS->AddComponent<TeamComponent>(entity, { 2 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		{
@@ -390,7 +390,7 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
-		pECS->AddComponent<TeamComponent>(entity, { 0 });
+		pECS->AddComponent<TeamComponent>(entity, { 2 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
 
 		{

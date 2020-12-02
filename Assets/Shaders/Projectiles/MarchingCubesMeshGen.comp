@@ -159,7 +159,7 @@ void main()
 			const SNode nodeA = nodes[edge.CornerIndexA];
 			const SNode nodeB = nodes[edge.CornerIndexB];
 
-			const float interpFactor = (1.0 - nodeA.Density) / (nodeB.Density - nodeA.Density);
+			const float interpFactor = abs(1.0 - nodeA.Density) / clamp(abs(nodeB.Density - nodeA.Density), 0.001, 10000.0);
 			const vec3 edgeInterpPos = nodeA.Position + interpFactor * (nodeB.Position - nodeA.Position);
 			triangle.Vertices[edgeNr].Position = vec4(mix(defaultPosition, edgeInterpPos, triangleExists), 0.0);
 
