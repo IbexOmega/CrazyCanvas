@@ -300,7 +300,7 @@ glm::vec3 WeaponSystem::CalculateZeroingDirection(
 	glm::vec3 zeroPoint = glm::vec3{ playerPos.x, weaponPos.y, playerPos.z } + glm::normalize(GetForward(playerDirection)) * zeroingDistance;
 	glm::vec3 fireDirection = glm::normalize(zeroPoint - weaponPos);
 
-	// adjusts m_YAngle to be less inpactful when aiming up or down.
+	// adjusts m_YAngle to be less impactful when aiming up or down.
 	float angleFactor = 1.0f - abs(glm::dot(g_DefaultUp, fireDirection)) * 0.5f;
 	return glm::rotate(fireDirection, glm::radians(m_YAngle * angleFactor), glm::cross(fireDirection, GetUp(playerDirection)));
 }
