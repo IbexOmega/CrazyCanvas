@@ -270,8 +270,9 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
 
 	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
-	glm::vec3 zeroPoint = glm::vec3{ playerPositionComponent.Position.x, position.y, playerPositionComponent.Position.z } + forward * m_ZeroDist;
-	LineRenderer::UpdateLineGroup(m_debug1, { position, position+ zeroPoint }, glm::vec3(0, 1.0, 0));
+	LineRenderer::UpdateLineGroup(m_debug1, { position, position+ velocity }, glm::vec3(0, 1.0, 0));
+	
+	
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 }
 
@@ -310,7 +311,7 @@ glm::vec3 WeaponSystem::CalculateZeroingDirection(
 	glm::vec3 zeroPoint = glm::vec3{ playerPos.x, weaponPos.y, playerPos.z } + glm::normalize(GetForward(playerDirection)) * zeroingDistance;
 	glm::vec3 fireDirection = glm::normalize(zeroPoint - weaponPos);
 
-	glm::quat directionQuat = glm::identity<glm::quat>();
-	SetForward(directionQuat, fireDirection);
-	return glm::rotate(GetForward(glm::normalize(directionQuat)), glm::radians(m_YAngle), GetRight(glm::normalize(directionQuat)));
+	// adjusts m_YAngle to be less inpactful when aiming up or down.
+	float angleFactor = 1.0 - abs(glm::dot(g_DefaultUp, fireDirection)) * 0.5f;
+	return glm::rotate(fireDirection, glm::radians(m_YAngle * angleFactor), glm::cross(fireDirection, GetUp(playerDirection)));
 }
