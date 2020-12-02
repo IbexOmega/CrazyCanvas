@@ -1019,10 +1019,6 @@ bool LevelObjectCreator::CreatePlayer(
 				.MaterialGUID = ResourceCatalog::WEAPON_MATERIAL_GUID,
 			});
 
-		pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
-				.HitMask = 0xFF
-			});
-
 		pECS->AddComponent<AnimationAttachedComponent>(weaponEntity, AnimationAttachedComponent
 			{
 				.JointName	= "mixamorig:RightHand",
@@ -1155,9 +1151,6 @@ bool LevelObjectCreator::CreatePlayer(
 		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Running & Strafe Right"));
 		pAnimationGraph->AddTransition(DBG_NEW Transition("Run Backward & Strafe Right", "Run Backward & Strafe Left"));
 #endif
-		pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
-				.HitMask = 0xFF
-			});
 
 		//Add Audio Instances
 		{
@@ -1177,9 +1170,25 @@ bool LevelObjectCreator::CreatePlayer(
 		if (!pPlayerDesc->IsLocal)
 		{
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
+
+			pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
+
+			pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 		}
 		else
 		{
+			pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
+				.HitMask = 0x02
+			});
+
+			pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
+				.HitMask = 0x02
+			});
+
 			if (pPlayerDesc->pCameraDesc == nullptr)
 			{
 				pECS->RemoveEntity(playerEntity);

@@ -67,7 +67,6 @@ bool Match::ResetMatch()
 		return true;
 	}
 
-	LOG_ERROR("Match::ResetMatch() Faild becouse s_pMatchInstance == nullptr");
 	return false;
 }
 
@@ -79,7 +78,7 @@ void Match::StartMatch()
 	if (s_pMatchInstance)
 		s_pMatchInstance->MatchStart();
 	else
-		LOG_ERROR("Match::StartMatch() Faild becouse s_pMatchInstance == nullptr");
+		LOG_ERROR("Match::StartMatch() Failed because s_pMatchInstance == nullptr");
 }
 
 void Match::BeginLoading()
@@ -90,7 +89,7 @@ void Match::BeginLoading()
 	if (s_pMatchInstance)
 		s_pMatchInstance->BeginLoading();
 	else
-		LOG_ERROR("Match::BeginLoading() Faild becouse s_pMatchInstance == nullptr");
+		LOG_ERROR("Match::BeginLoading() Failed because s_pMatchInstance == nullptr");
 }
 
 void Match::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity)
