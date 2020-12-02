@@ -283,6 +283,7 @@ namespace LambdaEngine
 			DrawArgMaskDesc			DrawArgsMaskDesc;
 			RenderPass*				pRenderPass							= nullptr;
 			RenderPass*				pDisabledRenderPass					= nullptr;
+			uint32					NumInstancesInTLAS					= 0;
 
 			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants		= {};

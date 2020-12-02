@@ -3,6 +3,7 @@
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/LineRenderer.h"
 
+#include "Rendering/Core/API/AccelerationStructure.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/PipelineLayout.h"
@@ -665,6 +666,8 @@ namespace LambdaEngine
 						}
 						else if (pResourceBinding->DescriptorType != EDescriptorType::DESCRIPTOR_TYPE_UNKNOWN)
 						{
+							pResourceBinding->pRenderStage->NumInstancesInTLAS = pResource->AccelerationStructure.pTLAS->GetMaxInstanceCount();
+
 							for (uint32 b = 0; b < m_BackBufferCount; b++)
 							{
 								pResourceBinding->pRenderStage->ppBufferDescriptorSets[b]->WriteAccelerationStructureDescriptors(
@@ -4562,7 +4565,7 @@ namespace LambdaEngine
 		CommandList*		pComputeCommandList,
 		CommandList**		ppExecutionStage)
 	{
-		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping && pRenderStage->pSBT != nullptr)
+		if (pRenderStage->FrameCounter == pRenderStage->FrameOffset && !pRenderStage->Sleeping && pRenderStage->pSBT != nullptr && pRenderStage->NumInstancesInTLAS > 0)
 		{
 			Profiler::GetGPUProfiler()->GetTimestamp(pComputeCommandList);
 			pComputeCommandAllocator->Reset();
