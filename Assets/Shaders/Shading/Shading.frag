@@ -151,7 +151,7 @@ void main()
 		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
 		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
 	
-		vec3 ambient	= mix(0.03 * albedo, (Kd_IBL * IBL_Diffuse + IBL_Specular), (1.0 - inShadowDirLight)) * ao;
+		vec3 ambient	= mix((Kd_IBL * IBL_Diffuse + IBL_Specular), 0.4 * albedo, inShadowDirLight) * ao;
 		colorHDR		= ambient + Lo;
 	}
 
