@@ -39,6 +39,7 @@
 
 #include "Lobby/PlayerManagerClient.h"
 #include "Lobby/PlayerManagerServer.h"
+#include "Lobby/ServerManager.h"
 
 #include "Chat/ChatManager.h"
 
@@ -168,10 +169,15 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 
-	if(MultiplayerUtils::IsServer())
+	if (MultiplayerUtils::IsServer())
+	{
 		PlayerManagerServer::Init();
+	}	
 	else
+	{
+		ServerManager::Init();
 		PlayerManagerClient::Init();
+	}
 
 	ChatManager::Init();
 }
@@ -187,6 +193,9 @@ CrazyCanvas::~CrazyCanvas()
 	ChatManager::Release();
 	PlayerManagerBase::Release();
 	PacketType::Release();
+
+	if(!LambdaEngine::MultiplayerUtils::IsServer())
+		ServerManager::Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -199,6 +208,8 @@ void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 {
 	if (LambdaEngine::MultiplayerUtils::IsServer())
 		PlayerManagerServer::FixedTick(delta);
+	else
+		ServerManager::Tick();
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)

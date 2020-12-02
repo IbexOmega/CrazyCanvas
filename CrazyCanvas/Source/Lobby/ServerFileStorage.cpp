@@ -1,19 +1,23 @@
-#include "GUI/ServerInfo.h"
+#include "Lobby/ServerFileStorage.h"
 
 #include "Log/Log.h"
 
-#pragma warning( push, 0 )
+#include "Networking/API/IPAddress.h"
+
+#pragma warning(push, 0)
 #include <rapidjson/filereadstream.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
-#pragma warning( pop )
+#include <rapidjson/document.h>
+#pragma warning(pop)
+
 #include <fstream>
 
 #define FILE_PATH "Saved_Servers.json"
 
 using namespace LambdaEngine;
 
-bool SavedServerSystem::LoadServers(TArray<ServerInfo>& serverInfos, uint16 defaultPort)
+bool ServerFileStorage::LoadServers(TArray<ServerInfo>& serverInfos, uint16 defaultPort)
 {
 	FILE* pFile = fopen(FILE_PATH, "r");
 	if (!pFile)
@@ -55,7 +59,7 @@ bool SavedServerSystem::LoadServers(TArray<ServerInfo>& serverInfos, uint16 defa
 	return true;
 }
 
-bool SavedServerSystem::SaveServers(const THashTable<IPAddress*, ServerInfo, IPAddressHasher>& serverInfos)
+bool ServerFileStorage::SaveServers(const TArray<ServerInfo>& serverInfos)
 {
 	FILE* pFile = fopen(FILE_PATH, "w");
 	if (!pFile)
@@ -72,10 +76,8 @@ bool SavedServerSystem::SaveServers(const THashTable<IPAddress*, ServerInfo, IPA
 
 	rapidjson::Value serverArray(rapidjson::kArrayType);
 
-	for (auto& pair : serverInfos)
+	for (const ServerInfo& serverInfo : serverInfos)
 	{
-		const ServerInfo& serverInfo = pair.second;
-
 		if (!serverInfo.IsLAN && serverInfo.EndPoint.GetAddress() != IPAddress::BROADCAST)
 		{
 			String address = serverInfo.EndPoint.ToString();
@@ -104,7 +106,7 @@ bool SavedServerSystem::SaveServers(const THashTable<IPAddress*, ServerInfo, IPA
 	return true;
 }
 
-FILE* SavedServerSystem::CreateFile()
+FILE* ServerFileStorage::CreateFile()
 {
 	FILE* pFile = fopen(FILE_PATH, "w");
 	if (!pFile)
