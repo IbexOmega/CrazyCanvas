@@ -80,65 +80,50 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 {
 	using namespace LambdaEngine;
 
-	ECSCore* pECS = ECSCore::GetInstance();
+	const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
 
-	Job job;
-	job.Components =
+	if (pLocalPlayer == event.pPlayer)
 	{
-		{ RW, CameraComponent::Type() },
-		{ RW, OffsetComponent::Type() },
-		{ RW, ParentComponent::Type() }
-	};
+		ECSCore* pECS = ECSCore::GetInstance();
+		ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+		ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
 
-	job.Function = [this, event]()
+		if (!pLocalPlayer->IsDead())
+		{
+			for (Entity cameraEntity : m_CameraEntities)
+			{
+				RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", false);
+				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+				OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
+
+				cameraOffsetComponent.Offset *= 0.5f; // reset camera offset
+				parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity(); // reset camera parent
+			}
+
+			m_SpectatorIndex = 0;
+			m_InSpectateView = false;
+			m_pSpectatedPlayer = nullptr;
+
+			SpectatePlayerEvent spectatePlayerEvent("", false);
+			EventQueue::SendEventImmediate(spectatePlayerEvent);
+		}
+		else
+		{
+			for (Entity cameraEntity : m_CameraEntities)
+			{
+				RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", true);
+				OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
+
+				cameraOffsetComponent.Offset *= 2;
+				SpectatePlayer();
+			}
+			m_InSpectateView = true;
+		}
+	}
+	else if (m_pSpectatedPlayer == event.pPlayer)
 	{
-		const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
-
-		if (pLocalPlayer == event.pPlayer)
-		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
-			ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
-
-			if (!pLocalPlayer->IsDead())
-			{
-				for (Entity cameraEntity : m_CameraEntities)
-				{
-					RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", false);
-					ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
-					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
-
-					cameraOffsetComponent.Offset *= 0.5f; // reset camera offset
-					parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity(); // reset camera parent
-				}
-
-				m_SpectatorIndex = 0;
-				m_InSpectateView = false;
-				m_pSpectatedPlayer = nullptr;
-
-				SpectatePlayerEvent spectatePlayerEvent("", false);
-				EventQueue::SendEventImmediate(spectatePlayerEvent);
-			}
-			else
-			{
-				for (Entity cameraEntity : m_CameraEntities)
-				{
-					RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", true);
-					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
-
-					cameraOffsetComponent.Offset *= 2;
-					SpectatePlayer();
-				}
-				m_InSpectateView = true;
-			}
-		}
-		else if (m_pSpectatedPlayer == event.pPlayer)
-		{
-			SpectatePlayer();
-		}
-	};
-
-	pECS->ScheduleJobASAP(job);
+		SpectatePlayer();
+	}
 
 	return false;
 }
