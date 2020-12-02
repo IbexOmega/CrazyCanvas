@@ -230,7 +230,7 @@ namespace LambdaEngine
 
 		// Release BLAS
 		m_pResourcesToRemove[m_ModFrameIndex].PushBack(blasData.pBLAS);
-		
+
 		//Dequeue from updating if enqueued
 		for (auto dirtyBLASIt = m_DirtyBLASes.Begin(); dirtyBLASIt != m_DirtyBLASes.End();)
 		{
@@ -257,7 +257,7 @@ namespace LambdaEngine
 		std::scoped_lock<SpinLock> lock(m_Lock);
 
 		VALIDATE(asInstanceDesc.BlasIndex < m_BLASes.GetSize());
-		
+
 		BLASData& blasData = m_BLASes[asInstanceDesc.BlasIndex];
 
 		uint32 instanceIndex = m_Instances.GetSize();
@@ -272,7 +272,7 @@ namespace LambdaEngine
 
 		m_InstanceIndicesChanged = true;
 		m_Instances.PushBack(asInstance);
-			
+
 		uint32 externalIndex;
 
 		if (!m_FreeInstanceIndices.IsEmpty())
@@ -375,8 +375,8 @@ namespace LambdaEngine
 	}
 
 	void ASBuilder::Update(
-		Timestamp delta, 
-		uint32 modFrameIndex, 
+		Timestamp delta,
+		uint32 modFrameIndex,
 		uint32 backBufferIndex)
 	{
 		UNREFERENCED_VARIABLE(delta);
@@ -615,10 +615,10 @@ namespace LambdaEngine
 	}
 
 	void ASBuilder::Render(
-		uint32 modFrameIndex, 
-		uint32 backBufferIndex, 
-		CommandList** ppFirstExecutionStage, 
-		CommandList** ppSecondaryExecutionStage, 
+		uint32 modFrameIndex,
+		uint32 backBufferIndex,
+		CommandList** ppFirstExecutionStage,
+		CommandList** ppSecondaryExecutionStage,
 		bool sleeping)
 	{
 		UNREFERENCED_VARIABLE(modFrameIndex);

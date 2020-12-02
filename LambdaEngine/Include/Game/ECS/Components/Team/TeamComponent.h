@@ -12,6 +12,6 @@ namespace LambdaEngine
 	struct TeamComponent
 	{
 		DECL_COMPONENT(TeamComponent);
-		uint8 TeamIndex = UINT8_MAX;
+		uint8 TeamIndex = 0;
 	};
 }

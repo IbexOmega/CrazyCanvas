@@ -254,13 +254,13 @@ void MatchServer::BeginLoading()
 		{
 			if (m_MatchDesc.GameMode == EGameMode::CTF_COMMON_FLAG)
 			{
-				SpawnFlag(UINT8_MAX); //UINT8_MAX means no Team
+				SpawnFlag(0); // 0 means no Team
 			}
 			else
 			{
 				for (uint8 t = 0; t < m_MatchDesc.NumTeams; t++)
 				{
-					SpawnFlag(t);
+					SpawnFlag(t + 1);
 				}
 			}
 		}
@@ -491,7 +491,7 @@ void MatchServer::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, Lambda
 
 				if (!pECS->GetConstComponentIf(otherEntity, flagTeamComponent))
 				{
-					flagTeamComponent.TeamIndex = UINT8_MAX;
+					flagTeamComponent.TeamIndex = 0;
 				}
 
 				glm::vec3 flagPosition;
@@ -632,7 +632,7 @@ void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity, bool respawnFl
 					TeamComponent flagTeamComponent = {};
 					if (!pECS->GetConstComponentIf<TeamComponent>(flagEntity, flagTeamComponent))
 					{
-						flagTeamComponent.TeamIndex = UINT8_MAX;
+						flagTeamComponent.TeamIndex = 0;
 					}
 
 					glm::vec3 flagSpawnPosition;
@@ -783,9 +783,9 @@ bool MatchServer::CreateFlagSpawnProperties(uint8 teamIndex, glm::vec3& position
 		bool flagSpawnHasTeamComponent = pTeamComponents->GetConstIf(flagSpawnPointEntity, flagSpawnTeamComponent);
 
 		bool validSpawnPoint = false;
-		if (teamIndex == UINT8_MAX)
+		if (teamIndex == 0)
 		{
-			//If the team index is UINT8_MAX the flag is common and we don't care about flag spawn point team
+			//If the team index is 0 the flag is common and we don't care about flag spawn point team
 			validSpawnPoint = !flagSpawnHasTeamComponent;
 		}
 		else

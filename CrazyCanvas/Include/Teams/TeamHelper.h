@@ -27,14 +27,16 @@ public:
 
 	FORCEINLINE static GUID_Lambda GetTeamColorMaterialGUID(uint8 teamIndex)
 	{
-		VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
-		return s_TeamColorMaterialGUIDs[teamIndex];
+		uint8 index = teamIndex - 1;
+		VALIDATE(index < LambdaEngine::MAX_NUM_TEAMS);
+		return s_TeamColorMaterialGUIDs[index];
 	}
 
 	FORCEINLINE static GUID_Lambda GetTeamPlayerMaterialGUID(uint8 teamIndex)
 	{
-		VALIDATE(teamIndex < LambdaEngine::MAX_NUM_TEAMS);
-		return s_TeamPlayerMaterialGUIDs[teamIndex];
+		uint8 index = teamIndex - 1;
+		VALIDATE(index < LambdaEngine::MAX_NUM_TEAMS);
+		return s_TeamPlayerMaterialGUIDs[index];
 	}
 
 	FORCEINLINE static GUID_Lambda GetMyTeamPlayerMaterialGUID() { return s_MyTeamPlayerMaterialGUID; }
