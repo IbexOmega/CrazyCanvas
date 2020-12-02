@@ -212,22 +212,33 @@ void SpectateCameraSystem::SpectatePlayer()
 
 	}
 
-	if (!teamPlayers.IsEmpty()) //Spectate team-member
+	if (!m_IsGameOver)
 	{
-		if (cameraEntity != UINT32_MAX)
+		if (!teamPlayers.IsEmpty()) //Spectate team-member
 		{
-			ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+			if (cameraEntity != UINT32_MAX)
+			{
+				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 
-			m_SpectatorIndex = m_SpectatorIndex % teamPlayers.GetSize();
+				m_SpectatorIndex = m_SpectatorIndex % teamPlayers.GetSize();
 
-			m_SpectatedPlayer = teamPlayers[m_SpectatorIndex];
+				m_SpectatedPlayer = teamPlayers[m_SpectatorIndex];
 
-			parentComponent.Parent = m_SpectatedPlayer;
+				parentComponent.Parent = m_SpectatedPlayer;
 
-			SpectatePlayerEvent event(PlayerManagerClient::GetPlayer(m_SpectatedPlayer)->GetName(), true);
-			EventQueue::SendEventImmediate(event);
+				SpectatePlayerEvent event(PlayerManagerClient::GetPlayer(m_SpectatedPlayer)->GetName(), true);
+				EventQueue::SendEventImmediate(event);
+			}
+
 		}
-
+		else // spectate Flag
+		{
+			if (flagSpawnEntity != UINT32_MAX && cameraEntity != UINT32_MAX)
+			{
+				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+				parentComponent.Parent = flagSpawnEntity;
+			}
+		}
 	}
 	else if (m_IsGameOver)
 	{
@@ -235,14 +246,6 @@ void SpectateCameraSystem::SpectatePlayer()
 		{
 			ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 			parentComponent.Parent = mapSpectatePointEntity;
-		}
-	}
-	else // spectate Flag
-	{
-		if (flagSpawnEntity != UINT32_MAX && cameraEntity != UINT32_MAX)
-		{
-			ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
-			parentComponent.Parent = flagSpawnEntity;
 		}
 	}
 }
