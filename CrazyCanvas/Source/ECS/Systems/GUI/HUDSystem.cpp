@@ -223,13 +223,14 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity playerWeapon : m_WeaponEntities)
+		for (Entity weapon : m_WeaponEntities)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(weapon);
 
-			if (pPlayerLocalComponents->HasComponent(weaponComponent.WeaponOwner) && m_HUDGUI)
+			if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
 				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+				LOG_ERROR("Entity %d fired", weaponComponent.WeaponOwner);
 			}
 		}
 	}
@@ -242,12 +243,13 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
 		for (Entity playerWeapon : m_WeaponEntities)
 		{
 			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
 
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
 				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
 			}
@@ -262,12 +264,13 @@ bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
 		for (Entity playerWeapon : m_WeaponEntities)
 		{
 			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
 
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
 				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
 				PromptMessage("Reloading", true);
@@ -283,12 +286,13 @@ bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& eve
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
 		for (Entity playerWeapon : m_WeaponEntities)
 		{
 			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
 
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
 				m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
 			}
