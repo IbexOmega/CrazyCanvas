@@ -194,7 +194,7 @@ void SpectateCameraSystem::SpectatePlayer()
 					flagSpawnEntity = entity;
 				}
 			}
-			else if (flagSpawnEntity != UINT32_MAX)
+			else if (flagSpawnEntity == UINT32_MAX)
 			{
 				flagSpawnEntity = entity;
 			}
