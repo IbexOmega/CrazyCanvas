@@ -28,9 +28,6 @@
 
 #include "Resources/ResourceCatalog.h"
 
-#include "Rendering/LineRenderer.h"
-
-
 /*
 * WeaponSystem
 */
@@ -103,10 +100,6 @@ void WeaponSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration
 		{
 			m_YAngle = input.Arguments[0].Value.Float32;
 		});
-
-	LOG_MESSAGE("SET DEBUG");
-	m_debug1 = LineRenderer::AddLineGroup({ glm::vec3(0, 0, 0), glm::vec3(1.0, 0.0, 0.0) }, glm::vec3(1.0, 0, 0));
-	m_debug2 = LineRenderer::AddLineGroup({ glm::vec3(0, 0, 0), glm::vec3(1.0, 0.0, 0.0) }, glm::vec3(0.0, 1.0, 0));
 }
 
 void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weaponComponent, EAmmoType ammoType, const glm::vec3& position, const glm::vec3& velocity, uint8 playerTeam, uint32 angle)
@@ -311,6 +304,6 @@ glm::vec3 WeaponSystem::CalculateZeroingDirection(
 	glm::vec3 fireDirection = glm::normalize(zeroPoint - weaponPos);
 
 	// adjusts m_YAngle to be less inpactful when aiming up or down.
-	float angleFactor = 1.0 - abs(glm::dot(g_DefaultUp, fireDirection)) * 0.5f;
+	float angleFactor = 1.0f - abs(glm::dot(g_DefaultUp, fireDirection)) * 0.5f;
 	return glm::rotate(fireDirection, glm::radians(m_YAngle * angleFactor), glm::cross(fireDirection, GetUp(playerDirection)));
 }
