@@ -126,7 +126,7 @@ void SandboxState::Init()
 
 	// Set Team Colors
 	{
-		TeamHelper::SetTeamColor(1, glm::vec3(1.0f, 1.0f, 0.0f));
+		TeamHelper::SetTeamColor(1, 3);
 		RenderSystem::GetInstance().SetPaintMaskColor(1, glm::vec3(1.0f, 1.0f, 0.0f));
 	}
 

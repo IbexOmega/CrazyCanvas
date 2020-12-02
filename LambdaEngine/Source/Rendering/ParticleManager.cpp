@@ -332,7 +332,6 @@ namespace LambdaEngine
 
 		emitterInstance.Color = emitterComp.Color;
 		emitterInstance.FrictionFactor = emitterComp.FrictionFactor;
-		emitterInstance.Bounciness = emitterComp.Bounciness;
 
 		emitterInstance.Color = emitterComp.Color;
 	}
@@ -411,7 +410,7 @@ namespace LambdaEngine
 			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
 			particle.WasCreated = true;
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
-			particle.Bounciness = emitterInstance.Bounciness;
+			particle.ShouldStop = 0.f;
 
 			particle.CurrentLife = emitterInstance.LifeTime + floor((1.f - emitterInstance.Explosive) * i) * emitterInstance.SpawnDelay;
 
@@ -491,11 +490,10 @@ namespace LambdaEngine
 			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
 			particle.WasCreated = true;
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
-			particle.Bounciness = emitterInstance.Bounciness;
+			particle.ShouldStop = 0.f;
 
 			particle.CurrentLife = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
 
-			
 			uint32 particleIndex = UINT32_MAX;
 			if (particleOffset + i < particleCount)
 			{

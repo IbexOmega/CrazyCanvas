@@ -4,6 +4,7 @@
 #define PAINT_THRESHOLD			0.4f
 #define PAINT_FREQ              5.0f
 #define PAINT_AMPL              0.4f
+#define UINT32_MAX              0xffffffff
 
 #include "Noise.glsl"
 

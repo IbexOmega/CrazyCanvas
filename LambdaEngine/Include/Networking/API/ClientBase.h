@@ -44,6 +44,8 @@ namespace LambdaEngine
 		virtual bool SendUnreliable(NetworkSegment* packet) override;
 		virtual bool SendReliable(NetworkSegment* packet, IPacketListener* listener = nullptr) override;
 		virtual uint64 GetUID() const override;
+		virtual void SetTimeout(Timestamp time) override;
+		virtual void ResetTimeout() override;
 
 	protected:
 		ClientBase(const ClientDesc& desc);
@@ -82,6 +84,7 @@ namespace LambdaEngine
 		String m_Reason;
 		Timestamp m_PingInterval;
 		Timestamp m_PingTimeout;
+		Timestamp m_PingTimeoutDefault;
 		Timestamp m_LastPingTimestamp;
 		bool m_UsePingSystem;
 		SpinLock m_LockReceivedPackets;
