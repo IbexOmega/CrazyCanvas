@@ -25,7 +25,7 @@ namespace LambdaEngine
 
 	bool GUIApplication::Init()
 	{
-		EventQueue::RegisterEventHandler<WindowResizedEvent>(&GUIApplication::OnWindowResized);
+		EventQueue::RegisterEventHandler<PostSwapChainRecreatedEvent>(&GUIApplication::OnPostSwapChainRecreated);
 		EventQueue::RegisterEventHandler<KeyPressedEvent>(&GUIApplication::OnKeyPressed);
 		EventQueue::RegisterEventHandler<KeyReleasedEvent>(&GUIApplication::OnKeyReleased);
 		EventQueue::RegisterEventHandler<KeyTypedEvent>(&GUIApplication::OnKeyTyped);
@@ -57,6 +57,15 @@ namespace LambdaEngine
 
 	bool GUIApplication::Release()
 	{
+		EventQueue::UnregisterEventHandler<PostSwapChainRecreatedEvent>(&GUIApplication::OnPostSwapChainRecreated);
+		EventQueue::UnregisterEventHandler<KeyPressedEvent>(&GUIApplication::OnKeyPressed);
+		EventQueue::UnregisterEventHandler<KeyReleasedEvent>(&GUIApplication::OnKeyReleased);
+		EventQueue::UnregisterEventHandler<KeyTypedEvent>(&GUIApplication::OnKeyTyped);
+		EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(&GUIApplication::OnMouseButtonClicked);
+		EventQueue::UnregisterEventHandler<MouseButtonReleasedEvent>(&GUIApplication::OnMouseButtonReleased);
+		EventQueue::UnregisterEventHandler<MouseScrolledEvent>(&GUIApplication::OnMouseScrolled);
+		EventQueue::UnregisterEventHandler<MouseMovedEvent>(&GUIApplication::OnMouseMoved);
+
 		if (s_pView.GetPtr() != nullptr)
 		{
 			s_pView->GetRenderer()->Shutdown();
@@ -158,10 +167,10 @@ namespace LambdaEngine
 		}
 	}
 
-	bool GUIApplication::OnWindowResized(const WindowResizedEvent& windowEvent)
+	bool GUIApplication::OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& postSwapChainRecreatedEvent)
 	{
 		if (s_pView.GetPtr() != nullptr)
-			s_pView->SetSize(windowEvent.Width, windowEvent.Height);
+			s_pView->SetSize(postSwapChainRecreatedEvent.NewWidth, postSwapChainRecreatedEvent.NewHeight);
 		return true;
 	}
 
