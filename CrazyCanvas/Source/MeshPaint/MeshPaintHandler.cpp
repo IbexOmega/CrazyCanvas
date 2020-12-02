@@ -45,11 +45,10 @@ void MeshPaintHandler::Init()
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		UnwrapData dummyData = {};
 		dummyData.TargetPosition.w = 0.f;
-		size_t size = sizeof(UnwrapData);
 		for (uint32 i = 0; i < 10; i++)
 		{
-			uint32 step = i * (uint32)size;
-			memcpy(pBufferMapping + step, &dummyData + i, size);
+			uint64 step = uint64(i) * sizeof(UnwrapData);
+			memcpy(pBufferMapping + step, &dummyData, sizeof(UnwrapData));
 		}
 		m_pPointsBuffer->Unmap();
 
@@ -79,11 +78,10 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		UnwrapData dummyData = {};
 		dummyData.TargetPosition.w = 0.f;
-		uint32 size = uint32(sizeof(UnwrapData));
 		for (uint32 i = 0; i < 10; i++)
 		{
-			uint32 step = i * size;
-			memcpy(pBufferMapping + step, &dummyData + i, size);
+			uint64 step = uint64(i) * sizeof(UnwrapData);
+			memcpy(pBufferMapping + step, &dummyData, sizeof(UnwrapData));
 		}
 		m_pPointsBuffer->Unmap();
 
@@ -101,7 +99,7 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 		if (s_ShouldReset)
 		{
 			UnwrapData& dataLast = s_Collisions.GetBack();
-			dataLast.ClearClient = true;
+			dataLast.ClearClient = 1;
 			s_ShouldReset = false;
 		}
 
@@ -151,7 +149,7 @@ void MeshPaintHandler::AddHitPoint(
 	data.PaintMode			= paintMode;
 	data.RemoteMode			= remoteMode;
 	data.Team				= team;
-	data.ClearClient		= false;
+	data.ClearClient		= 0;
 	s_Collisions.PushBack(data);
 }
 
