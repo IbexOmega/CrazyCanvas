@@ -316,7 +316,8 @@ namespace LambdaEngine
 			GUID_Lambda meshGUID,
 			GUID_Lambda materialGUID,
 			const glm::mat4& transform,
-			bool animated,
+			bool isAnimated,
+			bool isMorphable,
 			bool forceUniqueResource,
 			bool manualResourceDeletion);
 

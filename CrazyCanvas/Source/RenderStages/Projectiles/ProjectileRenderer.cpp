@@ -128,6 +128,11 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 	for (uint32 gridNr = 0; gridNr < m_MarchingCubesGrids.size(); gridNr++)
 	{
 		MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids[gridNr];
+		if (marchingCubesGrid.DescriptorSet)
+		{
+			continue;
+		}
+
 		for (uint32 drawArgIdx = 0; drawArgIdx < count; drawArgIdx++)
 		{
 			const DrawArg& drawArg = pDrawArgs[drawArgIdx];
@@ -647,6 +652,7 @@ void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 
 	const glm::mat4 transform = RenderSystem::CreateEntityTransform(entity, glm::bvec3(true));
 	constexpr const bool isAnimated = false;
+	constexpr const bool isMorphable = true;
 	constexpr const bool forceUniqueResource = false;
 	constexpr const bool manualResourceDeletion = true;
 	RenderSystem::GetInstance().AddRenderableEntity(
@@ -655,6 +661,7 @@ void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 		projectileMaterialGUID,
 		transform,
 		isAnimated,
+		isMorphable,
 		forceUniqueResource,
 		manualResourceDeletion);
 }

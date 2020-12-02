@@ -1098,6 +1098,7 @@ bool RenderSystem::InitIntegrationLUT()
 		GUID_Lambda materialGUID,
 		const glm::mat4& transform,
 		bool isAnimated,
+		bool isMorphable,
 		bool forceUniqueResource,
 		bool manualResourceDeletion)
 	{
@@ -1374,7 +1375,7 @@ bool RenderSystem::InitIntegrationLUT()
 						meshEntry.VertexCount,
 						sizeof(Vertex),
 						meshEntry.IndexCount,
-						isAnimated || forceUniqueResource);
+						isAnimated || isMorphable);
 				}
 
 				meshAndInstancesIt = m_MeshAndInstancesMap.insert(std::make_pair(meshKey, meshEntry)).first;
@@ -1842,6 +1843,7 @@ bool RenderSystem::InitIntegrationLUT()
 
 		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		constexpr const bool isAnimated = false;
+		constexpr const bool isMorphable = false;
 		constexpr const bool forceUniqueResource = false;
 		constexpr const bool manualResourceDeletion = false;
 		AddRenderableEntity(
@@ -1850,6 +1852,7 @@ bool RenderSystem::InitIntegrationLUT()
 			meshComp.MaterialGUID,
 			transform,
 			isAnimated,
+			isMorphable,
 			forceUniqueResource,
 			manualResourceDeletion);
 	}
@@ -1869,6 +1872,7 @@ bool RenderSystem::InitIntegrationLUT()
 
 		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(true));
 		constexpr const bool isAnimated = true;
+		constexpr const bool isMorphable = false;
 		constexpr const bool forceUniqueResource = false;
 		constexpr const bool manualResourceDeletion = false;
 		AddRenderableEntity(
@@ -1877,6 +1881,7 @@ bool RenderSystem::InitIntegrationLUT()
 			meshComp.MaterialGUID,
 			transform,
 			isAnimated,
+			isMorphable,
 			forceUniqueResource,
 			manualResourceDeletion);
 	}
@@ -1899,6 +1904,7 @@ bool RenderSystem::InitIntegrationLUT()
 		transform = transform * animationAttachedComponent.Transform;
 
 		constexpr const bool isAnimated = false;
+		constexpr const bool isMorphable = false;
 		constexpr const bool forceUniqueResource = false;
 		constexpr const bool manualResourceDeletion = false;
 		AddRenderableEntity(
@@ -1907,6 +1913,7 @@ bool RenderSystem::InitIntegrationLUT()
 			meshComp.MaterialGUID,
 			transform,
 			isAnimated,
+			isMorphable,
 			forceUniqueResource,
 			manualResourceDeletion);
 	}
@@ -1932,6 +1939,7 @@ bool RenderSystem::InitIntegrationLUT()
 		}
 
 		const glm::mat4 transform = CreateEntityTransform(entity, glm::bvec3(false, true, false));
+		constexpr const bool isMorphable = false;
 		constexpr const bool manualResourceDeletion = false;
 		AddRenderableEntity(
 			entity,
@@ -1939,6 +1947,7 @@ bool RenderSystem::InitIntegrationLUT()
 			meshComp.MaterialGUID,
 			transform,
 			pAnimationComponents->HasComponent(entity),
+			isMorphable,
 			forceUniqueResources,
 			manualResourceDeletion);
 	}
@@ -2607,7 +2616,7 @@ bool RenderSystem::InitIntegrationLUT()
 		{
 			//Raster Instances
 			{
-				uint32 requiredBufferSize = pDirtyInstanceBufferEntry->RasterInstances.GetSize() * sizeof(Instance);
+				uint32 requiredBufferSize = glm::max<uint32>(pDirtyInstanceBufferEntry->RasterInstances.GetSize() * sizeof(Instance), 1);
 
 				Buffer* pStagingBuffer = pDirtyInstanceBufferEntry->ppRasterInstanceStagingBuffers[m_ModFrameIndex];
 
@@ -2625,10 +2634,6 @@ bool RenderSystem::InitIntegrationLUT()
 					pStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 					pDirtyInstanceBufferEntry->ppRasterInstanceStagingBuffers[m_ModFrameIndex] = pStagingBuffer;
 				}
-
-				void* pMapped = pStagingBuffer->Map();
-				memcpy(pMapped, pDirtyInstanceBufferEntry->RasterInstances.GetData(), requiredBufferSize);
-				pStagingBuffer->Unmap();
 
 				if (pDirtyInstanceBufferEntry->pRasterInstanceBuffer == nullptr || pDirtyInstanceBufferEntry->pRasterInstanceBuffer->GetDesc().SizeInBytes < requiredBufferSize)
 				{
@@ -2656,7 +2661,14 @@ bool RenderSystem::InitIntegrationLUT()
 						EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 				}
 
-				pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pRasterInstanceBuffer, 0, requiredBufferSize);
+				if (!pDirtyInstanceBufferEntry->RasterInstances.IsEmpty())
+				{
+					void* pMapped = pStagingBuffer->Map();
+					memcpy(pMapped, pDirtyInstanceBufferEntry->RasterInstances.GetData(), requiredBufferSize);
+					pStagingBuffer->Unmap();
+
+					pCommandList->CopyBuffer(pStagingBuffer, 0, pDirtyInstanceBufferEntry->pRasterInstanceBuffer, 0, requiredBufferSize);
+				}
 			}
 		}
 
