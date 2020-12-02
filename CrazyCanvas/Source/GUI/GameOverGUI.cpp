@@ -21,7 +21,7 @@ using namespace LambdaEngine;
 
 GameOverGUI::GameOverGUI()
 {
-	m_GameOverSound = ResourceManager::LoadSoundEffect2DFromFile("2currency.wav");
+	//m_GameOverSound = ResourceManager::LoadSoundEffect2DFromFile("2currency.wav");
 }
 
 GameOverGUI::~GameOverGUI()
@@ -53,7 +53,7 @@ void GameOverGUI::DisplayGameOverGrid(bool isVisible)
 		m_pGameOverGrid->SetVisibility(Visibility_Hidden);
 
 	m_pShowWindowStoryboard->Begin();
-	ResourceManager::GetSoundEffect2D(m_GameOverSound)->PlayOnce(1.0f);
+	//ResourceManager::GetSoundEffect2D(m_GameOverSound)->PlayOnce(1.0f);
 }
 
 void GameOverGUI::SetMostKillsStats(uint8 score, const LambdaEngine::String& playerName)
