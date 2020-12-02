@@ -149,7 +149,6 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 				.RadiusRandomness = 0.5f,
 				.BeginRadius = 0.2f,
 				.FrictionFactor = 0.f,
-				.Bounciness = 0.f,
 				.RandomStartIndex = true,
 				.AnimationCount = 1,
 				.FirstAnimationIndex = 6,
