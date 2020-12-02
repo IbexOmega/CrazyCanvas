@@ -678,6 +678,45 @@ namespace LambdaEngine
 			return (m_Size == 0);
 		}
 
+		FORCEINLINE bool Contains(const T& element) const noexcept
+		{
+			for (ConstIterator it = Begin(); it != End(); it++)
+			{
+				if (*it == element)
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		FORCEINLINE Iterator Find(const T& element) noexcept
+		{
+			for (Iterator it = Begin(); it != End(); it++)
+			{
+				if (*it == element)
+				{
+					return it;
+				}
+			}
+
+			return End();
+		}
+
+		FORCEINLINE ConstIterator Find(const T& element) const noexcept
+		{
+			for (ConstIterator it = Begin(); it != End(); it++)
+			{
+				if (*it == element)
+				{
+					return it;
+				}
+			}
+
+			return End();
+		}
+
 		FORCEINLINE Iterator Begin() noexcept
 		{
 			return Iterator(m_pData);
