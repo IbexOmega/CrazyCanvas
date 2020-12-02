@@ -1762,17 +1762,23 @@ bool RenderSystem::InitIntegrationLUT()
 			VALIDATE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 			DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 
-			VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
-			DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
+			if (meshAndInstancesIt->second.pAnimationDescriptorSet)
+			{
+				DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
+			}
 
-			VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
+			if (meshAndInstancesIt->second.pBoneMatrixBuffer)
+			{
+				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
+			}
 
 			VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
 			DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
 
-			VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
+			if (meshAndInstancesIt->second.pStagingMatrixBuffer)
+			{
+				DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
+			}
 		}
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
