@@ -125,13 +125,11 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 
 	/*	An entity was assigned to a grid in ProjectileRenderer::OnProjectileAdded, find out which grid it was by
 		finding the entity in DrawArg::EntityIDs. */
-	for (uint32 gridNr = 0; gridNr < m_MarchingCubesGrids.size(); gridNr++)
+	uint32 linkedDrawArgs = 0;
+
+	for (uint32 gridNr = 0; gridNr < m_MarchingCubesGrids.size() && linkedDrawArgs < count; gridNr++)
 	{
 		MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids[gridNr];
-		if (marchingCubesGrid.DescriptorSet)
-		{
-			continue;
-		}
 
 		for (uint32 drawArgIdx = 0; drawArgIdx < count; drawArgIdx++)
 		{
@@ -139,14 +137,17 @@ void ProjectileRenderer::UpdateDrawArgsResource(const String& resourceName, cons
 			if (std::any_of(drawArg.EntityIDs.begin(), drawArg.EntityIDs.end(),
 				[&](Entity entity) { return marchingCubesGrid.InstancedEntities.contains(entity); }))
 			{
-				CreateRenderResources(gridNr, drawArg);
-				m_InitializedGridCount++;
-				return;
+				if (!marchingCubesGrid.DescriptorSet)
+				{
+					CreateRenderResources(gridNr, drawArg);
+					m_InitializedGridCount++;
+					linkedDrawArgs++;
+				}
+
+				break;
 			}
 		}
 	}
-
-	LOG_ERROR("Failed to link a draw arg to a marching cubes grid");
 }
 
 void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, CommandList** ppFirstExecutionStage, CommandList** ppSecondaryExecutionStage, bool sleeping)
@@ -171,20 +172,24 @@ void ProjectileRenderer::Render(uint32 modFrameIndex, uint32 backBufferIndex, Co
 				continue;
 			}
 
-			const Entity entity = *marchingCubesGrid.InstancedEntities.begin();
-			const glm::mat4 transform = RenderSystem::CreateEntityTransform(
-				pPositionComponents->GetConstData(entity),
-				pRotationComponents->GetConstData(entity),
-				pScaleComponents->GetConstData(entity),
-				rotationalAxes
-			);
+			for (const Entity instancedEntity : marchingCubesGrid.InstancedEntities)
+			{
+				const glm::mat4 transform = RenderSystem::CreateEntityTransform(
+					pPositionComponents->GetConstData(instancedEntity),
+					pRotationComponents->GetConstData(instancedEntity),
+					pScaleComponents->GetConstData(instancedEntity),
+					rotationalAxes
+				);
 
-			renderSystem.UpdateTransformData(entity, transform);
+				renderSystem.UpdateTransformData(instancedEntity, transform);
+			}
+
+			const Entity instancedEntity = *marchingCubesGrid.InstancedEntities.begin();
 
 			constexpr const bool isAnimated = false;
 			constexpr const bool forceUniqueResource = false;
 			constexpr const bool manualResourceDeletion = true;
-			renderSystem.RebuildBLAS(entity, marchingCubesGrid.MeshGUID, isAnimated, forceUniqueResource, manualResourceDeletion);
+			renderSystem.RebuildBLAS(instancedEntity, marchingCubesGrid.MeshGUID, isAnimated, forceUniqueResource, manualResourceDeletion);
 		}
 
 		CommandList* pCommandList = m_ComputeCommandLists[modFrameIndex].Get();
@@ -545,7 +550,8 @@ void ProjectileRenderer::CreateMarchingCubesGrids()
 		const String meshName = "Marching Cubes Mesh " + std::to_string(gridNr);
 		if (gridNr != 0)
 		{
-			meshGUID = ResourceManager::RegisterMesh(meshName, pOriginalMesh);
+			Mesh* pMeshCopy = DBG_NEW Mesh(*pOriginalMesh);
+			meshGUID = ResourceManager::RegisterMesh(meshName, pMeshCopy);
 		}
 
 		m_MarchingCubesGrids[gridNr] =
@@ -630,6 +636,8 @@ void ProjectileRenderer::SubscribeToProjectiles()
 void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 {
 	MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids[m_NextMarchingCubesGrid];
+	m_NextMarchingCubesGrid = (m_NextMarchingCubesGrid + 1) % UNIQUE_METABALLS_COUNT;
+
 	if (marchingCubesGrid.InstancedEntities.empty())
 	{
 		/*	The grid was previously unused. This is a good opportunity to randomize its spheres so it will have a new
@@ -668,8 +676,13 @@ void ProjectileRenderer::OnProjectileCreated(LambdaEngine::Entity entity)
 
 void ProjectileRenderer::OnProjectileRemoval(LambdaEngine::Entity entity)
 {
-	MarchingCubesGrid& marchingCubesGrid = m_MarchingCubesGrids[m_NextMarchingCubesGrid];
-	marchingCubesGrid.InstancedEntities.erase(entity);
+	for (MarchingCubesGrid& marchingCubesGrid : m_MarchingCubesGrids)
+	{
+		if (marchingCubesGrid.InstancedEntities.erase(entity) > 0)
+		{
+			break;
+		}
+	}
 
 	RenderSystem& renderSystem = RenderSystem::GetInstance();
 	renderSystem.RemoveRenderableEntity(entity);
