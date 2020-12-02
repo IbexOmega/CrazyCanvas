@@ -38,6 +38,7 @@
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/GUI/ProjectedGUIComponent.h"
 #include "ECS/Components/Misc/DestructionComponent.h"
+#include "ECS/Components/World/SpectateComponent.h"
 
 #include "Teams/TeamHelper.h"
 
@@ -94,6 +95,17 @@ bool LevelObjectCreator::Init()
 
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreatePlayerJail;
+		}
+
+		//Spectate Map Point
+		{
+			LevelObjectOnLoadDesc levelObjectDesc =
+			{
+				.Prefix = "SO_SPECTATE_OBJECT"
+			};
+
+			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
+			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateSpectateMapPoint;
 		}
 
 		//Flag Spawn
@@ -559,6 +571,29 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 	return ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_JAIL;
 }
 
+ELevelObjectType LevelObjectCreator::CreateSpectateMapPoint(
+	const LambdaEngine::LevelObjectOnLoad& levelObject, 
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const glm::vec3& translation)
+{
+
+	using namespace LambdaEngine;
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	Entity entity = pECS->CreateEntity();
+
+	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
+	pECS->AddComponent<SpectateComponent>(entity, SpectateComponent());
+
+	createdEntities.PushBack(entity);
+
+	LOG_DEBUG("Created Spectate Point with EntityID %u", entity);
+
+	return ELevelObjectType::LEVEL_OBJECT_TYPE_SPECTATE_MAP_POINT;
+}
+
 ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 	const LambdaEngine::LevelObjectOnLoad& levelObject,
 	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
@@ -572,6 +607,7 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	pECS->AddComponent<FlagSpawnComponent>(entity, FlagSpawnComponent());
 	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
+	pECS->AddComponent<SpectateComponent>(entity, SpectateComponent());
 
 	uint8 teamIndex = 0;
 	if (FindTeamIndex(levelObject.Name, teamIndex))
@@ -953,6 +989,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
+	pECS->AddComponent<SpectateComponent>(playerEntity, SpectateComponent());
 	pECS->AddComponent<PacketComponent<PacketPlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PacketPlayerActionResponse>>(playerEntity, { });
 
@@ -1206,6 +1243,7 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 			pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
 			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->GetAudioListener(false) });
+			pECS->AddComponent<SpectateComponent>(cameraEntity, SpectateComponent());
 
 			const ViewProjectionMatricesComponent viewProjComp =
 			{

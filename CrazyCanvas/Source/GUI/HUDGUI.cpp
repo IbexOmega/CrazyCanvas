@@ -203,7 +203,7 @@ void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>
 	else
 	{
 		Noesis::Ptr<Noesis::ScaleTransform> scaleTransform = *new ScaleTransform();
-		std::string ammoString = std::to_string(50) + "/" + std::to_string(50);
+		std::string ammoString = std::to_string(25) + "/" + std::to_string(25);
 		scaleTransform->SetCenterX(0.0);
 		scaleTransform->SetCenterY(0.0);
 		scaleTransform->SetScaleX(1.0f);
