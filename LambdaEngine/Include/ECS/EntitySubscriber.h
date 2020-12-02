@@ -37,7 +37,7 @@ namespace LambdaEngine
 		EntitySubscriber() = default;
 		~EntitySubscriber();
 
-		// subscribeToEntities enqueues entity subscriptions. initFn is called when all dependencies have been initialized.
+		// SubscribeToEntities enqueues entity subscriptions. initFn is called when all dependencies have been initialized.
 		void SubscribeToEntities(EntitySubscriberRegistration& subscriberRegistration);
 
 	private:

@@ -24,6 +24,8 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
+#include "Game/PlayerIndexHelper.h"
+
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Match/ShowerSystemBase.h"
@@ -456,8 +458,8 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("Team Index not found for Player Spawn, defaulting to 0...");
-		teamComponent.TeamIndex = 0;
+		LOG_ERROR("Team Index not found for Player Spawn, defaulting to 1...");
+		teamComponent.TeamIndex = 1;
 	}
 
 	pECS->AddComponent<TeamComponent>(entity, teamComponent);
@@ -611,8 +613,8 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 
 	if (!FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
 	{
-		LOG_ERROR("Team Index not found for Flag Delivery Point, defaulting to 0...");
-		teamComponent.TeamIndex = 0;
+		LOG_ERROR("Team Index not found for Flag Delivery Point, defaulting to 1...");
+		teamComponent.TeamIndex = 1;
 	}
 
 	pECS->AddComponent<TeamComponent>(entity, teamComponent);
@@ -718,7 +720,7 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 				.Velocity = 2.0,
 				.Acceleration = 0.0,
 				.Gravity = -7.f,
-				.LifeTime = 1.2f,
+				.LifeTime = 1.5f,
 				.RadiusRandomness = 0.5f,
 				.BeginRadius = 0.2f,
 				.FrictionFactor = 0.f,
@@ -755,6 +757,12 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 		PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 		const StaticCollisionComponent staticCollider = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollider);
+
+		TeamComponent teamComponent;
+		if (FindTeamIndex(levelObject.Name, teamComponent.TeamIndex))
+		{
+			pECS->AddComponent<TeamComponent>(entity, teamComponent);
+		}
 	}
 
 	createdEntities.PushBack(entity);
@@ -782,7 +790,7 @@ bool LevelObjectCreator::CreateFlag(
 
 	GUID_Lambda flagMaterialGUID = ResourceCatalog::FLAG_COMMON_MATERIAL_GUID;
 
-	if (pFlagDesc->TeamIndex != UINT8_MAX)
+	if (pFlagDesc->TeamIndex != 0)
 	{
 		pECS->AddComponent<TeamComponent>(flagEntity, { .TeamIndex = pFlagDesc->TeamIndex });
 		flagMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(pFlagDesc->TeamIndex);
@@ -928,6 +936,8 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerBaseComponent>(playerEntity,		PlayerBaseComponent());
 	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
+	PlayerIndexHelper::AddPlayerEntity(playerEntity);
+
 
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
@@ -975,7 +985,7 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PositionComponent>(weaponEntity, PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<RotationComponent>(weaponEntity, RotationComponent{ .Quaternion = lookDirQuat });
 	pECS->AddComponent<ScaleComponent>(weaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
-	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.3f, 1.4f, 0.0f) });
+	pECS->AddComponent<OffsetComponent>(weaponEntity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.17f, 1.35f, 0.6f) });
 	pECS->AddComponent<TeamComponent>(weaponEntity, TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
 	pECS->AddComponent<MeshPaintComponent>(weaponEntity, MeshPaint::CreateComponent(weaponEntity));
 	pECS->AddComponent<PlayerRelatedComponent>(weaponEntity, PlayerRelatedComponent{});
@@ -1297,6 +1307,8 @@ bool LevelObjectCreator::CreateProjectile(
 	projectileComp.Owner	= desc.WeaponOwner;
 	projectileComp.Angle	= desc.Angle;
 	pECS->AddComponent<ProjectileComponent>(projectileEntity, projectileComp);
+	EntityMaskManager::AddExtensionToEntity(projectileEntity, ProjectileComponent::Type(), nullptr);
+
 	pECS->AddComponent<TeamComponent>(projectileEntity, { static_cast<uint8>(desc.TeamIndex) });
 
 	const glm::vec3 normVelocity = glm::normalize(desc.InitalVelocity);
@@ -1332,16 +1344,9 @@ bool LevelObjectCreator::CreateProjectile(
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		glm::vec4 particleColor(1.0f);
-		if (desc.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
+		glm::vec4 particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
+		if (desc.AmmoType == EAmmoType::AMMO_TYPE_WATER)
 		{
-			GUID_Lambda projectileMaterialGUID = TeamHelper::GetTeamColorMaterialGUID(desc.TeamIndex);
-			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = projectileMaterialGUID });
-			particleColor = glm::vec4(TeamHelper::GetTeamColor(desc.TeamIndex), 1.0f);
-		}
-		else
-		{
-			pECS->AddComponent<MeshComponent>(projectileEntity, MeshComponent{ .MeshGUID = ResourceCatalog::PROJECTILE_MESH_GUID, .MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL });
 			particleColor = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 		}
 
@@ -1404,7 +1409,7 @@ bool LevelObjectCreator::FindTeamIndex(const LambdaEngine::String& objectName, u
 	size_t teamIndexPos = objectName.find("TEAM");
 	if (teamIndexPos != String::npos)
 	{
-		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4)) - 1;
+		teamIndex = (uint8)std::stoi(objectName.substr(teamIndexPos + 4));
 		return true;
 	}
 

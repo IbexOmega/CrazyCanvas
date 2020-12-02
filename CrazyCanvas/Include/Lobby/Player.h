@@ -60,7 +60,7 @@ private:
 	Player();
 
 public:
-	static inline constexpr char* GameStateToString(EGameState gameState)
+	static inline constexpr const char* GameStateToString(EGameState gameState)
 	{
 		switch (gameState)
 		{

@@ -63,6 +63,7 @@ BenchmarkState::~BenchmarkState()
 	SAFEDELETE(m_pLevel);
 
 	SingleplayerInitializer::Release();
+	WeaponSystem::Release();
 }
 
 void BenchmarkState::Init()

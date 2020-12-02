@@ -50,7 +50,7 @@ public:
 	}
 
 	FORCEINLINE bool HasBegun() const { return m_HasBegun; }
-	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE(teamIndex < m_Scores.GetSize()); return m_Scores[teamIndex]; }
+	FORCEINLINE uint32 GetScore(uint32 teamIndex) const { VALIDATE((teamIndex - 1) < m_Scores.GetSize()); return m_Scores[teamIndex - 1]; }
 	FORCEINLINE EGameMode GetGameMode() const { return m_MatchDesc.GameMode; }
 
 	virtual void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity) = 0;

@@ -78,7 +78,7 @@ private:
 
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
-	bool StartUpServer(const std::string& applicationName, const std::string& commandLine);
+	bool StartUpServer(const std::string& commandLine);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 };

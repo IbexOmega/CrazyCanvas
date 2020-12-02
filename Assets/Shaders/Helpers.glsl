@@ -232,6 +232,9 @@ float PowerHeuristicWithPDF(float nf, float fPDF, float ng, float gPDF)
 #define ONE_NINTH 0.1111111
 float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir, sampler2D shadowMap)
 {
+	const float blendBorderStart = 0.65f; 
+	const float blendBorderThickness = (1.0f - blendBorderStart);
+
 	vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
 	projCoords.xy = (projCoords.xy * 0.5 + 0.5);
 	projCoords.y = 1.0 - projCoords.y;
@@ -244,20 +247,24 @@ float DirShadowDepthTest(vec4 fragPosLightSpace, vec3 fragNormal, vec3 lightDir,
 	float closestDepth = texture(shadowMap, projCoords.xy).r;
 	float currentDepth = projCoords.z;
 
+	vec2 borderBlendXY = blendBorderThickness - max(abs(projCoords.xy * 2.0f - 1.0f) - blendBorderStart, 0.0f);
+	float borderBlend = smoothstep(0.0f, blendBorderThickness, min(borderBlendXY.x, borderBlendXY.y));
+
 	float bias = max(0.01 * (1.0 - dot(fragNormal, lightDir)), 0.001);
 	float shadow = 0.0;
 	
-	vec2 texelSize = 1.0 / textureSize(shadowMap, 0); // Todo: send in shadowMap width as pushback constant
+	vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 	for(int x = -1; x <= 1; ++x)
 	{
 		for(int y = -1; y <= 1; ++y)
 		{
-			float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
-			shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;        
+			vec2 texCoords = projCoords.xy + vec2(x, y) * texelSize;
+			float pcfDepth = texture(shadowMap, texCoords).r;
+			shadow += (currentDepth - bias > pcfDepth ? 1.0 : 0.0);        
 		}
 	}
 	
-	shadow *= ONE_NINTH;
+	shadow *= ONE_NINTH * borderBlend;
 
 	return shadow;
 }

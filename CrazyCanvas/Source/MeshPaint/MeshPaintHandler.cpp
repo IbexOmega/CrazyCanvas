@@ -95,6 +95,16 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	// Load buffer with new data
 	if (!s_Collisions.IsEmpty())
 	{
+		UnwrapData& dataFirst = s_Collisions.GetFront();
+		dataFirst.TargetPosition.w = (float)s_Collisions.GetSize();
+
+		if (s_ShouldReset)
+		{
+			UnwrapData& dataLast = s_Collisions.GetBack();
+			dataLast.ClearClient = true;
+			s_ShouldReset = false;
+		}
+
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		memcpy(pBufferMapping, s_Collisions.GetData(), s_Collisions.GetSize() * sizeof(UnwrapData));
 		m_pPointsBuffer->Unmap();
@@ -142,7 +152,6 @@ void MeshPaintHandler::AddHitPoint(
 	data.RemoteMode			= remoteMode;
 	data.Team				= team;
 	data.ClearClient		= false;
-	LOG_WARNING("[HitPoint] Team: %d", team);
 	s_Collisions.PushBack(data);
 }
 

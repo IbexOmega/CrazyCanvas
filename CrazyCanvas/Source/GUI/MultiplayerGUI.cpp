@@ -299,13 +299,8 @@ void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const
 		//start Server with populated struct
 		NotiPopUP(HOST_NOTIFICATION);
 
-#if defined(LAMBDA_CONFIG_DEBUG)
-		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
-#elif defined(LAMBDA_CONFIG_RELEASE)
-		StartUpServer("../Build/bin/Release-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
-#elif defined(LAMBDA_CONFIG_PRODUCTION)
-		StartUpServer("../Build/bin/Production-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
-#endif
+		StartUpServer("--state=server");
+
 		//LambdaEngine::GUIApplication::SetView(nullptr);
 	}
 }
@@ -352,15 +347,33 @@ void MultiplayerGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noe
 	}
 }
 
-bool MultiplayerGUI::StartUpServer(const std::string& applicationName, const std::string& commandLine)
+bool MultiplayerGUI::StartUpServer(const std::string& commandLine)
 {
+	// Get application (.exe) path
+	HANDLE processHandle = NULL;
+	WString filePath;
+
+	processHandle = GetCurrentProcess();
+	if (processHandle != NULL)
+	{
+		TCHAR filename[MAX_PATH];
+		if (GetModuleFileNameEx(processHandle, NULL, filename, MAX_PATH) > 0)
+		{
+			filePath = WString(filename);
+		}
+		else
+		{
+			LOG_ERROR("Failed to get current process file path - cannot start server");
+			return false;
+		}
+	}
+
 	//additional Info
 	STARTUPINFOA lpStartupInfo;
 	PROCESS_INFORMATION lpProcessInfo;
-
 	m_ClientHostID = Random::Int32();
 
-	std::string finalCLine = applicationName + " " + commandLine + " " + std::to_string(m_ClientHostID);
+	std::string finalCLine = ConvertToAscii(filePath) + " " + commandLine + " " + std::to_string(m_ClientHostID);
 
 	// set the size of the structures
 	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
