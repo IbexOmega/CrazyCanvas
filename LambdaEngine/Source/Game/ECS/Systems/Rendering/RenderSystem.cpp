@@ -1310,10 +1310,7 @@ bool RenderSystem::InitIntegrationLUT()
 		const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
 		if (pTeamComponents->HasComponent(entity))
 		{
-			LOG_WARNING("[RenderSystem] TODO: Change TeamComponent to use 0 as \"No Team\"! For now just add 1 to the team index before sending it to shaders");
-			// TODO: Fix team index
 			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex);
-			teamIndex = (teamIndex == 0) ? 2 : 1;
 		}
 
 		if (meshKey.EntityMask & ~EntityMaskManager::FetchDefaultEntityMask())

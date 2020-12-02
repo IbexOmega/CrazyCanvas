@@ -27,7 +27,7 @@
                 <Grid.Resources>
                 </Grid.Resources>
 
-                <StackPanel x:Name="BLUE_TEAM_STACK_PANEL" Grid.Column="0" Margin="30 50 30 50" TextElement.FontSize="20">
+                <StackPanel x:Name="TEAM_1_STACK_PANEL" Grid.Column="0" Margin="30 50 30 50" TextElement.FontSize="20">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.5*" />
@@ -56,7 +56,7 @@
                     </Grid>
                 </StackPanel>
 
-                <StackPanel x:Name="RED_TEAM_STACK_PANEL" Grid.Column="1" Margin="50" TextElement.FontSize="20">
+                <StackPanel x:Name="TEAM_2_STACK_PANEL" Grid.Column="1" Margin="50" TextElement.FontSize="20">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="0.5*" />

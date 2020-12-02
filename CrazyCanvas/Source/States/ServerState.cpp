@@ -93,7 +93,6 @@ void ServerState::Init()
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	m_MeshPaintHandler.Init();
 	m_MultiplayerServer.InitInternal();
 
 	ServerSystem::GetInstance().Start();
@@ -128,7 +127,6 @@ bool ServerState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
 void ServerState::Tick(Timestamp delta)
 {
 	m_MultiplayerServer.TickMainThreadInternal(delta);
-	m_MeshPaintHandler.Tick(delta);
 }
 
 void ServerState::FixedTick(LambdaEngine::Timestamp delta)
@@ -168,8 +166,8 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 		LOG_INFO("FlagsToWin: %hhu", packet.FlagsToWin);
 		LOG_INFO("Visible:    %s", packet.Visible ? "True" : "False");
 		LOG_INFO("ChangeTeam: %s\n", packet.ChangeTeam ? "True" : "False");
-		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor0 );
-		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor1 );
+		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor1 );
+		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor2 );
 	}
 	else
 	{
