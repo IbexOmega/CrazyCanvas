@@ -127,13 +127,13 @@ bool HUDGUI::UpdateScore()
 
 	// poor solution to handle bug if Match being reset before entering
 
-	if (m_GUIState.Scores[0] != team1Score && team1Score != 0)	//Blue
+	if (m_GUIState.Scores[0] != team1Score && team1Score != 0)
 	{
 		m_GUIState.Scores[0] = team1Score;
 
 		m_pTeam1Score->SetText(std::to_string(team1Score).c_str());
 	}
-	else if (m_GUIState.Scores[1] != team2Score && team2Score != 0) //Red
+	else if (m_GUIState.Scores[1] != team2Score && team2Score != 0)
 	{
 		m_GUIState.Scores[1] = team2Score;
 
