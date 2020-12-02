@@ -9,13 +9,13 @@
 layout(location = 0) in vec2 in_TexCoord;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
-{ 
-	SPerFrameBuffer val; 
-} u_PerFrameBuffer;
-layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
 {
-	SLightsBuffer val; 
-	SPointLight pointLights[];  
+	SPerFrameBuffer val;
+} u_PerFrameBuffer;
+layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer
+{
+	SLightsBuffer val;
+	SPointLight pointLights[];
 } b_LightsBuffer;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAlbedo;
@@ -112,12 +112,12 @@ void main()
 			float distance = length(L);
 			L = normalize(L);
 			vec3 H = normalize(V + L);
-			
+
 			float inShadow 			= PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			float attenuation		= 1.0f / (distance * distance);
 			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - inShadow);
-		
+
 			float NDF	= Distribution(N, H, roughness);
 			float G		= Geometry(N, V, L, roughness);
 			vec3 F		= Fresnel(F0, max(dot(V, H), 0.0f));
@@ -135,23 +135,23 @@ void main()
 
 			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
 		}
-		
+
 		float dotNV = max(dot(N, V), 0.0f);
 		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
 		vec3 Ks_IBL	= F_IBL;
 		vec3 Kd_IBL	= vec3(1.0f) - Ks_IBL;
 		Kd_IBL		*= (1.0f - metallic);
-	
+
 		vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
 		vec3 IBL_Diffuse	= irradiance * albedo;
-	
+
 		const float numberOfMips = 7.0;
 		vec3 R					= reflect(-V, N);
 		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, R, roughness * float(numberOfMips)).rgb;
 		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
 		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
-	
-		vec3 ambient	= mix((Kd_IBL * IBL_Diffuse + IBL_Specular), 0.4 * albedo, inShadowDirLight) * ao;
+
+		vec3 ambient	= (Kd_IBL * IBL_Diffuse + IBL_Specular) * ao;
 		colorHDR		= ambient + Lo;
 	}
 

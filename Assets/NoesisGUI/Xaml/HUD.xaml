@@ -230,9 +230,9 @@
         </Viewbox>
 
         <!--EscapeGrid-->
-        <Grid Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="4" Grid.RowSpan="5">
+        <Viewbox Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="2" Grid.RowSpan="9">
             <uc:EscapeMenuGUI x:Name="ESC_MENU_GUI" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        </Grid>
+        </Viewbox>
        
     </Grid>
 

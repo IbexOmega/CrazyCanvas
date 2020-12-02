@@ -17,6 +17,6 @@ enum class ERemoteMode : uint32
 enum class ETeam : uint32
 {
 	NONE	= 0,
-	RED		= 1,
-	BLUE	= 2
+	TEAM_1	= 1,
+	TEAM_2	= 2
 };
