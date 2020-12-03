@@ -32,6 +32,8 @@ void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const u
 {
 	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
 
+	UNREFERENCED_VARIABLE(teamIndex);
+
 	/*if (teamIndex != UINT8_MAX)
 	{
 		glm::vec3 promptColor = TeamHelper::GetTeamColor(teamIndex);
