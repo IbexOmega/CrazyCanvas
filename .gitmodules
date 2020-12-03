@@ -13,3 +13,6 @@
 [submodule "Dependencies/argh"]
 	path = Dependencies/argh
 	url = https://github.com/adishavit/argh
+[submodule "Dependencies/Vulkan-Headers"]
+	path = Dependencies/Vulkan-Headers
+	url = http://github.com/KhronosGroup/Vulkan-Headers

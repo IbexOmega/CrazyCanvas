@@ -78,12 +78,18 @@ namespace LambdaEngine
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
+		Extension("VK_KHR_acceleration_structure"),
+		Extension("VK_KHR_ray_tracing_pipeline"),
+		Extension("VK_KHR_ray_query"),
+		Extension("VK_KHR_deferred_host_operations"),
+		Extension("VK_KHR_pipeline_library")
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
 	/*
 	 * GraphicsDeviceVK
 	 */
+
 	GraphicsDeviceVK::GraphicsDeviceVK()
 		: GraphicsDevice()
 		, RayTracingProperties()
@@ -1634,8 +1640,16 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::RegisterDeviceExtensionData()
 	{
+		const bool oldRayTracingSupported	= IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+		const bool rayTracingSupported		= 
+			(IsDeviceExtensionEnabled("VK_KHR_acceleration_structure")	&&
+			IsDeviceExtensionEnabled("VK_KHR_ray_tracing_pipeline")		&&
+			IsDeviceExtensionEnabled("VK_KHR_ray_query")				&&
+			IsDeviceExtensionEnabled("VK_KHR_pipeline_library")			&&
+			IsDeviceExtensionEnabled("VK_KHR_deferred_host_operations"));
+
 		// RayTracing
-		if (IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME))
+		if (oldRayTracingSupported)
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkDestroyAccelerationStructureKHR);
@@ -1660,6 +1674,24 @@ namespace LambdaEngine
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 
 			m_DeviceFeatures.MaxRecursionDepth = RayTracingProperties.maxRecursionDepth;
+		}
+		else if (rayTracingSupported)
+		{
+			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkDestroyAccelerationStructureKHR);
+
+			GET_DEVICE_PROC_ADDR(Device, vkBindAccelerationStructureMemoryKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkGetAccelerationStructureMemoryRequirementsKHR);
+			
+			GET_DEVICE_PROC_ADDR(Device, vkGetAccelerationStructureDeviceAddressKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdBuildAccelerationStructureKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCreateRayTracingPipelinesKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkGetRayTracingShaderGroupHandlesKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdTraceRaysKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCopyAccelerationStructureToMemoryKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdCopyAccelerationStructureToMemoryKHR);
+
+
 		}
 
 		//PushDescriptorSet

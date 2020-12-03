@@ -378,9 +378,6 @@ workspace "LambdaEngine"
 
 			sysincludedirs
 			{
-				-- Vulkan
-				VK_SDK_PATH .. "/Include",
-
 				-- FMOD
 				"C:/FMOD Studio API Windows/api/core/inc",
 				"C:/Program Files (x86)/FMOD SoundSystem/FMOD Studio API Windows/api/core/inc",

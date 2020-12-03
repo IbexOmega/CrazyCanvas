@@ -79,8 +79,8 @@ namespace LambdaEngine
 		VkFramebuffer GetFrameBuffer(const RenderPass* pRenderPass, const TextureView* const* ppRenderTargets, uint32 renderTargetCount, const TextureView* pDepthStencil, uint32 width, uint32 height) const;
 		
 		uint32 GetQueueFamilyIndexFromQueueType(ECommandQueueType type) const;
-		ECommandQueueType GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex) const;
-		VkFormatProperties GetFormatProperties(VkFormat format) const;
+		ECommandQueueType	GetCommandQueueTypeFromQueueIndex(uint32 queueFamilyIndex) const;
+		VkFormatProperties	GetFormatProperties(VkFormat format) const;
 		VkPhysicalDeviceProperties GetPhysicalDeviceProperties() const;
 		
 		FORCEINLINE VkPhysicalDeviceLimits GetDeviceLimits() const
@@ -107,9 +107,9 @@ namespace LambdaEngine
 
 		virtual Shader* CreateShader(const ShaderDesc* pDesc) const override final;
 
-		virtual Buffer* CreateBuffer(const BufferDesc* pDesc) const override final;
-		virtual Texture* CreateTexture(const TextureDesc* pDesc) const override final;
-		virtual Sampler* CreateSampler(const SamplerDesc* pDesc) const override final;
+		virtual Buffer*		CreateBuffer(const BufferDesc* pDesc) const override final;
+		virtual Texture*	CreateTexture(const TextureDesc* pDesc) const override final;
+		virtual Sampler*	CreateSampler(const SamplerDesc* pDesc) const override final;
 
 		virtual SwapChain* CreateSwapChain(const SwapChainDesc* pDesc)	const override final;
 
@@ -178,24 +178,20 @@ namespace LambdaEngine
 		* Extension Data
 		*/
 
-		// Ray-Tracing
-		VkPhysicalDeviceRayTracingPropertiesKHR	RayTracingProperties;
-
 		PFN_vkSetDebugUtilsObjectNameEXT	vkSetDebugUtilsObjectNameEXT	= nullptr;
 		PFN_vkDestroyDebugUtilsMessengerEXT vkDestroyDebugUtilsMessengerEXT = nullptr;
 		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT	= nullptr;
 
-		PFN_vkCreateAccelerationStructureKHR				vkCreateAccelerationStructureKHR				= nullptr;
-		PFN_vkDestroyAccelerationStructureKHR				vkDestroyAccelerationStructureKHR				= nullptr;
-		PFN_vkBindAccelerationStructureMemoryKHR			vkBindAccelerationStructureMemoryKHR			= nullptr;
-		PFN_vkGetAccelerationStructureDeviceAddressKHR		vkGetAccelerationStructureDeviceAddressKHR		= nullptr;
-		PFN_vkGetAccelerationStructureMemoryRequirementsKHR	vkGetAccelerationStructureMemoryRequirementsKHR = nullptr;
-		PFN_vkCmdBuildAccelerationStructureKHR				vkCmdBuildAccelerationStructureKHR				= nullptr;
-		PFN_vkCreateRayTracingPipelinesKHR					vkCreateRayTracingPipelinesKHR					= nullptr;
-		PFN_vkGetRayTracingShaderGroupHandlesKHR			vkGetRayTracingShaderGroupHandlesKHR			= nullptr;
-		PFN_vkCmdTraceRaysKHR								vkCmdTraceRaysKHR								= nullptr;
-		PFN_vkCopyAccelerationStructureToMemoryKHR			vkCopyAccelerationStructureToMemoryKHR			= nullptr;
-		PFN_vkCmdCopyAccelerationStructureToMemoryKHR		vkCmdCopyAccelerationStructureToMemoryKHR		= nullptr;
+		// Raytracing
+		PFN_vkCreateAccelerationStructureKHR			vkCreateAccelerationStructureKHR			= nullptr;
+		PFN_vkDestroyAccelerationStructureKHR			vkDestroyAccelerationStructureKHR			= nullptr;
+		PFN_vkCmdBuildAccelerationStructuresKHR			vkCmdBuildAccelerationStructuresKHR			= nullptr;
+		PFN_vkGetAccelerationStructureDeviceAddressKHR	vkGetAccelerationStructureDeviceAddressKHR	= nullptr;
+		PFN_vkCreateRayTracingPipelinesKHR				vkCreateRayTracingPipelinesKHR				= nullptr;
+		PFN_vkGetRayTracingShaderGroupHandlesKHR		vkGetRayTracingShaderGroupHandlesKHR		= nullptr;
+		PFN_vkCmdTraceRaysKHR							vkCmdTraceRaysKHR							= nullptr;
+		PFN_vkCopyAccelerationStructureToMemoryKHR		vkCopyAccelerationStructureToMemoryKHR		= nullptr;
+		PFN_vkCmdCopyAccelerationStructureToMemoryKHR	vkCmdCopyAccelerationStructureToMemoryKHR	= nullptr;
 
 		//PushDescriptorSet
 		PFN_vkCmdPushDescriptorSetKHR						vkCmdPushDescriptorSetKHR						= nullptr;
