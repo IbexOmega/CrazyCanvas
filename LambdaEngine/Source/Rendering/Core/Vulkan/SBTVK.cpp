@@ -161,27 +161,24 @@ namespace LambdaEngine
 		{
 			VkDeviceSize baseOffset = hitSBTOffset + s * hitSBTStride;
 			VkDeviceSize hitGroupByteOffset = pDesc->HitGroupIndices[(uint32_t)s] * shaderGroupHandleSize;
-			pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, hitGroupHandleOffset + hitGroupByteOffset,	m_pSBTBuffer, baseOffset,							shaderGroupHandleSize);
-			pCommandList->CopyBuffer(m_pShaderRecordsBuffer,		s * sizeof(SBTRecord),	m_pSBTBuffer, baseOffset + shaderGroupHandleSize,	sizeof(SBTRecord));
+			pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, hitGroupHandleOffset + hitGroupByteOffset, m_pSBTBuffer, baseOffset, shaderGroupHandleSize);
+			pCommandList->CopyBuffer(m_pShaderRecordsBuffer, s * sizeof(SBTRecord), m_pSBTBuffer, baseOffset + shaderGroupHandleSize, sizeof(SBTRecord));
 		}
 
 		pCommandList->CopyBuffer(m_pShaderHandleStorageBuffer, missGroupHandleOffset, m_pSBTBuffer, missSBTOffset, missSize);
 
-		VkBuffer sbtBuffer = m_pSBTBuffer->GetBuffer();
-		m_RaygenBufferRegion.buffer	= sbtBuffer;
-		m_RaygenBufferRegion.offset	= raygenAlignedOffset;
-		m_RaygenBufferRegion.size	= raygenSize;
-		m_RaygenBufferRegion.stride	= raygenStride;
+		VkDeviceAddress sbtAddress = m_pSBTBuffer->GetDeviceAddress();
+		m_RaygenBufferRegion.deviceAddress	= sbtAddress;
+		m_RaygenBufferRegion.size			= raygenSize;
+		m_RaygenBufferRegion.stride			= raygenStride;
 
-		m_HitBufferRegion.buffer	= sbtBuffer;
-		m_HitBufferRegion.offset	= hitSBTOffset;
-		m_HitBufferRegion.size		= hitSBTSize;
-		m_HitBufferRegion.stride	= hitSBTStride;
+		m_HitBufferRegion.deviceAddress	= sbtAddress;
+		m_HitBufferRegion.size			= hitSBTSize;
+		m_HitBufferRegion.stride		= hitSBTStride;
 
-		m_MissBufferRegion.buffer	= sbtBuffer;
-		m_MissBufferRegion.offset	= missSBTOffset;
-		m_MissBufferRegion.size		= missSize;
-		m_MissBufferRegion.stride	= missStride;
+		m_MissBufferRegion.deviceAddress	= sbtAddress;
+		m_MissBufferRegion.size				= missSize;
+		m_MissBufferRegion.stride			= missStride;
 
 		return true;
 	}

@@ -26,22 +26,22 @@ namespace LambdaEngine
 			return m_pSBTBuffer;
 		}
 		
-		FORCEINLINE const VkStridedBufferRegionKHR* GetRaygenBufferRegion() const
+		FORCEINLINE const VkStridedDeviceAddressRegionKHR* GetRaygenBufferRegion() const
 		{
 			return &m_RaygenBufferRegion;
 		}
 
-		FORCEINLINE const VkStridedBufferRegionKHR* GetHitBufferRegion() const
+		FORCEINLINE const VkStridedDeviceAddressRegionKHR* GetHitBufferRegion() const
 		{
 			return &m_HitBufferRegion;
 		}
 
-		FORCEINLINE const VkStridedBufferRegionKHR* GetMissBufferRegion() const
+		FORCEINLINE const VkStridedDeviceAddressRegionKHR* GetMissBufferRegion() const
 		{
 			return &m_MissBufferRegion;
 		}
 
-		FORCEINLINE const VkStridedBufferRegionKHR* GetCallableBufferRegion() const
+		FORCEINLINE const VkStridedDeviceAddressRegionKHR* GetCallableBufferRegion() const
 		{
 			return &m_CallableBufferRegion;
 		}
@@ -55,9 +55,9 @@ namespace LambdaEngine
 		BufferVK*				m_pShaderRecordsBuffer			= nullptr;
 		uint32					m_NumShaderRecords				= 0;
 
-		VkStridedBufferRegionKHR m_RaygenBufferRegion	= {};
-		VkStridedBufferRegionKHR m_HitBufferRegion		= {};
-		VkStridedBufferRegionKHR m_MissBufferRegion		= {};
-		VkStridedBufferRegionKHR m_CallableBufferRegion	= {};
+		VkStridedDeviceAddressRegionKHR m_RaygenBufferRegion;
+		VkStridedDeviceAddressRegionKHR m_HitBufferRegion;
+		VkStridedDeviceAddressRegionKHR m_MissBufferRegion;
+		VkStridedDeviceAddressRegionKHR m_CallableBufferRegion;
 	};
 }

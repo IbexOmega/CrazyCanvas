@@ -64,16 +64,11 @@ namespace LambdaEngine
 			geometryInfo.geometry.triangles.indexData.deviceAddress;
 			geometryInfo.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
 			geometryInfo.geometry.triangles.maxVertex = pDesc->MaxVertexCount;
-			geometryInfo.geometry.triangles.transformData;
+			geometryInfo.geometry.triangles.transformData.deviceAddress;
 			geometryInfo.geometry.triangles.vertexData.deviceAddress;
 			geometryInfo.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-			geometryInfo.geometry.triangles.vertexStride = ;
-			
-			= pDesc->MaxTriangleCount;
-			geometryInfo.indexType			= VK_INDEX_TYPE_UINT32;
-			geometryInfo.maxVertexCount		= pDesc->MaxVertexCount;
-			geometryInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
-			geometryInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
+			geometryInfo.geometry.triangles.vertexStride;
+
 			m_MaxInstanceCount = pDesc->MaxTriangleCount;
 		}
 
@@ -103,8 +98,8 @@ namespace LambdaEngine
 			SetName(m_Desc.DebugName);
 		}
 
-		VkMemoryRequirements	memoryRequirements	= GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
-		int32					memoryTypeIndex		= FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
+		int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo = {};
 		accelerationStructureMemoryInfo.sType					= VK_STRUCTURE_TYPE_BIND_ACCELERATION_STRUCTURE_MEMORY_INFO_KHR;
@@ -112,7 +107,11 @@ namespace LambdaEngine
 		accelerationStructureMemoryInfo.pDeviceIndices			= nullptr;
 		accelerationStructureMemoryInfo.accelerationStructure	= m_AccelerationStructure;
 
-		if (!m_pDevice->AllocateAccelerationStructureMemory(&m_Allocation, memoryRequirements.size, memoryRequirements.alignment, memoryTypeIndex))
+		if (!m_pDevice->AllocateAccelerationStructureMemory(
+			&m_Allocation, 
+			memoryRequirements.size, 
+			memoryRequirements.alignment, 
+			memoryTypeIndex))
 		{
 			LOG_ERROR("Failed to allocate memory");
 			return false;
@@ -143,7 +142,9 @@ namespace LambdaEngine
 		accelerationStructureDeviceAddressInfo.accelerationStructure	= m_AccelerationStructure;
 
 		VALIDATE(m_pDevice->vkGetAccelerationStructureDeviceAddressKHR != nullptr);
-		m_AccelerationStructureDeviceAddress = m_pDevice->vkGetAccelerationStructureDeviceAddressKHR(m_pDevice->Device, &accelerationStructureDeviceAddressInfo);
+		m_AccelerationStructureDeviceAddress = m_pDevice->vkGetAccelerationStructureDeviceAddressKHR(
+			m_pDevice->Device, 
+			&accelerationStructureDeviceAddressInfo);
 
 		if (!m_Desc.DebugName.empty())
 		{
@@ -192,7 +193,11 @@ namespace LambdaEngine
 
 		VALIDATE(m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR != nullptr);
 
-		m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR(m_pDevice->Device, &memoryRequirementsInfo, &memoryRequirements2);
+		m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR(
+			m_pDevice->Device, 
+			&memoryRequirementsInfo, 
+			&memoryRequirements2);
+
 		return memoryRequirements2.memoryRequirements;
 	}
 }
