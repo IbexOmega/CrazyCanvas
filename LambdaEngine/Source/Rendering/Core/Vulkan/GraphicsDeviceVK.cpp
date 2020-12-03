@@ -74,15 +74,14 @@ namespace LambdaEngine
 		Extension("OPT_D_E_BASE"),
 		Extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME),
 		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME),
-		Extension(VK_KHR_RAY_TRACING_EXTENSION_NAME),
 		Extension(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME),
 		Extension(VK_NV_MESH_SHADER_EXTENSION_NAME),
 		Extension(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME),
-		Extension("VK_KHR_acceleration_structure"),
-		Extension("VK_KHR_ray_tracing_pipeline"),
-		Extension("VK_KHR_ray_query"),
-		Extension("VK_KHR_deferred_host_operations"),
-		Extension("VK_KHR_pipeline_library")
+		Extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME),
+		Extension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME),
+		Extension(VK_KHR_RAY_QUERY_EXTENSION_NAME),
+		Extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME),
+		Extension(VK_KHR_PIPELINE_LIBRARY_EXTENSION_NAME)
 		//Extension(VK_KHR_SHADER_NON_SEMANTIC_INFO_EXTENSION_NAME)
 	};
 
@@ -92,7 +91,6 @@ namespace LambdaEngine
 
 	GraphicsDeviceVK::GraphicsDeviceVK()
 		: GraphicsDevice()
-		, RayTracingProperties()
 		, m_DeviceQueueFamilyIndices()
 		, m_DeviceLimits()
 		, m_QueueFamilyProperties()
@@ -1128,8 +1126,12 @@ namespace LambdaEngine
 		}
 
 		// Set up device features
-		m_DeviceFeatures.MeshShaders		= IsDeviceExtensionEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
-		m_DeviceFeatures.RayTracing			= IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME);
+		m_DeviceFeatures.MeshShaders	= IsDeviceExtensionEnabled(VK_NV_MESH_SHADER_EXTENSION_NAME);
+		m_DeviceFeatures.RayTracing		=
+			IsDeviceExtensionEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+			IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+			IsDeviceExtensionEnabled(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		m_DeviceFeatures.InlineRayTracing	= IsDeviceExtensionEnabled(VK_KHR_RAY_QUERY_EXTENSION_NAME);
 		m_DeviceFeatures.GeometryShaders	= m_DeviceFeaturesVk.geometryShader;
 		m_DeviceFeatures.TimestampPeriod	= m_DeviceLimits.timestampPeriod;
 		memcpy(&m_DeviceFeatures.MaxComputeWorkGroupSize, m_DeviceLimits.maxComputeWorkGroupSize, sizeof(uint32) * 3);
@@ -1209,12 +1211,16 @@ namespace LambdaEngine
 		}
 
 		// Query support for features
+		VkPhysicalDeviceRayQueryFeaturesKHR supportedRayQueryFeatures = { };
+		supportedRayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+		supportedRayQueryFeatures.pNext = nullptr;
+
 		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = { };
 		supportedMeshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-		supportedMeshShaderFeatures.pNext = nullptr;
+		supportedMeshShaderFeatures.pNext = &supportedRayQueryFeatures;
 
-		VkPhysicalDeviceRayTracingFeaturesKHR supportedRayTracingFeatures = { };
-		supportedRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR supportedRayTracingFeatures = { };
+		supportedRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 		supportedRayTracingFeatures.pNext = &supportedMeshShaderFeatures;
 
 		VkPhysicalDeviceVulkan12Features supportedDeviceFeatures12 = { };
@@ -1231,18 +1237,25 @@ namespace LambdaEngine
 		vkGetPhysicalDeviceFeatures2(PhysicalDevice, &deviceFeatures2);
 
 		// Enabled features
+		VkPhysicalDeviceRayQueryFeaturesKHR enabledRayQueryFeatures = {};
+		enabledRayQueryFeatures.sType		= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+		enabledRayQueryFeatures.pNext		= nullptr;
+		enabledRayQueryFeatures.rayQuery	= supportedRayQueryFeatures.rayQuery;
+
 		VkPhysicalDeviceMeshShaderFeaturesNV enabledMeshShaderFeatures = {};
 		enabledMeshShaderFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-		enabledMeshShaderFeatures.pNext			= nullptr;
+		enabledMeshShaderFeatures.pNext			= &enabledRayQueryFeatures;
 		enabledMeshShaderFeatures.meshShader	= supportedMeshShaderFeatures.meshShader;
 		enabledMeshShaderFeatures.taskShader	= supportedMeshShaderFeatures.taskShader;
 
-		VkPhysicalDeviceRayTracingFeaturesKHR enabledRayTracingFeatures = {};
-		enabledRayTracingFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
+		VkPhysicalDeviceRayTracingPipelineFeaturesKHR enabledRayTracingFeatures = {};
+		enabledRayTracingFeatures.sType			= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
 		enabledRayTracingFeatures.pNext			= &enabledMeshShaderFeatures;
-		enabledRayTracingFeatures.rayTracing	= supportedRayTracingFeatures.rayTracing;
-		enabledRayTracingFeatures.rayQuery		= supportedRayTracingFeatures.rayQuery;
-		m_DeviceFeatures.InlineRayTracing		= supportedRayTracingFeatures.rayQuery;
+		enabledRayTracingFeatures.rayTracingPipeline									= supportedRayTracingFeatures.rayTracingPipeline;
+		enabledRayTracingFeatures.rayTracingPipelineShaderGroupHandleCaptureReplay		= supportedRayTracingFeatures.rayTracingPipelineShaderGroupHandleCaptureReplay;
+		enabledRayTracingFeatures.rayTracingPipelineShaderGroupHandleCaptureReplayMixed = supportedRayTracingFeatures.rayTracingPipelineShaderGroupHandleCaptureReplayMixed;
+		enabledRayTracingFeatures.rayTracingPipelineTraceRaysIndirect					= supportedRayTracingFeatures.rayTracingPipelineTraceRaysIndirect;
+		enabledRayTracingFeatures.rayTraversalPrimitiveCulling							= supportedRayTracingFeatures.rayTraversalPrimitiveCulling;
 
 		VkPhysicalDeviceVulkan12Features enabledDeviceFeatures12 = {};
 		enabledDeviceFeatures12.sType							= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
@@ -1640,23 +1653,18 @@ namespace LambdaEngine
 
 	void GraphicsDeviceVK::RegisterDeviceExtensionData()
 	{
-		const bool oldRayTracingSupported	= IsDeviceExtensionEnabled(VK_KHR_RAY_TRACING_EXTENSION_NAME);
-		const bool rayTracingSupported		= 
-			(IsDeviceExtensionEnabled("VK_KHR_acceleration_structure")	&&
+		const bool rayTracingSupported	= 
+			IsDeviceExtensionEnabled("VK_KHR_acceleration_structure")	&&
 			IsDeviceExtensionEnabled("VK_KHR_ray_tracing_pipeline")		&&
-			IsDeviceExtensionEnabled("VK_KHR_ray_query")				&&
-			IsDeviceExtensionEnabled("VK_KHR_pipeline_library")			&&
-			IsDeviceExtensionEnabled("VK_KHR_deferred_host_operations"));
+			IsDeviceExtensionEnabled("VK_KHR_pipeline_library");
 
 		// RayTracing
-		if (oldRayTracingSupported)
+		if (rayTracingSupported)
 		{
 			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkDestroyAccelerationStructureKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkBindAccelerationStructureMemoryKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkGetAccelerationStructureDeviceAddressKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkGetAccelerationStructureMemoryRequirementsKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkCmdBuildAccelerationStructureKHR);
+			GET_DEVICE_PROC_ADDR(Device, vkCmdBuildAccelerationStructuresKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkCreateRayTracingPipelinesKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkGetRayTracingShaderGroupHandlesKHR);
 			GET_DEVICE_PROC_ADDR(Device, vkCmdTraceRaysKHR);
@@ -1664,7 +1672,7 @@ namespace LambdaEngine
 			GET_DEVICE_PROC_ADDR(Device, vkCmdCopyAccelerationStructureToMemoryKHR);
 
 			// Query Ray Tracing properties
-			RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PROPERTIES_KHR;
+			RayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
 			RayTracingProperties.pNext = nullptr;
 
 			VkPhysicalDeviceProperties2 deviceProps2 = {};
@@ -1673,25 +1681,7 @@ namespace LambdaEngine
 
 			vkGetPhysicalDeviceProperties2(PhysicalDevice, &deviceProps2);
 
-			m_DeviceFeatures.MaxRecursionDepth = RayTracingProperties.maxRecursionDepth;
-		}
-		else if (rayTracingSupported)
-		{
-			GET_DEVICE_PROC_ADDR(Device, vkCreateAccelerationStructureKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkDestroyAccelerationStructureKHR);
-
-			GET_DEVICE_PROC_ADDR(Device, vkBindAccelerationStructureMemoryKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkGetAccelerationStructureMemoryRequirementsKHR);
-			
-			GET_DEVICE_PROC_ADDR(Device, vkGetAccelerationStructureDeviceAddressKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkCmdBuildAccelerationStructureKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkCreateRayTracingPipelinesKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkGetRayTracingShaderGroupHandlesKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkCmdTraceRaysKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkCopyAccelerationStructureToMemoryKHR);
-			GET_DEVICE_PROC_ADDR(Device, vkCmdCopyAccelerationStructureToMemoryKHR);
-
-
+			m_DeviceFeatures.MaxRecursionDepth = RayTracingProperties.maxRayRecursionDepth;
 		}
 
 		//PushDescriptorSet

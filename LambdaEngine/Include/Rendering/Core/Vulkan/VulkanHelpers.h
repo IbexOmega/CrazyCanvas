@@ -856,7 +856,6 @@ namespace LambdaEngine
 		case VK_ERROR_NOT_PERMITTED_EXT:							return "VK_ERROR_NOT_PERMITTED_EXT";
 		case VK_ERROR_INVALID_DEVICE_ADDRESS_EXT:					return "VK_ERROR_INVALID_DEVICE_ADDRESS_EXT";
 		case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:			return "VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT";
-		case VK_ERROR_INCOMPATIBLE_VERSION_KHR:                     return "VK_ERROR_INCOMPATIBLE_VERSION_KHR";
 		case VK_THREAD_IDLE_KHR:                                    return "VK_THREAD_IDLE_KHR";
 		case VK_THREAD_DONE_KHR:                                    return "VK_THREAD_DONE_KHR";
 		case VK_OPERATION_DEFERRED_KHR:                             return "VK_OPERATION_DEFERRED_KHR";
@@ -917,7 +916,6 @@ namespace LambdaEngine
 		case VK_ERROR_NOT_PERMITTED_EXT:							return "VK_ERROR_NOT_PERMITTED_EXT";
 		case VK_ERROR_INVALID_DEVICE_ADDRESS_EXT:					return "A buffer creation failed because the requested address is not available.";
 		case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT:			return "An operation on a swapchain created with VK_FULL_SCREEN_EXCLUSIVE_APPLICATION_CONTROLLED_EXT failed as it did not have exlusive full-screen access. This may occur due to implementation-dependent reasons, outside of the application�s control.";
-		case VK_ERROR_INCOMPATIBLE_VERSION_KHR:                     return "VK_ERROR_INCOMPATIBLE_VERSION_KHR";
 		case VK_THREAD_IDLE_KHR:                                    return "A deferred operation is not complete but there is currently no work for this thread to do at the time of this call.";
 		case VK_THREAD_DONE_KHR:                                    return "A deferred operation is not complete but there is no work remaining to assign to additional threads.";
 		case VK_OPERATION_DEFERRED_KHR:                             return "A deferred operation was requested and at least some of the work was deferred.";

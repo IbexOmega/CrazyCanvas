@@ -33,48 +33,57 @@ namespace LambdaEngine
 	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc)
 	{
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
-		accelerationStructureCreateInfo.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-		accelerationStructureCreateInfo.compactedSize		= 0;
-		accelerationStructureCreateInfo.maxGeometryCount	= 1;
-		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
-		accelerationStructureCreateInfo.flags				= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
-		if (pDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
-		{
-			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		}
+		accelerationStructureCreateInfo.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+		accelerationStructureCreateInfo.pNext			= nullptr;
+		accelerationStructureCreateInfo.createFlags		= 0;
+		accelerationStructureCreateInfo.size			= 0;
+		accelerationStructureCreateInfo.buffer			= VK_NULL_HANDLE;
+		accelerationStructureCreateInfo.deviceAddress	= VK_NULL_HANDLE;
+		accelerationStructureCreateInfo.offset			= 0;
 
-		VkAccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
-		geometryTypeInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_GEOMETRY_TYPE_INFO_KHR;
-		geometryTypeInfo.pNext = nullptr;
+		VkAccelerationStructureGeometryKHR geometryInfo = {};
+		geometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryInfo.pNext = nullptr;
 
-		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
 		if (pDesc->Type == EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP)
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
 
-			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_INSTANCES_KHR;
-			geometryTypeInfo.maxPrimitiveCount	= pDesc->InstanceCount;
-			geometryTypeInfo.allowsTransforms	= VK_FALSE;
-			m_MaxInstanceCount					= pDesc->InstanceCount;
+			geometryInfo.flags								= 0;
+			geometryInfo.geometryType						= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+			geometryInfo.geometry.instances.arrayOfPointers = VK_FALSE;
+			geometryInfo.geometry.instances.data.deviceAddress;
+
+			m_MaxInstanceCount = pDesc->InstanceCount;
 		}
 		else
 		{
 			accelerationStructureCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
 
-			geometryTypeInfo.geometryType		= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-			geometryTypeInfo.maxPrimitiveCount	= pDesc->MaxTriangleCount;
-			geometryTypeInfo.indexType			= VK_INDEX_TYPE_UINT32;
-			geometryTypeInfo.maxVertexCount		= pDesc->MaxVertexCount;
-			geometryTypeInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
-			geometryTypeInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
-			m_MaxInstanceCount					= pDesc->MaxTriangleCount;
+			geometryInfo.geometryType		= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+			geometryInfo.geometry.triangles.indexData.deviceAddress;
+			geometryInfo.geometry.triangles.indexType = VK_INDEX_TYPE_UINT32;
+			geometryInfo.geometry.triangles.maxVertex = pDesc->MaxVertexCount;
+			geometryInfo.geometry.triangles.transformData;
+			geometryInfo.geometry.triangles.vertexData.deviceAddress;
+			geometryInfo.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+			geometryInfo.geometry.triangles.vertexStride = ;
+			
+			= pDesc->MaxTriangleCount;
+			geometryInfo.indexType			= VK_INDEX_TYPE_UINT32;
+			geometryInfo.maxVertexCount		= pDesc->MaxVertexCount;
+			geometryInfo.vertexFormat		= VK_FORMAT_R32G32B32_SFLOAT;
+			geometryInfo.allowsTransforms	= pDesc->AllowsTransform ? VK_TRUE : VK_FALSE;
+			m_MaxInstanceCount = pDesc->MaxTriangleCount;
 		}
-
-		accelerationStructureCreateInfo.pGeometryInfos = &geometryTypeInfo;
 
 		VALIDATE(m_pDevice->vkCreateAccelerationStructureKHR != nullptr);
 
-		VkResult result = m_pDevice->vkCreateAccelerationStructureKHR(m_pDevice->Device, &accelerationStructureCreateInfo, nullptr, &m_AccelerationStructure);
+		VkResult result = m_pDevice->vkCreateAccelerationStructureKHR(
+			m_pDevice->Device, 
+			&accelerationStructureCreateInfo, 
+			nullptr, 
+			&m_AccelerationStructure);
 		if (result != VK_SUCCESS)
 		{
 			if (!pDesc->DebugName.empty())

@@ -183,6 +183,8 @@ namespace LambdaEngine
 		PFN_vkCreateDebugUtilsMessengerEXT	vkCreateDebugUtilsMessengerEXT	= nullptr;
 
 		// Raytracing
+		VkPhysicalDeviceRayTracingPipelinePropertiesKHR RayTracingProperties;
+
 		PFN_vkCreateAccelerationStructureKHR			vkCreateAccelerationStructureKHR			= nullptr;
 		PFN_vkDestroyAccelerationStructureKHR			vkDestroyAccelerationStructureKHR			= nullptr;
 		PFN_vkCmdBuildAccelerationStructuresKHR			vkCmdBuildAccelerationStructuresKHR			= nullptr;
