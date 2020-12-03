@@ -670,7 +670,7 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 
 		{
 			std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
-			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 5.0f));
+			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 10.0f));
 		}
 	}
 
