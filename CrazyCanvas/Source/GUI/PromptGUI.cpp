@@ -32,7 +32,7 @@ void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const u
 {
 	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
 
-	if (teamIndex != UINT8_MAX)
+	/*if (teamIndex != UINT8_MAX)
 	{
 		glm::vec3 promptColor = TeamHelper::GetTeamColor(teamIndex);
 		Noesis::Color color(promptColor.r, promptColor.g, promptColor.b);
@@ -40,7 +40,9 @@ void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const u
 		pBrush->SetColor(color);
 	}
 	else
-		pBrush->SetColor(Noesis::Color::Red());
+		pBrush->SetColor(Noesis::Color::Red());*/
+
+	pBrush->SetColor(Noesis::Color::White());
 
 	m_pPromptTextblock->SetForeground(pBrush);
 
