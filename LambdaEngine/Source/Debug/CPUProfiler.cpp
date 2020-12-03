@@ -52,6 +52,8 @@ namespace LambdaEngine
 
 	CPUProfiler::CPUProfiler() : m_Counter(0)
 	{
+		m_ProfilingTicks[0].Reset();
+		m_ProfilingTicks[1].Reset();
 	}
 
 	CPUProfiler::~CPUProfiler()
@@ -252,7 +254,7 @@ namespace LambdaEngine
 				profilingTickIt != profilingTick.FinishedProfilingSegments.rend();
 				profilingTickIt++)
 			{
-				RenderFinishedProfilingSegment(*profilingTickIt, profilingTick.TotalDeltaTime, 0.0f);
+				RenderFinishedProfilingSegment(*profilingTickIt, profilingTick.TotalDeltaTime);
 			}
 
 			ImGui::Dummy(ImVec2(0.0f, 20.0f));
@@ -260,18 +262,18 @@ namespace LambdaEngine
 		}
 	}
 
-	void LambdaEngine::CPUProfiler::RenderFinishedProfilingSegment(const FinishedProfilingSegment& profilingSegment, float64 parentDeltaTime, float32 indent)
+	void LambdaEngine::CPUProfiler::RenderFinishedProfilingSegment(const FinishedProfilingSegment& profilingSegment, float64 parentDeltaTime)
 	{
+		constexpr const float32 indent = 25.0f;
 		ImGui::Indent(indent);
 
 		glm::vec3 color = glm::lerp<glm::vec3>(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(profilingSegment.DeltaTime / parentDeltaTime));
 		ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1.0f), "%s: %fms", profilingSegment.Name.c_str(), profilingSegment.DeltaTime);
-		float32 childIndent = indent + 25.0f;
 		for (auto profilingTickIt = profilingSegment.ChildProfilingSegments.rbegin();
 			profilingTickIt != profilingSegment.ChildProfilingSegments.rend();
 			profilingTickIt++)
 		{
-			RenderFinishedProfilingSegment(*profilingTickIt, profilingSegment.DeltaTime, childIndent);
+			RenderFinishedProfilingSegment(*profilingTickIt, profilingSegment.DeltaTime);
 		}
 
 		ImGui::Unindent(indent);

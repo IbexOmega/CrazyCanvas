@@ -127,7 +127,7 @@ namespace LambdaEngine
 		static bool g_RunProfilingSample;
 
 	private:
-		void RenderFinishedProfilingSegment(const FinishedProfilingSegment& profilingSegment, float64 parentDeltaTime, float32 indent);
+		void RenderFinishedProfilingSegment(const FinishedProfilingSegment& profilingSegment, float64 parentDeltaTime);
 
 	private:
 		std::mutex m_Mutex;

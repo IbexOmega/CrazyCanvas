@@ -83,11 +83,19 @@ namespace LambdaEngine
 
 			// Update
 			const Timestamp& delta = g_Clock.GetDeltaTime();
+
+			Profiler::Tick(delta);
+
+			BEGIN_PROFILING_SEGMENT("Full Frame");
+
+			BEGIN_PROFILING_SEGMENT("EngineLoop::Tick");
 			isRunning = Tick(delta);
+			END_PROFILING_SEGMENT("EngineLoop::Tick");
 
 			// Fixed update
 			accumulator += delta;
 			uint32 fixedTickCounter = 0;
+			BEGIN_PROFILING_SEGMENT("EngineLoop::FixedTick");
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
@@ -102,6 +110,9 @@ namespace LambdaEngine
 					break;
 				}
 			}
+			END_PROFILING_SEGMENT("EngineLoop::FixedTick");
+
+			END_PROFILING_SEGMENT("Full Frame");
 		}
 	}
 
@@ -138,8 +149,6 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
-		Profiler::Tick(delta);
-
 		// Stats
 		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 
@@ -243,9 +252,9 @@ namespace LambdaEngine
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
-		Game::Get().FixedTick(delta);
-		NetworkUtils::FixedTick(delta);
-		StateManager::GetInstance()->FixedTick(delta);
+		PROFILE_FUNCTION("Game::FixedTick", Game::Get().FixedTick(delta));
+		PROFILE_FUNCTION("NetworkUtils::FixedTick", NetworkUtils::FixedTick(delta));
+		PROFILE_FUNCTION("StateManager::FixedTick", StateManager::GetInstance()->FixedTick(delta));
 	}
 
 	bool EngineLoop::PreInit(const argh::parser& flagParser)

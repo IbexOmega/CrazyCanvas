@@ -840,6 +840,7 @@ namespace LambdaEngine
 			currentFrameDeviceResourcesToDestroy.Clear();
 		}
 
+		BEGIN_PROFILING_SEGMENT("Record Pipeline Stages");
 		for (uint32 p = 0; p < m_PipelineStageCount; p++)
 		{
 			//Seperate Thread
@@ -914,8 +915,10 @@ namespace LambdaEngine
 				}
 			}
 		}
+		END_PROFILING_SEGMENT("Record Pipeline Stages");
 
 		//Execute Copy Command Lists
+		BEGIN_PROFILING_SEGMENT("Execute General Purpose Command Lists");
 		{
 			CommandList* pGraphicsCopyCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
@@ -935,10 +938,12 @@ namespace LambdaEngine
 				m_SignalValue++;
 			}
 		}
+		END_PROFILING_SEGMENT("Execute General Purpose Command Lists");
 
 		//Wait Threads
 
 		//Execute the recorded Command Lists, we do this in a Batched mode where we batch as many "same queue" command lists that execute in succession together. This reduced the overhead caused by QueueSubmit
+		BEGIN_PROFILING_SEGMENT("Execute Other Command Lists");
 		{
 			//This is safe since the first Execution Stage should never be nullptr
 			ECommandQueueType currentBatchType = ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
@@ -994,6 +999,7 @@ namespace LambdaEngine
 				currentBatch.Clear();
 			}
 		}
+		END_PROFILING_SEGMENT("Execute Other Command Lists");
 
 		m_ModFrameIndex = modFrameIndex;
 	}

@@ -748,7 +748,7 @@ namespace LambdaEngine
 
 		PROFILE_FUNCTION("m_pRenderGraph->Render", m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex));
 
-		m_SwapChain->Present();
+		PROFILE_FUNCTION("m_SwapChain->Present", m_SwapChain->Present());
 
 		return true;
 	}
