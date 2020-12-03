@@ -54,6 +54,8 @@
 
 #include "GUI/Core/GUIApplication.h"
 
+#include "Debug/Profiler.h"
+
 #include <imgui/imgui.h>
 
 namespace LambdaEngine
@@ -136,42 +138,45 @@ namespace LambdaEngine
 
 	bool EngineLoop::Tick(Timestamp delta)
 	{
+		Profiler::Tick(delta);
+
 		// Stats
 		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 
 		// Input
-		Input::Tick();
+		PROFILE_FUNCTION("Input", Input::Tick());
 
 		// Misc
-		GameConsole::Get().Tick();
+		PROFILE_FUNCTION("GameConsole Tick", GameConsole::Get().Tick());
 
-		Thread::Join();
+		PROFILE_FUNCTION("EngineLoop Thread::Join", Thread::Join());
 
-		PlatformNetworkUtils::Tick(delta);
+		PROFILE_FUNCTION("PlatformNetworkUtils::Tick", PlatformNetworkUtils::Tick(delta));
 
 		// Event
+		BEGIN_PROFILING_SEGMENT("CommonApplication::Tick");
 		if (!CommonApplication::Get()->Tick())
 		{
 			return false;
 		}
+		END_PROFILING_SEGMENT("CommonApplication::Tick");
 
-		EventQueue::Tick();
+		PROFILE_FUNCTION("EventQueue::Tick", EventQueue::Tick());
 
 		// Audio
-		AudioAPI::Tick();
+		PROFILE_FUNCTION("AudioAPI::Tick", AudioAPI::Tick());
 
 		// States / ECS-systems
-		ClientSystem::StaticTickMainThread(delta);
-		ServerSystem::StaticTickMainThread(delta);
-		CameraSystem::GetInstance().MainThreadTick(delta);
-		StateManager::GetInstance()->Tick(delta);
-		AudioSystem::GetInstance().Tick(delta);
-		ECSCore::GetInstance()->Tick(delta);
-
-		InheritanceComponentOwner::GetInstance()->Tick();
+		PROFILE_FUNCTION("ClientSystem::StaticTickMainThread", ClientSystem::StaticTickMainThread(delta));
+		PROFILE_FUNCTION("ServerSystem::StaticTickMainThread", ServerSystem::StaticTickMainThread(delta));
+		PROFILE_FUNCTION("CameraSystem::MainThreadTick", CameraSystem::GetInstance().MainThreadTick(delta));
+		PROFILE_FUNCTION("StateManager::Tick", StateManager::GetInstance()->Tick(delta));
+		PROFILE_FUNCTION("AudioSystem::Tick", AudioSystem::GetInstance().Tick(delta));
+		PROFILE_FUNCTION("ECSCore::Tick", ECSCore::GetInstance()->Tick(delta));
+		PROFILE_FUNCTION("InheritanceComponentOwner::Tick", InheritanceComponentOwner::GetInstance()->Tick());
 
 		// Game
-		Game::Get().Tick(delta);
+		PROFILE_FUNCTION("Game::Tick", Game::Get().Tick(delta));
 
 		// Rendering
 #ifdef LAMBDA_DEVELOPMENT
@@ -226,9 +231,13 @@ namespace LambdaEngine
 				ImGui::PopStyleColor();
 			});
 #endif
+		
+		PROFILE_FUNCTION("RenderSystem::Render", RenderSystem::GetInstance().Render(delta));
 
-		RenderSystem::GetInstance().Render(delta);
-
+		ImGuiRenderer::Get().DrawUI([&]()
+			{
+				Profiler::Render();
+			});
 		return true;
 	}
 

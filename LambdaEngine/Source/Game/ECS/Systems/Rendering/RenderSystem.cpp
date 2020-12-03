@@ -45,6 +45,8 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/PlayerIndexHelper.h"
 
+#include "Debug/Profiler.h"
+
 namespace LambdaEngine
 {
 	RenderSystem RenderSystem::s_Instance;
@@ -696,6 +698,7 @@ namespace LambdaEngine
 		}
 
 		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
+		BEGIN_PROFILING_SEGMENT("UpdateParticleEmitters");
 		for (Entity entity : m_ParticleEmitters)
 		{
 			const auto& positionComp = pPositionComponents->GetConstData(entity);
@@ -712,6 +715,7 @@ namespace LambdaEngine
 				emitterCompNonConst.Active = false;
 			}
 		}
+		END_PROFILING_SEGMENT("UpdateParticleEmitters");
 
 		// Tick Particle Manager
 		if (m_ParticleManager.IsInitilized())
@@ -734,15 +738,15 @@ namespace LambdaEngine
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
 
-		StagingBufferCache::Tick();
-		CleanBuffers();
+		PROFILE_FUNCTION("StagingBufferCache::Tick", StagingBufferCache::Tick());
+		PROFILE_FUNCTION("RenderSystem::CleanBuffers", CleanBuffers());
 
-		UpdateBuffers();
-		UpdateRenderGraph();
+		PROFILE_FUNCTION("RenderSystem::UpdateBuffers", UpdateBuffers());
+		PROFILE_FUNCTION("RenderSystem::UpdateRenderGraph", UpdateRenderGraph());
 
-		m_pRenderGraph->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
+		PROFILE_FUNCTION("m_pRenderGraph->Update", m_pRenderGraph->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex));
 
-		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
+		PROFILE_FUNCTION("m_pRenderGraph->Render", m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex));
 
 		m_SwapChain->Present();
 

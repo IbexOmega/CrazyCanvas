@@ -49,6 +49,9 @@
 
 #include "ECS/Systems/Misc/DestructionSystem.h"
 
+#include "Rendering/ImGuiRenderer.h"
+#include "Debug/Profiler.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState* PlaySessionState::s_pInstance = nullptr;

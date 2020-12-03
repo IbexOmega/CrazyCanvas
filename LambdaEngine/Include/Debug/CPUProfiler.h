@@ -2,6 +2,7 @@
 
 #include "Input/API/InputCodes.h"
 #include "Time/API/Timestamp.h"
+#include "Time/API/Clock.h"
 #include "Application/API/Application.h"
 
 #include <chrono>
@@ -58,6 +59,40 @@ namespace LambdaEngine
 
 	class CPUProfiler
 	{
+		struct FinishedProfilingSegment
+		{
+			String Name;
+			float64 DeltaTime;
+			std::multiset<FinishedProfilingSegment> ChildProfilingSegments;
+
+			inline bool operator<(const FinishedProfilingSegment& profilingSegment) const
+			{
+				return DeltaTime < profilingSegment.DeltaTime;
+			}
+		};
+
+		struct LiveProfilingSegment
+		{
+			Clock Clock;
+			std::multiset<FinishedProfilingSegment> ChildProfilingSegments;
+		};
+
+		struct ProfilingTick
+		{
+			THashTable<String, uint32> ProfilingSegmentsMap;
+			TArray<LiveProfilingSegment> LiveProfilingSegments;
+			std::multiset<FinishedProfilingSegment> FinishedProfilingSegments;
+			float64 TotalDeltaTime = 0;
+
+			inline void Reset()
+			{
+				ProfilingSegmentsMap.clear();
+				LiveProfilingSegments.Clear();
+				FinishedProfilingSegments.clear();
+				TotalDeltaTime = 0;
+			}
+		};
+
 	public:
 		struct ProfileData
 		{
@@ -70,6 +105,9 @@ namespace LambdaEngine
 		~CPUProfiler();
 
 		static CPUProfiler* Get();
+
+		void BeginProfilingSegment(const String& name);
+		void EndProfilingSegment(const String& name);
 
 		void BeginSession(const std::string& name, const std::string& filePath = "CPUResult.json");
 
@@ -89,6 +127,9 @@ namespace LambdaEngine
 		static bool g_RunProfilingSample;
 
 	private:
+		void RenderFinishedProfilingSegment(const FinishedProfilingSegment& profilingSegment, float64 parentDeltaTime, float32 indent);
+
+	private:
 		std::mutex m_Mutex;
 		std::ofstream m_File;
 		unsigned long long m_Counter;
@@ -97,5 +138,11 @@ namespace LambdaEngine
 		CPUStatistics m_CPUStat = {};
 		float32 m_UpdateFrequency = 1.0f;
 		Timestamp m_Timestamp = 0;
+
+		SpinLock m_ProfilingSegmentSpinlock;
+		ProfilingTick m_ProfilingTicks[2];
+		TArray<uint32> m_ProfilingSegmentStack;
+		uint32 m_PreviousProfilingTick = 0;
+		uint32 m_CurrentProfilingTick = 1;
 	};
 }

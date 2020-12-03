@@ -520,9 +520,10 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(modFrameIndex);
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
-		for (CustomRenderer* pCustomRenderer : m_CustomRenderers)
+		for (uint32 i = 0; i < m_CustomRenderers.GetSize(); i++)
 		{
-			pCustomRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
+			CustomRenderer* pCustomRenderer = m_CustomRenderers[i];
+			PROFILE_FUNCTION("Update: " + pCustomRenderer->GetName(), pCustomRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex));
 		}
 
 		UpdateResourceBindings();
@@ -848,11 +849,15 @@ namespace LambdaEngine
 				if (pPipelineStage->Type == ERenderGraphPipelineStageType::RENDER)
 				{
 					RenderStage* pRenderStage = &m_pRenderStages[pPipelineStage->StageIndex];
+					BEGIN_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 
 					if (pRenderStage->UsesCustomRenderer)
 					{
 						if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset) && pRenderStage->pDisabledRenderPass == nullptr)
+						{
+							END_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 							continue;
+						}
 
 						CustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 						pCustomRenderer->Render(
@@ -889,6 +894,8 @@ namespace LambdaEngine
 						//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
 						pRenderStage->FrameCounter = 1;
 					}
+
+					END_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 				}
 				else if (pPipelineStage->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
 				{
@@ -2265,7 +2272,6 @@ namespace LambdaEngine
 							return false;
 						}
 
-						m_CustomRenderers.PushBack(pLineRenderer);
 						m_DebugRenderers.PushBack(pLineRenderer);
 
 						pCustomRenderer = pLineRenderer;
@@ -2294,7 +2300,6 @@ namespace LambdaEngine
 							return false;
 						}
 
-						m_CustomRenderers.PushBack(pImGuiRenderer);
 						m_DebugRenderers.PushBack(pImGuiRenderer);
 
 						pCustomRenderer = pImGuiRenderer;

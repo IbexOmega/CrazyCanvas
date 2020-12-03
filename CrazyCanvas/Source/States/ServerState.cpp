@@ -61,8 +61,8 @@ ServerState::ServerState(const std::string& clientHostID) :
 	char buffer[UNLEN + 1];
 	GetUserNameA(buffer, &length);
 
-	String name = buffer;
-	name += "'s server";
+	String name = "Rum 1";//buffer;
+	//name += "'s server";
 	strcpy(m_GameSettings.ServerName, name.c_str());
 	m_MapName = LevelManager::GetLevelNames()[0];
 }
