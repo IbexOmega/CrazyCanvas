@@ -95,11 +95,10 @@ namespace LambdaEngine
 			// Fixed update
 			accumulator += delta;
 			uint32 fixedTickCounter = 0;
-			BEGIN_PROFILING_SEGMENT("EngineLoop::FixedTick");
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
-				FixedTick(g_FixedTimestep);
+				PROFILE_FUNCTION("EngineLoop::FixedTick", FixedTick(g_FixedTimestep));
 				accumulator -= g_FixedTimestep;
 
 				//Bailout so we don't get stuck in Fixed Tick
@@ -110,7 +109,6 @@ namespace LambdaEngine
 					break;
 				}
 			}
-			END_PROFILING_SEGMENT("EngineLoop::FixedTick");
 
 			END_PROFILING_SEGMENT("Full Frame");
 		}
@@ -166,6 +164,7 @@ namespace LambdaEngine
 		BEGIN_PROFILING_SEGMENT("CommonApplication::Tick");
 		if (!CommonApplication::Get()->Tick())
 		{
+			END_PROFILING_SEGMENT("CommonApplication::Tick");
 			return false;
 		}
 		END_PROFILING_SEGMENT("CommonApplication::Tick");

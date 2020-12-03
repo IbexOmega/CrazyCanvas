@@ -82,6 +82,7 @@ namespace LambdaEngine
 			THashTable<String, uint32> ProfilingSegmentsMap;
 			TArray<LiveProfilingSegment> LiveProfilingSegments;
 			std::multiset<FinishedProfilingSegment> FinishedProfilingSegments;
+			TArray<uint32> ProfilingSegmentStack;
 			float64 TotalDeltaTime = 0;
 
 			inline void Reset()
@@ -140,8 +141,7 @@ namespace LambdaEngine
 		Timestamp m_Timestamp = 0;
 
 		SpinLock m_ProfilingSegmentSpinlock;
-		ProfilingTick m_ProfilingTicks[2];
-		TArray<uint32> m_ProfilingSegmentStack;
+		ProfilingTick m_ProfilingTicks[2];	
 		uint32 m_PreviousProfilingTick = 0;
 		uint32 m_CurrentProfilingTick = 1;
 	};

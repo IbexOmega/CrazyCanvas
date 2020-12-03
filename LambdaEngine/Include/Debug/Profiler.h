@@ -8,9 +8,9 @@
 #define PROFILING_ENABLED 1
 
 #if PROFILING_ENABLED
-	#define BEGIN_PROFILING_SEGMENT(_name_) Profiler::GetCPUProfiler()->BeginProfilingSegment(_name_)
-	#define END_PROFILING_SEGMENT(_name_) Profiler::GetCPUProfiler()->EndProfilingSegment(_name_)
-	#define PROFILE_FUNCTION(_name_, _func_call_) Profiler::GetCPUProfiler()->BeginProfilingSegment(_name_); _func_call_; Profiler::GetCPUProfiler()->EndProfilingSegment(_name_)
+	#define BEGIN_PROFILING_SEGMENT(_name_) LambdaEngine::Profiler::GetCPUProfiler()->BeginProfilingSegment(_name_)
+	#define END_PROFILING_SEGMENT(_name_) LambdaEngine::Profiler::GetCPUProfiler()->EndProfilingSegment(_name_)
+	#define PROFILE_FUNCTION(_name_, _func_call_) LambdaEngine::Profiler::GetCPUProfiler()->BeginProfilingSegment(_name_); _func_call_; LambdaEngine::Profiler::GetCPUProfiler()->EndProfilingSegment(_name_)
 #else
 	#define BEGIN_PROFILING_SEGMENT(_name_)
 	#define END_PROFILING_SEGMENT(_name_)

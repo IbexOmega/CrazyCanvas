@@ -72,7 +72,15 @@ namespace LambdaEngine
 
 		ProfilingTick& currentProfilingTick = m_ProfilingTicks[m_CurrentProfilingTick];
 
-		if (auto profilingSegmentIt = currentProfilingTick.ProfilingSegmentsMap.find(name); profilingSegmentIt == currentProfilingTick.ProfilingSegmentsMap.end())
+		if (auto profilingSegmentIt = currentProfilingTick.ProfilingSegmentsMap.find(name); profilingSegmentIt != currentProfilingTick.ProfilingSegmentsMap.end())
+		{
+			LiveProfilingSegment& liveProfilingSegment = currentProfilingTick.LiveProfilingSegments[profilingSegmentIt->second];
+			liveProfilingSegment.Clock.Reset();
+			liveProfilingSegment.ChildProfilingSegments.clear();
+
+			currentProfilingTick.ProfilingSegmentStack.PushBack(profilingSegmentIt->second);
+		}
+		else
 		{
 			uint32 profilingSegmentIndex = currentProfilingTick.LiveProfilingSegments.GetSize();
 			currentProfilingTick.ProfilingSegmentsMap[name] = profilingSegmentIndex;
@@ -80,11 +88,7 @@ namespace LambdaEngine
 			clock.Reset();
 			currentProfilingTick.LiveProfilingSegments.PushBack(LiveProfilingSegment{ .Clock = clock });
 
-			m_ProfilingSegmentStack.PushBack(profilingSegmentIndex);
-		}
-		else
-		{
-			LOG_ERROR("Profiling Segment with name %s already begun", name.c_str());
+			currentProfilingTick.ProfilingSegmentStack.PushBack(profilingSegmentIndex);
 		}
 	}
 
@@ -108,13 +112,13 @@ namespace LambdaEngine
 				.ChildProfilingSegments = liveProfilingSegment.ChildProfilingSegments
 			};
 
-			VALIDATE(profilingSegmentIt->second == m_ProfilingSegmentStack.GetBack());
+			VALIDATE(profilingSegmentIt->second == currentProfilingTick.ProfilingSegmentStack.GetBack());
 
-			m_ProfilingSegmentStack.PopBack();
+			currentProfilingTick.ProfilingSegmentStack.PopBack();
 
-			if (!m_ProfilingSegmentStack.IsEmpty())
+			if (!currentProfilingTick.ProfilingSegmentStack.IsEmpty())
 			{
-				LiveProfilingSegment& liveParentProfilingSegment = currentProfilingTick.LiveProfilingSegments[m_ProfilingSegmentStack.GetBack()];
+				LiveProfilingSegment& liveParentProfilingSegment = currentProfilingTick.LiveProfilingSegments[currentProfilingTick.ProfilingSegmentStack.GetBack()];
 				liveParentProfilingSegment.ChildProfilingSegments.insert(finishedProfilingSegment);
 			}
 			else

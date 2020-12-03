@@ -56,6 +56,8 @@
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
+#include "Debug/Profiler.h"
+
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
 #include <rapidjson/prettywriter.h>
@@ -210,9 +212,13 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 {
 	if (LambdaEngine::MultiplayerUtils::IsServer())
-		PlayerManagerServer::FixedTick(delta);
+	{
+		PROFILE_FUNCTION("PlayerManagerServer::FixedTick", PlayerManagerServer::FixedTick(delta));
+	}
 	else
-		ServerManager::Tick();
+	{
+		PROFILE_FUNCTION("ServerManager::Tick", ServerManager::Tick());
+	}
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)
