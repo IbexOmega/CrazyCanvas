@@ -52,9 +52,9 @@
 
       <!--Play buttons-->
       <StackPanel x:Name="PlayButtons" Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" Margin="0 0 0 40">
+        <Button Click="OnButtonMultiplayerClick" Content="Multiplayer" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
         <Button Click="OnButtonSandboxClick" Content="Sandbox" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
         <Button Click="OnButtonBenchmarkClick" Content="Benchmark" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
-        <Button Click="OnButtonMultiplayerClick" Content="Multiplayer" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
         <Button Click="OnButtonBackClick" Content="Back" BorderBrush="{x:Null}" Background="{x:Null}" Foreground="White" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" FontSize="48"/>
       </StackPanel>
     </Grid>
