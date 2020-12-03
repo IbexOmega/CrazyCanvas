@@ -25,7 +25,6 @@ SpectateCameraSystem::~SpectateCameraSystem()
 	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &SpectateCameraSystem::OnMouseButtonClicked);
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &SpectateCameraSystem::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &SpectateCameraSystem::OnGameOver);
-
 }
 
 void SpectateCameraSystem::Init()
@@ -35,7 +34,7 @@ void SpectateCameraSystem::Init()
 	{
 		{
 			.pSubscriber = & m_SpectatableEntities,
-			.ComponentAccesses = 
+			.ComponentAccesses =
 			{
 				{ NDA, SpectateComponent::Type() }
 			}
@@ -109,7 +108,7 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 		for (Entity entity : m_SpectatableEntities)
 		{
 			if (pCameraComponents->HasComponent(entity))
-				cameraEntity = entity;		
+				cameraEntity = entity;
 		}
 
 		if (cameraEntity != UINT32_MAX)
