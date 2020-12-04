@@ -1,5 +1,7 @@
 #define GLOSSY_REFLECTIONS_ENABLED 1
 
+
+
 #if GLOSSY_REFLECTIONS_ENABLED
     //Settings
     #define SAMPLE_VISIBLE_NORMALS_ENABLED      1
@@ -17,6 +19,7 @@
     #define GAUSSIAN_FILTER_LEVEL_0             0.01f
     #define GAUSSIAN_FILTER_LEVEL_1             0.05f
     #define GAUSSIAN_FILTER_LEVEL_2             0.1f
+    #define REFLECTION_SPP                      1
 #else
     //Constants
 	#define REFLECTION_REJECT_THRESHOLD         0.0f
@@ -24,4 +27,5 @@
     #define TEMPORAL_REUSE_MAX_HISTORY_LENGTH   0.0f
     #define BRDF_DENOISING_MIN_KERNEL_RADIUS    0
     #define BRDF_DENOISING_MAX_KERNEL_RADIUS    0
+    #define REFLECTION_SPP                      1
 #endif
