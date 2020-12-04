@@ -116,6 +116,7 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 		// to disable any further drawings
 		m_ResetPointBuffer = true;
 		transferMemory = true;
+		MeshPaintUpdater::SetHitPointBufferValid(true);
 	}
 
 	// Transfer to GPU
@@ -198,6 +199,9 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			packet.Position		= collisionInfo.Position;
 			packet.Direction	= collisionInfo.Direction;
 			packet.Angle		= projectileHitEvent.Angle;
+			LOG_WARNING("Team: %u, Angle %.4f, Position: (%.4f, %.4f, %.4f), Direction: (%.4f, %.4f, %.4f)", team, projectileHitEvent.Angle,
+			collisionInfo.Position.x, collisionInfo.Position.y, collisionInfo.Position.z,
+			collisionInfo.Direction.x, collisionInfo.Direction.y, collisionInfo.Direction.z);
 			ServerHelper::SendBroadcast(packet);
 		}
 		else

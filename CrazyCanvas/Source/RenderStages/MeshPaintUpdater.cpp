@@ -14,6 +14,7 @@
 namespace LambdaEngine
 {
 	std::unordered_set<Entity> MeshPaintUpdater::s_EntitiesToClear;
+	uint32 s_HitPointBufferValid = 0;
 
 	MeshPaintUpdater::MeshPaintUpdater()
 	{
@@ -40,6 +41,11 @@ namespace LambdaEngine
 	void MeshPaintUpdater::ClearServer(Entity entity)
 	{
 		s_EntitiesToClear.insert(entity);
+	}
+
+	void MeshPaintUpdater::SetHitPointBufferValid(bool valid)
+	{
+		s_HitPointBufferValid = (uint32)valid;
 	}
 
 	bool LambdaEngine::MeshPaintUpdater::CreatePipelineLayout()
@@ -352,6 +358,7 @@ namespace LambdaEngine
 			pushConstantData.VertexCount = m_VertexCountList[d];
 			// Check if this entity should clear its server side vertex paint.
 			pushConstantData.ShouldResetServer = (uint32)s_EntitiesToClear.contains(m_DrawArgsDescriptorSets[d].first);
+			pushConstantData.HitPointBufferValid = s_HitPointBufferValid;
 
 			pCommandList->BindDescriptorSetCompute(m_DrawArgsDescriptorSets[d].second, m_UpdatePipeline.GetPipelineLayout().Get(), 1);
 			m_UpdatePipeline.BindConstantRange(pCommandList, (void*)&pushConstantData, sizeof(pushConstantData), 0U);
@@ -360,6 +367,7 @@ namespace LambdaEngine
 			uint32 workGroupX = uint32(std::ceilf(float(pushConstantData.VertexCount) / float(WORK_GROUP_INVOCATIONS)));
 			pCommandList->Dispatch(workGroupX, 1U, 1U);
 		}
+		s_HitPointBufferValid = 0;
 
 		pCommandList->End();
 
