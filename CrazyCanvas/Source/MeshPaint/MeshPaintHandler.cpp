@@ -225,12 +225,12 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	{
 		// Allways clear client side when receiving hit from the server.
 		//ResetClient();
-		LOG_WARNING("[FROM SERVER] CLEAR CLIENT");
+		//LOG_WARNING("[FROM SERVER] CLEAR CLIENT");
 
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
 		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
-		LOG_WARNING("[FROM SERVER] hit pos: (%f, %f, %f)", packet.Position.x, packet.Position.y, packet.Position.z);
+		LOG_WARNING("[FROM SERVER] hit pos: (%f, %f, %f), dir: (%f, %f, %f)", packet.Position.x, packet.Position.y, packet.Position.z, packet.Direction.x, packet.Direction.y, packet.Direction.z);
 	}
 
 	return true;
