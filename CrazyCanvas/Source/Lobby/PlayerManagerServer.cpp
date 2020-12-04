@@ -237,13 +237,13 @@ void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 
 	TArray<const Player*> playersTeam0;
 	TArray<const Player*> playersTeam1;
-	GetPlayersOfTeam(playersTeam0, 0);
-	GetPlayersOfTeam(playersTeam1, 1);
+	GetPlayersOfTeam(playersTeam0, 1);
+	GetPlayersOfTeam(playersTeam1, 2);
 	int32 delta = playersTeam0.GetSize() - playersTeam1.GetSize();
 	if (glm::abs(delta) >= 2)
 	{
 		Player* pPlayer = &(s_Players.begin()->second);
-		pPlayer->m_Team = delta > 0 ? 1 : 0;
+		pPlayer->m_Team = delta > 0 ? 2 : 1;
 		PacketPlayerScore packetPlayerScore;
 		FillPacketPlayerScore(&packetPlayerScore, pPlayer);
 		ServerHelper::SendBroadcast(packetPlayerScore, nullptr, pClient);

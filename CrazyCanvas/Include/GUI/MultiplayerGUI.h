@@ -1,12 +1,13 @@
 #pragma once
 
-#include "GUI/SavedServerGUI.h"
-#include "GUI/ServerInfo.h"
+#include "Lobby/ServerInfo.h"
 
-#include "Application/API/Events/NetworkEvents.h"
+#include "Containers/THashTable.h"
 
-#include "Networking/API/IPAddress.h"
-#include "Networking/API/IPEndPoint.h"
+#include "NsCore/Ptr.h"
+#include "NsGui/Grid.h"
+#include "NsGui/ListBox.h"
+#include "NsGui/TextBox.h"
 
 struct HostGameDescription
 {
@@ -26,30 +27,47 @@ enum PopUpCode
 	JOIN_NOTIFICATION
 };
 
+class MultiplayerState;
+
 class MultiplayerGUI : public Noesis::Grid
 {
-	//ObservableCollection<HostGameDescription> Servers;
-
 public:
-	MultiplayerGUI(const LambdaEngine::String& xamlFile);
+	MultiplayerGUI(MultiplayerState* pMulitplayerState);
 	~MultiplayerGUI();
 
-	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
+	void AddServerLAN(const ServerInfo& serverInfo);
+	void AddServerSaved(const ServerInfo& serverInfo);
+	void RemoveServerLAN(const ServerInfo& serverInfo);
+	void RemoveServerSaved(const ServerInfo& serverInfo);
+	void UpdateServerLAN(const ServerInfo& serverInfo);
+	void UpdateServerSaved(const ServerInfo& serverInfo);
 
+	const char* GetPlayerName() const;
+	bool HasHostedServer() const;
+
+private:
+	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
-	void OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	Noesis::Grid* CreateServerItem(const ServerInfo& serverInfo);
+	Noesis::Grid* DeleteServerItem(const ServerInfo& serverInfo);
+	void UpdateServerItem(Noesis::Grid* pGrid, const ServerInfo& serverInfo);
+	void ServerInfoToUniqeString(const ServerInfo& serverInfo, LambdaEngine::String& str) const;
+	const ServerInfo* GetServerInfoFromGrid(const LambdaEngine::THashTable<uint64, ServerInfo>& servers, Noesis::Grid* pGrid) const;
+
+private:
+	Noesis::Grid* m_pGridServers;
+	Noesis::ListBox* m_pListBoxServersLAN;
+	Noesis::ListBox* m_pListBoxServersSaved;
+	Noesis::TextBox* m_pTextBoxAddress;
+	Noesis::TextBox* m_pTextBoxName;
 	
-	bool JoinSelectedServer(Noesis::Grid* pGrid);
-
-	bool OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event);
-	bool OnClientConnected(const LambdaEngine::ClientConnectedEvent& event);
-
-	void FixedTick(LambdaEngine::Timestamp delta);
+	int32 m_ClientHostID;
+	MultiplayerState* m_pMulitplayerState;
 
 private:
 	void ErrorPopUp(PopUpCode errorCode);
@@ -58,23 +76,9 @@ private:
 	void ErrorPopUpClose();
 	void NotiPopUpClose();
 
-	bool CheckServerStatus();
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
 
 	bool StartUpServer(const std::string& commandLine);
 
-	void HandleServerInfo(ServerInfo& serverInfo, bool forceSave = false);
-
-	bool HasHostedServer() const;
-
 	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
-
-private:
-	bool m_RayTracingEnabled = false;
-	int32 m_ClientHostID;
-	SavedServerGUI m_ServerList;
-
-	LambdaEngine::TArray<LambdaEngine::String> m_SavedServerList;
-
-	std::unordered_map<LambdaEngine::IPAddress*, ServerInfo, LambdaEngine::IPAddressHasher> m_Servers;
 };

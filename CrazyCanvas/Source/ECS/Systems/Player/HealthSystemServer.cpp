@@ -44,22 +44,8 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 	using namespace LambdaEngine;
 	UNREFERENCED_VARIABLE(deltaTime);
 
-	// TEMP REMOVE
-	static bool pressed = false;
-	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_F) && !pressed)
-	{
-		for (Entity entity : m_HealthEntities)
-			HealthCompute::QueueHealthCalculation(entity);
-		pressed = true;
-	}
-	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_F) && pressed)
-	{
-		pressed = false;
-	}
-
 	for (Entity entity : m_HealthEntities)
 		HealthCompute::QueueHealthCalculation(entity);
-
 
 	// More threadsafe
 	{
@@ -80,24 +66,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			m_DeferredResets.Clear();
 		}
 	}
-
-	// TEMP REMOVE
-	static bool p = false;
-	if (Input::IsKeyDown(Input::GetCurrentInputmode(), EKey::KEY_G) && !p)
-	{
-		TArray<uint32> healths = HealthCompute::GetHealths();
-		for (auto health : healths)
-		{
-			LOG_WARNING("Health: %u", health);
-		}
-		LOG_WARNING("VertexCount: %u", HealthCompute::GetVertexCount());
-		p = true;
-	}
-	else if (Input::IsKeyUp(Input::GetCurrentInputmode(), EKey::KEY_G) && p)
-	{
-		p = false;
-	}
-
 
 	// Update health
 	if (!m_HitInfoToProcess.IsEmpty() && PlayerIndexHelper::GetNumOfIndices() > 0)
@@ -124,9 +92,6 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 				const float32	paintedHealth		= float32(paintedVerticies) / float32(HealthCompute::GetVertexCount() * (1.0f - BIASED_MAX_HEALTH));
 				const int32		oldHealth			= healthComponent.CurrentHealth;
 				healthComponent.CurrentHealth		= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
-
-				// Still here for debugging
-				LOG_INFO("HIT REGISTERED: oldHealth=%d currentHealth=%d paintedVerticies=%u, paintedHealth=%.4f", oldHealth, healthComponent.CurrentHealth, paintedVerticies, paintedHealth);
 
 				// Check if health changed
 				if (oldHealth != healthComponent.CurrentHealth)

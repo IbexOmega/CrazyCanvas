@@ -520,9 +520,10 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(modFrameIndex);
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
-		for (CustomRenderer* pCustomRenderer : m_CustomRenderers)
+		for (uint32 i = 0; i < m_CustomRenderers.GetSize(); i++)
 		{
-			pCustomRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
+			CustomRenderer* pCustomRenderer = m_CustomRenderers[i];
+			PROFILE_FUNCTION("Update: " + pCustomRenderer->GetName(), pCustomRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex));
 		}
 
 		UpdateResourceBindings();
@@ -839,6 +840,7 @@ namespace LambdaEngine
 			currentFrameDeviceResourcesToDestroy.Clear();
 		}
 
+		BEGIN_PROFILING_SEGMENT("Record Pipeline Stages");
 		for (uint32 p = 0; p < m_PipelineStageCount; p++)
 		{
 			//Seperate Thread
@@ -848,11 +850,15 @@ namespace LambdaEngine
 				if (pPipelineStage->Type == ERenderGraphPipelineStageType::RENDER)
 				{
 					RenderStage* pRenderStage = &m_pRenderStages[pPipelineStage->StageIndex];
+					BEGIN_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 
 					if (pRenderStage->UsesCustomRenderer)
 					{
 						if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset) && pRenderStage->pDisabledRenderPass == nullptr)
+						{
+							END_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 							continue;
+						}
 
 						CustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 						pCustomRenderer->Render(
@@ -889,6 +895,8 @@ namespace LambdaEngine
 						//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
 						pRenderStage->FrameCounter = 1;
 					}
+
+					END_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 				}
 				else if (pPipelineStage->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
 				{
@@ -907,8 +915,10 @@ namespace LambdaEngine
 				}
 			}
 		}
+		END_PROFILING_SEGMENT("Record Pipeline Stages");
 
 		//Execute Copy Command Lists
+		BEGIN_PROFILING_SEGMENT("Execute General Purpose Command Lists");
 		{
 			CommandList* pGraphicsCopyCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
@@ -928,10 +938,12 @@ namespace LambdaEngine
 				m_SignalValue++;
 			}
 		}
+		END_PROFILING_SEGMENT("Execute General Purpose Command Lists");
 
 		//Wait Threads
 
 		//Execute the recorded Command Lists, we do this in a Batched mode where we batch as many "same queue" command lists that execute in succession together. This reduced the overhead caused by QueueSubmit
+		BEGIN_PROFILING_SEGMENT("Execute Other Command Lists");
 		{
 			//This is safe since the first Execution Stage should never be nullptr
 			ECommandQueueType currentBatchType = ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
@@ -987,6 +999,7 @@ namespace LambdaEngine
 				currentBatch.Clear();
 			}
 		}
+		END_PROFILING_SEGMENT("Execute Other Command Lists");
 
 		m_ModFrameIndex = modFrameIndex;
 	}
@@ -2265,7 +2278,6 @@ namespace LambdaEngine
 							return false;
 						}
 
-						m_CustomRenderers.PushBack(pLineRenderer);
 						m_DebugRenderers.PushBack(pLineRenderer);
 
 						pCustomRenderer = pLineRenderer;
@@ -2294,7 +2306,6 @@ namespace LambdaEngine
 							return false;
 						}
 
-						m_CustomRenderers.PushBack(pImGuiRenderer);
 						m_DebugRenderers.PushBack(pImGuiRenderer);
 
 						pCustomRenderer = pImGuiRenderer;
