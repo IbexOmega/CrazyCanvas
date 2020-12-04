@@ -15,6 +15,8 @@
 
 #include "World/Player/Client/PlayerSoundHelper.h"
 
+#include "Match/Match.h"
+
 using namespace LambdaEngine;
 
 PlayerForeignSystem::PlayerForeignSystem()
@@ -52,7 +54,6 @@ void PlayerForeignSystem::Init()
 void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	float32 dt = (float32)deltaTime.AsSeconds();
 
 	const ComponentArray<NetworkPositionComponent>* pNetPosComponents						= pECS->GetComponentArray<NetworkPositionComponent>();
 	ComponentArray<CharacterColliderComponent>* pCharacterColliders							= pECS->GetComponentArray<CharacterColliderComponent>();
@@ -100,8 +101,9 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 
 			CharacterControllerHelper::SetForeignCharacterController(characterColliderComponent, constNetPosComponent);
 		}
-		else //Data does not exist for the current frame :(
+		else if(Match::HasBegun()) //Data does not exist for the current frame :(
 		{
+			float32 dt = (float32)deltaTime.AsSeconds();
 			CharacterControllerHelper::ApplyGravity(dt, velocityComponent.Velocity);
 
 			NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
