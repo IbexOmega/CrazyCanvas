@@ -170,9 +170,9 @@ void SpectateCameraSystem::SpectatePlayer()
 	Entity localPlayer = UINT32_MAX;
 	Entity flagSpawnEntity = UINT32_MAX;
 	Entity mapSpectatePointEntity = UINT32_MAX;
+
 	for (Entity cameraEntity : m_CameraEntities)
 	{
-
 		for (Entity entity : m_SpectatableEntities)
 		{
 			const SpectateComponent& spectateComponent = pSpectateComponents->GetConstData(entity);
@@ -181,11 +181,12 @@ void SpectateCameraSystem::SpectatePlayer()
 			{
 				case SpectateType::FLAG_SPAWN:
 				{
-					const TeamComponent& teamComponent = pTeamComponents->GetConstData(entity);
-
-					if (teamComponent.TeamIndex == m_LocalTeamIndex)
+					TeamComponent teamComponent = {};
+					
+					if (pTeamComponents->GetConstIf(entity, teamComponent))
 					{
-						flagSpawnEntity = entity;
+						if (teamComponent.TeamIndex == m_LocalTeamIndex)
+							flagSpawnEntity = entity;
 					}
 
 					break;
@@ -194,8 +195,11 @@ void SpectateCameraSystem::SpectatePlayer()
 				{
 					const Player* pPlayer = PlayerManagerClient::GetPlayer(entity);
 
-					if (pPlayer->GetTeam() == m_LocalTeamIndex && !pPlayer->IsDead())
-						teamPlayers.PushBack(entity);
+					if (pPlayer)
+					{
+						if (pPlayer->GetTeam() == m_LocalTeamIndex && !pPlayer->IsDead())
+							teamPlayers.PushBack(entity);
+					}
 
 					break;
 				}
@@ -240,7 +244,7 @@ void SpectateCameraSystem::SpectatePlayer()
 					parentComponent.Parent = flagSpawnEntity;
 
 
-					SpectatePlayerEvent event("Spectating Team Flag", true);
+					SpectatePlayerEvent event("Team Flag", true);
 					EventQueue::SendEventImmediate(event);
 				}
 			}
