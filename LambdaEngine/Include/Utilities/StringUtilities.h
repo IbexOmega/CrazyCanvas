@@ -4,6 +4,8 @@
 #include <codecvt>
 #include <locale>
 
+#define VEC_TO_ARG(v) v.x, v.y, v.z
+
 namespace LambdaEngine
 {
 	struct StringUtilities
