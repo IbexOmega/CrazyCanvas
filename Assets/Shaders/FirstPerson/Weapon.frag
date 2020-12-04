@@ -45,8 +45,6 @@ layout(location = 0) out vec4 out_Color;
 
 void main()
 {
-	// out_Color = vec4(1.0f, 1.0f, 0.0f, 0.5);
-	// return;
 
 	vec3 normal		= normalize(in_Normal);
 	vec3 tangent	= normalize(in_Tangent);
@@ -69,7 +67,9 @@ void main()
 	GetVec4ToPackedPaintInfoAndDistance(in_LocalPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
 	SPaintDescription paintDescription = InterpolatePaint(TBN, in_LocalPosition, tangent, bitangent, packedPaintInfo, dist);
 
-	shadingNormal = mix(shadingNormal, paintDescription.Normal + shadingNormal * 0.2f, paintDescription.Interpolation);
+	vec3 paintNormal =  normalize(paintDescription.Normal + shadingNormal * 0.2f);
+
+	shadingNormal = mix(shadingNormal, paintNormal, paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
@@ -102,7 +102,7 @@ void main()
 	float metallic	= aoRoughMetalValid.b;
 	float depth 	= texture(u_DepthStencil, in_TexCoord).r;
 
-	vec3 N 					= shadingNormal;
+	vec3 N 					= normalize(shadingNormal);
 	vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - in_WorldPosition;
 	float viewDistance		= length(viewVector);
 	vec3 V 					= normalize(viewVector);
@@ -137,6 +137,7 @@ void main()
 		float NdotL = max(dot(N, L), 0.05f);
 
 		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
+
 	}
 
 	//Point Light Loop

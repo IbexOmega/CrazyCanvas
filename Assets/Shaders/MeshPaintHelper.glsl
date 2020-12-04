@@ -72,8 +72,8 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	float h_u 					= snoise(PAINT_NOISE_SCALE * (position + PAINT_DELTA_NOISE * tangent));
 	float h_v 					= snoise(PAINT_NOISE_SCALE * (position + PAINT_DELTA_NOISE * bitangent));
 	vec2 grad_h					= vec2(h0 - h_u, h0 - h_v);
-	vec3 paintNormal			= normalize(vec3(PAINT_BUMPINESS * grad_h, sqrt(1.0f - (grad_h.x * grad_h.x) - (grad_h.y * grad_h.y))));
-	vec3 paintNormalBorder		= normalize(vec3(PAINT_BORDER_BUMPINESS*borderDir, sqrt(1.f - (borderDir.x*borderDir.x) - (borderDir.y*borderDir.y))));
+	vec3 paintNormal			= normalize(vec3(PAINT_BUMPINESS * grad_h, sqrt( max(0, 1.0f - (grad_h.x * grad_h.x) - (grad_h.y * grad_h.y)))));
+	vec3 paintNormalBorder		= normalize(vec3(PAINT_BORDER_BUMPINESS*borderDir, sqrt(  max(0, 1.f - (borderDir.x*borderDir.x) - (borderDir.y*borderDir.y)))));
 	vec3 noPaintNormal00		= normalize(vec3(-1.0f,  1.0f, 1.0f));
 	vec3 noPaintNormal10		= normalize(vec3( 1.0f,  1.0f, 1.0f));
 	vec3 noPaintNormal01		= normalize(vec3(-1.0f, -1.0f, 1.0f));
