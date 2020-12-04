@@ -402,8 +402,6 @@ namespace LambdaEngine
 	void MeshTessellator::CreateDummyRenderTarget()
 	{
 		TextureDesc textureDesc = {};
-
-		TextureDesc textureDesc;
 		textureDesc.DebugName = "Dummy Texture Tessellation";
 		textureDesc.Type = ETextureType::TEXTURE_TYPE_2D;
 		textureDesc.ArrayCount = 1;
