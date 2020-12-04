@@ -70,7 +70,7 @@ private:
 	bool			m_MeshShadersEnabled = false;
 	bool			m_FullscreenEnabled = false;
 	bool			m_EscapeMenuEnabled = false;
-
+	bool			m_EscapeActive = false;
 	bool			m_MouseEnabled = false;
 
 	Noesis::Grid* m_pEscapeGrid = nullptr;
