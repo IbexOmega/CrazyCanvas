@@ -320,6 +320,22 @@ namespace LambdaEngine
 		halfHeight = halfHeight - radius;
 	}
 
+	bool PhysicsSystem::Raycast(const glm::vec3& origin, const glm::vec3& direction, float32 maxDistance, PxRaycastHit& raycastHit)
+	{
+		const PxVec3 originPX = { origin.x, origin.y, origin.z };
+		const PxVec3 directionPX = { direction.x, direction.y, direction.z };
+
+		PxRaycastBuffer raycastBuffer;
+		const bool hit = m_pScene->raycast(originPX, directionPX, maxDistance, raycastBuffer);
+
+		if (hit)
+		{
+			raycastHit = raycastBuffer.block;
+		}
+
+		return hit;
+	}
+
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
 	{
 		for (PxU32 pairIdx = 0; pairIdx < nbPairs; pairIdx++)
