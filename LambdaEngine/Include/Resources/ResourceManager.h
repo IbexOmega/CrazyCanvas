@@ -16,8 +16,6 @@ namespace LambdaEngine
 	class IAudioDevice;
 
 	//Meshes
-
-	//Meshes
 	constexpr GUID_Lambda GUID_MESH_QUAD					= 0;
 
 	//Material
