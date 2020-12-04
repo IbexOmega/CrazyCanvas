@@ -446,6 +446,16 @@ void HUDGUI::InitGUI()
 	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
 	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
 
+	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+
+	const glm::vec3& teamColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
+	Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
+	brush->SetColor(color);
+
+	brush->SetOpacity(0.25f);
+
+	m_pLookAtGrid->SetBackground(brush);
+
 	m_pPaintAmmoRect->SetSource(pBitmap);
 	m_pPaintDropRect->SetSource(pBitmapDrop);
 
