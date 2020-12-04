@@ -224,7 +224,7 @@ void SpectateCameraSystem::SpectatePlayer()
 				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 
 				if (m_SpectatorIndex < 0)
-					m_SpectatorIndex = (int8)(teamPlayers.GetSize() - 1);
+					m_SpectatorIndex = (int8)teamPlayers.GetSize() - 1;
 
 				m_SpectatorIndex = m_SpectatorIndex % teamPlayers.GetSize();
 

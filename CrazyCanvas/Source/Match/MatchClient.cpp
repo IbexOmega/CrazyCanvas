@@ -258,8 +258,9 @@ bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMat
 bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event)
 {
 	const PacketGameOver& packet = event.Packet;
-
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
+
+	m_HasBegun = false;
 
 	GameOverEvent gameOverEvent(packet.WinningTeamIndex);
 	EventQueue::SendEventImmediate(gameOverEvent);

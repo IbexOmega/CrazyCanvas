@@ -267,7 +267,7 @@ namespace LambdaEngine
 		constexpr const float32 indent = 25.0f;
 		ImGui::Indent(indent);
 
-		glm::vec3 color = glm::lerp<glm::vec3>(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(profilingSegment.DeltaTime / parentDeltaTime));
+		glm::vec3 color = glm::lerp<glm::vec3>(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(float32(profilingSegment.DeltaTime / parentDeltaTime)));
 		ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1.0f), "%s: %fms", profilingSegment.Name.c_str(), profilingSegment.DeltaTime);
 		for (auto profilingTickIt = profilingSegment.ChildProfilingSegments.rbegin();
 			profilingTickIt != profilingSegment.ChildProfilingSegments.rend();
