@@ -59,7 +59,7 @@ void ServerManager::RegisterNewServer(const ServerInfo& serverInfo)
 	}
 
 	TArray<ServerInfo> servers;
-	servers.Reserve(s_ServersWAN.size());
+	servers.Reserve((uint32)s_ServersWAN.size());
 
 	for (auto& pair : s_ServersWAN)
 	{
