@@ -298,6 +298,27 @@ void HUDGUI::DisplayHitIndicator()
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
+void HUDGUI::DisplayCarryFlagIndicator(Entity flagEntity, bool isCarrying)
+{
+	auto grid = m_ProjectedElements.find(flagEntity);
+
+	if (isCarrying)
+	{
+		grid->second->SetVisibility(Visibility::Visibility_Hidden);
+
+		m_CarryFlagIndicator->SetVisibility(Visibility::Visibility_Visible);
+		m_CarryFlagIndicatorStoryBoard->Begin();
+	}
+	else
+	{
+		grid->second->SetVisibility(Visibility::Visibility_Visible);
+
+		m_CarryFlagIndicator->SetVisibility(Visibility::Visibility_Collapsed);
+		m_CarryingFlagResetStoryBoard->Begin();
+	}
+
+}
+
 void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex)
 {
 	m_pKillFeedGUI->AddToKillFeed(killed, killer, killedPlayerTeamIndex);
@@ -438,23 +459,48 @@ void HUDGUI::InitGUI()
 
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
+	m_pCarryFlagBorder = FrameworkElement::FindName<Border>("CarryFlagBorder");
+	m_CarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
 
+	m_CarryFlagIndicatorStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagStoryBoard");
+	m_CarryingFlagResetStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagResetStoryBoard");
+
+
 	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
 	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
 
-	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+	{ // init CarryFlagIndicator and LookAtGrid colors  
 
-	const glm::vec3& teamColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
-	Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
-	brush->SetColor(color);
+		Ptr<Noesis::RadialGradientBrush> gradientBrush = *new Noesis::RadialGradientBrush();
+		const glm::vec3& teamGradientColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam() == 1 ? 2 : 1);
+		Noesis::Color gradientColor(teamGradientColor.r, teamGradientColor.g, teamGradientColor.b);
+		Noesis::GradientStopCollection* pGStops = new GradientStopCollection();
+		Noesis::GradientStop* teamGradientStopColor = new GradientStop();
+		Noesis::GradientStop* teamGradientStop = new GradientStop();
 
-	brush->SetOpacity(0.25f);
+		teamGradientStopColor->SetColor(gradientColor);
+		teamGradientStopColor->SetOffset(1.0f);
+		pGStops->Add(teamGradientStopColor);
+		pGStops->Add(teamGradientStop);
+		gradientBrush->SetGradientStops(pGStops);
 
-	m_pLookAtGrid->SetBackground(brush);
+		m_pCarryFlagBorder->SetBackground(gradientBrush);
+
+
+		Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+		const glm::vec3& teamColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
+		Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
+
+		brush->SetColor(color);
+		brush->SetOpacity(0.25f);
+
+		m_pLookAtGrid->SetBackground(brush);
+
+	}
 
 	m_pPaintAmmoRect->SetSource(pBitmap);
 	m_pPaintDropRect->SetSource(pBitmapDrop);
