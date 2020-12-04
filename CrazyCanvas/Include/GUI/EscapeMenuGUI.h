@@ -61,21 +61,22 @@ private:
 private:
 
 	// EscapeGUI
-	bool 			m_ListenToCallbacks = false;
-	Noesis::Button* m_pSetKeyButton = nullptr;
+	bool 			m_ListenToCallbacks		= false;
+	Noesis::Button* m_pSetKeyButton			= nullptr;
 	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
 	float32 m_LookSensitivityPercentageToSet = 0.0f;
 
 	// bool			m_RayTracingEnabled		= false;
-	bool			m_MeshShadersEnabled = false;
-	bool			m_FullscreenEnabled = false;
-	bool			m_EscapeMenuEnabled = false;
-	bool			m_EscapeActive = false;
-	bool			m_MouseEnabled = false;
+	bool			m_MeshShadersEnabled	= false;
+	bool			m_FullscreenEnabled		= false;
+	bool			m_EscapeMenuEnabled		= false;
 
-	Noesis::Grid* m_pEscapeGrid = nullptr;
-	Noesis::Grid* m_pSettingsGrid = nullptr;
-	Noesis::Grid* m_pControlsGrid = nullptr;
+	bool			m_EscapeActive			= false;
+	bool			m_MouseEnabled			= false;
+
+	Noesis::Grid* m_pEscapeGrid				= nullptr;
+	Noesis::Grid* m_pSettingsGrid			= nullptr;
+	Noesis::Grid* m_pControlsGrid			= nullptr;
 
 	glm::vec2 m_WindowSize = glm::vec2(1.0f);
 

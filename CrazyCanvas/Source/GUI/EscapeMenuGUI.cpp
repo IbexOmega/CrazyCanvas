@@ -88,13 +88,13 @@ void EscapeMenuGUI::ToggleEscapeMenu()
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 
-		m_EscapeActive = true;
+		m_EscapeActive = !m_EscapeActive;
 		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Visible);
 		m_ContextStack.push(m_pEscapeGrid);
 	}
 	else if (currentInputLayer == EInputLayer::GUI && m_EscapeActive)
 	{
-		m_EscapeActive = false;
+		m_EscapeActive = !m_EscapeActive;
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 		Noesis::FrameworkElement* pElement = m_ContextStack.top();
