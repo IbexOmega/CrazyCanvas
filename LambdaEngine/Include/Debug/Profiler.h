@@ -5,7 +5,7 @@
 #include "Debug/CPUProfiler.h"
 #include "Debug/GPUProfiler.h"
 
-#define PROFILING_ENABLED 1
+#define PROFILING_ENABLED 0
 
 #if PROFILING_ENABLED
 	#define BEGIN_PROFILING_SEGMENT(_name_) LambdaEngine::Profiler::GetCPUProfiler()->BeginProfilingSegment(_name_)
