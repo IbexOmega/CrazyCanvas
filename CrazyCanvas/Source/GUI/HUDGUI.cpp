@@ -479,13 +479,13 @@ void HUDGUI::InitGUI()
 		const glm::vec3& teamGradientColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam() == 1 ? 2 : 1);
 		Noesis::Color gradientColor(teamGradientColor.r, teamGradientColor.g, teamGradientColor.b);
 		Noesis::GradientStopCollection* pGStops = new GradientStopCollection();
-		Noesis::GradientStop* teamGradientStopColor = new GradientStop();
-		Noesis::GradientStop* teamGradientStop = new GradientStop();
+		Noesis::GradientStop* pTeamGradientStopColor = new GradientStop();
+		Noesis::GradientStop* pTeamGradientStop = new GradientStop();
 
-		teamGradientStopColor->SetColor(gradientColor);
-		teamGradientStopColor->SetOffset(1.0f);
-		pGStops->Add(teamGradientStopColor);
-		pGStops->Add(teamGradientStop);
+		pTeamGradientStopColor->SetColor(gradientColor);
+		pTeamGradientStopColor->SetOffset(1.0f);
+		pGStops->Add(pTeamGradientStopColor);
+		pGStops->Add(pTeamGradientStop);
 		gradientBrush->SetGradientStops(pGStops);
 
 		m_pCarryFlagBorder->SetBackground(gradientBrush);
