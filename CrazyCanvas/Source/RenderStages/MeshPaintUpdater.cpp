@@ -14,7 +14,7 @@
 namespace LambdaEngine
 {
 	std::unordered_set<Entity> MeshPaintUpdater::s_EntitiesToClear;
-	uint32 s_HitPointBufferValid = 0;
+	uint32 MeshPaintUpdater::s_HitPointBufferValid = 0;
 
 	MeshPaintUpdater::MeshPaintUpdater()
 	{
