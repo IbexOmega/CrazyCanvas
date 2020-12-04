@@ -145,33 +145,36 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 
 	const Player* pPlayer = PlayerManagerServer::GetPlayer(event.pClient);
 
-	if (pPlayer->IsHost())
+	if (pPlayer)
 	{
-		m_GameSettings = packet;
-		m_MapName = LevelManager::GetLevelNames()[packet.MapID];
-		ServerHelper::SendBroadcast(packet, nullptr, event.pClient);
-		ServerHelper::SetMaxClients(packet.Players);
-
-		if (PlayerManagerServer::GetPlayerCount() > packet.Players)
+		if (pPlayer->IsHost())
 		{
-			PlayerManagerServer::KickPlayers(PlayerManagerServer::GetPlayerCount() - packet.Players);
-		}
+			m_GameSettings = packet;
+			m_MapName = LevelManager::GetLevelNames()[packet.MapID];
+			ServerHelper::SendBroadcast(packet, nullptr, event.pClient);
+			ServerHelper::SetMaxClients(packet.Players);
 
-		LOG_INFO("\nConfiguring Server With The Following Settings:");
-		LOG_INFO("Name:       %s", packet.ServerName);
-		LOG_INFO("Players:    %hhu", packet.Players);
-		LOG_INFO("Map:        %s", m_MapName.c_str());
-		LOG_INFO("GameMode:   %s", GameModeToString(packet.GameMode));
-		LOG_INFO("MaxTime:    %hu", packet.MaxTime);
-		LOG_INFO("FlagsToWin: %hhu", packet.FlagsToWin);
-		LOG_INFO("Visible:    %s", packet.Visible ? "True" : "False");
-		LOG_INFO("ChangeTeam: %s\n", packet.ChangeTeam ? "True" : "False");
-		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor1 );
-		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor2 );
-	}
-	else
-	{
-		LOG_ERROR("Player [%s] tried to change server settings while not being the host", pPlayer->GetName().c_str());
+			if (PlayerManagerServer::GetPlayerCount() > packet.Players)
+			{
+				PlayerManagerServer::KickPlayers(PlayerManagerServer::GetPlayerCount() - packet.Players);
+			}
+
+			LOG_INFO("\nConfiguring Server With The Following Settings:");
+			LOG_INFO("Name:       %s", packet.ServerName);
+			LOG_INFO("Players:    %hhu", packet.Players);
+			LOG_INFO("Map:        %s", m_MapName.c_str());
+			LOG_INFO("GameMode:   %s", GameModeToString(packet.GameMode));
+			LOG_INFO("MaxTime:    %hu", packet.MaxTime);
+			LOG_INFO("FlagsToWin: %hhu", packet.FlagsToWin);
+			LOG_INFO("Visible:    %s", packet.Visible ? "True" : "False");
+			LOG_INFO("ChangeTeam: %s\n", packet.ChangeTeam ? "True" : "False");
+			LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor1);
+			LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor2);
+		}
+		else
+		{
+			LOG_ERROR("Player [%s] tried to change server settings while not being the host", pPlayer->GetName().c_str());
+		}
 	}
 
 	return true;

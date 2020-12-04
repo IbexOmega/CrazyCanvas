@@ -17,10 +17,16 @@
 
 #include "Multiplayer/ClientHelper.h"
 
+#include "Math/Random.h"
+
+#include <Psapi.h>
+#include "Utilities/StringUtilities.h"
+
 using namespace LambdaEngine;
 
 MultiplayerState::MultiplayerState() : 
-	m_IsManualConnection(false)
+	m_IsManualConnection(false),
+	m_ClientHostID(-1)
 {
 
 }
@@ -82,7 +88,7 @@ bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEven
 		ServerManager::RegisterNewServer(serverInfo);
 	}
 
-	State* pLobbyState = DBG_NEW LobbyState(m_MultiplayerGUI->GetPlayerName(), m_MultiplayerGUI->HasHostedServer());
+	State* pLobbyState = DBG_NEW LobbyState(m_MultiplayerGUI->GetPlayerName(), HasHostedServer());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;
@@ -98,10 +104,17 @@ bool MultiplayerState::OnServerOnlineEvent(const ServerOnlineEvent& event)
 	const ServerInfo& serverInfo = event.Server;
 
 	if (serverInfo.IsLAN)
+	{
+		if (m_ClientHostID == serverInfo.ClientHostID)
+		{
+			ConnectToServer(serverInfo.EndPoint, false);
+		}
 		m_MultiplayerGUI->AddServerLAN(serverInfo);
+	}	
 	else
+	{
 		m_MultiplayerGUI->AddServerSaved(serverInfo);
-
+	}
 	return true;
 }
 
@@ -145,4 +158,76 @@ bool MultiplayerState::ConnectToServer(const IPEndPoint& endPoint, bool isManual
 {
 	m_IsManualConnection = isManual;
 	return ClientSystem::GetInstance().Connect(endPoint);
+}
+
+bool MultiplayerState::HasHostedServer() const
+{
+	return m_ClientHostID != -1;
+}
+
+void MultiplayerState::StartUpServer()
+{
+	if (HasHostedServer())
+		return;
+
+	static String commandLine = "--state=server";
+
+	// Get application (.exe) path
+	HANDLE processHandle = NULL;
+	WString filePath;
+
+	processHandle = GetCurrentProcess();
+	if (processHandle != NULL)
+	{
+		TCHAR filename[MAX_PATH];
+		if (GetModuleFileNameEx(processHandle, NULL, filename, MAX_PATH) > 0)
+		{
+			filePath = WString(filename);
+		}
+		else
+		{
+			LOG_ERROR("Failed to get current process file path - cannot start server");
+			return;
+		}
+	}
+
+	//additional Info
+	STARTUPINFOA lpStartupInfo;
+	PROCESS_INFORMATION lpProcessInfo;
+	m_ClientHostID = Random::Int32();
+
+	std::string finalCLine = ConvertToAscii(filePath) + " " + commandLine + " " + std::to_string(m_ClientHostID);
+
+	// set the size of the structures
+	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
+	lpStartupInfo.cb = sizeof(lpStartupInfo);
+	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
+
+	SetLastError(0);
+
+	if (!CreateProcessA(
+		NULL,
+		finalCLine.data(),	//Command line
+		NULL,			// Process handle not inheritable
+		NULL,			// Thread handle not inheritable
+		NULL,
+		NULL,			// No creation flags
+		NULL,			// Use parent's environment block
+		NULL,			// Use parent's starting directory
+		&lpStartupInfo,
+		&lpProcessInfo)
+		)
+	{
+		int dError2 = GetLastError();
+
+		LOG_ERROR("Create Process LastError: %d", dError2);
+	}
+	else
+	{
+		LOG_MESSAGE("Create Process Success");
+
+		// Close process and thread handles. 
+		CloseHandle(lpProcessInfo.hProcess);
+		CloseHandle(lpProcessInfo.hThread);
+	}
 }

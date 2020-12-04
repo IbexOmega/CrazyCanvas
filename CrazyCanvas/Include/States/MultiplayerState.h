@@ -38,9 +38,12 @@ private:
 
 	bool ConnectToServer(const LambdaEngine::IPEndPoint& endPoint, bool isManual);
 
+	bool HasHostedServer() const;
+	void StartUpServer();
+
 private:
 	Noesis::Ptr<MultiplayerGUI> m_MultiplayerGUI;
 	Noesis::Ptr<Noesis::IView> m_View;
-
+	int32 m_ClientHostID;
 	bool m_IsManualConnection;
 };

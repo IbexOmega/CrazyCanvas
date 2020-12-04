@@ -75,6 +75,8 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
 
+	LOG_INFO("STATE [%s]", stateStr.c_str());
+
 	const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
 
 	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
@@ -185,8 +187,6 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	ChatManager::Init();
-
-	LOG_ERROR("CrazyCanvas Successfully Initiated");
 }
 
 CrazyCanvas::~CrazyCanvas()
