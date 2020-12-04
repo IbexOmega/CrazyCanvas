@@ -185,6 +185,8 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	}
 
 	ChatManager::Init();
+
+	LOG_ERROR("CrazyCanvas Successfully Initiated");
 }
 
 CrazyCanvas::~CrazyCanvas()
