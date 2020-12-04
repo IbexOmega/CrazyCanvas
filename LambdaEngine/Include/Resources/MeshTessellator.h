@@ -17,6 +17,13 @@ namespace LambdaEngine
 			uint32 outerBorder			= 0;
 		};
 
+		struct SCalculationData
+		{
+			glm::mat4 ScaleMatrix;
+			uint32 PrimitiveCounter;
+			glm::vec3 Padding;
+		};
+
 	public:
 		void Init();
 		void Release();
@@ -49,6 +56,9 @@ namespace LambdaEngine
 
 		Texture* m_pDummyTexture;
 		TextureView* m_pDummyTextureView;
+
+		Buffer* m_pCalculationDataStagingBuffer = nullptr;
+		Buffer* m_pCalculationDataBuffer = nullptr;
 
 		Buffer* m_pInVertexStagingBuffer = nullptr;
 		Buffer* m_pInVertexBuffer = nullptr;

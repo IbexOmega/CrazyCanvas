@@ -64,11 +64,18 @@ namespace LambdaEngine
 			inVerticesBinding.DescriptorCount = 1;
 			inVerticesBinding.Binding = 0;
 			inVerticesBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+			
+			DescriptorBindingDesc counterBinding = { };
+			counterBinding.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			counterBinding.DescriptorCount = 1;
+			counterBinding.Binding = 1;
+			counterBinding.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 			DescriptorSetLayoutDesc inDescriptorSetLayoutDesc = { };
 			inDescriptorSetLayoutDesc.DescriptorBindings =
 			{
-				inVerticesBinding
+				inVerticesBinding,
+				counterBinding
 			};
 
 			DescriptorBindingDesc outVerticesBinding = { };
@@ -150,20 +157,6 @@ namespace LambdaEngine
 			pipelineStateDesc.DepthStencilState.DepthTestEnable = false;
 			pipelineStateDesc.DepthStencilState.DepthWriteEnable = false;
 
-			pipelineStateDesc.BlendState.BlendAttachmentStates =
-			{
-				{
-					EBlendOp::BLEND_OP_ADD,
-					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
-					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-					EBlendOp::BLEND_OP_ADD,
-					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
-					COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
-					false
-				}
-			};
-
 			GUID_Lambda vertexShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
 			GUID_Lambda pixelShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
 			GUID_Lambda controlShader = ResourceManager::LoadShaderFromFile("Tessellation/Passthrough.tesc", FShaderStageFlag::SHADER_STAGE_FLAG_HULL_SHADER, EShaderLang::SHADER_LANG_GLSL, "main");
@@ -204,6 +197,9 @@ namespace LambdaEngine
 		m_pOutVertexFirstStagingBuffer->Release();
 		m_pOutVertexSecondStagingBuffer->Release();
 
+		m_pCalculationDataBuffer->Release();
+		m_pCalculationDataStagingBuffer->Release();
+
 		// Release textures
 		m_pDummyTexture->Release();
 		m_pDummyTextureView->Release();
@@ -228,8 +224,11 @@ namespace LambdaEngine
 		pushConstantData.outerBorder = 3; // Not counting the corners! One outer edge on the triangle will be, o-x-x-x-o, if the outerBorder is 3.
 
 		// TODO: Change this to be the correct size, if assuming all triangle will be fully tessellated!
-		uint64 newVerticesMaxSize = (pushConstantData.triangleCount*12) * sizeof(Vertex);
-		uint64 newIndicesMaxSize = (pushConstantData.triangleCount * 12) * sizeof(MeshIndexType);
+		const uint32 MaxInnerTessellationLevel = 6;
+		const uint32 MaxOuterTessellationLevel = 6;
+
+		uint64 newVerticesMaxSize = (pushConstantData.triangleCount * 12 * MaxInnerTessellationLevel * MaxOuterTessellationLevel) * sizeof(Vertex);
+		uint64 newIndicesMaxSize = (pushConstantData.triangleCount * 12 * MaxInnerTessellationLevel * MaxOuterTessellationLevel) * sizeof(MeshIndexType);
 
 		BeginRenderPassDesc beginRenderPassDesc = {};
 		beginRenderPassDesc.pRenderPass = m_RenderPass;
@@ -256,6 +255,7 @@ namespace LambdaEngine
 		scissorRect.Width = 1;
 		scissorRect.Height = 1;
 
+		LOG_WARNING("Mesh PreVertexCount: %d", pMesh->Vertices.GetSize());
 		LOG_WARNING("Create buffers...");
 		static uint64 signalValue = 0;
 		{
@@ -264,9 +264,16 @@ namespace LambdaEngine
 
 			// ------- Create buffers if needed and copy data to them ------
 
+			// Create buffer for tessellation calculations
+			SCalculationData meshCalculationData = {};
+			meshCalculationData.ScaleMatrix = glm::scale(pMesh->DefaultScale);
+			meshCalculationData.PrimitiveCounter = 0;
+			uint64 size = sizeof(SCalculationData);
+			CreateAndCopyInBuffer(m_pCommandList, &m_pCalculationDataBuffer, &m_pCalculationDataStagingBuffer, (void*)&meshCalculationData, size, "Tessellator Calculation Data Buffer", FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER);
+
 			// In Buffers
 			void* data = pMesh->Vertices.GetData();
-			uint64 size = pMesh->Vertices.GetSize() * sizeof(Vertex);
+			size = pMesh->Vertices.GetSize() * sizeof(Vertex);
 			CreateAndCopyInBuffer(m_pCommandList, &m_pInVertexBuffer, &m_pInVertexStagingBuffer, pMesh->Vertices.GetData(), size, "Tessellator In Vertex Buffer", FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER);
 
 			data = pMesh->Indices.GetData();
@@ -296,10 +303,10 @@ namespace LambdaEngine
 		{
 			// In descriptor set
 			{
-				Buffer* buffers[1] = { m_pInVertexBuffer };
-				uint64 offsets[1] = { 0 };
-				uint64 sizes[1] = { m_pInVertexBuffer->GetDesc().SizeInBytes };
-				m_pInDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+				Buffer* buffers[2] = { m_pInVertexBuffer, m_pCalculationDataBuffer };
+				uint64 offsets[2] = { 0, 0 };
+				uint64 sizes[2] = { m_pInVertexBuffer->GetDesc().SizeInBytes, m_pCalculationDataBuffer->GetDesc().SizeInBytes };
+				m_pInDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 2, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 			}
 			
 			// Out descriptor set
@@ -317,7 +324,6 @@ namespace LambdaEngine
 			m_pCommandAllocator->Reset();
 			m_pCommandList->Begin(nullptr);
 			m_pCommandList->BeginRenderPass(&beginRenderPassDesc);
-
 			m_pCommandList->SetViewports(&viewport, 0, 1);
 			m_pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
@@ -332,6 +338,8 @@ namespace LambdaEngine
 
 			// Render
 			m_pCommandList->DrawIndexInstanced(pMesh->Indices.GetSize(), 1, 0, 0, 0);
+
+			m_pCommandList->EndRenderPass();
 
 			static constexpr const PipelineMemoryBarrierDesc MEMORY_BARRIER
 			{
@@ -379,6 +387,8 @@ namespace LambdaEngine
 
 		LOG_WARNING("Compact data...");
 		uint32 emptyCount = 0;
+
+		THashTable<glm::vec3, uint32> vertexToIndexMap;
 		// Move all elements to the left.
 		for (uint32 i = 0; i < pMesh->Indices.GetSize(); i++)
 		{
@@ -396,7 +406,7 @@ namespace LambdaEngine
 		// Remove the unused elements.
 		pMesh->Indices.Resize(pMesh->Indices.GetSize() - emptyCount);
 		pMesh->Vertices.Resize(pMesh->Vertices.GetSize() - emptyCount);
-
+		LOG_WARNING("Mesh PostVertexCount: %d", pMesh->Vertices.GetSize());
 		LOG_WARNING("Done");
 		
 		LOG_WARNING("Tessellation Complete");
