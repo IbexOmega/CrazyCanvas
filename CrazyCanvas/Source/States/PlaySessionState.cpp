@@ -60,6 +60,7 @@ PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool 
 	m_Singleplayer(singlePlayer),
 	m_MultiplayerClient(),
 	m_GameSettings(gameSettings),
+	m_NameplateSystem(&m_HUDSystem),
 	m_DefferedTicks(3),
 	m_Initiated(false),
 	m_MatchReadyReceived(false),
@@ -121,6 +122,7 @@ void PlaySessionState::Init()
 
 	// Init Systems
 	m_HUDSystem.Init();
+	m_NameplateSystem.Init();
 	m_DestructionSystem.Init();
 
 	// Commands
@@ -164,7 +166,7 @@ void PlaySessionState::Tick(Timestamp delta)
 {
 	if (m_UpdateShaders)
 	{
-		m_UpdateShaders = false; 
+		m_UpdateShaders = false;
 		EventQueue::SendEvent(ShaderRecompileEvent());
 		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}

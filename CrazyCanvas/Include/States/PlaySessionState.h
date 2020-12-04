@@ -1,8 +1,10 @@
 #pragma once
-#include "ECS/Systems/Player/WeaponSystem.h"
-#include "ECS/Systems/Player/HealthSystem.h"
+
+#include "ECS/Systems/GUI/NameplateSystem.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Misc/DestructionSystem.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystem.h"
 
 #include "Game/State.h"
 
@@ -63,6 +65,7 @@ private:
 
 	/* Systems */
 	HUDSystem m_HUDSystem;
+	NameplateSystem m_NameplateSystem;
 	SpectateCameraSystem m_CamSystem;
 	MultiplayerClient m_MultiplayerClient;
 	DestructionSystem m_DestructionSystem;

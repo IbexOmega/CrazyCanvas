@@ -158,8 +158,8 @@ namespace LambdaEngine
 		/* Character controllers */
 		// CreateCharacterCapsule creates a character collider capsule. Total height is height + radius * 2 (+ contactOffset * 2)
 		CharacterColliderComponent CreateCharacterCapsule(
-			const CharacterColliderCreateInfo& characterColliderInfo, 
-			float32 height, 
+			const CharacterColliderCreateInfo& characterColliderInfo,
+			float32 height,
 			float32 radius);
 
 		// CreateCharacterBox creates a character collider box
@@ -167,6 +167,12 @@ namespace LambdaEngine
 
 		static float32 CalculateSphereRadius(const Mesh* pMesh);
 		void CalculateCapsuleDimensions(Mesh* pMesh, float32& radius, float32& halfHeight);
+
+		/**
+		 * @param raycastHit Will contain hit data if there was a hit
+		 * @return True if there was a hit, otherwise false.
+		*/
+		bool Raycast(const glm::vec3& origin, const glm::vec3& direction, float32 maxDistance, PxRaycastHit& raycastHit);
 
 		/* Implement PxSimulationEventCallback */
 		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs) override final;
@@ -181,9 +187,9 @@ namespace LambdaEngine
 
 	private:
 		PxShape* CreateShape(
-			const ShapeCreateInfo& shapeCreateInfo, 
-			const glm::vec3& position, 
-			const glm::vec3& scale, 
+			const ShapeCreateInfo& shapeCreateInfo,
+			const glm::vec3& position,
+			const glm::vec3& scale,
 			const glm::quat& rotation) const;
 
 		// CreateCollisionCapsule creates a sphere if no capsule can be made
@@ -204,26 +210,26 @@ namespace LambdaEngine
 		void OnCharacterColliderRemoval(Entity entity);
 
 		StaticCollisionComponent FinalizeStaticCollisionActor(
-			const CollisionCreateInfo& collisionInfo, 
+			const CollisionCreateInfo& collisionInfo,
 			const glm::quat& additionalRotation = glm::identity<glm::quat>());
-		
+
 		DynamicCollisionComponent FinalizeDynamicCollisionActor(
-			const DynamicCollisionCreateInfo& collisionInfo, 
+			const DynamicCollisionCreateInfo& collisionInfo,
 			const glm::quat& additionalRotation = glm::identity<glm::quat>());
-		
+
 		CharacterColliderComponent FinalizeCharacterController(
-			const CharacterColliderCreateInfo& characterColliderInfo, 
+			const CharacterColliderCreateInfo& characterColliderInfo,
 			PxControllerDesc& controllerDesc);
-		
+
 		void FinalizeCollisionActor(const CollisionCreateInfo& collisionInfo, PxRigidActor* pActor);
 
 		void TriggerCallbacks(
-			const std::array<PxRigidActor*, 2>& actors, 
+			const std::array<PxRigidActor*, 2>& actors,
 			const std::array<PxShape*, 2>& shapes) const;
-		
+
 		void CollisionCallbacks(
-			const std::array<PxRigidActor*, 2>& actors, 
-			const std::array<PxShape*, 2>& shapes, 
+			const std::array<PxRigidActor*, 2>& actors,
+			const std::array<PxShape*, 2>& shapes,
 			const TArray<PxContactPairPoint>& contactPoints) const;
 
 	private:
