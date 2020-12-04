@@ -8,9 +8,10 @@ namespace LambdaEngine
     System::~System()
     {
         ECSCore* pECS = ECSCore::GetInstance();
-        if (pECS)
+        const uint32 jobID = GetJobID();
+        if (pECS && jobID != UINT32_MAX)
         {
-            pECS->DeregisterSystem(GetJobID());
+            pECS->DeregisterSystem(jobID);
         }
     }
 

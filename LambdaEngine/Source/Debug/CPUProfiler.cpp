@@ -3,6 +3,8 @@
 #include "Input/API/Input.h"
 #include "Application/API/CommonApplication.h"
 
+#include "Engine/EngineLoop.h"
+
 #include <imgui.h>
 
 // Code modifed from: https://github.com/TheCherno/Hazel
@@ -50,6 +52,8 @@ namespace LambdaEngine
 
 	CPUProfiler::CPUProfiler() : m_Counter(0)
 	{
+		m_ProfilingTicks[0].Reset();
+		m_ProfilingTicks[1].Reset();
 	}
 
 	CPUProfiler::~CPUProfiler()
@@ -60,6 +64,69 @@ namespace LambdaEngine
 	{
 		static CPUProfiler cpuProfiler;
 		return &cpuProfiler;
+	}
+
+	void LambdaEngine::CPUProfiler::BeginProfilingSegment(const String& name)
+	{
+		std::scoped_lock<SpinLock> lock(m_ProfilingSegmentSpinlock);
+
+		ProfilingTick& currentProfilingTick = m_ProfilingTicks[m_CurrentProfilingTick];
+
+		if (auto profilingSegmentIt = currentProfilingTick.ProfilingSegmentsMap.find(name); profilingSegmentIt != currentProfilingTick.ProfilingSegmentsMap.end())
+		{
+			currentProfilingTick.ProfilingSegmentStack.PushBack(profilingSegmentIt->second);
+		}
+		else
+		{
+			uint32 profilingSegmentIndex = currentProfilingTick.LiveProfilingSegments.GetSize();
+			currentProfilingTick.ProfilingSegmentsMap[name] = profilingSegmentIndex;
+			Clock clock;
+			clock.Reset();
+			currentProfilingTick.LiveProfilingSegments.PushBack(LiveProfilingSegment{ .Clock = clock });
+
+			currentProfilingTick.ProfilingSegmentStack.PushBack(profilingSegmentIndex);
+		}
+	}
+
+	void LambdaEngine::CPUProfiler::EndProfilingSegment(const String& name)
+	{
+		std::scoped_lock<SpinLock> lock(m_ProfilingSegmentSpinlock);
+
+		ProfilingTick& currentProfilingTick = m_ProfilingTicks[m_CurrentProfilingTick];
+
+		if (auto profilingSegmentIt = currentProfilingTick.ProfilingSegmentsMap.find(name); profilingSegmentIt != currentProfilingTick.ProfilingSegmentsMap.end())
+		{
+			LiveProfilingSegment& liveProfilingSegment = currentProfilingTick.LiveProfilingSegments[profilingSegmentIt->second];
+			Clock& clock = liveProfilingSegment.Clock;
+			clock.Tick();
+			float64 deltaTime = clock.GetDeltaTime().AsMilliSeconds();
+
+			FinishedProfilingSegment finishedProfilingSegment
+			{
+				.Name = name,
+				.DeltaTime = deltaTime,
+				.ChildProfilingSegments = liveProfilingSegment.ChildProfilingSegments
+			};
+
+			VALIDATE(profilingSegmentIt->second == currentProfilingTick.ProfilingSegmentStack.GetBack());
+
+			currentProfilingTick.ProfilingSegmentStack.PopBack();
+
+			if (!currentProfilingTick.ProfilingSegmentStack.IsEmpty())
+			{
+				LiveProfilingSegment& liveParentProfilingSegment = currentProfilingTick.LiveProfilingSegments[currentProfilingTick.ProfilingSegmentStack.GetBack()];
+				liveParentProfilingSegment.ChildProfilingSegments.insert(finishedProfilingSegment);
+			}
+			else
+			{
+				currentProfilingTick.FinishedProfilingSegments.insert(finishedProfilingSegment);
+				currentProfilingTick.TotalDeltaTime += deltaTime;
+			}
+		}
+		else
+		{
+			LOG_ERROR("Profiling Segment with name %s ended but never begun", name.c_str());
+		}
 	}
 
 	void CPUProfiler::BeginSession(const std::string& name, const std::string& filePath)
@@ -131,12 +198,19 @@ namespace LambdaEngine
 
 	void CPUProfiler::Tick(Timestamp delta)
 	{
+		m_PreviousProfilingTick = m_CurrentProfilingTick;
+		m_CurrentProfilingTick++;
+		if (m_CurrentProfilingTick >= ARR_SIZE(m_ProfilingTicks)) m_CurrentProfilingTick = 0;
+		m_ProfilingTicks[m_CurrentProfilingTick].Reset();
+
 		m_TimeSinceUpdate += delta.AsSeconds();
 		m_Timestamp = delta;
 	}
 
 	void CPUProfiler::Render()
 	{
+		std::scoped_lock<SpinLock> lock(m_ProfilingSegmentSpinlock);
+
 		if (m_TimeSinceUpdate > 1 / m_UpdateFrequency)
 		{
 			CommonApplication::Get()->GetPlatformApplication()->QueryCPUStatistics(&m_CPUStat);
@@ -171,9 +245,37 @@ namespace LambdaEngine
 			sprintf(buf, "%.3f%%", m_CPUStat.CPUPercentage);
 			ImGui::ProgressBar((float)m_CPUStat.CPUPercentage / 100.f, ImVec2(-1.0f, 0.0f), buf);
 
+			ImGui::NewLine();
+
+			ProfilingTick& profilingTick = m_ProfilingTicks[m_PreviousProfilingTick];
+			ImGui::Text("Profiling Segments - Total Profile Time %fms", profilingTick.TotalDeltaTime);
+
+			for (auto profilingTickIt = profilingTick.FinishedProfilingSegments.rbegin();
+				profilingTickIt != profilingTick.FinishedProfilingSegments.rend();
+				profilingTickIt++)
+			{
+				RenderFinishedProfilingSegment(*profilingTickIt, profilingTick.TotalDeltaTime);
+			}
+
 			ImGui::Dummy(ImVec2(0.0f, 20.0f));
 			ImGui::Unindent(10.0f);
 		}
 	}
 
+	void LambdaEngine::CPUProfiler::RenderFinishedProfilingSegment(const FinishedProfilingSegment& profilingSegment, float64 parentDeltaTime)
+	{
+		constexpr const float32 indent = 25.0f;
+		ImGui::Indent(indent);
+
+		glm::vec3 color = glm::lerp<glm::vec3>(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(profilingSegment.DeltaTime / parentDeltaTime));
+		ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1.0f), "%s: %fms", profilingSegment.Name.c_str(), profilingSegment.DeltaTime);
+		for (auto profilingTickIt = profilingSegment.ChildProfilingSegments.rbegin();
+			profilingTickIt != profilingSegment.ChildProfilingSegments.rend();
+			profilingTickIt++)
+		{
+			RenderFinishedProfilingSegment(*profilingTickIt, profilingSegment.DeltaTime);
+		}
+
+		ImGui::Unindent(indent);
+	}
 }

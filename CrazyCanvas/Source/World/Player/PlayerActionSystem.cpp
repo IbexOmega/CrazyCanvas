@@ -59,7 +59,7 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 		const MouseState& mouseState = Input::GetMouseState(currentInputLayer == EInputLayer::GAME ? EInputLayer::GAME : EInputLayer::DEAD);
 
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-		const int32 halfWidth		= int32(0.5f * float32(window->GetWidth()));
+		const int32 halfWidth	= int32(0.5f * float32(window->GetWidth()));
 		const int32 halfHeight	= int32(0.5f * float32(window->GetHeight()));
 
 		const glm::vec2 mouseDelta(mouseState.Position.x - halfWidth, mouseState.Position.y - halfHeight);

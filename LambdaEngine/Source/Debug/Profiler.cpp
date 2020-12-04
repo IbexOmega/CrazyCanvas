@@ -45,5 +45,4 @@ namespace LambdaEngine
 
 		ImGui::End();
 	}
-
 }

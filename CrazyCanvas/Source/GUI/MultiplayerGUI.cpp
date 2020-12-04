@@ -60,7 +60,7 @@ MultiplayerGUI::MultiplayerGUI(MultiplayerState* pMultiplayerState) :
 	m_pTextBoxAddress		= FrameworkElement::FindName<TextBox>("IP_ADDRESS");
 	m_pTextBoxName			= FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
 
-	m_pTextBoxAddress->SetText("81.170.143.133:4444");
+	//m_pTextBoxAddress->SetText("81.170.143.133:4444");
 
 	ErrorPopUpClose();
 	NotiPopUpClose();
