@@ -84,8 +84,9 @@ namespace LambdaEngine
 			// Update
 			const Timestamp& delta = g_Clock.GetDeltaTime();
 
+#if PROFILING_ENABLED
 			Profiler::Tick(delta);
-
+#endif
 			BEGIN_PROFILING_SEGMENT("Full Frame");
 
 			BEGIN_PROFILING_SEGMENT("EngineLoop::Tick");
@@ -242,10 +243,12 @@ namespace LambdaEngine
 		
 		PROFILE_FUNCTION("RenderSystem::Render", RenderSystem::GetInstance().Render(delta));
 
+#if PROFILING_ENABLED
 		ImGuiRenderer::Get().DrawUI([&]()
 			{
 				Profiler::Render();
 			});
+#endif
 		return true;
 	}
 
