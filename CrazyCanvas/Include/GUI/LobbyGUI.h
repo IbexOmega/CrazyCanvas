@@ -55,6 +55,7 @@ public:
 	void OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
 	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
@@ -87,6 +88,7 @@ private:
 	Noesis::Label*		m_pPlayersLabel				= nullptr;
 	Noesis::Label*		m_pTeam1Label				= nullptr;
 	Noesis::Label*		m_pTeam2Label				= nullptr;
+	Noesis::Grid*		m_pSettingsGrid				= nullptr;
 
 	PacketGameSettings* m_pGameSettings;
 	bool m_IsInitiated;

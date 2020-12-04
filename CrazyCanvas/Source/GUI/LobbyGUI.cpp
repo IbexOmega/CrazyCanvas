@@ -43,6 +43,8 @@ LobbyGUI::LobbyGUI(PacketGameSettings* pGameSettings) :
 	m_pChatInputTextBox->SetMaxLines(1);
 	m_pChatInputTextBox->SetMaxLength(128);
 
+	m_pSettingsGrid = FrameworkElement::FindName<Grid>("SettingsGrid");
+
 	SetHostMode(false);
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
@@ -315,7 +317,7 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		// Update Settings Color
 		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor1->GetBackground());
 		pSolidColorBrush->SetColor(teamColor);
-		
+
 		// Update Team Label color
 		pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
 		pSolidColorBrush->SetColor(teamColor);
@@ -370,7 +372,7 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		else if (minutes == 15)
 			pSettingMaxTimeHost->SetSelectedIndex(3);
 	}
-		
+
 
 	ComboBox* pSettingFlagsToWinHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_host").c_str());
 	if (pSettingFlagsToWinHost)
@@ -523,6 +525,7 @@ bool LobbyGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const ch
 	NS_CONNECT_EVENT(Button, Click, OnButtonReadyClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonLeaveClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonSendMessageClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonSettingsClick);
 
 	return false;
 }
@@ -544,6 +547,14 @@ void LobbyGUI::OnButtonLeaveClick(BaseComponent* pSender, const RoutedEventArgs&
 void LobbyGUI::OnButtonSendMessageClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	TrySendChatMessage();
+}
+
+void LobbyGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
 }
 
 bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
@@ -667,7 +678,7 @@ void LobbyGUI::OnTextBoxChanged(BaseComponent* pSender, const RoutedEventArgs& a
 {
 	TextBox* pTextBox = static_cast<TextBox*>(pSender);
 
-	if (strcmp(m_pGameSettings->ServerName, pTextBox->GetText()) != 0) 
+	if (strcmp(m_pGameSettings->ServerName, pTextBox->GetText()) != 0)
 	{
 		strcpy(m_pGameSettings->ServerName, pTextBox->GetText());
 
