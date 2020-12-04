@@ -200,6 +200,11 @@
                 <Grid Grid.Column="3" Grid.Row="2" Grid.ColumnSpan="4" Grid.RowSpan="5">
                     <uc:CountdownGUI x:Name="COUNTDOWN" Canvas.Left="-26" Canvas.Top="-51" Opacity="0.0"/>
                 </Grid>
+
+                <Grid x:Name="LookAtGrid" Grid.Column="4" Grid.Row="10" Background="#3F000000" Visibility="Collapsed" MinWidth="100" MaxHeight="30" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0">
+                    <TextBlock x:Name="LookAtText" Text="" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="2.5" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="28" ></TextBlock>
+                </Grid>
+
             </Grid>
         </Viewbox>
 

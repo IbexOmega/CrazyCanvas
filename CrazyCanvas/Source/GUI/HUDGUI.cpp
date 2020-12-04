@@ -354,6 +354,16 @@ void HUDGUI::ShowHUD(const bool isVisible)
 		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
 }
 
+void HUDGUI::ShowNamePlate(const LambdaEngine::String& name, bool isLooking)
+{
+	((Noesis::TextBlock*)m_pLookAtGrid->GetChildren()->Get(0))->SetText(name.c_str());
+
+	if (isLooking)
+		m_pLookAtGrid->SetVisibility(Noesis::Visibility::Visibility_Visible);
+	else
+		m_pLookAtGrid->SetVisibility(Noesis::Visibility::Visibility_Collapsed);
+}
+
 ScoreBoardGUI* HUDGUI::GetScoreBoard() const
 {
 	return m_pScoreBoardGUI;
@@ -427,6 +437,7 @@ void HUDGUI::InitGUI()
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
 
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
+	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
@@ -486,7 +497,7 @@ void HUDGUI::SetRenderStagesInactive()
 	DisablePlaySessionsRenderstages();
 }
 
-void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
+void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
 	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
 

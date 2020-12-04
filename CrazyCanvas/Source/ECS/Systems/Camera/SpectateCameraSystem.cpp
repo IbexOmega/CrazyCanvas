@@ -33,7 +33,7 @@ void SpectateCameraSystem::Init()
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
 		{
-			.pSubscriber = & m_SpectatableEntities,
+			.pSubscriber = &m_SpectatableEntities,
 			.ComponentAccesses =
 			{
 				{ NDA, SpectateComponent::Type() }
@@ -180,13 +180,10 @@ void SpectateCameraSystem::SpectatePlayer()
 			{
 				case SpectateType::FLAG_SPAWN:
 				{
-					TeamComponent teamComponent = {};
+					const TeamComponent& teamComponent = pTeamComponents->GetConstData(entity);
 					
-					if (pTeamComponents->GetConstIf(entity, teamComponent))
-					{
-						if (teamComponent.TeamIndex == m_LocalTeamIndex)
-							flagSpawnEntity = entity;
-					}
+					if (teamComponent.TeamIndex == m_LocalTeamIndex)
+						flagSpawnEntity = entity;
 
 					break;
 				}
@@ -241,7 +238,6 @@ void SpectateCameraSystem::SpectatePlayer()
 				{
 					ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 					parentComponent.Parent = flagSpawnEntity;
-
 
 					SpectatePlayerEvent event("Team Flag", true);
 					EventQueue::SendEventImmediate(event);
