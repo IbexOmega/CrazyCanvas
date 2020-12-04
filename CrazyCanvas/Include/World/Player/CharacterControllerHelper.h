@@ -13,6 +13,10 @@ public:
 
 public:
 
+	static void SetForeignCharacterController(
+		LambdaEngine::CharacterColliderComponent& characterColliderComponent,
+		const LambdaEngine::NetworkPositionComponent& networkPositionComponent);
+
 	static void TickForeignCharacterController(
 		float32 dt,
 		LambdaEngine::CharacterColliderComponent& characterColliderComponent,
