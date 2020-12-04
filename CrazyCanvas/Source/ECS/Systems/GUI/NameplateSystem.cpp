@@ -7,6 +7,7 @@
 #include "Game/ECS/Components/Team/TeamComponent.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Lobby/PlayerManagerClient.h"
+#include "ECS/Systems/GUI/HUDSystem.h"
 
 NameplateSystem::NameplateSystem(HUDSystem* pHUDSystem)
 	: m_pHUDSystem(pHUDSystem)
@@ -83,7 +84,12 @@ void NameplateSystem::Tick(LambdaEngine::Timestamp deltaTime)
 				if (teamComponent.TeamIndex == m_LocalPlayerTeam)
 				{
 					LOG_INFO("Looking at teammate");
-					// m_pHUDSystem->ActivateNameplate(...);
+
+					const Player* pPlayer = PlayerManagerClient::GetPlayer(foreignPlayer);
+
+					if (pPlayer)
+						m_pHUDSystem->DisplayNamePlate(pPlayer->GetName(), true);
+
 				}
 			}
 		}
