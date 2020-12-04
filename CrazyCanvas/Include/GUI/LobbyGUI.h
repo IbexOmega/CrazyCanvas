@@ -100,6 +100,6 @@ private:
 	static constexpr const char* SETTING_MAX_PLAYERS			= "MAX_PLAYERS";
 	static constexpr const char* SETTING_VISIBILITY				= "VISIBILITY";
 	static constexpr const char* SETTING_CHANGE_TEAM			= "CHANGE_TEAM";
-	static constexpr const char* SETTING_CHANGE_TEAM_0_COLOR	= "CHANGE_TEAM_0_COLOR";
 	static constexpr const char* SETTING_CHANGE_TEAM_1_COLOR	= "CHANGE_TEAM_1_COLOR";
+	static constexpr const char* SETTING_CHANGE_TEAM_2_COLOR	= "CHANGE_TEAM_2_COLOR";
 };

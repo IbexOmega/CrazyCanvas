@@ -34,14 +34,14 @@ void ScoreBoardGUI::InitGUI()
 {
 	m_pScoreboardGrid = FrameworkElement::FindName<Noesis::Grid>("SCOREBOARD_GRID");
 
-	m_pBlueTeamStackPanel = FrameworkElement::FindName<Noesis::StackPanel>("BLUE_TEAM_STACK_PANEL");
-	m_pRedTeamStackPanel = FrameworkElement::FindName<Noesis::StackPanel>("RED_TEAM_STACK_PANEL");
+	m_pTeam1StackPanel = FrameworkElement::FindName<Noesis::StackPanel>("TEAM_1_STACK_PANEL");
+	m_pTeam2StackPanel = FrameworkElement::FindName<Noesis::StackPanel>("TEAM_2_STACK_PANEL");
 
 	Noesis::Ptr<Noesis::SolidColorBrush> pteamBrush1 = *new Noesis::SolidColorBrush();
 	Noesis::Ptr<Noesis::SolidColorBrush> pteamBrush2 = *new Noesis::SolidColorBrush();
 
-	glm::vec3 teamColor1 = TeamHelper::GetTeamColor(0);
-	glm::vec3 teamColor2 = TeamHelper::GetTeamColor(1);
+	glm::vec3 teamColor1 = TeamHelper::GetTeamColor(1);
+	glm::vec3 teamColor2 = TeamHelper::GetTeamColor(2);
 
 	Noesis::Color Color1(teamColor1.r, teamColor1.g, teamColor1.b);
 	Noesis::Color Color2(teamColor2.r, teamColor2.g, teamColor2.b);
@@ -149,13 +149,13 @@ void ScoreBoardGUI::RemovePlayer(const Player& player)
 
 	m_PlayerGrids.erase(player.GetUID());
 
-	if (player.GetTeam() == 0)
+	if (player.GetTeam() == 1)
 	{
-		m_pBlueTeamStackPanel->GetChildren()->Remove(pGrid);
+		m_pTeam1StackPanel->GetChildren()->Remove(pGrid);
 	}
-	else if (player.GetTeam() == 1)
+	else if (player.GetTeam() == 2)
 	{
-		m_pRedTeamStackPanel->GetChildren()->Remove(pGrid);
+		m_pTeam2StackPanel->GetChildren()->Remove(pGrid);
 	}
 	else
 	{
@@ -201,13 +201,13 @@ void ScoreBoardGUI::AddPlayer(const Player& newPlayer)
 	AddStatsLabel(pGrid, std::to_string(newPlayer.GetFlagsDefended()), column++);
 	AddStatsLabel(pGrid, std::to_string(newPlayer.GetPing()), column++);
 
-	if (newPlayer.GetTeam() == 0)
+	if (newPlayer.GetTeam() == 1)
 	{
-		m_pBlueTeamStackPanel->GetChildren()->Add(pGrid);
+		m_pTeam1StackPanel->GetChildren()->Add(pGrid);
 	}
-	else if (newPlayer.GetTeam() == 1)
+	else if (newPlayer.GetTeam() == 2)
 	{
-		m_pRedTeamStackPanel->GetChildren()->Add(pGrid);
+		m_pTeam2StackPanel->GetChildren()->Add(pGrid);
 	}
 	else
 	{

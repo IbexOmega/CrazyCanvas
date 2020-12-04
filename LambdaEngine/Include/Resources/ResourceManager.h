@@ -146,6 +146,13 @@ namespace LambdaEngine
 			bool useMeshletCache = false);
 
 		/**
+		 * Register a new mesh that already contains all desired data
+		 * @param name	Name of the mesh to register
+		 * @param pMesh	A mesh that already contains all desired data
+		*/
+		static GUID_Lambda RegisterMesh(const String& name, Mesh* pMesh);
+
+		/*
 		* Load a material from memory
 		* @param name				A name given to the material
 		* @param albedoMap
@@ -363,7 +370,6 @@ namespace LambdaEngine
 			LoadedMaterial* pLoadedMaterial,
 			MaterialLoadDesc& materialLoadConfig);
 
-		static GUID_Lambda RegisterMesh(const String& name, Mesh* pMesh);
 		static GUID_Lambda RegisterMaterial(const String& name, Material* pMaterial);
 		static GUID_Lambda RegisterAnimation(const String& name, Animation* pAnimation);
 		static GUID_Lambda RegisterTexture(Texture* pTexture);

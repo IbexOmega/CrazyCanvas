@@ -65,17 +65,38 @@ namespace LambdaEngine
 			verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 			verticesBindingDesc.DescriptorCount = 1;
 			verticesBindingDesc.Binding = 0;
-			verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 			DescriptorBindingDesc instanceBindingDesc = {};
 			instanceBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
 			instanceBindingDesc.DescriptorCount = 1;
 			instanceBindingDesc.Binding = 1;
-			instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+			instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			DescriptorBindingDesc meshletsBindingDesc = {};
+			meshletsBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			meshletsBindingDesc.DescriptorCount = 1;
+			meshletsBindingDesc.Binding = 2;
+			meshletsBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			DescriptorBindingDesc uniqueIndicesBindingDesc = {};
+			uniqueIndicesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			uniqueIndicesBindingDesc.DescriptorCount = 1;
+			uniqueIndicesBindingDesc.Binding = 3;
+			uniqueIndicesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			DescriptorBindingDesc primitiveIndicesBindingDesc = {};
+			primitiveIndicesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			primitiveIndicesBindingDesc.DescriptorCount = 1;
+			primitiveIndicesBindingDesc.Binding = 4;
+			primitiveIndicesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 
 			TArray<DescriptorBindingDesc> descriptorBindings = {
 				verticesBindingDesc,
-				instanceBindingDesc
+				instanceBindingDesc,
+				meshletsBindingDesc,
+				uniqueIndicesBindingDesc,
+				primitiveIndicesBindingDesc
 			};
 			
 			m_UpdatePipeline.CreateDescriptorSetLayout(descriptorBindings);
@@ -177,7 +198,6 @@ namespace LambdaEngine
 	bool LambdaEngine::MeshPaintUpdater::Init()
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
-		m_ResourcesToRemove.Resize(m_BackBufferCount);
 
 		if (!CreatePipelineLayout())
 		{
@@ -261,7 +281,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorCount = 1;
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("[MeshPaintUpdater] Brush mask texture Descriptor Set 2 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			m_UpdatePipeline.UpdateDescriptorSet("[MeshPaintUpdater] Brush mask texture Descriptor Set 2 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc, false);
 		}
 	}
 
@@ -282,7 +302,7 @@ namespace LambdaEngine
 			descriptorUpdateDesc.DescriptorCount = count;
 			descriptorUpdateDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
 
-			m_UpdatePipeline.UpdateDescriptorSet("[MeshPaintUpdater] Hit points Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc);
+			m_UpdatePipeline.UpdateDescriptorSet("[MeshPaintUpdater] Hit points Buffer Descriptor Set 0 Binding 0", setIndex, m_DescriptorHeap.Get(), descriptorUpdateDesc, false);
 		}
 	}
 
@@ -290,34 +310,21 @@ namespace LambdaEngine
 	{
 		if (resourceName == SCENE_DRAW_ARGS)
 		{
-			constexpr uint32 setIndex = 1U;
-			constexpr uint32 setBinding = 0U;
-
-			m_VertexCountList.Clear();
-
-			// Remove previous draw args
-			for (std::pair<Entity, TSharedRef<DescriptorSet>> desc : m_DrawArgDescriptorSets)
+			if (pDrawArgs)
 			{
-				m_ResourcesToRemove[m_CurrentFrameIndex].PushBack(desc.second.GetAndAddRef());
-			}
-			m_DrawArgDescriptorSets.Clear();
+				m_VertexCountList.Clear();
 
-			for (uint32 d = 0; d < count; d++)
-			{
-				const DrawArg& drawArg = pDrawArgs[d];
-				uint32 vertexCount = (uint32)(drawArg.pVertexBuffer->GetDesc().SizeInBytes / sizeof(Vertex));
-				m_VertexCountList.PushBack(vertexCount);
+				if (count != m_DrawArgsDescriptorSets.GetSize())
+				{
+					m_DrawArgsDescriptorSets.Resize(count);
+				}
 
-				TSharedRef<DescriptorSet> descriptorSet = RenderAPI::GetDevice()->CreateDescriptorSet(
-					"[MeshPaintUpdater] DrawArgs Buffer Descriptor Set 0 Binding 0 Index - " + std::to_string(d), 
-					m_UpdatePipeline.GetPipelineLayout().Get(), setIndex, m_DescriptorHeap.Get());
-
-				Buffer* ppBuffers[2] = { drawArg.pVertexBuffer, drawArg.pInstanceBuffer };
-				uint64 pOffsets[2] = { 0, 0 };
-				uint64 pSizes[2] = { drawArg.pVertexBuffer->GetDesc().SizeInBytes, drawArg.pInstanceBuffer->GetDesc().SizeInBytes };
-				descriptorSet->WriteBufferDescriptors(ppBuffers, pOffsets, pSizes, setBinding, 2, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
-
-				m_DrawArgDescriptorSets.PushBack(std::make_pair(drawArg.EntityIDs[0], descriptorSet));
+				for (uint32 d = 0; d < count; d++)
+				{
+					const DrawArg& drawArg = pDrawArgs[d];
+					m_VertexCountList.PushBack((uint32)(drawArg.pVertexBuffer->GetDesc().SizeInBytes / sizeof(Vertex)));
+					m_DrawArgsDescriptorSets[d] = std::make_pair(drawArg.EntityIDs[0], drawArg.pDescriptorSet);
+				}
 			}
 		}
 	}
@@ -333,12 +340,6 @@ namespace LambdaEngine
 
 		m_CurrentFrameIndex = modFrameIndex;
 
-		// Remove old resources
-		TArray<DeviceChild*>& resourcesToRemove = m_ResourcesToRemove[m_CurrentFrameIndex];
-		for (DeviceChild* resource : resourcesToRemove)
-			resource->Release();
-		resourcesToRemove.Clear();
-
 		CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 		m_ppComputeCommandAllocators[modFrameIndex]->Reset();
 		pCommandList->Begin(nullptr);
@@ -350,9 +351,9 @@ namespace LambdaEngine
 			SPushConstantData pushConstantData = {};
 			pushConstantData.VertexCount = m_VertexCountList[d];
 			// Check if this entity should clear its server side vertex paint.
-			pushConstantData.ShouldResetServer = (uint32)s_EntitiesToClear.contains(m_DrawArgDescriptorSets[d].first);
+			pushConstantData.ShouldResetServer = (uint32)s_EntitiesToClear.contains(m_DrawArgsDescriptorSets[d].first);
 
-			pCommandList->BindDescriptorSetCompute(m_DrawArgDescriptorSets[d].second.Get(), m_UpdatePipeline.GetPipelineLayout().Get(), 1);
+			pCommandList->BindDescriptorSetCompute(m_DrawArgsDescriptorSets[d].second, m_UpdatePipeline.GetPipelineLayout().Get(), 1);
 			m_UpdatePipeline.BindConstantRange(pCommandList, (void*)&pushConstantData, sizeof(pushConstantData), 0U);
 
 			constexpr uint32 WORK_GROUP_INVOCATIONS = 32;

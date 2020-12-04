@@ -26,14 +26,6 @@ layout(location = 8) out vec4 out_PaintInfo4;
 layout(location = 9) out float out_PaintDist;
 layout(location = 10) out vec3 out_VertDist;
 
-vec2 rotate(in vec2 v, float a)
-{
-    float c = cos(a);
-    float s = sin(a);
-    mat2 r = mat2(vec2(c, s), vec2(-s, c));
-    return r * v;
-}
-
 void main()
 {
 	SVertex vertex					= b_Vertices.val[gl_VertexIndex];

@@ -73,15 +73,17 @@ void main()
 		vec3 F0 = vec3(0.04f);
 
 		F0 = mix(F0, albedo, metallic);
+
+		float inShadowDirLight = 0.0f;
 		// Directional Light
 		{
 			vec3 L = normalize(lightBuffer.DirL_Direction);
 			vec3 H = normalize(V + L);
 
 			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(positions.WorldPos, 1.0f);
-			float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
+			inShadowDirLight 		= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance	= outgoingRadiance * (1.0f - inShadow);
+			vec3 incomingRadiance	= outgoingRadiance * (1.0f - inShadowDirLight);
 
 			float NDF	= Distribution(N, H, roughness);
 			float G		= Geometry(N, V, L, roughness);
@@ -140,15 +142,15 @@ void main()
 		vec3 Kd_IBL	= vec3(1.0f) - Ks_IBL;
 		Kd_IBL		*= (1.0f - metallic);
 	
-		vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
+		vec3 R				= reflect(-V, N);
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, R).rgb;
 		vec3 IBL_Diffuse	= irradiance * albedo;
 	
 		const float numberOfMips = 7.0;
-		vec3 R					= reflect(-V, N);
 		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, R, roughness * float(numberOfMips)).rgb;
 		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
 		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
-	
+
 		vec3 ambient	= (Kd_IBL * IBL_Diffuse + IBL_Specular) * ao;
 		colorHDR		= ambient + Lo;
 	}

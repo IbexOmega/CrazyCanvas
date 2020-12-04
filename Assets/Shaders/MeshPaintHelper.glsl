@@ -3,12 +3,12 @@
 
 #define PAINT_NOISE_SCALE			2.0f
 #define PAINT_DELTA_NOISE			0.0003f
-#define PAINT_BUMPINESS	        	15.0f
+#define PAINT_BUMPINESS	        	50.0f
 #define PAINT_BORDER_DELTA_NOISE	0.0005f
 #define PAINT_BORDER_BUMPINESS	    15.0f
 #define PAINT_BORDER_FREQUENCY	    10.0f
 #define PAINT_BORDER_AMPLITUDE	    0.4f
-#define PAINT_ROUGHNESS	        	0.01f
+#define PAINT_ROUGHNESS	        	0.1f
 
 #include "Noise.glsl"
 #include "MeshPaintFunc.glsl"
@@ -89,7 +89,7 @@ SPaintDescription InterpolatePaint(in mat3 TBN, in vec3 position, in vec3 tangen
 	SPaintDescription paintDescription;
 
 	paintDescription.Normal			= combinedNormal;
-	paintDescription.Albedo 		= /*vec3(float(1-step(1, abs(packedPaintInfo-1))), dist, float(1-step(1, abs(packedPaintInfo-2))));*/paintColorFinal;
+	paintDescription.Albedo 		= paintColorFinal;
 	paintDescription.Roughness 		= PAINT_ROUGHNESS;
 	paintDescription.Interpolation	= step(1.f, paintAmountFinal);
 

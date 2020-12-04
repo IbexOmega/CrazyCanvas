@@ -12,13 +12,13 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "EventHandlers/AudioEffectHandler.h"
-#include "MeshPaint/MeshPaintHandler.h"
 
 #include "Multiplayer/MultiplayerClient.h"
 
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "Multiplayer/Packet/PacketGameSettings.h"
+#include "Multiplayer/Packet/PacketMatchReady.h"
 
 class Level;
 
@@ -30,25 +30,34 @@ public:
 
 	void Init() override final;
 
-	void Resume() override final 
+	void Resume() override final
 	{
 	}
 
-	void Pause() override final 
+	void Pause() override final
 	{
 	}
 
 	void Tick(LambdaEngine::Timestamp delta) override final;
 	void FixedTick(LambdaEngine::Timestamp delta) override final;
 	bool OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event);
+	bool OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event);
 
 	const PacketGameSettings& GetGameSettings() const;
+
+private:
+	void InternalInit();
+	void TryFinishMatchLoading();
 
 public:
 	static PlaySessionState* GetInstance();
 
 private:
 	bool m_Singleplayer;
+	uint8 m_DefferedTicks;
+	bool m_Initiated;
+	bool m_MatchReadyReceived;
+	bool m_MatchLoaded;
 
 	PacketGameSettings m_GameSettings;
 
@@ -60,7 +69,6 @@ private:
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
-	MeshPaintHandler m_MeshPaintHandler;
 
 	/* Commands */
 	bool m_UpdateShaders = false;

@@ -661,6 +661,25 @@ namespace LambdaEngine
 		return guid;
 	}
 
+	GUID_Lambda ResourceManager::RegisterMesh(const String& name, Mesh* pResource)
+	{
+		VALIDATE(pResource != nullptr);
+
+		GUID_Lambda guid = GUID_NONE;
+		Mesh** ppMappedResource = nullptr;
+
+		//Spinlock
+		{
+			guid						= s_NextFreeGUID++;
+			ppMappedResource			= &s_Meshes[guid]; //Creates new entry if not existing
+			s_MeshGUIDsToNames[guid]	= name;
+			s_MeshNamesToGUIDs[name]	= guid;
+		}
+
+		(*ppMappedResource) = pResource;
+		return guid;
+	}
+
 	GUID_Lambda ResourceManager::LoadMaterialFromMemory(
 		const String& name,
 		GUID_Lambda albedoMap,
@@ -1874,7 +1893,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		//D_LOG_WARNING("GetMaterialDesc called with invalid GUID %u", guid);
+		LOG_DEBUG("GetMaterialDesc called with invalid GUID %u", guid);
 
 		// Return empty 
 		ResourceManager::MaterialLoadDesc materialLoadDesc = {};
@@ -2140,25 +2159,6 @@ namespace LambdaEngine
 		GUID_Lambda guid = RegisterMaterial(name, pMaterialToBeRegistered);
 		s_MaterialLoadConfigurations[guid] = materialLoadConfig;
 
-		return guid;
-	}
-
-	GUID_Lambda ResourceManager::RegisterMesh(const String& name, Mesh* pResource)
-	{
-		VALIDATE(pResource != nullptr);
-
-		GUID_Lambda guid = GUID_NONE;
-		Mesh** ppMappedResource = nullptr;
-
-		//Spinlock
-		{
-			guid						= s_NextFreeGUID++;
-			ppMappedResource			= &s_Meshes[guid]; //Creates new entry if not existing
-			s_MeshGUIDsToNames[guid]	= name;
-			s_MeshNamesToGUIDs[name]	= guid;
-		}
-
-		(*ppMappedResource) = pResource;
 		return guid;
 	}
 

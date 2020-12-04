@@ -31,6 +31,7 @@ layout(location = 9) out flat uint out_InstanceIndex;
 layout(location = 10) out vec3 out_ViewDirection;
 layout(location = 11) out vec4 out_PaintInfo4;
 layout(location = 12) out float out_PaintDist;
+layout(location = 13) out vec3 out_LocalPosition;
 
 void main()
 {
@@ -60,6 +61,7 @@ void main()
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	out_PaintDist 			= vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
+	out_LocalPosition		= vec3(vertex.Tangent.x, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 

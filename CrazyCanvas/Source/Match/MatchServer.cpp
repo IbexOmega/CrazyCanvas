@@ -46,6 +46,8 @@
 
 #include "States/ServerState.h"
 
+#include "Game/PlayerIndexHelper.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -252,13 +254,13 @@ void MatchServer::BeginLoading()
 		{
 			if (m_MatchDesc.GameMode == EGameMode::CTF_COMMON_FLAG)
 			{
-				SpawnFlag(UINT8_MAX); //UINT8_MAX means no Team
+				SpawnFlag(0); // 0 means no Team
 			}
 			else
 			{
 				for (uint8 t = 0; t < m_MatchDesc.NumTeams; t++)
 				{
-					SpawnFlag(t);
+					SpawnFlag(t + 1);
 				}
 			}
 		}
@@ -489,7 +491,7 @@ void MatchServer::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, Lambda
 
 				if (!pECS->GetConstComponentIf(otherEntity, flagTeamComponent))
 				{
-					flagTeamComponent.TeamIndex = UINT8_MAX;
+					flagTeamComponent.TeamIndex = 0;
 				}
 
 				glm::vec3 flagPosition;
@@ -534,6 +536,7 @@ bool MatchServer::OnPlayerLeft(const PlayerLeftEvent& event)
 
 	Entity playerEntity = event.pPlayer->GetEntity();
 	DeleteGameLevelObject(playerEntity);
+	PlayerIndexHelper::RemovePlayerEntity(playerEntity);
 
 	return true;
 }
@@ -629,7 +632,7 @@ void MatchServer::DoKillPlayer(LambdaEngine::Entity playerEntity, bool respawnFl
 					TeamComponent flagTeamComponent = {};
 					if (!pECS->GetConstComponentIf<TeamComponent>(flagEntity, flagTeamComponent))
 					{
-						flagTeamComponent.TeamIndex = UINT8_MAX;
+						flagTeamComponent.TeamIndex = 0;
 					}
 
 					glm::vec3 flagSpawnPosition;
@@ -655,7 +658,21 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 
 	const Player* pPlayer		= PlayerManagerServer::GetPlayer(entityToKill);
 	const Player* pPlayerKiller = PlayerManagerServer::GetPlayer(killedByEntity);
-	PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
+
+	if (pPlayer)
+	{
+		PlayerManagerServer::SetPlayerAlive(pPlayer, false, pPlayerKiller);
+
+		{
+			std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
+			m_PlayersToKill.EmplaceBack(PlayerKillDesc{ .PlayerToKill = entityToKill, .RespawnFlagIfCarried = respawnFlagIfCarried });
+		}
+
+		{
+			std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
+			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 5.0f));
+		}
+	}
 
 	if (pPlayerKiller)
 	{
@@ -674,62 +691,54 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 			}
 		}
 	}
-
-	{
-
-		std::scoped_lock<SpinLock> lock(m_PlayersToKillLock);
-		m_PlayersToKill.EmplaceBack(PlayerKillDesc{ .PlayerToKill = entityToKill, .RespawnFlagIfCarried = respawnFlagIfCarried });
-	}
-
-	{
-
-		std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
-		m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 5.0f));
-	}
 }
 
 void MatchServer::RespawnPlayer(LambdaEngine::Entity entity)
 {
 	using namespace LambdaEngine;
 
-	ECSCore* pECS = ECSCore::GetInstance();
-	NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(entity);
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(entity);
 
-	glm::vec3 spawnPosition = glm::vec3(0.0f);
-
-	if (m_pLevel != nullptr)
+	if (pPlayer != nullptr)
 	{
-		TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+		ECSCore* pECS = ECSCore::GetInstance();
+		NetworkPositionComponent& positionComp = pECS->GetComponent<NetworkPositionComponent>(entity);
 
-		ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
-		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		glm::vec3 spawnPosition = glm::vec3(0.0f);
 
-		uint8 playerTeam = pTeamComponents->GetConstData(entity).TeamIndex;
-		for (Entity spawnEntity : spawnPoints)
+		if (m_pLevel != nullptr)
 		{
-			if (pTeamComponents->HasComponent(spawnEntity))
+			TArray<Entity> spawnPoints = m_pLevel->GetEntities(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPAWN);
+
+			ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
+			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+
+			uint8 playerTeam = pTeamComponents->GetConstData(entity).TeamIndex;
+			for (Entity spawnEntity : spawnPoints)
 			{
-				if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
+				if (pTeamComponents->HasComponent(spawnEntity))
 				{
-					spawnPosition = pPositionComponents->GetConstData(spawnEntity).Position;
+					if (pTeamComponents->GetConstData(spawnEntity).TeamIndex == playerTeam)
+					{
+						spawnPosition = pPositionComponents->GetConstData(spawnEntity).Position;
+					}
 				}
 			}
 		}
+
+		LOG_INFO("SERVER: Moving player[%s] to spawn at [%.4f, %.4f, %.4f] With entity: %d",
+			pPlayer->GetName().c_str(),
+			spawnPosition.x,
+			spawnPosition.y,
+			spawnPosition.z,
+			entity);
+
+		// Spawn position
+		positionComp.Position = spawnPosition;
+
+		//Set player alive again
+		PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 	}
-
-	const Player* pPlayer = PlayerManagerServer::GetPlayer(entity);
-	LOG_INFO("SERVER: Moving player[%s] to spawn at [%.4f, %.4f, %.4f] With entity: %d",
-		pPlayer->GetName().c_str(),
-		spawnPosition.x,
-		spawnPosition.y,
-		spawnPosition.z,
-		entity);
-
-	// Spawn position
-	positionComp.Position = spawnPosition;
-
-	//Set player alive again
-	PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 }
 
 void MatchServer::InternalSetScore(uint8 team, uint32 score, uint64 playerUID)
@@ -780,9 +789,9 @@ bool MatchServer::CreateFlagSpawnProperties(uint8 teamIndex, glm::vec3& position
 		bool flagSpawnHasTeamComponent = pTeamComponents->GetConstIf(flagSpawnPointEntity, flagSpawnTeamComponent);
 
 		bool validSpawnPoint = false;
-		if (teamIndex == UINT8_MAX)
+		if (teamIndex == 0)
 		{
-			//If the team index is UINT8_MAX the flag is common and we don't care about flag spawn point team
+			//If the team index is 0 the flag is common and we don't care about flag spawn point team
 			validSpawnPoint = !flagSpawnHasTeamComponent;
 		}
 		else

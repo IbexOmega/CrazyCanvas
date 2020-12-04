@@ -181,7 +181,7 @@ void HealthCompute::UpdateDrawArgsResource(
 
 	if (resourceName == SCENE_DRAW_ARGS)
 	{
-		if (count > 0U && pDrawArgs != nullptr)
+		if (pDrawArgs)
 		{
 			if (count != m_DrawArgsDescriptorSets.GetSize())
 			{
@@ -190,7 +190,7 @@ void HealthCompute::UpdateDrawArgsResource(
 
 			for (uint32 i = 0; i < count; i++)
 			{
-				m_DrawArgsDescriptorSets[i] = pDrawArgs[i].pDescriptorSet;
+				m_DrawArgsDescriptorSets[PlayerIndexHelper::GetPlayerIndex(pDrawArgs[i].EntityIDs[0])] = pDrawArgs[i].pDescriptorSet;
 			}
 		}
 	}
@@ -209,10 +209,8 @@ void HealthCompute::Render(
 	UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 	UNREFERENCED_VARIABLE(sleeping);
 
-	if (s_HealthsToCalculate.empty())
+	if (s_HealthsToCalculate.empty() || m_DrawArgsDescriptorSets.IsEmpty())
 		return;
-
-	LOG_WARNING("Health compute called");
 
 	CommandList* pCommandList = m_ppComputeCommandLists[modFrameIndex];
 	m_ppComputeCommandAllocators[modFrameIndex]->Reset();
@@ -260,7 +258,9 @@ uint32 HealthCompute::GetVertexCount()
 uint32 HealthCompute::GetEntityHealth(LambdaEngine::Entity entity)
 {
 	uint32 index = LambdaEngine::PlayerIndexHelper::GetPlayerIndex(entity);
-	return index != UINT32_MAX ? s_Healths[index] : index;
+	uint32 health = index != UINT32_MAX ? s_Healths[index] : UINT32_MAX;
+	// LOG_WARNING("[HealthCompute]: Entity=%u Index=%u, PaintedVerticies=%u", entity, index, health);
+	return health;
 }
 
 

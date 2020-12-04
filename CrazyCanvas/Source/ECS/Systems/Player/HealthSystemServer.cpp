@@ -21,6 +21,8 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Rendering/RenderGraph.h"
 
+#include "Game/PlayerIndexHelper.h"
+
 #include <mutex>
 
 // TEMP REMOVE
@@ -98,7 +100,7 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 
 
 	// Update health
-	if (!m_HitInfoToProcess.IsEmpty())
+	if (!m_HitInfoToProcess.IsEmpty() && PlayerIndexHelper::GetNumOfIndices() > 0)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<HealthComponent>*		pHealthComponents		= pECS->GetComponentArray<HealthComponent>();
@@ -109,41 +111,45 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			const Entity entity				= hitInfo.Player;
 			const Entity projectileOwner	= hitInfo.ProjectileOwner;
 
-			HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
-			PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
-
-			constexpr float32 BIASED_MAX_HEALTH	= 0.3f; // CHANGE THIS TO CHANGE AMOUNT OF HEALTH NEEDED TO DIE
-			constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
-
-			// Update health
-			const uint32	paintedVerticies	= HealthCompute::GetEntityHealth(entity);
-			const float32	paintedHealth		= float32(paintedVerticies) / float32(HealthCompute::GetVertexCount() * (1.0f - BIASED_MAX_HEALTH));
-			const int32		oldHealth			= healthComponent.CurrentHealth;
-			healthComponent.CurrentHealth		= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
-
-			LOG_INFO("HIT REGISTERED: oldHealth=%d currentHealth=%d", oldHealth, healthComponent.CurrentHealth);
-
-			// Check if health changed
-			if (oldHealth != healthComponent.CurrentHealth)
+			if (PlayerIndexHelper::IsEntityValid(entity))
 			{
-				LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedVerticies=%u VertexCount=%u",
-					healthComponent.CurrentHealth,
-					paintedHealth,
-					paintedVerticies,
-					HealthCompute::GetVertexCount());
+				HealthComponent& healthComponent				= pHealthComponents->GetData(entity);
+				PacketComponent<PacketHealthChanged>& packets	= pHealthChangedComponents->GetData(entity);
 
-				bool killed = false;
-				if (healthComponent.CurrentHealth <= 0)
+				constexpr float32 BIASED_MAX_HEALTH	= 0.5f; // CHANGE THIS TO CHANGE AMOUNT OF HEALTH NEEDED TO DIE
+				constexpr float32 START_HEALTH_F	= float32(START_HEALTH);
+
+				// Update health
+				const uint32	paintedVerticies	= HealthCompute::GetEntityHealth(entity);
+				const float32	paintedHealth		= float32(paintedVerticies) / float32(HealthCompute::GetVertexCount() * (1.0f - BIASED_MAX_HEALTH));
+				const int32		oldHealth			= healthComponent.CurrentHealth;
+				healthComponent.CurrentHealth		= std::max<int32>(int32(START_HEALTH_F * (1.0f - paintedHealth)), 0);
+
+				// Still here for debugging
+				LOG_INFO("HIT REGISTERED: oldHealth=%d currentHealth=%d paintedVerticies=%u, paintedHealth=%.4f", oldHealth, healthComponent.CurrentHealth, paintedVerticies, paintedHealth);
+
+				// Check if health changed
+				if (oldHealth != healthComponent.CurrentHealth)
 				{
-					MatchServer::KillPlayer(entity, projectileOwner, false);
-					killed = true;
+					LOG_INFO("PLAYER HEALTH: CurrentHealth=%u, paintedHealth=%.4f paintedVerticies=%u VertexCount=%u",
+						healthComponent.CurrentHealth,
+						paintedHealth,
+						paintedVerticies,
+						HealthCompute::GetVertexCount());
 
-					LOG_INFO("PLAYER DIED");
+					bool killed = false;
+					if (healthComponent.CurrentHealth <= 0)
+					{
+						MatchServer::KillPlayer(entity, projectileOwner, false);
+						killed = true;
+
+						LOG_INFO("PLAYER DIED");
+					}
+
+					PacketHealthChanged packet = {};
+					packet.CurrentHealth = healthComponent.CurrentHealth;
+					packets.SendPacket(packet);
 				}
-
-				PacketHealthChanged packet = {};
-				packet.CurrentHealth = healthComponent.CurrentHealth;
-				packets.SendPacket(packet);
 			}
 		}
 	}

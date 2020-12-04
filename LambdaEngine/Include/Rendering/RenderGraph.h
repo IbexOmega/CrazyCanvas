@@ -283,6 +283,7 @@ namespace LambdaEngine
 			DrawArgMaskDesc			DrawArgsMaskDesc;
 			RenderPass*				pRenderPass							= nullptr;
 			RenderPass*				pDisabledRenderPass					= nullptr;
+			uint32					NumInstancesInTLAS					= 0;
 
 			PushConstants			pInternalPushConstants[NUM_INTERNAL_PUSH_CONSTANTS_TYPES];
 			PushConstants			ExternalPushConstants		= {};
@@ -415,7 +416,6 @@ namespace LambdaEngine
 		bool GetResourceAccelerationStructure(const char* pResourceName, const AccelerationStructure** ppAccelerationStructure)					const;
 
 	private:
-		bool OnWindowResized(const WindowResizedEvent& windowEvent);
 		bool OnPreSwapChainRecreated(const PreSwapChainRecreatedEvent& swapChainEvent);
 		bool OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& swapChainEvent);
 		bool OnPipelineStatesRecompiled(const PipelineStatesRecompiledEvent& event);

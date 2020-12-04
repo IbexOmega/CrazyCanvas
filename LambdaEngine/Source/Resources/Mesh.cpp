@@ -8,12 +8,12 @@ namespace LambdaEngine
 {
 	Mesh* MeshFactory::CreateQuad()
 	{
-		Vertex vertices[4] = 
+		Vertex vertices[4] =
 		{
-			{ glm::vec4(-1.0f, 0.0f, -1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 1.0f) },
-			{ glm::vec4(-1.0f, 0.0f,  1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(0.0f, 0.0f) },
-			{ glm::vec4( 1.0f, 0.0f,  1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 0.0f) },
-			{ glm::vec4( 1.0f, 0.0f, -1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), glm::vec2(1.0f, 1.0f) }
+			{ glm::vec4(-1.0f, 0.0f, -1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f) },
+			{ glm::vec4(-1.0f, 0.0f,  1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f) },
+			{ glm::vec4( 1.0f, 0.0f,  1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f) },
+			{ glm::vec4( 1.0f, 0.0f, -1.0f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f) }
 		};
 
 		uint32 indices[6] =
@@ -607,7 +607,7 @@ namespace LambdaEngine
 			//LOG_INFO("PrimOffset=%u", m.PrimOffset);
 			//LOG_INFO("VertCount=%u", m.VertCount);
 			//LOG_INFO("VertOffset=%u", m.VertOffset);
-			
+
 		//	LOG_INFO("Primitive Indices: ", meshlet);
 		//	for (uint32 prim = 0; prim < m.PrimCount; prim++)
 		//	{

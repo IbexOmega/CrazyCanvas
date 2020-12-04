@@ -17,17 +17,13 @@ MultiplayerBase::~MultiplayerBase()
 		LOG_ERROR("Match Release Failed");
 	}
 
+	WeaponSystem::Release();
 	HealthSystem::Release();
 }
 
 void MultiplayerBase::InitInternal()
 {
 	m_PlayerAnimationSystem.Init();
-
-	if (!Match::Init())
-	{
-		LOG_ERROR("Match Init Failed");
-	}
 
 	WeaponSystem::Init();
 	HealthSystem::Init();

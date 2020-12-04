@@ -45,7 +45,7 @@ bool ResourceCatalog::Init()
 		ResourceManager::LoadMeshFromFile("sphere.obj", PROJECTILE_MESH_GUID, false);
 
 		MaterialProperties projectileMaterialProperties;
-		projectileMaterialProperties.Metallic = 0.5f;
+		projectileMaterialProperties.Metallic = 0.8f;
 		projectileMaterialProperties.Roughness = 0.1f;
 		projectileMaterialProperties.Albedo = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 
@@ -74,7 +74,6 @@ bool ResourceCatalog::Init()
 	{
 		SOUND_EFFECT_SPLASH0_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/HitSound0.mp3");
 		SOUND_EFFECT_SPLASH1_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Player/HitSound1.mp3");
-		SOUND_EFFECT_PLAYER_CONNECTED_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("connect_sound.mp3");
 	}
 
 	return true;

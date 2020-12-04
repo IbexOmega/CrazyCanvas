@@ -78,6 +78,11 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 	Player* pPlayer = HandlePlayerJoined(packet.UID, packet);
 	pPlayer->m_IsHost = isHost;
 
+	if (name == "Singleplayer")
+	{
+		pPlayer->m_Team = 1;
+	}
+
 	if (isHost)
 	{
 		PlayerHostUpdatedEvent event(pPlayer);
@@ -134,6 +139,8 @@ void PlayerManagerClient::SetLocalPlayerStateLoading()
 	{
 		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_SETUP, "Player not in SETUP state!");
 
+		ClientHelper::SetTimeout(Timestamp::Seconds(15));
+
 		pPlayer->m_State = GAME_STATE_LOADING;
 
 		PacketPlayerState packet;
@@ -154,6 +161,8 @@ void PlayerManagerClient::SetLocalPlayerStateLoaded()
 	if (pPlayer)
 	{
 		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_LOADING, "Player not in LOADING state!");
+
+		ClientHelper::ResetTimeout();
 
 		pPlayer->m_State = GAME_STATE_LOADED;
 

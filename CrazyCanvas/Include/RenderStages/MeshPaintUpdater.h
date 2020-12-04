@@ -66,15 +66,13 @@ namespace LambdaEngine
 		PipelineContext						m_UpdatePipeline;
 
 		TArray<uint32>						m_VertexCountList;
-		TArray<std::pair<Entity, TSharedRef<DescriptorSet>>>	m_DrawArgDescriptorSets;
+		TArray<std::pair<Entity, DescriptorSet*>>	m_DrawArgsDescriptorSets;
 
 		uint32								m_BackBufferCount = 0;
 		uint32								m_CurrentFrameIndex = 0;
 
 		CommandAllocator** m_ppComputeCommandAllocators = nullptr;
 		CommandList** m_ppComputeCommandLists = nullptr;
-
-		TArray<TArray<DeviceChild*>> m_ResourcesToRemove;
 
 		static std::unordered_set<Entity> s_EntitiesToClear;
 	};

@@ -43,6 +43,7 @@ public:
 
 	void Init();
 	void Tick(LambdaEngine::Timestamp delta);
+	void Release();
 
 public:
 	/* Adds a hitpoint to draw out a splash at
@@ -66,7 +67,7 @@ private:
 		EPaintMode		PaintMode			= EPaintMode::NONE;
 		ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 		ETeam			Team				= ETeam::NONE;
-		bool			ClearClient			= false;
+		uint32			ClearClient			= 0;
 	};
 
 private:

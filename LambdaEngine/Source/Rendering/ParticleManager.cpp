@@ -176,8 +176,7 @@ namespace LambdaEngine
 		if (emitterComp.Active)
 		{
 			// Check if active
-			auto emitterEntity = m_RepeatEmitters.find(entity);
-			if (emitterEntity != m_RepeatEmitters.end())
+			if (m_RepeatEmitters.contains(entity))
 			{
 				EmitterID id = m_EntityToEmitterID[entity];
 
@@ -211,7 +210,7 @@ namespace LambdaEngine
 				ParticleEmitterInstance newEmitterInstance;
 				EmitterID emitterID = m_Emitters.GetSize();
 				m_Emitters.PushBack(newEmitterInstance);
-				
+
 				if (ActivateEmitterInstance(emitterID, positionComp, rotationComp, emitterComp))
 				{
 					// If not onetime emitter the emitter needs to be tracked for updating
@@ -332,7 +331,6 @@ namespace LambdaEngine
 
 		emitterInstance.Color = emitterComp.Color;
 		emitterInstance.FrictionFactor = emitterComp.FrictionFactor;
-		emitterInstance.Bounciness = emitterComp.Bounciness;
 
 		emitterInstance.Color = emitterComp.Color;
 	}
@@ -411,7 +409,7 @@ namespace LambdaEngine
 			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
 			particle.WasCreated = true;
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
-			particle.Bounciness = emitterInstance.Bounciness;
+			particle.ShouldStop = 0.f;
 
 			particle.CurrentLife = emitterInstance.LifeTime + floor((1.f - emitterInstance.Explosive) * i) * emitterInstance.SpawnDelay;
 
@@ -491,11 +489,10 @@ namespace LambdaEngine
 			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
 			particle.WasCreated = true;
 			particle.FrictionFactor = emitterInstance.FrictionFactor;
-			particle.Bounciness = emitterInstance.Bounciness;
+			particle.ShouldStop = 0.f;
 
 			particle.CurrentLife = emitterInstance.LifeTime + (1.f - emitterInstance.Explosive) * i * emitterInstance.SpawnDelay;
 
-			
 			uint32 particleIndex = UINT32_MAX;
 			if (particleOffset + i < particleCount)
 			{
@@ -631,7 +628,7 @@ namespace LambdaEngine
 	{
 		auto& emitterInstance = m_Emitters[emitterID];
 		UpdateEmitterInstanceData(emitterInstance, positionComp, rotationComp, emitterComp);
-		
+
 		if (emitterInstance.ParticleChunk.Size > 0)
 		{
 			if (!AllocateParticleChunk(emitterInstance.ParticleChunk))
@@ -741,7 +738,7 @@ namespace LambdaEngine
 				m_DirtyParticleChunks.PushBack(ParticleChunk{.Offset = offset, .Size = size});
 			}
 			FreeParticleChunk(emitterInstance.ParticleChunk);
-			
+
 			// Replace removed emitter with last emitter
 			ReplaceRemovedEmitterWithLast(removeIndex);
 

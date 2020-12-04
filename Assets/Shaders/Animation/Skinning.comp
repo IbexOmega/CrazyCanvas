@@ -76,6 +76,11 @@ void main()
 	SVertex skinnedVertex = b_SkinnedVertices.Val[gl_GlobalInvocationID.x];
 	vertex.Position.w = skinnedVertex.Position.w;
 	vertex.Normal.w = skinnedVertex.Normal.w;
+
+	// Store the vertex's original position to use when applying paint on the players.
+	SVertex originalVertex = b_OriginalVertices.Val[gl_GlobalInvocationID.x];
+	vertex.Tangent.w = originalVertex.Position.x;
+	vertex.TexCoord.zw = originalVertex.Position.yz;
 	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = vertex;
 #endif
 }

@@ -144,6 +144,10 @@ namespace LambdaEngine
 	
 	Noesis::Ptr<Noesis::RenderTarget> GUIRenderer::CreateRenderTarget(const char* pLabel, uint32_t width, uint32_t height, uint32_t sampleCount)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("GUIRenderer::CreateRenderTarget");
+#endif
+
 		GUIRenderTargetDesc renderTargetDesc = {};
 		renderTargetDesc.DebugName		= pLabel;
 		renderTargetDesc.Width			= width;
@@ -164,6 +168,10 @@ namespace LambdaEngine
 
 	Noesis::Ptr<Noesis::RenderTarget> GUIRenderer::CloneRenderTarget(const char* pLabel, Noesis::RenderTarget* pSurface)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("GUIRenderer::CloneRenderTarget");
+#endif
+
 		const GUIRenderTarget* pOriginal = reinterpret_cast<const GUIRenderTarget*>(pSurface);
 
 		GUIRenderTarget* pRenderTarget = new GUIRenderTarget();
@@ -180,6 +188,10 @@ namespace LambdaEngine
 
 	Noesis::Ptr<Noesis::Texture> GUIRenderer::CreateTexture(const char* pLabel, uint32_t width, uint32_t height, uint32_t numLevels, Noesis::TextureFormat::Enum format, const void** ppData)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("GUIRenderer::CreateTexture");
+#endif
+
 		GUITextureDesc textureDesc = {};
 		textureDesc.DebugName		= pLabel;
 		textureDesc.Width			= width;
@@ -279,7 +291,7 @@ namespace LambdaEngine
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
 
 #ifdef PRINT_FUNC
-		LOG_INFO("BeginTile W: %u, H: %u", m_CurrentSurfaceWidth, m_CurrentSurfaceHeight);
+		LOG_INFO("BeginTile W: %u, H: %u", surfaceWidth, surfaceHeight);
 #endif
 	}
 
@@ -793,21 +805,26 @@ namespace LambdaEngine
 		{
 			if (m_pCurrentRenderTarget && m_pCurrentRenderTarget->GetRenderPass())
 			{
-				BeginRenderPassDesc beginRenderPass = {};
-				beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
-				beginRenderPass.ppRenderTargets		= m_pCurrentRenderTarget->GetRenderTargets();
-				beginRenderPass.RenderTargetCount	= 2; // The rendertarget + resolve target
-				beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
-				beginRenderPass.Width				= m_pCurrentRenderTarget->GetWidth();
-				beginRenderPass.Height				= m_pCurrentRenderTarget->GetHeight();
-				beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-				beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
-				beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
-				beginRenderPass.Offset.x			= 0;
-				beginRenderPass.Offset.y			= 0;
+				TextureView** ppTextureViews = m_pCurrentRenderTarget->GetRenderTargets();
 
-				pCommandList->BeginRenderPass(&beginRenderPass);
-				m_IsInRenderPass = true;
+				if (ppTextureViews[0] != nullptr && ppTextureViews[1] != nullptr)
+				{
+					BeginRenderPassDesc beginRenderPass = {};
+					beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
+					beginRenderPass.ppRenderTargets		= ppTextureViews;
+					beginRenderPass.RenderTargetCount	= 2; // The rendertarget + resolve target
+					beginRenderPass.pDepthStencil		= m_pCurrentRenderTarget->GetDepthStencil();
+					beginRenderPass.Width				= m_pCurrentRenderTarget->GetWidth();
+					beginRenderPass.Height				= m_pCurrentRenderTarget->GetHeight();
+					beginRenderPass.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+					beginRenderPass.pClearColors		= m_pCurrentRenderTarget->GetClearColors();
+					beginRenderPass.ClearColorCount		= m_pCurrentRenderTarget->GetClearColorCount();
+					beginRenderPass.Offset.x			= 0;
+					beginRenderPass.Offset.y			= 0;
+
+					pCommandList->BeginRenderPass(&beginRenderPass);
+					m_IsInRenderPass = true;
+				}
 			}
 			
 			m_TileBegun = true;

@@ -49,5 +49,4 @@ public:
 	// Sounds 
 	inline static GUID_Lambda SOUND_EFFECT_SPLASH0_3D_GUID = GUID_NONE;
 	inline static GUID_Lambda SOUND_EFFECT_SPLASH1_2D_GUID = GUID_NONE;
-	inline static GUID_Lambda SOUND_EFFECT_PLAYER_CONNECTED_2D_GUID = GUID_NONE;
 };

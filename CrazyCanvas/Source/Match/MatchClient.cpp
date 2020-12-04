@@ -41,7 +41,6 @@ MatchClient::MatchClient()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -54,7 +53,7 @@ MatchClient::MatchClient()
 	m_CountdownSoundEffects[2] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/three.wav");
 	m_CountdownSoundEffects[1] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/two.wav");
 	m_CountdownSoundEffects[0] = ResourceManager::LoadSoundEffect2DFromFile("Countdown/one.wav");
-	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/go.mp3");
+	m_CountdownDoneSoundEffect = ResourceManager::LoadSoundEffect2DFromFile("Countdown/start.mp3");
 }
 
 MatchClient::~MatchClient()
@@ -62,7 +61,6 @@ MatchClient::~MatchClient()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &MatchClient::OnPacketCreateLevelObjectReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &MatchClient::OnPacketTeamScoredReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketDeleteLevelObject>>(this, &MatchClient::OnPacketDeleteLevelObjectReceived);
-	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchReady>>(this, &MatchClient::OnPacketMatchReadyReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchStart>>(this, &MatchClient::OnPacketMatchStartReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketMatchBegin>>(this, &MatchClient::OnPacketMatchBeginReceived);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameOver>>(this, &MatchClient::OnPacketGameOverReceived);
@@ -186,13 +184,6 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
 			}
 
-			// Notify systems that a new player connected (Not myself tho)
-			if (!createPlayerDesc.IsLocal)
-			{
-				PlayerConnectedEvent connectedEvent(createdPlayerEntities[0], packet.Position);
-				EventQueue::SendEvent(connectedEvent);
-			}
-
 			break;
 		}
 		case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
@@ -253,16 +244,6 @@ bool MatchClient::OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMat
 	return true;
 }
 
-bool MatchClient::OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event)
-{
-	UNREFERENCED_VARIABLE(event);
-	//Makes sure we have finished loading everything....
-
-	PlayerManagerClient::SetLocalPlayerStateLoaded();
-
-	return true;
-}
-
 bool MatchClient::OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event)
 {
 	UNREFERENCED_VARIABLE(event);
@@ -280,22 +261,20 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 	LOG_INFO("Game Over, Winning team is %d", packet.WinningTeamIndex);
 
-	EventQueue::SendEvent<GameOverEvent>(packet.WinningTeamIndex);
+	GameOverEvent gameOverEvent(packet.WinningTeamIndex);
+	EventQueue::SendEventImmediate(gameOverEvent);
 
 	return true;
 }
 
 bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
-	UNREFERENCED_VARIABLE(event);
-
 	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
 
-	UNREFERENCED_VARIABLE(event);
-
-	if (event.pPlayer == PlayerManagerClient::GetPlayerLocal())
+	if (event.pPlayer == pPlayerLocal)
 	{
-		if (PlayerManagerClient::GetPlayerLocal()->IsDead())
+		if (pPlayerLocal->IsDead())
 		{
 			if (currentInputLayer == EInputLayer::GUI)
 			{
@@ -366,6 +345,7 @@ void MatchClient::KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, Lambda
 			}
 			case ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE:
 			{
+				LOG_INFO("Projectile hit killplane!");
 				m_pLevel->DeleteObject(otherEntity);
 				break;
 			}

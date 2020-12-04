@@ -16,8 +16,6 @@
 #include "Multiplayer/MultiplayerServer.h"
 #include "Multiplayer/Packet/PacketGameSettings.h"
 
-#include "MeshPaint/MeshPaintHandler.h"
-
 class Level;
 
 class ServerState :
@@ -45,7 +43,9 @@ private:
 	bool OnServerStateEvent(const ServerStateEvent& event);
 	bool OnPlayerLeftEvent(const PlayerLeftEvent& event);
 	bool OnGameOverEvent(const GameOverEvent& event);
+
 	void SetState(EServerState state);
+	void TryLoadMatch();
 
 public:
 	static EServerState GetState();
@@ -55,7 +55,6 @@ private:
 	PacketGameSettings m_GameSettings;
 	std::string m_MapName;
 	MultiplayerServer m_MultiplayerServer;
-	MeshPaintHandler m_MeshPaintHandler;
 
 private:
 	static EServerState s_State;

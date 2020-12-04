@@ -1594,7 +1594,6 @@ namespace LambdaEngine
 			vertex.PositionXYZPaintBitsW.x = pMeshAI->mVertices[vertexIdx].x;
 			vertex.PositionXYZPaintBitsW.y = pMeshAI->mVertices[vertexIdx].y;
 			vertex.PositionXYZPaintBitsW.z = pMeshAI->mVertices[vertexIdx].z;
-			vertex.PositionXYZPaintBitsW.w = glm::uintBitsToFloat(UINT32_MAX);
 
 			maxExtent.x = glm::max<float>(maxExtent.x, glm::abs(vertex.PositionXYZPaintBitsW.x));
 			maxExtent.y = glm::max<float>(maxExtent.y, glm::abs(vertex.PositionXYZPaintBitsW.y));
@@ -1612,21 +1611,27 @@ namespace LambdaEngine
 				vertex.NormalXYZPaintDistW.x = pMeshAI->mNormals[vertexIdx].x;
 				vertex.NormalXYZPaintDistW.y = pMeshAI->mNormals[vertexIdx].y;
 				vertex.NormalXYZPaintDistW.z = pMeshAI->mNormals[vertexIdx].z;
-				vertex.NormalXYZPaintDistW.w = 1.0f;
 			}
 
 			if (pMeshAI->HasTangentsAndBitangents())
 			{
-				vertex.Tangent.x = pMeshAI->mTangents[vertexIdx].x;
-				vertex.Tangent.y = pMeshAI->mTangents[vertexIdx].y;
-				vertex.Tangent.z = pMeshAI->mTangents[vertexIdx].z;
+				vertex.TangentXYZOriginalPosW.x = pMeshAI->mTangents[vertexIdx].x;
+				vertex.TangentXYZOriginalPosW.y = pMeshAI->mTangents[vertexIdx].y;
+				vertex.TangentXYZOriginalPosW.z = pMeshAI->mTangents[vertexIdx].z;
 			}
 
 			if (pMeshAI->HasTextureCoords(0))
 			{
-				vertex.TexCoord.x = pMeshAI->mTextureCoords[0][vertexIdx].x;
-				vertex.TexCoord.y = pMeshAI->mTextureCoords[0][vertexIdx].y;
+				vertex.TexCoordXYOriginalPosZW.x = pMeshAI->mTextureCoords[0][vertexIdx].x;
+				vertex.TexCoordXYOriginalPosZW.y = pMeshAI->mTextureCoords[0][vertexIdx].y;
 			}
+
+			// Store data for mesh painting.
+			vertex.PositionXYZPaintBitsW.w = glm::uintBitsToFloat(0);
+			vertex.NormalXYZPaintDistW.w = 1.0f;
+			vertex.TangentXYZOriginalPosW.w = glm::uintBitsToFloat(UINT32_MAX);
+			vertex.TexCoordXYOriginalPosZW.z = glm::uintBitsToFloat(UINT32_MAX);
+			vertex.TexCoordXYOriginalPosZW.w = glm::uintBitsToFloat(UINT32_MAX);
 
 			pMesh->Vertices[vertexIdx] = vertex;
 		}

@@ -26,10 +26,11 @@ public:
 	static void SetPlayerStats(const Player* pPlayer, uint8 team, uint8 kills, uint8 deaths, uint8 flagsCaptured, uint8 flagsDefended);
 	static void KickPlayers(uint8 count);
 
+	static void Reset();
+
 protected:
 	static void Init();
 	static void Release();
-	static void Reset();
 	static void FixedTick(LambdaEngine::Timestamp deltaTime);
 
 	static bool OnPacketJoinReceived(const PacketReceivedEvent<PacketJoin>& event);

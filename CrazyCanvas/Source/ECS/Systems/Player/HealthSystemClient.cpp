@@ -2,8 +2,10 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/HealthComponent.h"
 #include "ECS/Components/Player/Player.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -13,6 +15,7 @@
 
 #include "Match/Match.h"
 
+#include "Teams/TeamHelper.h"
 #include "MeshPaint/MeshPaintHandler.h"
 
 /*
@@ -92,6 +95,11 @@ bool HealthSystemClient::InitInternal()
 			.ComponentGroups = { &playerGroup }
 		});
 
+		systemReg.SubscriberRegistration.AdditionalAccesses =
+		{
+			{ R, TeamComponent::Type() }
+		};
+
 		RegisterSystem(TYPE_NAME(HealthSystemClient), systemReg);
 	}
 
@@ -112,6 +120,46 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<ChildComponent>* pChildComponents = pECS->GetComponentArray<ChildComponent>();
+
+		const PositionComponent positionComponent	= pECS->GetComponent<PositionComponent>(playerEntity);
+		const TeamComponent teamComponent			= pECS->GetComponent<TeamComponent>(playerEntity);
+
+		Entity entity = pECS->CreateEntity();
+
+		pECS->AddComponent<PositionComponent>(entity, positionComponent);
+		pECS->AddComponent<RotationComponent>(entity, { true, GetRotationQuaternion(glm::normalize(glm::vec3(0, -1, 0))) });
+
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.Active = true,
+				.OneTime = true,
+				.Explosive = 1.f,
+				.SpawnDelay = 0.05f,
+				.ParticleCount = 512,
+				.EmitterShape = EEmitterShape::CONE,
+				.Angle = 45.f,
+				.VelocityRandomness = 0.5f,
+				.Velocity = 7.0,
+				.Acceleration = 0.0,
+				.Gravity = -9.f,
+				.LifeTime = 1.2f,
+				.RadiusRandomness = 0.5f,
+				.BeginRadius = 0.2f,
+				.FrictionFactor = 0.f,
+				.RandomStartIndex = true,
+				.AnimationCount = 1,
+				.FirstAnimationIndex = 6,
+				.Color = glm::vec4(TeamHelper::GetTeamColor(teamComponent.TeamIndex), 1.f)
+			}
+		);
+
+		MeshPaintHandler::AddHitPoint(
+			positionComponent.Position,
+			glm::vec3(0.0f, -1.0f, 0.0f),
+			EPaintMode::PAINT,
+			ERemoteMode::CLIENT,
+			ETeam(teamComponent.TeamIndex == 1),
+			0);
 
 		// Reset child components
 		if (pChildComponents->HasComponent(playerEntity))

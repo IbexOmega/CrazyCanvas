@@ -38,6 +38,8 @@
 
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Chat/ChatManager.h"
+
 #include <windows.h>
 #include <Lmcons.h>
 
@@ -91,7 +93,6 @@ void ServerState::Init()
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	m_MeshPaintHandler.Init();
 	m_MultiplayerServer.InitInternal();
 
 	ServerSystem::GetInstance().Start();
@@ -109,6 +110,7 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	ServerBase* pServer = event.pServer;
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
+	pEncoder->WriteUInt8(m_GameSettings.Players);
 	pEncoder->WriteString(m_GameSettings.ServerName);
 	pEncoder->WriteString(m_MapName);
 	pEncoder->WriteInt32(m_ClientHostID);
@@ -125,7 +127,6 @@ bool ServerState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
 void ServerState::Tick(Timestamp delta)
 {
 	m_MultiplayerServer.TickMainThreadInternal(delta);
-	m_MeshPaintHandler.Tick(delta);
 }
 
 void ServerState::FixedTick(LambdaEngine::Timestamp delta)
@@ -142,7 +143,9 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 {	
 	const PacketGameSettings& packet = event.Packet;
 
-	if (PlayerManagerServer::HasPlayerAuthority(event.pClient))
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(event.pClient);
+
+	if (pPlayer->IsHost())
 	{
 		m_GameSettings = packet;
 		m_MapName = LevelManager::GetLevelNames()[packet.MapID];
@@ -163,12 +166,12 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 		LOG_INFO("FlagsToWin: %hhu", packet.FlagsToWin);
 		LOG_INFO("Visible:    %s", packet.Visible ? "True" : "False");
 		LOG_INFO("ChangeTeam: %s\n", packet.ChangeTeam ? "True" : "False");
-		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor0 );
-		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor1 );
+		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor1 );
+		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor2 );
 	}
 	else
 	{
-		LOG_ERROR("Unauthorised Client tried to exectute a server command!");
+		LOG_ERROR("Player [%s] tried to change server settings while not being the host", pPlayer->GetName().c_str());
 	}
 
 	return true;
@@ -178,60 +181,83 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 {
 	using namespace LambdaEngine;
 
-	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
 	const Player* pPlayer = event.pPlayer;
 	EGameState gameState = pPlayer->GetState();
 
 	if (gameState == GAME_STATE_SETUP)
 	{
-		if (pPlayer->IsHost())
+		if (GetState() == SERVER_STATE_LOBBY)
 		{
-			SetState(SERVER_STATE_LOADING);
+			SetState(SERVER_STATE_SETUP);
+		}
+		else
+		{
+			LOG_ERROR("Player [%s] tried to setup a match but the server is not in the lobby state", pPlayer->GetName().c_str());
 		}
 	}
 	else if (gameState == GAME_STATE_LOADING)
 	{
-		for (auto& pair : players)
-		{
-			if (pair.second.GetState() != gameState)
-				return false;
-		}
-
-		//Reset stats
-		for (auto& pair : players)
-		{
-			const Player* pP = &pair.second;
-			PlayerManagerServer::SetPlayerStats(pP, pP->GetTeam(), 0, 0, 0, 0);
-		}
-
-		// Load Match
-		{
-			const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
-
-			MatchDescription matchDescription =
-			{
-				.LevelHash	= levelHashes[m_GameSettings.MapID],
-				.GameMode	= m_GameSettings.GameMode,
-				.MaxScore	= m_GameSettings.FlagsToWin,
-			};
-			Match::CreateMatch(&matchDescription);
-			Match::BeginLoading();
-		}
+		TryLoadMatch();
 	}
 	else if (gameState == GAME_STATE_LOADED)
 	{
-		for (auto& pair : players)
+		if (GetState() == SERVER_STATE_LOADING)
 		{
-			if (pair.second.GetState() != gameState)
-				return false;
+			const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+			for (auto& pair : players)
+			{
+				if (pair.second.GetState() != gameState)
+					return false;
+			}
+
+			SetState(SERVER_STATE_PLAYING);
 		}
-
-		SetState(SERVER_STATE_PLAYING);
-
-		Match::StartMatch();
+		else
+		{
+			LOG_ERROR("Player [%s] tried to start a match but the server is not in the loading state", pPlayer->GetName().c_str());
+		}
 	}
 
 	return true;
+}
+
+void ServerState::TryLoadMatch()
+{
+	if (GetState() != SERVER_STATE_SETUP)
+		return;
+
+	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+	for (auto& pair : players)
+	{
+		if (pair.second.GetState() != GAME_STATE_LOADING)
+			return;
+	}
+
+	SetState(SERVER_STATE_LOADING);
+
+	//Reset stats
+	for (auto& pair : players)
+	{
+		const Player* pP = &pair.second;
+		PlayerManagerServer::SetPlayerStats(pP, pP->GetTeam(), 0, 0, 0, 0);
+	}
+
+	// Load Match
+	{
+		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+		MatchDescription matchDescription =
+		{
+			.LevelHash = levelHashes[m_GameSettings.MapID],
+			.GameMode = m_GameSettings.GameMode,
+			.MaxScore = m_GameSettings.FlagsToWin,
+		};
+
+		if (!Match::CreateMatch(&matchDescription))
+			LOG_ERROR("Failed to create match");
+
+		Match::BeginLoading();
+	}
 }
 
 bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
@@ -239,7 +265,9 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	EServerState state = event.State;
 	if (state == SERVER_STATE_LOBBY)
 	{
+		ChatManager::Clear();
 		Match::ResetMatch();
+		PlayerManagerServer::Reset();
 
 		const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
 		for (auto& pair : players)
@@ -251,9 +279,15 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 
 		ServerHelper::SetIgnoreNewClients(false);
 	}
-	else if (state == SERVER_STATE_LOADING)
+	else if (state == SERVER_STATE_SETUP)
 	{
 		ServerHelper::SetIgnoreNewClients(true);
+		ServerHelper::SetTimeout(Timestamp::Seconds(15));
+	}
+	else if (state == SERVER_STATE_PLAYING)
+	{
+		ServerHelper::ResetTimeout();
+		Match::StartMatch();
 	}
 	return true;
 }
@@ -264,6 +298,10 @@ bool ServerState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
 	if (PlayerManagerServer::GetPlayerCount() == 1)
 	{
 		SetState(SERVER_STATE_LOBBY);
+	}
+	else
+	{
+		TryLoadMatch();
 	}
 	return false;
 }

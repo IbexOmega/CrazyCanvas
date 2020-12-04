@@ -50,6 +50,11 @@ bool WeaponSystem::Init()
 	return s_Instance->InitInternal();
 }
 
+void WeaponSystem::Release()
+{
+	s_Instance.Reset();
+}
+
 void WeaponSystem::CreateBaseSystemRegistration(LambdaEngine::SystemRegistration& systemReg)
 {
 	using namespace LambdaEngine;
@@ -198,7 +203,7 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 			friendly = true;
 		}
 	}
-	else
+	else if (!MultiplayerUtils::IsServer())
 	{
 		// Play Level Hit Sound
 		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::SOUND_EFFECT_SPLASH0_3D_GUID);
@@ -207,10 +212,9 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 		levelHit = true;
 	}
 
-	if (levelHit || (friendly && ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
+	if (levelHit || (ammoType == EAmmoType::AMMO_TYPE_WATER) || (!friendly && ammoType == EAmmoType::AMMO_TYPE_PAINT))
 	{
-		// TODO: Make it do this (ETeam)(projectileTeam+1); (Or fix team index in whole project)
-		const ETeam team = (projectileTeam == 0) ? ETeam::BLUE : ETeam::RED;
+		const ETeam team = (ETeam)projectileTeam;
 		ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team, angle);
 		EventQueue::SendEventImmediate(hitEvent);
 	}
@@ -230,17 +234,20 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 
-
 	constexpr const float PROJECTILE_INITAL_SPEED = 30.0f;
 
 	//Don't use weapon position/rotation because it now depends on animation, only use player data instead.
-	glm::quat playerRotation = playerRotationComponent.Quaternion;
-	playerRotation.x = 0;
-	playerRotation.z = 0;
-	playerRotation = glm::normalize(playerRotation);
+	const glm::vec3 right = glm::normalize(GetRight(playerRotationComponent.Quaternion));
+	const glm::vec3 up = glm::normalize(g_DefaultUp);
+	const glm::vec3 forward = glm::normalize(GetForward(playerRotationComponent.Quaternion));
 
-	position		= playerPositionComponent.Position + playerRotation * weaponOffsetComponent.Offset + GetForward(playerRotationComponent.Quaternion) * 0.5f;
+	position = playerPositionComponent.Position +
+		up * weaponOffsetComponent.Offset.y +
+		right * weaponOffsetComponent.Offset.x +
+		forward * weaponOffsetComponent.Offset.z;
+
 	const glm::vec3 zeroingDirection	= CalculateZeroingDirection(position, playerPositionComponent.Position, playerRotationComponent.Quaternion, m_ZeroDist);
+
 	velocity		= zeroingDirection * PROJECTILE_INITAL_SPEED;
 	playerTeam		= pECS->GetConstComponent<TeamComponent>(weaponOwner).TeamIndex;
 }
@@ -257,11 +264,17 @@ void WeaponSystem::StartReload(WeaponComponent& weaponComponent, PacketComponent
 	}
 
 	weaponComponent.ReloadClock = weaponComponent.ReloadTime;
+
+	WeaponReloadStartedEvent reloadStartedEvent(weaponComponent.WeaponOwner);
+	LambdaEngine::EventQueue::SendEventImmediate(reloadStartedEvent);
 }
 
 void WeaponSystem::AbortReload(WeaponComponent& weaponComponent)
 {
 	weaponComponent.ReloadClock = 0;
+
+	WeaponReloadCanceledEvent reloadCancelEvent(weaponComponent.WeaponOwner);
+	LambdaEngine::EventQueue::SendEventImmediate(reloadCancelEvent);
 }
 
 glm::vec3 WeaponSystem::CalculateZeroingDirection(
@@ -271,10 +284,10 @@ glm::vec3 WeaponSystem::CalculateZeroingDirection(
 	float32 zeroingDistance)
 {
 	using namespace LambdaEngine;
-
-	glm::vec3 zeroPoint = glm::vec3{playerPos.x, weaponPos.y, playerPos.z} + glm::normalize(GetForward(playerDirection)) * zeroingDistance;
+	glm::vec3 zeroPoint = glm::vec3{ playerPos.x, weaponPos.y, playerPos.z } + glm::normalize(GetForward(playerDirection)) * zeroingDistance;
 	glm::vec3 fireDirection = glm::normalize(zeroPoint - weaponPos);
-	glm::quat directionQuat = glm::identity<glm::quat>();
-	SetForward(directionQuat, fireDirection);
-	return glm::rotate(GetForward(glm::normalize(directionQuat)), glm::radians(m_YAngle), GetRight(glm::normalize(directionQuat)));
+
+	// adjusts m_YAngle to be less impactful when aiming up or down.
+	float angleFactor = 1.0f - abs(glm::dot(g_DefaultUp, fireDirection)) * 0.5f;
+	return glm::rotate(fireDirection, glm::radians(m_YAngle * angleFactor), glm::cross(fireDirection, GetUp(playerDirection)));
 }

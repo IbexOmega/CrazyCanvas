@@ -5,7 +5,7 @@
 
 #include "Time/API/Timestamp.h"
 
-#include "Application/API/Events/WindowEvents.h"
+#include "Application/API/Events/RenderEvents.h"
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/MouseEvents.h"
 
@@ -42,7 +42,7 @@ namespace LambdaEngine
 		static void NoesisLogHandler(const char* file, uint32_t line, uint32_t level, const char* channel, const char* message);
 		static void NoesisErrorHandler(const char* file, uint32_t line, const char* message, bool fatal);
 
-		static bool OnWindowResized(const WindowResizedEvent& windowEvent);
+		static bool OnPostSwapChainRecreated(const PostSwapChainRecreatedEvent& postSwapChainRecreatedEvent);
 		static bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);
 		static bool OnKeyReleased(const KeyReleasedEvent& keyReleasedEvent);
 		static bool OnKeyTyped(const KeyTypedEvent& keyTypedEvent);

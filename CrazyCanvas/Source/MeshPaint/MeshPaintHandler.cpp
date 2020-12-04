@@ -45,11 +45,10 @@ void MeshPaintHandler::Init()
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		UnwrapData dummyData = {};
 		dummyData.TargetPosition.w = 0.f;
-		size_t size = sizeof(UnwrapData);
 		for (uint32 i = 0; i < 10; i++)
 		{
-			uint32 step = i * (uint32)size;
-			memcpy(pBufferMapping + step, &dummyData + i, size);
+			uint64 step = uint64(i) * sizeof(UnwrapData);
+			memcpy(pBufferMapping + step, &dummyData, sizeof(UnwrapData));
 		}
 		m_pPointsBuffer->Unmap();
 
@@ -79,11 +78,10 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		UnwrapData dummyData = {};
 		dummyData.TargetPosition.w = 0.f;
-		uint32 size = uint32(sizeof(UnwrapData));
 		for (uint32 i = 0; i < 10; i++)
 		{
-			uint32 step = i * size;
-			memcpy(pBufferMapping + step, &dummyData + i, size);
+			uint64 step = uint64(i) * sizeof(UnwrapData);
+			memcpy(pBufferMapping + step, &dummyData, sizeof(UnwrapData));
 		}
 		m_pPointsBuffer->Unmap();
 
@@ -95,6 +93,16 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	// Load buffer with new data
 	if (!s_Collisions.IsEmpty())
 	{
+		UnwrapData& dataFirst = s_Collisions.GetFront();
+		dataFirst.TargetPosition.w = (float)s_Collisions.GetSize();
+
+		if (s_ShouldReset)
+		{
+			UnwrapData& dataLast = s_Collisions.GetBack();
+			dataLast.ClearClient = 1;
+			s_ShouldReset = false;
+		}
+
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		memcpy(pBufferMapping, s_Collisions.GetData(), s_Collisions.GetSize() * sizeof(UnwrapData));
 		m_pPointsBuffer->Unmap();
@@ -122,6 +130,11 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	}
 }
 
+void MeshPaintHandler::Release()
+{
+	m_pPointsBuffer.Reset();
+}
+
 void MeshPaintHandler::AddHitPoint(
 	const glm::vec3& position,
 	const glm::vec3& direction,
@@ -136,8 +149,7 @@ void MeshPaintHandler::AddHitPoint(
 	data.PaintMode			= paintMode;
 	data.RemoteMode			= remoteMode;
 	data.Team				= team;
-	data.ClearClient		= false;
-	LOG_WARNING("[HitPoint] Team: %d", team);
+	data.ClearClient		= 0;
 	s_Collisions.PushBack(data);
 }
 

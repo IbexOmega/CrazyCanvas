@@ -4,6 +4,7 @@
 #define PAINT_THRESHOLD			0.4f
 #define PAINT_FREQ              5.0f
 #define PAINT_AMPL              0.4f
+#define UINT32_MAX              0xffffffff
 
 #include "Noise.glsl"
 
@@ -18,7 +19,7 @@ uint PackPaintInfo(in uint paintInfo)
 	uint serverPainting			= uint(step(1, int(server)));
 
 	uint shouldPaint = clientPainting | serverPainting;
-	uint teamIndex = clientPainting * clientTeam + (1 - clientPainting) * serverTeam;
+	uint teamIndex = serverPainting * server + (1 - serverPainting) * client;
 	return shouldPaint*teamIndex;
 }
 

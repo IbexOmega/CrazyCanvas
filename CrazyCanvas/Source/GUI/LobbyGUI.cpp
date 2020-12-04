@@ -72,8 +72,8 @@ void LobbyGUI::InitGUI()
 	/*AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
-	AddSettingColorBox(SETTING_CHANGE_TEAM_0_COLOR, "Team 1 Color", colors, 0);
-	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 2 Color", colors, 1);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 1 Color", colors, 0);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_2_COLOR, "Team 2 Color", colors, 1);
 
 	UpdateSettings(*m_pGameSettings);
 
@@ -82,8 +82,7 @@ void LobbyGUI::InitGUI()
 
 void LobbyGUI::AddPlayer(const Player& player)
 {
-	// TODO: Make sure team is correct (might have to change to == 1)
-	StackPanel* pPanel = player.GetTeam() == 0 ? m_pTeam1StackPanel : m_pTeam2StackPanel;
+	StackPanel* pPanel = player.GetTeam() == 1 ? m_pTeam1StackPanel : m_pTeam2StackPanel;
 
 	const LambdaEngine::String& uid = std::to_string(player.GetUID());
 
@@ -108,12 +107,13 @@ void LobbyGUI::AddPlayer(const Player& player)
 	RegisterName(uid + "_checkmark", image);
 	Style* pStyle = FrameworkElement::FindResource<Style>("CheckmarkImageStyle");
 	image->SetStyle(pStyle);
-	image->SetVisibility(Visibility::Visibility_Hidden);
+	image->SetVisibility(Visibility::Visibility_Visible);
 	playerGrid->GetChildren()->Add(image);
 
 	pPanel->GetChildren()->Add(playerGrid);
 
 	UpdatePlayersLabel();
+	UpdatePlayerReady(player);
 }
 
 void LobbyGUI::RemovePlayer(const Player& player)
@@ -151,6 +151,11 @@ void LobbyGUI::UpdatePlayerPing(const Player& player)
 	if (pPingLabel)
 	{
 		pPingLabel->SetContent(std::to_string(player.GetPing()).c_str());
+	}
+
+	if (PlayerManagerClient::GetPlayerLocal() == &player)
+	{
+		UpdatePlayersLabel();
 	}
 }
 
@@ -198,7 +203,7 @@ void LobbyGUI::UpdatePlayerReady(const Player& player)
 	Image* pImage = FrameworkElement::FindName<Image>((uid + "_checkmark").c_str());
 	if (pImage)
 	{
-		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Hidden);
+		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Collapsed);
 	}
 }
 
@@ -227,7 +232,7 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 	}
 	else
 	{
-		uint8 colorIndex = chatMessage.Team == 0 ? m_pGameSettings->TeamColor0 : m_pGameSettings->TeamColor1;
+		uint8 colorIndex = chatMessage.Team == 1 ? m_pGameSettings->TeamColor1 : m_pGameSettings->TeamColor2;
 		glm::vec3 teamColor = TeamHelper::GetAvailableColor(colorIndex);
 		Color chatMessageColor(teamColor.r, teamColor.g, teamColor.b);
 
@@ -301,14 +306,14 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 	if (pSettingChangeTeam)
 		pSettingChangeTeam->SetContent(packet.ChangeTeam ? "True" : "False");
 
-	TextBlock* pSettingChangeTeamColor0 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_0_COLOR) + "_client").c_str());
-	if (pSettingChangeTeamColor0)
+	TextBlock* pSettingChangeTeamColor1 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_1_COLOR) + "_client").c_str());
+	if (pSettingChangeTeamColor1)
 	{
-		glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor0);
+		glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor1);
 		Color teamColor = Color(color.r, color.g, color.b);
 
 		// Update Settings Color
-		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor0->GetBackground());
+		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor1->GetBackground());
 		pSolidColorBrush->SetColor(teamColor);
 		
 		// Update Team Label color
@@ -320,14 +325,14 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		ChatManager::RenotifyAllChatMessages();
 	}
 
-	TextBlock* pSettingChangeTeamColor1 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_1_COLOR) + "_client").c_str());
-	if (pSettingChangeTeamColor1)
+	TextBlock* pSettingChangeTeamColor2 = FrameworkElement::FindName<TextBlock>((LambdaEngine::String(SETTING_CHANGE_TEAM_2_COLOR) + "_client").c_str());
+	if (pSettingChangeTeamColor2)
 	{
-		glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor1);
+		glm::vec3 color = TeamHelper::GetAvailableColor((uint8)packet.TeamColor2);
 		Color teamColor = Color(color.r, color.g, color.b);
 
 		// Update Settings Color
-		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor1->GetBackground());
+		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor2->GetBackground());
 		pSolidColorBrush->SetColor(teamColor);
 
 		// Update Team Label color
@@ -403,20 +408,20 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 	if (pSettingChangeTeamHost)
 		pSettingChangeTeamHost->SetSelectedIndex(packet.ChangeTeam ? 0 : 1);
 
-	ComboBox* pSettingTeam0Color = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_CHANGE_TEAM_0_COLOR) + "_host").c_str());
-	if (pSettingTeam0Color)
-	{
-		pSettingTeam0Color->SetSelectedIndex(packet.TeamColor0);
-		TextBlock* pBox = (TextBlock*)pSettingTeam0Color->GetSelectedItem();
-		pSettingTeam0Color->SetBackground(pBox->GetBackground());
-	}
-
 	ComboBox* pSettingTeam1Color = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_CHANGE_TEAM_1_COLOR) + "_host").c_str());
 	if (pSettingTeam1Color)
 	{
 		pSettingTeam1Color->SetSelectedIndex(packet.TeamColor1);
 		TextBlock* pBox = (TextBlock*)pSettingTeam1Color->GetSelectedItem();
 		pSettingTeam1Color->SetBackground(pBox->GetBackground());
+	}
+
+	ComboBox* pSettingTeam2Color = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_CHANGE_TEAM_2_COLOR) + "_host").c_str());
+	if (pSettingTeam2Color)
+	{
+		pSettingTeam2Color->SetSelectedIndex(packet.TeamColor2);
+		TextBlock* pBox = (TextBlock*)pSettingTeam2Color->GetSelectedItem();
+		pSettingTeam2Color->SetBackground(pBox->GetBackground());
 	}
 
 	UpdatePlayersLabel();
@@ -551,6 +556,10 @@ bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
 			return true;
 		}
 	}
+	else if(event.Key == EKey::KEY_SPACE)
+	{
+		UpdatePlayersLabel();
+	}
 	return false;
 }
 
@@ -618,27 +627,26 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	{
 		m_pGameSettings->ChangeTeam = textSelected == "True";
 	}
-	else if (setting == SETTING_CHANGE_TEAM_0_COLOR || setting == SETTING_CHANGE_TEAM_1_COLOR)
+	else if (setting == SETTING_CHANGE_TEAM_1_COLOR || setting == SETTING_CHANGE_TEAM_2_COLOR)
 	{
 		TextBlock* pBox = (TextBlock*)pComboBox->GetSelectedItem();
 		SolidColorBrush* pBoxColorBrush = static_cast<SolidColorBrush*>(pBox->GetBackground());
-		pComboBox->SetBackground(pBoxColorBrush);
-
 		SolidColorBrush* pLabelColorBrush = nullptr;
 
-		if (setting == SETTING_CHANGE_TEAM_0_COLOR)
+		if (setting == SETTING_CHANGE_TEAM_1_COLOR)
 		{
 			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
-			m_pGameSettings->TeamColor0 = (uint8)indexSelected;
+			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
 		}
 		else
 		{
 			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
-			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
+			m_pGameSettings->TeamColor2 = (uint8)indexSelected;
 		}
 
+		pComboBox->SetBackground(pBoxColorBrush);
 		pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
-			
+
 		m_pChatPanel->GetChildren()->Clear();
 		ChatManager::RenotifyAllChatMessages();
 	}

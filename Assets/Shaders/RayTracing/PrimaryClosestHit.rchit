@@ -18,6 +18,7 @@ struct SRayHitDescription
 	uint	PackedPaintInfo;
 	float	PaintDist;
 	float	PaintBorder;
+	vec3	NoisePosition;
 };
 
 layout(buffer_reference, buffer_reference_align = 16) buffer VertexBuffer 
@@ -40,6 +41,14 @@ layout(location = 0) rayPayloadInEXT SPrimaryPayload s_PrimaryPayload;
 
 hitAttributeEXT vec3 attribs;
 
+vec3 ExtractOriginalPosition(SVertex v)
+{
+	vec3 pos = vec3(v.Tangent.x, v.TexCoord.z, v.TexCoord.w);
+	if(floatBitsToUint(pos.x) == UINT32_MAX || floatBitsToUint(pos.y) == UINT32_MAX || floatBitsToUint(pos.z) == UINT32_MAX)
+		pos = v.Position.xyz;
+	return pos;
+}
+
 SRayHitDescription CalculateHitData()
 {
 	vec3 barycentricCoords = vec3(1.0f - attribs.x - attribs.y, attribs.x, attribs.y);
@@ -59,7 +68,11 @@ SRayHitDescription CalculateHitData()
 	vec3 B = cross(N, T);
 	mat3 TBN = mat3(T, B, N);
 
-	vec3 modelPosition = (v0.Position.xyz * barycentricCoords.x + v1.Position.xyz * barycentricCoords.y + v2.Position.xyz * barycentricCoords.z);
+	vec3 originalPosV0 = ExtractOriginalPosition(v0);
+	vec3 originalPosV1 = ExtractOriginalPosition(v1);
+	vec3 originalPosV2 = ExtractOriginalPosition(v2);
+
+	vec3 noisePosition = (originalPosV0 * barycentricCoords.x + originalPosV1 * barycentricCoords.y + originalPosV2 * barycentricCoords.z);
 	vec2 texCoord = (v0.TexCoord.xy * barycentricCoords.x + v1.TexCoord.xy * barycentricCoords.y + v2.TexCoord.xy * barycentricCoords.z);
 	float paintDist = (v0.Normal.w * barycentricCoords.x + v1.Normal.w * barycentricCoords.y + v2.Normal.w * barycentricCoords.z);
 
@@ -71,7 +84,7 @@ SRayHitDescription CalculateHitData()
 	vec4 paintInfo4 = (paintInfo4V0 * barycentricCoords.x + paintInfo4V1 * barycentricCoords.y + paintInfo4V2 * barycentricCoords.z);
 	uint packedPaintInfo = 0;
 	float dist = 1.f;
-	GetVec4ToPackedPaintInfoAndDistance(position, paintInfo4, paintDist, packedPaintInfo, dist);
+	GetVec4ToPackedPaintInfoAndDistance(noisePosition, paintInfo4, paintDist, packedPaintInfo, dist);
 
 	uint materialIndex		= gl_InstanceCustomIndexEXT & 0xFF;
 
@@ -89,6 +102,7 @@ SRayHitDescription CalculateHitData()
 	hitDescription.MaterialIndex	= materialIndex;
 	hitDescription.PackedPaintInfo	= packedPaintInfo;
 	hitDescription.PaintDist		= dist;
+	hitDescription.NoisePosition	= noisePosition;
 	
 	return hitDescription;
 }
@@ -96,7 +110,7 @@ SRayHitDescription CalculateHitData()
 void main() 
 {
 	SRayHitDescription hitDescription = CalculateHitData();
-	SPaintDescription paintDescription = InterpolatePaint(hitDescription.TBN, hitDescription.Position, hitDescription.Tangent, hitDescription.Bitangent, hitDescription.PackedPaintInfo, hitDescription.PaintDist);
+	SPaintDescription paintDescription = InterpolatePaint(hitDescription.TBN, hitDescription.NoisePosition, hitDescription.Tangent, hitDescription.Bitangent, hitDescription.PackedPaintInfo, hitDescription.PaintDist);
 	
 	SMaterialParameters materialParameters = u_MaterialParameters.val[hitDescription.MaterialIndex];
 
