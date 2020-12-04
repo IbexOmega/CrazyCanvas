@@ -2,9 +2,15 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
+#include "Audio/AudioAPI.h"
+
 #include "Lobby/PlayerManagerClient.h"
 
 #include "Containers/String.h"
+
+#include "Engine/EngineConfig.h"
+
+#include "Input/API/InputActionSystem.h"
 
 #include "Game/StateManager.h"
 
@@ -17,6 +23,8 @@
 #include "World/LevelManager.h"
 
 #include "Teams/TeamHelper.h"
+
+#include "Game/ECS/Systems/CameraSystem.h"
 
 using namespace Noesis;
 using namespace LambdaEngine;
@@ -39,11 +47,10 @@ LobbyGUI::LobbyGUI(PacketGameSettings* pGameSettings) :
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
 	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 	m_pPlayersLabel				= FrameworkElement::FindName<Label>("PlayersLabel");
+	m_pSettingsGrid				= FrameworkElement::FindName<Grid>("SettingsGrid");
 
 	m_pChatInputTextBox->SetMaxLines(1);
 	m_pChatInputTextBox->SetMaxLength(128);
-
-	m_pSettingsGrid = FrameworkElement::FindName<Grid>("SettingsGrid");
 
 	SetHostMode(false);
 
@@ -527,6 +534,9 @@ bool LobbyGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const ch
 	NS_CONNECT_EVENT(Button, Click, OnButtonSendMessageClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonSettingsClick);
 
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnVolumeSliderChanged);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnFOVSliderChanged);
+
 	return false;
 }
 
@@ -596,6 +606,77 @@ void LobbyGUI::UpdatePlayersLabel()
 	m_pPlayersLabel->SetContent((std::to_string(players.size()) + "/" + std::to_string(m_pGameSettings->Players) + " Players").c_str());
 }
 
+void LobbyGUI::SetDefaultSettings()
+{
+	// Set inital volume
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	NS_ASSERT(pVolumeSlider);
+	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
+	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	//Set initial FOV
+	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
+	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	SetDefaultKeyBindings();
+
+	Noesis::Slider* pLookSensitivitySlider = FrameworkElement::FindName<Slider>("LookSensitivitySlider");
+	pLookSensitivitySlider->SetValue(InputActionSystem::GetLookSensitivityPercentage() * pLookSensitivitySlider->GetMaximum());
+
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
+	// Ray Tracing Toggle
+	// m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
+	// CheckBox* pToggleRayTracing = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// NS_ASSERT(pToggleRayTracing);
+	// pToggleRayTracing->SetIsChecked(m_RayTracingEnabled);
+
+	// Mesh Shader Toggle
+	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	NS_ASSERT(pToggleMeshShader);
+	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
+
+	// Fullscreen
+	m_FullscreenEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN);
+	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	NS_ASSERT(pToggleFullscreen);
+	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
+}
+
+void LobbyGUI::SetDefaultKeyBindings()
+{
+	TArray<EAction> actions = {
+		// Movement
+		EAction::ACTION_MOVE_FORWARD,
+		EAction::ACTION_MOVE_BACKWARD,
+		EAction::ACTION_MOVE_LEFT,
+		EAction::ACTION_MOVE_RIGHT,
+		EAction::ACTION_MOVE_JUMP,
+		EAction::ACTION_MOVE_WALK,
+
+		// Attack
+		EAction::ACTION_ATTACK_PRIMARY,
+		EAction::ACTION_ATTACK_SECONDARY,
+		EAction::ACTION_ATTACK_RELOAD,
+	};
+
+	for (EAction action : actions)
+	{
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(KeyToString(key));
+		}
+		else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(ButtonToString(mouseButton));
+		}
+	}
+}
+
 void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const SelectionChangedEventArgs& args)
 {
 	if (!m_IsInitiated)
@@ -646,29 +727,20 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 
 		if (setting == SETTING_CHANGE_TEAM_1_COLOR)
 		{
-			if (m_pGameSettings->TeamColor2 != (uint8)indexSelected)
-			{
-				m_pGameSettings->TeamColor1 = (uint8)indexSelected;
-				pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
-			}
+			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
+			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
 		}
 		else
 		{
-			if (m_pGameSettings->TeamColor1 != (uint8)indexSelected)
-			{
-				m_pGameSettings->TeamColor2 = (uint8)indexSelected;
-				pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
-			}
+			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
+			m_pGameSettings->TeamColor2 = (uint8)indexSelected;
 		}
 
-		if (pLabelColorBrush)
-		{
-			pComboBox->SetBackground(pBoxColorBrush);
-			pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
+		pComboBox->SetBackground(pBoxColorBrush);
+		pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
 
-			m_pChatPanel->GetChildren()->Clear();
-			ChatManager::RenotifyAllChatMessages();
-		}
+		m_pChatPanel->GetChildren()->Clear();
+		ChatManager::RenotifyAllChatMessages();
 	}
 
 	SendGameSettings();
@@ -684,6 +756,21 @@ void LobbyGUI::OnTextBoxChanged(BaseComponent* pSender, const RoutedEventArgs& a
 
 		SendGameSettings();
 	}
+}
+
+void LobbyGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+}
+
+void LobbyGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
 }
 
 void LobbyGUI::AddColumnDefinitionStar(ColumnDefinitionCollection* columnCollection, float width)
