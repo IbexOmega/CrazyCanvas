@@ -53,7 +53,7 @@ void main()
 	const float BRUSH_SIZE	= 1.0f;
 	const float PAINT_DEPTH = BRUSH_SIZE * 2.0f;
 
-	while (vertexIndex < u_PC.VertexCount && HitPointsBufferValid > 0)
+	while (vertexIndex < u_PC.VertexCount && u_PC.HitPointsBufferValid > 0)
 	{
 		SVertex vertex = b_Vertices.Val[vertexIndex];
 		vec3 worldPosition		= (instance.Transform * vec4(vertex.Position.xyz, 1.0f)).xyz;
