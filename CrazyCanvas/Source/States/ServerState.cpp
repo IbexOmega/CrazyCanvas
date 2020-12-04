@@ -275,6 +275,7 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 			const Player* pPlayer = &pair.second;
 			PlayerManagerServer::SetPlayerReady(pPlayer, false);
 			PlayerManagerServer::SetPlayerState(pPlayer, EGameState::GAME_STATE_LOBBY);
+			PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 		}
 
 		ServerHelper::SetIgnoreNewClients(false);

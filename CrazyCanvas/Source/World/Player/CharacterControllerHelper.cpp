@@ -8,6 +8,15 @@
 using namespace physx;
 using namespace LambdaEngine;
 
+void CharacterControllerHelper::SetForeignCharacterController(
+	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
+	const LambdaEngine::NetworkPositionComponent& networkPositionComponent)
+{
+	PxController* pController = characterColliderComponent.pController;
+	const glm::vec3& position = networkPositionComponent.Position;
+	pController->setFootPosition({ position.x,  position.y,  position.z });
+}
+
 void CharacterControllerHelper::TickForeignCharacterController(
 	float32 dt,
 	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
@@ -36,7 +45,6 @@ void CharacterControllerHelper::TickForeignCharacterController(
 			velocityComponent.Velocity.y = 0.0f;
 		}
 	}
-	// Maybe add something to change the rendered PositionComponent here in case we collide
 }
 
 /*
