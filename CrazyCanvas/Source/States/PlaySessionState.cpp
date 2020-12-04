@@ -175,7 +175,7 @@ void PlaySessionState::Tick(Timestamp delta)
 void PlaySessionState::FixedTick(Timestamp delta)
 {
 	PROFILE_FUNCTION("m_HUDSystem.FixedTick", m_HUDSystem.FixedTick(delta));
-	PROFILE_FUNCTION("m_MultiplayerClient.FixedTickMainThreadInternal", m_MultiplayerClient.FixedTickMainThreadInternal(delta));
+	PROFILE_FUNCTION("MultiplayerBase::FixedTickMainThreadInternal", m_MultiplayerClient.FixedTickMainThreadInternal(delta));
 
 	if (!m_Initiated)
 	{

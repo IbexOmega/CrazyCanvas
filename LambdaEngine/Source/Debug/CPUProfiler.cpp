@@ -103,7 +103,7 @@ namespace LambdaEngine
 
 			FinishedProfilingSegment finishedProfilingSegment
 			{
-				.Name = name, 
+				.Name = name,
 				.DeltaTime = deltaTime,
 				.ChildProfilingSegments = liveProfilingSegment.ChildProfilingSegments
 			};
