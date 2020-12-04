@@ -199,17 +199,13 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			packet.Position		= collisionInfo.Position;
 			packet.Direction	= collisionInfo.Direction;
 			packet.Angle		= projectileHitEvent.Angle;
-			LOG_WARNING("Team: %u, Angle %.4f, Position: (%.4f, %.4f, %.4f), Direction: (%.4f, %.4f, %.4f)", team, projectileHitEvent.Angle,
-			collisionInfo.Position.x, collisionInfo.Position.y, collisionInfo.Position.z,
-			collisionInfo.Direction.x, collisionInfo.Direction.y, collisionInfo.Direction.z);
 			ServerHelper::SendBroadcast(packet);
 		}
 		else
 		{
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
-			//AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-			//LOG_WARNING("[CLIENT] hit pos: (%f, %f, %f)", collisionInfo.Position.x, collisionInfo.Position.y, collisionInfo.Position.z);
+			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
 		}
 	}
 
@@ -228,13 +224,11 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	if (!MultiplayerUtils::IsServer())
 	{
 		// Allways clear client side when receiving hit from the server.
-		//ResetClient();
-		//LOG_WARNING("[FROM SERVER] CLEAR CLIENT");
+		ResetClient();
 
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
 		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
-		LOG_WARNING("[FROM SERVER] hit pos: (%f, %f, %f), dir: (%f, %f, %f)", packet.Position.x, packet.Position.y, packet.Position.z, packet.Direction.x, packet.Direction.y, packet.Direction.z);
 	}
 
 	return true;
