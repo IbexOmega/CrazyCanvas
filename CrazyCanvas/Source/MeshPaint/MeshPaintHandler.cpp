@@ -73,22 +73,22 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	bool transferMemory = false;
 
 	// Reset memory if needed
-	if ((m_ResetPointBuffer && s_Collisions.IsEmpty()) || (m_PreviousPointsSize > s_Collisions.GetSize()))
-	{
-		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
-		UnwrapData dummyData = {};
-		dummyData.TargetPosition.w = 0.f;
-		for (uint32 i = 0; i < 10; i++)
-		{
-			uint64 step = uint64(i) * sizeof(UnwrapData);
-			memcpy(pBufferMapping + step, &dummyData, sizeof(UnwrapData));
-		}
-		m_pPointsBuffer->Unmap();
+	// if ((m_ResetPointBuffer && s_Collisions.IsEmpty()) || (m_PreviousPointsSize > s_Collisions.GetSize()))
+	// {
+	// 	byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
+	// 	UnwrapData dummyData = {};
+	// 	dummyData.TargetPosition.w = 0.f;
+	// 	for (uint32 i = 0; i < 10; i++)
+	// 	{
+	// 		uint64 step = uint64(i) * sizeof(UnwrapData);
+	// 		memcpy(pBufferMapping + step, &dummyData, sizeof(UnwrapData));
+	// 	}
+	// 	m_pPointsBuffer->Unmap();
 
-		m_PreviousPointsSize = 0;
-		m_ResetPointBuffer = false;
-		transferMemory = true;
-	}
+	// 	m_PreviousPointsSize = 0;
+	// 	m_ResetPointBuffer = false;
+	// 	transferMemory = true;
+	// }
 
 	// Load buffer with new data
 	if (!s_Collisions.IsEmpty())

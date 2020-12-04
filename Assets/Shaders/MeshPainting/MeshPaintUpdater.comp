@@ -14,6 +14,7 @@ layout(push_constant) uniform PushConstants
 {
 	uint VertexCount;
 	uint ShouldResetServer;
+	uint HitPointsBufferValid;
 } u_PC;
 
 layout(binding = 0, set = 0) uniform HitPointsBuffer				{ SUnwrapData Val[10]; }	u_HitPointsBuffer;
@@ -52,7 +53,7 @@ void main()
 	const float BRUSH_SIZE	= 1.0f;
 	const float PAINT_DEPTH = BRUSH_SIZE * 2.0f;
 
-	while (vertexIndex < u_PC.VertexCount)
+	while (vertexIndex < u_PC.VertexCount && HitPointsBufferValid > 0)
 	{
 		SVertex vertex = b_Vertices.Val[vertexIndex];
 		vec3 worldPosition		= (instance.Transform * vec4(vertex.Position.xyz, 1.0f)).xyz;
