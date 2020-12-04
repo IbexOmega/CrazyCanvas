@@ -74,10 +74,6 @@ namespace LambdaEngine
 
 		if (auto profilingSegmentIt = currentProfilingTick.ProfilingSegmentsMap.find(name); profilingSegmentIt != currentProfilingTick.ProfilingSegmentsMap.end())
 		{
-			LiveProfilingSegment& liveProfilingSegment = currentProfilingTick.LiveProfilingSegments[profilingSegmentIt->second];
-			liveProfilingSegment.Clock.Reset();
-			liveProfilingSegment.ChildProfilingSegments.clear();
-
 			currentProfilingTick.ProfilingSegmentStack.PushBack(profilingSegmentIt->second);
 		}
 		else
