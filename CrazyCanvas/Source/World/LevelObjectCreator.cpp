@@ -607,12 +607,12 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	pECS->AddComponent<FlagSpawnComponent>(entity, FlagSpawnComponent());
 	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
-	pECS->AddComponent<SpectateComponent>(entity, { SpectateType::FLAG_SPAWN });
 
 	uint8 teamIndex = 0;
 	if (FindTeamIndex(levelObject.Name, teamIndex))
 	{
 		pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+		pECS->AddComponent<SpectateComponent>(entity, { SpectateType::FLAG_SPAWN });
 	}
 
 	createdEntities.PushBack(entity);

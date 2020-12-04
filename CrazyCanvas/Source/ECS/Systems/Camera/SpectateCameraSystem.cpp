@@ -170,54 +170,50 @@ void SpectateCameraSystem::SpectatePlayer()
 	Entity localPlayer = UINT32_MAX;
 	Entity flagSpawnEntity = UINT32_MAX;
 	Entity mapSpectatePointEntity = UINT32_MAX;
-
-	for (Entity entity : m_SpectatableEntities)
+	for (Entity cameraEntity : m_CameraEntities)
 	{
-		const SpectateComponent& spectateComponent = pSpectateComponents->GetConstData(entity);
 
-		switch (spectateComponent.SpectateType)
+		for (Entity entity : m_SpectatableEntities)
 		{
-			case SpectateType::FLAG_SPAWN:
+			const SpectateComponent& spectateComponent = pSpectateComponents->GetConstData(entity);
+
+			switch (spectateComponent.SpectateType)
 			{
-				TeamComponent teamComponent = {};
-				if (pTeamComponents->GetConstIf(entity, teamComponent))
+				case SpectateType::FLAG_SPAWN:
 				{
+					const TeamComponent& teamComponent = pTeamComponents->GetConstData(entity);
+
 					if (teamComponent.TeamIndex == m_LocalTeamIndex)
 					{
 						flagSpawnEntity = entity;
 					}
+
+					break;
 				}
-				else if (flagSpawnEntity == UINT32_MAX)
+				case SpectateType::PLAYER:
 				{
-					flagSpawnEntity = entity;
-				}
-				break;
-			}
-			case SpectateType::PLAYER:
-			{
-				const Player* pPlayer = PlayerManagerClient::GetPlayer(entity);
+					const Player* pPlayer = PlayerManagerClient::GetPlayer(entity);
 
-				if (pPlayer->GetTeam() == m_LocalTeamIndex)
-					if (!pPlayer->IsDead()) //remove local player from list
+					if (pPlayer->GetTeam() == m_LocalTeamIndex && !pPlayer->IsDead())
 						teamPlayers.PushBack(entity);
-				break;
-			}
-			case SpectateType::LOCAL_PLAYER:
-			{
-				localPlayer = entity;
-				break;
-			}
-			case SpectateType::SPECTATE_OBJECT:
-			{
-				mapSpectatePointEntity = entity;
-				break;
-			}
-			default: { LOG_ERROR("Spectate Type not found!"); }
-		}
-	}
 
-	for (Entity cameraEntity : m_CameraEntities)
-	{
+					break;
+				}
+				case SpectateType::LOCAL_PLAYER:
+				{
+					localPlayer = entity;
+					break;
+				}
+				case SpectateType::SPECTATE_OBJECT:
+				{
+					mapSpectatePointEntity = entity;
+					break;
+				}
+				default: { LOG_ERROR("Spectate Type not found!"); }
+			}
+		}
+
+
 		if (!m_IsGameOver)
 		{
 			if (!teamPlayers.IsEmpty()) //Spectate team-member
@@ -238,7 +234,7 @@ void SpectateCameraSystem::SpectatePlayer()
 			}
 			else // spectate Flag
 			{
-				if (flagSpawnEntity != UINT32_MAX && cameraEntity != UINT32_MAX)
+				if (flagSpawnEntity != UINT32_MAX)
 				{
 					ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 					parentComponent.Parent = flagSpawnEntity;
@@ -251,7 +247,7 @@ void SpectateCameraSystem::SpectatePlayer()
 		}
 		else if (m_IsGameOver)
 		{
-			if (cameraEntity != UINT32_MAX && mapSpectatePointEntity != UINT32_MAX)
+			if (mapSpectatePointEntity != UINT32_MAX)
 			{
 				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
 				parentComponent.Parent = mapSpectatePointEntity;
