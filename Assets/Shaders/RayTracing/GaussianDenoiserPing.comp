@@ -7,7 +7,7 @@
 #include "../Helpers.glsl"
 #include "../Reflections.glsl"
 
-layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout (local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 layout(binding = 0,	set = TEXTURE_SET_INDEX) uniform sampler2D u_BlurSrc;
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAORoughMetalValid;
@@ -27,20 +27,60 @@ void main()
     ivec2 p         = ivec2(gl_GlobalInvocationID.x, gl_GlobalInvocationID.y);
     vec2 texCoords  = (vec2(p) + 0.5f) / vec2(BLUR_IMAGE_SIZE);
 
-    vec4 current_Radiance_Valid = texelFetch(u_BlurSrc, p, 0);
-    float validSample = current_Radiance_Valid.a;
+    vec4 center_Radiance_Valid = texelFetch(u_BlurSrc, p, 0);
+    float validSample = center_Radiance_Valid.a;
     vec3 filteredColor;
 
+    const vec2 blurDirection = vec2(1.0f, 0.0f);
+
 #if GAUSSIAN_FILTER_DENOISING_ENABLED
+    vec4 center_AO_Rough_Metal_Valid = texelFetch(u_GBufferAORoughMetalValid, p, 0);
+    vec3 center_Normal = UnpackNormal(texelFetch(u_GBufferCompactNormal, p, 0).xyz);
+
+    float centerRoughness = center_AO_Rough_Metal_Valid.g;
 
     #if BILATERAL_FILTER_DENOISING_ENABLED
-        filteredColor = bilateralBlur9(u_BlurSrc, u_GBufferAORoughMetalValid, u_GBufferCompactNormal, texCoords, BLUR_IMAGE_SIZE, vec2(1.0f, 0.0f)).rgb;
+
+        if (centerRoughness < GAUSSIAN_FILTER_LEVEL_0)
+        {
+            filteredColor = center_Radiance_Valid.rgb;
+        }
+        else if (centerRoughness < GAUSSIAN_FILTER_LEVEL_1)
+        {
+            filteredColor = bilateralBlur5(center_Radiance_Valid, center_Normal, centerRoughness, u_BlurSrc, u_GBufferAORoughMetalValid, u_GBufferCompactNormal, texCoords, BLUR_IMAGE_SIZE, blurDirection).rgb;
+        }
+        else if (centerRoughness < GAUSSIAN_FILTER_LEVEL_2)
+        {
+            filteredColor = bilateralBlur9(center_Radiance_Valid, center_Normal, centerRoughness, u_BlurSrc, u_GBufferAORoughMetalValid, u_GBufferCompactNormal, texCoords, BLUR_IMAGE_SIZE, blurDirection).rgb;
+        }
+        else
+        {
+            filteredColor = bilateralBlur13(center_Radiance_Valid, center_Normal, centerRoughness, u_BlurSrc, u_GBufferAORoughMetalValid, u_GBufferCompactNormal, texCoords, BLUR_IMAGE_SIZE, blurDirection).rgb;
+        }
+        
     #else
-        filteredColor = blur9(u_BlurSrc, texCoords, BLUR_IMAGE_SIZE, vec2(1.0f, 0.0f)).rgb;
+        
+        if (centerRoughness < GAUSSIAN_FILTER_LEVEL_0)
+        {
+            filteredColor = center_Radiance_Valid.rgb;
+        }
+        else if (centerRoughness < GAUSSIAN_FILTER_LEVEL_1)
+        {
+            filteredColor = blur5(center_Radiance_Valid, u_BlurSrc, texCoords, BLUR_IMAGE_SIZE, blurDirection).rgb;
+        }
+        else if (centerRoughness < GAUSSIAN_FILTER_LEVEL_2)
+        {
+            filteredColor = blur9(center_Radiance_Valid, u_BlurSrc, texCoords, BLUR_IMAGE_SIZE, blurDirection).rgb;
+        }
+        else
+        {
+            filteredColor = blur13(center_Radiance_Valid, u_BlurSrc, texCoords, BLUR_IMAGE_SIZE, blurDirection).rgb;
+        }
+
     #endif
 
 #else
-    filteredColor = current_Radiance_Valid.rgb;
+    filteredColor = center_Radiance_Valid.rgb;
 #endif
 
     imageStore(u_DenoisedReflections, p, vec4(filteredColor, validSample));

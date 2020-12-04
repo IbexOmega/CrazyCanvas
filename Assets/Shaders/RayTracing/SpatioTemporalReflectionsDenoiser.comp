@@ -11,7 +11,7 @@ layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 layout(binding = 0,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D u_DenoisedReflections;
 layout(binding = 1,	set = TEXTURE_SET_INDEX) uniform sampler2D u_Reflections;
-layout(binding = 2,	set = TEXTURE_SET_INDEX) uniform sampler2D u_BRDF_PDF;
+layout(binding = 2,	set = TEXTURE_SET_INDEX) uniform sampler2D u_Specular_BRDF_PDF;
 layout(binding = 3,	set = TEXTURE_SET_INDEX) uniform sampler2D u_PrevDenoisedReflections;
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAORoughMetalValid;
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferVelocityfWidthNormal;
@@ -74,7 +74,7 @@ void main()
 
             const int kernelRadius = RoughnessToKernelSize(roughness);
 
-            vec4 orig_brdf_pdf = texelFetch(u_BRDF_PDF, p, 0);
+            vec4 orig_brdf_pdf = texelFetch(u_Specular_BRDF_PDF, p, 0);
 
             for (int y = -kernelRadius; y <= kernelRadius; y++)
             {
@@ -97,7 +97,7 @@ void main()
 
                         if (validReprojection > 0.0f)
                         {
-                            vec4 local_brdf_pdf = texelFetch(u_BRDF_PDF, pp, 0);
+                            vec4 local_brdf_pdf = texelFetch(u_Specular_BRDF_PDF, pp, 0);
                             vec3 local_Radiance = texelFetch(u_Reflections, pp, 0).rgb;
 
                             minRadiance = min(minRadiance, local_Radiance);
@@ -135,7 +135,7 @@ void main()
             //Calculate new History Length
             float maxHistoryLength = RoughnessToTemporalHistoryLength(roughness);
             float historyStep = 1.0f / maxHistoryLength;
-            historyLength = validReprojection * validSample * min(prev_Radiance_HistoryLength.a + historyStep, 1.0f);
+            historyLength = min(validReprojection * validSample * prev_Radiance_HistoryLength.a + historyStep, 1.0f);
 
             //Mix accumulated and new information
             current_Radiance_Valid.rgb = mix(

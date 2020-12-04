@@ -110,24 +110,21 @@ vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 alb
 			l_o += (f_Diffuse + f_Specular) * incomingRadiance * n_dot_i;
 		}
 
-		//IBL
-		{
-			vec3 F_IBL		= FresnelRoughness(F0, n_dot_o, roughness);
-			vec3 k_s_IBL	= F_IBL;
-			vec3 k_d_IBL	= 1.0f - k_s_IBL;
-			k_d_IBL			*= 1.0f - metallic;
-		
-			vec3 irradiance		= texture(u_GlobalDiffuseProbe, w_nw).rgb;
-			vec3 IBL_Diffuse	= irradiance * albedo * k_d_IBL;
-		
-			const int numberOfMips	= textureQueryLevels(u_GlobalSpecularProbe);
-			vec3 w_iw_inv			= reflect(-w_ow, w_nw);
-			vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, w_iw_inv, roughness * float(numberOfMips)).rgb;
-			vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(n_dot_o, roughness), 0).rg;
-			vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
-		
-			ambient = (IBL_Diffuse + IBL_Specular) * ao;
-		}
+		vec3 F_IBL		= FresnelRoughness(F0, n_dot_o, roughness);
+		vec3 k_s_IBL	= F_IBL;
+		vec3 k_d_IBL	= 1.0f - k_s_IBL;
+		k_d_IBL			*= 1.0f - metallic;
+	
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, w_nw).rgb;
+		vec3 IBL_Diffuse	= irradiance * albedo * k_d_IBL;
+	
+		const int numberOfMips	= textureQueryLevels(u_GlobalSpecularProbe);
+		vec3 w_iw_inv			= reflect(-w_ow, w_nw);
+		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, w_iw_inv, roughness * float(numberOfMips)).rgb;
+		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(n_dot_o, roughness), 0).rg;
+		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
+	
+		ambient = (IBL_Diffuse + IBL_Specular) * ao;
 
 		return ambient + l_o;
 }
@@ -182,13 +179,14 @@ void main()
 	vec3 w_ow_start = normalize(perFrameBuffer.CameraPosition.xyz - s_PrimaryPayload.HitPosition);
 
 	vec3 reflDir;
-	vec3 throughput;
+	vec3 throughput = vec3(1.0f);
 
 #if !GLOSSY_REFLECTIONS_ENABLED
 	{
 		//Calculate a mirror reflection direction
 		reflDir = reflect(-w_ow_start, s_PrimaryPayload.Normal);
-		throughput = vec3(1.0f);
+		
+		imageStore(u_BRDF_PDF, pixelCoords, vec4(1.0f));
 	}
 #else
 	//Define Sample Variables
@@ -207,8 +205,9 @@ void main()
 									GenerateSample(1, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
 									GenerateSample(2, randomSeedPoint, numSamplesPerFrame, blueNoiseSize),
 									GenerateSample(3, randomSeedPoint, numSamplesPerFrame, blueNoiseSize)); 
-
-	SReflectionDesc reflectionDescStart = Sample_f(
+	
+	//Sample f
+	SBxDFSample bxdfSampleStart = Sample_f(
 		w_ow_start, 
 		s_PrimaryPayload.Normal, 
 		n_dot_o_start, 
@@ -218,31 +217,31 @@ void main()
 		F0_start, 
 		u_Surface_BRDF);
 
-	imageStore(u_BRDF_PDF, pixelCoords, vec4(reflectionDescStart.f_Specular * n_dot_o_start, reflectionDescStart.PDF_Specular));
+	reflDir = bxdfSampleStart.w_iw;
 
-	reflDir = reflectionDescStart.w_iw;
+	//Store specular part of sampled f to be used in denoising
+	imageStore(u_Specular_BRDF_PDF, pixelCoords, vec4(bxdfSampleStart.f_Specular * n_dot_o_start, bxdfSampleStart.PDF_Specular));
+
+	//Calculate a mirror reflection direction
+	vec3 mirrorReflDir = reflect(-w_ow_start, s_PrimaryPayload.Normal);
+
+	//Eval f for perfect mirror reflection
+	SBxDFEval bxdfEvalStart = Eval_f(
+		w_ow_start, 
+		s_PrimaryPayload.Normal,
+		mirrorReflDir,
+		s_PrimaryPayload.Albedo,
+		s_PrimaryPayload.Roughness, 
+		s_PrimaryPayload.Metallic,
+		F0_start);
+
+	//We don't use throughput for first bounce, it's applied when shading because it causes lots of noise when used for denoising
+	//Store evaluated f to be applied in shading (after denoising)
+	imageStore(u_BRDF_PDF, pixelCoords, vec4(bxdfEvalStart.f * n_dot_o_start, bxdfEvalStart.PDF));
 
 	//Initialize Glossy Variables
-	throughput = reflectionDescStart.f * n_dot_o_start / reflectionDescStart.PDF;
 	vec3 l_o = vec3(0.0f);
-	bool hitGlossySurface = false;
-	if (s_PrimaryPayload.Roughness > 0.0f)
-	{
-		//Här är problemet, denna borde ej shadeas med IBL
-		/*l_o += ShadePoint( 
-			s_PrimaryPayload.HitPosition,
-			s_PrimaryPayload.Normal,
-			w_ow_start,
-			n_dot_o_start,
-			s_PrimaryPayload.Distance,
-			s_PrimaryPayload.Albedo,
-			s_PrimaryPayload.AO,
-			s_PrimaryPayload.Roughness,
-			s_PrimaryPayload.Metallic,
-			F0_start);*/
-
-		hitGlossySurface = true;
-	}
+	bool hitGlossySurface = s_PrimaryPayload.Roughness > 0.0f;
 #endif
 
 	bool shadeOutput     = false;
@@ -297,7 +296,7 @@ void main()
 		float n_dot_o 	= max(dot(w_nw, w_ow), 0.001f);
 		vec3 F0 		= F0(s_PrimaryPayload.Albedo, s_PrimaryPayload.Metallic);
 
-		SReflectionDesc reflectionDesc = Sample_f(
+		SBxDFSample bxdfSample = Sample_f(
 			w_ow, 
 			w_nw, 
 			n_dot_o, 
@@ -307,7 +306,7 @@ void main()
 			F0, 
 			u_Surface_BRDF);
 
-		reflDir = reflectionDesc.w_iw;
+		reflDir = bxdfSample.w_iw;
 
 		//Update l_o
 		if (s_PrimaryPayload.Roughness > 0.0f)
@@ -329,7 +328,7 @@ void main()
 		}
 
 		//Update Throughput
-		throughput *= reflectionDesc.f * n_dot_o / reflectionDesc.PDF;
+		throughput *= bxdfSample.f * n_dot_o / bxdfSample.PDF;
 #endif
 
 	}
@@ -354,18 +353,17 @@ void main()
 			s_PrimaryPayload.Metallic,
 			F0);
 #else
+		//Fake energy loss on mirror bounce
+		float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
+		colorHDR *= bounceDarkening;
+
 		colorHDR = l_o;
 #endif
-
 	}
 	else
 	{
 		colorHDR = throughput * s_PrimaryPayload.Albedo;
 	}
-
-	//Fake energy loss on mirror bounce
-	float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
-	colorHDR *= bounceDarkening;
 
 	//Reinhard Tone-Mapping
 	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));

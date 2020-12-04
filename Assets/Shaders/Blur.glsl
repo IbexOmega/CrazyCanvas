@@ -8,7 +8,7 @@
 
 #include "Helpers.glsl"
 
-vec4 blur5(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
+vec4 blur5(in vec4 centerColor, in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
 {
     vec2 off1 = vec2(1.3333333333333333) * direction;
     
@@ -17,9 +17,8 @@ vec4 blur5(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
     vec2 uv_f;
     float weight;
 
-    uv_f = uv;
     weight = 0.29411764705882354;
-    colorSum += texture(blurSrc, uv_f) * weight;
+    colorSum += centerColor * weight;
     weightSum += weight;
 
     uv_f = uv + (off1 / resolution);
@@ -35,7 +34,7 @@ vec4 blur5(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
     return colorSum / weightSum;
 }
 
-vec4 bilateralBlur5(in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid, in sampler2D gBufferGeometricNormal, vec2 uv, vec2 resolution, vec2 direction)
+vec4 bilateralBlur5(in vec4 centerColor, in vec3 centerNormal, in float centerRoughness, in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid, in sampler2D gBufferGeometricNormal, vec2 uv, vec2 resolution, vec2 direction)
 {
     vec2 off1 = vec2(1.3333333333333333) * direction;
     
@@ -47,13 +46,9 @@ vec4 bilateralBlur5(in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid,
     float roughness;
     float weight;
 
-    vec3 centerNormal = UnpackNormal(texture(gBufferGeometricNormal, uv).xyz);
-    float centerRoughness = texture(gBufferAORoughMetalValid, uv).g;
-
     uv_f = uv;
-    color = texture(blurSrc, uv_f);
-    weight = color.a * 0.29411764705882354;
-    colorSum += color * weight;
+    weight = centerColor.a * 0.29411764705882354;
+    colorSum += centerColor * weight;
     weightSum += weight;
 
     uv_f = uv + (off1 / resolution);
@@ -75,7 +70,7 @@ vec4 bilateralBlur5(in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid,
     return colorSum / weightSum;
 }
 
-vec4 blur9(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
+vec4 blur9(in vec4 centerColor, in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
 {
     vec2 off1 = vec2(1.3846153846) * direction;
     vec2 off2 = vec2(3.2307692308) * direction;
@@ -85,9 +80,8 @@ vec4 blur9(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
     vec2 uv_f;
     float weight;
 
-    uv_f = uv;
     weight = 0.2270270270;
-    colorSum += texture(blurSrc, uv_f) * weight;
+    colorSum += centerColor * weight;
     weightSum += weight;
 
     uv_f = uv + (off1 / resolution);
@@ -113,7 +107,7 @@ vec4 blur9(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
     return colorSum / weightSum;
 }
 
-vec4 bilateralBlur9(in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid, in sampler2D gBufferGeometricNormal, vec2 uv, vec2 resolution, vec2 direction)
+vec4 bilateralBlur9(in vec4 centerColor, in vec3 centerNormal, in float centerRoughness, in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid, in sampler2D gBufferGeometricNormal, vec2 uv, vec2 resolution, vec2 direction)
 {
     vec2 off1 = vec2(1.3846153846) * direction;
     vec2 off2 = vec2(3.2307692308) * direction;
@@ -126,13 +120,8 @@ vec4 bilateralBlur9(in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid,
     float roughness;
     float weight;
 
-    vec3 centerNormal = UnpackNormal(texture(gBufferGeometricNormal, uv).xyz);
-    float centerRoughness = texture(gBufferAORoughMetalValid, uv).g;
-
-    uv_f = uv;
-    color = texture(blurSrc, uv_f);
-    weight = color.a * 0.2270270270;
-    colorSum += color * weight;
+    weight = centerColor.a * 0.2270270270;
+    colorSum += centerColor * weight;
     weightSum += weight;
 
     uv_f = uv + (off1 / resolution);
@@ -170,7 +159,7 @@ vec4 bilateralBlur9(in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid,
     return colorSum / weightSum;
 }
 
-vec4 blur13(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
+vec4 blur13(in vec4 centerColor, in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
 {
     vec2 off1 = vec2(1.411764705882353) * direction;
     vec2 off2 = vec2(3.2941176470588234) * direction;
@@ -181,9 +170,8 @@ vec4 blur13(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
     vec2 uv_f;
     float weight;
 
-    uv_f = uv;
     weight = 0.1964825501511404;
-    colorSum += texture(blurSrc, uv_f) * weight;
+    colorSum += centerColor * weight;
     weightSum += weight;
 
     uv_f = uv + (off1 / resolution); 
@@ -219,7 +207,7 @@ vec4 blur13(in sampler2D blurSrc, vec2 uv, vec2 resolution, vec2 direction)
     return colorSum / weightSum;
 }
 
-vec4 bilateralBlur13(in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid, in sampler2D gBufferGeometricNormal, vec2 uv, vec2 resolution, vec2 direction)
+vec4 bilateralBlur13(in vec4 centerColor, in vec3 centerNormal, in float centerRoughness, in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid, in sampler2D gBufferGeometricNormal, vec2 uv, vec2 resolution, vec2 direction)
 {
     vec2 off1 = vec2(1.411764705882353) * direction;
     vec2 off2 = vec2(3.2941176470588234) * direction;
@@ -233,13 +221,8 @@ vec4 bilateralBlur13(in sampler2D blurSrc, in sampler2D gBufferAORoughMetalValid
     float roughness;
     float weight;
 
-    vec3 centerNormal = UnpackNormal(texture(gBufferGeometricNormal, uv).xyz);
-    float centerRoughness = texture(gBufferAORoughMetalValid, uv).g;
-
-    uv_f = uv;
-    color = texture(blurSrc, uv_f);
-    weight = color.a * 0.1964825501511404;
-    colorSum += color * weight;
+    weight = centerColor.a * 0.1964825501511404;
+    colorSum += centerColor * weight;
     weightSum += weight;
 
     uv_f = uv + (off1 / resolution); 

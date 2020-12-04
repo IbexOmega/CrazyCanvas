@@ -2,7 +2,7 @@
 #include "../Helpers.glsl"
 #include "../Reflections.glsl"
 
-struct SReflectionDesc
+struct SBxDFSample
 {
     vec3    f;
     float   PDF;
@@ -119,27 +119,27 @@ SBxDFEval Eval_f_Diffuse(vec3 albedo, vec3 k_d, float cosTheta)
     return bxdfEval;
 }
 
-SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float roughness, float metallic, vec3 F0, vec4 u)
+SBxDFSample Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float roughness, float metallic, vec3 F0, vec4 u)
 {
-    SReflectionDesc reflectionDesc;
-    reflectionDesc.f                = vec3(0.0f);
-    reflectionDesc.PDF              = 0.0f;
-    reflectionDesc.f_Specular       = vec3(0.0f);
-    reflectionDesc.PDF_Specular     = 0.0f;
-    reflectionDesc.w_iw             = vec3(0.0f);
+    SBxDFSample bxdfSample;
+    bxdfSample.f                = vec3(0.0f);
+    bxdfSample.PDF              = 0.0f;
+    bxdfSample.f_Specular       = vec3(0.0f);
+    bxdfSample.PDF_Specular     = 0.0f;
+    bxdfSample.w_iw             = vec3(0.0f);
 
     //Don't sample for tangent directions
     if (n_dot_o == 0.0f) 
-        return reflectionDesc;
+        return bxdfSample;
 
     if (roughness == 0.0f)
     {
         //Perfect Specular Reflection, just reflect w_o around normal, delta distribution means that we set the PDF to 1
-        reflectionDesc.w_iw         = reflect(-w_ow,  w_nw);
-        reflectionDesc.PDF          = 1.0f;
-        reflectionDesc.f            = vec3(1.0f) / max(0.001f, n_dot_o);
-        reflectionDesc.PDF_Specular = reflectionDesc.PDF;
-        reflectionDesc.f_Specular   = reflectionDesc.f;
+        bxdfSample.w_iw         = reflect(-w_ow,  w_nw);
+        bxdfSample.PDF          = 1.0f;
+        bxdfSample.f            = vec3(1.0f) / max(0.001f, n_dot_o);
+        bxdfSample.PDF_Specular = bxdfSample.PDF;
+        bxdfSample.f_Specular   = bxdfSample.f;
     }
     else
     {
@@ -171,7 +171,7 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
 #endif
             vec3 w_is = reflect(-w_os, w_hs);
 
-            reflectionDesc.w_iw = surfaceToWorld * w_is;
+            bxdfSample.w_iw = surfaceToWorld * w_is;
 
             //Prepare some dot products
             float n_dot_i = max(0.001f, w_is.z);
@@ -187,10 +187,10 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
 #else
             SBxDFEval specularBRDFEval  = Eval_f_Specular_GGX_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
 #endif
-            reflectionDesc.PDF          = specularBRDFEval.PDF;
-            reflectionDesc.f            = specularBRDFEval.f;
-            reflectionDesc.PDF_Specular = specularBRDFEval.PDF;
-            reflectionDesc.f_Specular   = specularBRDFEval.f;
+            bxdfSample.PDF          = specularBRDFEval.PDF;
+            bxdfSample.f            = specularBRDFEval.f;
+            bxdfSample.PDF_Specular = specularBRDFEval.PDF;
+            bxdfSample.f_Specular   = specularBRDFEval.f;
         }
         else
         {     
@@ -203,7 +203,7 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
 #endif
                 vec3 w_is = reflect(-w_os, w_hs);
 
-                reflectionDesc.w_iw = surfaceToWorld * w_is;
+                bxdfSample.w_iw = surfaceToWorld * w_is;
 
                 //Prepare some dot products
                 float n_dot_i = max(0.001f, w_is.z);
@@ -226,10 +226,10 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
                 //Eval BRDF
                 SBxDFEval lambertBRDFEval   = Eval_f_Diffuse(albedo, k_d, n_dot_i);    
 
-                reflectionDesc.PDF_Specular     = specularBRDFEval.PDF;
-                reflectionDesc.f_Specular       = specularBRDFEval.f;
-                reflectionDesc.PDF              = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
-                reflectionDesc.f                = lambertBRDFEval.f + specularBRDFEval.f;
+                bxdfSample.PDF_Specular     = specularBRDFEval.PDF;
+                bxdfSample.f_Specular       = specularBRDFEval.f;
+                bxdfSample.PDF              = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
+                bxdfSample.f                = lambertBRDFEval.f + specularBRDFEval.f;
             }
 
             /*
@@ -271,11 +271,71 @@ SReflectionDesc Sample_f(vec3 w_ow, vec3 w_nw, float n_dot_o, vec3 albedo, float
                 float PDF   = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
 
                 //We're taking 2 samples so we need to divide by 2 (multiply by 0.5)
-                reflectionDesc.f                = ((f * reflectionDesc.PDF) + (reflectionDesc.f * PDF)) * 0.5f;
-                reflectionDesc.PDF              = PDF * reflectionDesc.PDF;
+                bxdfSample.f                = ((f * bxdfSample.PDF) + (bxdfSample.f * PDF)) * 0.5f;
+                bxdfSample.PDF              = PDF * bxdfSample.PDF;
             }
         }
     }
 
-    return reflectionDesc;
+    return bxdfSample;
+}
+
+SBxDFEval Eval_f(vec3 w_ow, vec3 w_nw, vec3 w_iw, vec3 albedo, float roughness, float metallic, vec3 F0)
+{
+    SBxDFEval bxdfEval;
+    bxdfEval.f                = vec3(1.0f);
+    bxdfEval.PDF              = 1.0f;
+
+    float n_dot_o = dot(w_nw, w_ow);
+    float n_dot_i = dot(w_nw, w_iw);
+
+    //Perfect Specular are delta distributions -> (mathematically) zero percent chance that w_i gives a value of f > 0 
+    if (roughness == 0.0f || n_dot_o <= 0.0f || n_dot_i <= 0.0f) return bxdfEval;
+
+    float alpha             = roughness * roughness;
+    float alphaSqrd         = max(alpha * alpha, 0.0000001f);
+
+    vec3 w_hw = normalize(w_ow + w_iw);
+
+    //Prepare some dot products
+    n_dot_o = max(0.001f, n_dot_o);
+    n_dot_i = max(0.001f, n_dot_i);
+    float n_dot_h = max(0.001f, dot(w_nw, w_hw));
+    float o_dot_h = max(0.001f, dot(w_ow, w_hw));
+
+    //Calculate Fresnel
+    vec3 F = Fresnel(F0, n_dot_i);
+
+    //True metallic objects don't use a lambertian BRDF
+    if (metallic == 1.0f)
+    {
+        //Eval Specular BRDF
+#ifdef SAMPLE_VISIBLE_NORMALS_ENABLED
+        SBxDFEval specularBRDFEval  = Eval_f_Specular_GGXVNDF_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#else
+        SBxDFEval specularBRDFEval  = Eval_f_Specular_GGX_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#endif
+        bxdfEval.PDF          = specularBRDFEval.PDF;
+        bxdfEval.f            = specularBRDFEval.f;
+    }
+    else
+    {     
+        //Eval Specular BRDF
+#ifdef SAMPLE_VISIBLE_NORMALS_ENABLED
+        SBxDFEval specularBRDFEval  = Eval_f_Specular_GGXVNDF_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#else
+        SBxDFEval specularBRDFEval  = Eval_f_Specular_GGX_Sampled(n_dot_i, n_dot_h, o_dot_h, n_dot_o, albedo, roughness, alphaSqrd, F);
+#endif
+
+        vec3 k_s = F;
+        vec3 k_d = (1.0f - k_s) * (1.0f - metallic);            
+
+        //Eval Lambert BRDF
+        SBxDFEval lambertBRDFEval   = Eval_f_Diffuse(albedo, k_d, n_dot_i);    
+
+        bxdfEval.PDF              = (lambertBRDFEval.PDF + specularBRDFEval.PDF) * 0.5f;
+        bxdfEval.f                = (lambertBRDFEval.f + specularBRDFEval.f);
+    }
+
+    return bxdfEval;
 }
