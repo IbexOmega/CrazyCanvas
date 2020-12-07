@@ -3,10 +3,9 @@
 
 enum class IndicatorTypeGUI
 {
-	FLAG_INDICATOR
-	//PLAYER_NAME_INDICATOR
+	FLAG_INDICATOR,
+	PING_INDICATOR
 };
-
 
 struct ProjectedGUIComponent
 {

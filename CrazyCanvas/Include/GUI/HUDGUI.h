@@ -95,7 +95,7 @@ public:
 	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex);
 	void UpdateKillFeedTimer(LambdaEngine::Timestamp delta);
 
-	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
+	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity, IndicatorTypeGUI indicatorType);
 	void CreateProjectedFlagGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
 	void CreateProjectedPingGUIElement(LambdaEngine::Entity entity);
 	void RemoveProjectedGUIElement(LambdaEngine::Entity entity);

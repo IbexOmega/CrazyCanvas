@@ -1,4 +1,6 @@
 #pragma once
+
+#include "Application/API/Events/KeyEvents.h"
 #include "Input/API/InputState.h"
 #include "Containers/THashTable.h"
 #include "ActionCodes.h"
@@ -25,12 +27,13 @@ namespace LambdaEngine
 		static bool IsActive(EAction action);
 		static bool IsActiveGlobal(EAction action);
 		static bool IsBoundToKey(EAction action);
+		static bool IsActionBoundToKey(EAction action, EKey key);
 		static bool IsBoundToMouseButton(EAction action);
 		static EKey GetKey(EAction action);
 		static EMouseButton GetMouseButton(EAction action);
-		
-		FORCEINLINE static float32 GetLookSensitivityPercentage() { return s_CurrentLookSensitivityPercentage; }
-		FORCEINLINE static float32 GetLookSensitivity() { return s_CurrentLookSensitivity; }
+
+		FORCEINLINE static float32 GetLookSensitivityPercentage()	{ return s_CurrentLookSensitivityPercentage; }
+		FORCEINLINE static float32 GetLookSensitivity()				{ return s_CurrentLookSensitivity; }
 
 	private:
 		static void CreateDefaults();
