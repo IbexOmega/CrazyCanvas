@@ -189,38 +189,41 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			paintMode = EPaintMode::REMOVE;
 		}
 
-		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
-		if (MultiplayerUtils::IsServer())
+		if (projectileHitEvent.CollisionInfo0.Entity != projectileHitEvent.CollisionInfo1.Entity)
 		{
-			remoteMode = ERemoteMode::SERVER;
-			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-			// LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-			// 	VEC_TO_ARG(collisionInfo.Position),
-			// 	VEC_TO_ARG(collisionInfo.Direction),
-			// 	PAINT_MODE_TO_STR(paintMode),
-			// 	REMOTE_MODE_TO_STR(remoteMode),
-			// 	team, projectileHitEvent.Angle);
+			const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
+			if (MultiplayerUtils::IsServer())
+			{
+				remoteMode = ERemoteMode::SERVER;
+				AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
+				// LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+				// 	VEC_TO_ARG(collisionInfo.Position),
+				// 	VEC_TO_ARG(collisionInfo.Direction),
+				// 	PAINT_MODE_TO_STR(paintMode),
+				// 	REMOTE_MODE_TO_STR(remoteMode),
+				// 	team, projectileHitEvent.Angle);
 
-			// Send the server's paint point to all clients.
-			PacketProjectileHit packet;
-			SET_TEAM_INDEX(packet.Info, team);
-			SET_PAINT_MODE(packet.Info, paintMode);
-			packet.Position		= collisionInfo.Position;
-			packet.Direction	= collisionInfo.Direction;
-			packet.Angle		= projectileHitEvent.Angle;
-			ServerHelper::SendBroadcast(packet);
-		}
-		else
-		{
-			// If it is a client, paint it on the temporary mask and save the point.
-			remoteMode = ERemoteMode::CLIENT;
-			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-			// LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-			// 	VEC_TO_ARG(collisionInfo.Position),
-			// 	VEC_TO_ARG(collisionInfo.Direction),
-			// 	PAINT_MODE_TO_STR(paintMode),
-			// 	REMOTE_MODE_TO_STR(remoteMode),
-			// 	team, projectileHitEvent.Angle);
+				// Send the server's paint point to all clients.
+				PacketProjectileHit packet;
+				SET_TEAM_INDEX(packet.Info, team);
+				SET_PAINT_MODE(packet.Info, paintMode);
+				packet.Position = collisionInfo.Position;
+				packet.Direction = collisionInfo.Direction;
+				packet.Angle = projectileHitEvent.Angle;
+				ServerHelper::SendBroadcast(packet);
+			}
+			else
+			{
+				// If it is a client, paint it on the temporary mask and save the point.
+				remoteMode = ERemoteMode::CLIENT;
+				AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
+				// LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+				// 	VEC_TO_ARG(collisionInfo.Position),
+				// 	VEC_TO_ARG(collisionInfo.Direction),
+				// 	PAINT_MODE_TO_STR(paintMode),
+				// 	REMOTE_MODE_TO_STR(remoteMode),
+				// 	team, projectileHitEvent.Angle);
+			}
 		}
 	}
 
@@ -245,8 +248,8 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
 		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
-		LOG_WARNING("[FROM SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d", 
-			VEC_TO_ARG(packet.Position), 
+		LOG_WARNING("[FROM SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			VEC_TO_ARG(packet.Position),
 			VEC_TO_ARG(packet.Direction),
 			PAINT_MODE_TO_STR(paintMode),
 			REMOTE_MODE_TO_STR(remoteMode),
