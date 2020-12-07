@@ -802,6 +802,8 @@ namespace LambdaEngine
 				.Direction = direction,
 				.Normal = { contactPoint.normal.x, contactPoint.normal.y, contactPoint.normal.z }
 			};
+
+			collisionInfos[actorIdx].Normal *= actorIdx == 0 ? 1.f : -1.f;
 		}
 
 		if (pCollisionCallback0 && *pCollisionCallback0)
