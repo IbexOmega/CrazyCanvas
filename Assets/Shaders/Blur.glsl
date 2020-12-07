@@ -55,7 +55,7 @@ vec4 bilateralBlur5(in vec4 centerColor, in vec3 centerNormal, in float centerRo
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.35294117647058826;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.35294117647058826;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -63,7 +63,7 @@ vec4 bilateralBlur5(in vec4 centerColor, in vec3 centerNormal, in float centerRo
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.35294117647058826;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.35294117647058826;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -128,7 +128,7 @@ vec4 bilateralBlur9(in vec4 centerColor, in vec3 centerNormal, in float centerRo
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.3162162162;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.3162162162;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -136,7 +136,7 @@ vec4 bilateralBlur9(in vec4 centerColor, in vec3 centerNormal, in float centerRo
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.3162162162;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.3162162162;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -144,7 +144,7 @@ vec4 bilateralBlur9(in vec4 centerColor, in vec3 centerNormal, in float centerRo
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.0702702703;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.0702702703;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -152,7 +152,7 @@ vec4 bilateralBlur9(in vec4 centerColor, in vec3 centerNormal, in float centerRo
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g; 
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.0702702703;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.0702702703;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -229,7 +229,7 @@ vec4 bilateralBlur13(in vec4 centerColor, in vec3 centerNormal, in float centerR
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.2969069646728344;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.2969069646728344;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -237,7 +237,7 @@ vec4 bilateralBlur13(in vec4 centerColor, in vec3 centerNormal, in float centerR
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.2969069646728344;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.2969069646728344;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -245,7 +245,7 @@ vec4 bilateralBlur13(in vec4 centerColor, in vec3 centerNormal, in float centerR
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.09447039785044732;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.09447039785044732;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -253,7 +253,7 @@ vec4 bilateralBlur13(in vec4 centerColor, in vec3 centerNormal, in float centerR
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.09447039785044732;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.09447039785044732;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -261,7 +261,7 @@ vec4 bilateralBlur13(in vec4 centerColor, in vec3 centerNormal, in float centerR
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.010381362401148057;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.010381362401148057;
     colorSum += color * weight;
     weightSum += weight;
 
@@ -269,7 +269,7 @@ vec4 bilateralBlur13(in vec4 centerColor, in vec3 centerNormal, in float centerR
     color = texture(blurSrc, uv_f);
     normal = UnpackNormal(texture(gBufferGeometricNormal, uv_f).xyz);
     roughness = texture(gBufferAORoughMetalValid, uv_f).g;
-    weight = color.a * max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.010381362401148057;
+    weight = max(0.0f, dot(centerNormal, normal)) * (1.0f - abs(centerRoughness - roughness)) * 0.010381362401148057;
     colorSum += color * weight;
     weightSum += weight;
 

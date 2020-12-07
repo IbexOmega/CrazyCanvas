@@ -110,7 +110,7 @@ void main()
                     }
                 }
             }
-
+            
             current_Radiance_Valid.rgb /= max(weightSum, vec3(1.0f));
         #else
             vec3 minRadiance = vec3(0.0f);

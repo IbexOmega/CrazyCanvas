@@ -143,14 +143,8 @@ void main()
 		{
 			vec3 reflectionColor = texture(u_Reflections, in_TexCoord).rgb;
 			vec4 BRDF_PDF = texture(u_BRDF_PDF, in_TexCoord);
-			
-			//Inverse Gamma Correction
-			vec3 reflectionLDR = pow(reflectionColor, vec3(GAMMA));
 
-			//Inverse Reinhard Tone-Mapping
-			vec3 reflectionHDR = -reflectionLDR / min(vec3(-0.00001f), reflectionLDR - vec3(1.0f));
-
-			Lo += reflectionHDR * BRDF_PDF.rgb / BRDF_PDF.a;
+			Lo += reflectionColor * BRDF_PDF.rgb / BRDF_PDF.a;
 			ambient = vec3(0.03) * albedo * ao;
 		}
 		else

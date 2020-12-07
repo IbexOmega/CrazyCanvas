@@ -352,11 +352,8 @@ void main()
 
 	l_o_tot /= float(pc_ReflectionSettings.SPP);
 
-	//Reinhard Tone-Mapping
-	vec3 colorLDR = l_o_tot / (l_o_tot + vec3(1.0f));
+	//Clamp Radiance to force away fireflies and make denoising more effective (actually doesn't impact the result very much in a negative way)
+	l_o_tot = min(l_o_tot, 1.0f);
 
-	//Gamma Correction
-	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
-	imageStore(u_Reflections, pixelCoords, vec4(finalColor, 1.0f));
+	imageStore(u_Reflections, pixelCoords, vec4(l_o_tot, 1.0f));
 }
