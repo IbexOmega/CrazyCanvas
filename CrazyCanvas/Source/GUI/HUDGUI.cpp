@@ -354,6 +354,16 @@ void HUDGUI::ShowHUD(const bool isVisible)
 		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
 }
 
+void HUDGUI::ShowNamePlate(const LambdaEngine::String& name, bool isLooking)
+{
+	((Noesis::TextBlock*)m_pLookAtGrid->GetChildren()->Get(0))->SetText(name.c_str());
+
+	if (isLooking)
+		m_pLookAtGrid->SetVisibility(Noesis::Visibility::Visibility_Visible);
+	else
+		m_pLookAtGrid->SetVisibility(Noesis::Visibility::Visibility_Collapsed);
+}
+
 ScoreBoardGUI* HUDGUI::GetScoreBoard() const
 {
 	return m_pScoreBoardGUI;
@@ -427,6 +437,7 @@ void HUDGUI::InitGUI()
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
 
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
+	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
@@ -434,6 +445,16 @@ void HUDGUI::InitGUI()
 
 	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
 	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
+
+	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+
+	const glm::vec3& teamColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
+	Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
+	brush->SetColor(color);
+
+	brush->SetOpacity(0.25f);
+
+	m_pLookAtGrid->SetBackground(brush);
 
 	m_pPaintAmmoRect->SetSource(pBitmap);
 	m_pPaintDropRect->SetSource(pBitmapDrop);
@@ -486,7 +507,7 @@ void HUDGUI::SetRenderStagesInactive()
 	DisablePlaySessionsRenderstages();
 }
 
-void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
+void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
 	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
 

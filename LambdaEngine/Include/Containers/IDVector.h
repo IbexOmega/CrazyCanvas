@@ -200,6 +200,11 @@ namespace LambdaEngine
 			return m_IDs;
 		}
 
+		uint32 Front()
+		{
+			return m_IDs.GetFront();
+		}
+
 		uint32 Back()
 		{
 			return m_IDs.GetBack();

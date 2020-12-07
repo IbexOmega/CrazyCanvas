@@ -93,11 +93,12 @@ public:
 	void UpdateKillFeedTimer(LambdaEngine::Timestamp delta);
 
 	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
-	void CreateProjectedGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
+	void CreateProjectedFlagGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
 	void RemoveProjectedGUIElement(LambdaEngine::Entity entity);
 
 	void SetWindowSize(uint32 width, uint32 height);
 	void ShowHUD(const bool isVisible);
+	void ShowNamePlate(const LambdaEngine::String& name, bool isLooking);
 
 	ScoreBoardGUI* GetScoreBoard() const;
 
@@ -137,6 +138,7 @@ private:
 	Noesis::TextBlock* m_pSpectatePlayerText	= nullptr;
 
 	Noesis::Grid* m_pHUDGrid					= nullptr;
+	Noesis::Grid* m_pLookAtGrid					= nullptr;
 
 	Noesis::Grid* m_pHitIndicatorGrid			= nullptr;
 	Noesis::Grid* m_pScoreboardGrid				= nullptr;

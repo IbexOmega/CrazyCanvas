@@ -404,11 +404,11 @@ bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 	{
 		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 		const TeamComponent& teamComponent = pTeamComponents->GetConstData(projectedEntity);
-		m_HUDGUI->CreateProjectedGUIElement(projectedEntity, m_LocalTeamIndex, teamComponent.TeamIndex);
+		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex, teamComponent.TeamIndex);
 	}
 	else
 	{
-		m_HUDGUI->CreateProjectedGUIElement(projectedEntity, m_LocalTeamIndex);
+		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex);
 	}
 
 	return false;
@@ -506,4 +506,9 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
 {
 	m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
+}
+
+void HUDSystem::DisplayNamePlate(const LambdaEngine::String& name, bool isLookingAtTeamPlayer)
+{
+	m_HUDGUI->ShowNamePlate(name, isLookingAtTeamPlayer);
 }

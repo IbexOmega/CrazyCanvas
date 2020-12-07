@@ -34,6 +34,7 @@ private:
 
 private:
 	LambdaEngine::IDVector m_SpectatableEntities;
+	LambdaEngine::IDVector m_CameraEntities;
 
 
 	LambdaEngine::Entity m_SpectatedPlayer = UINT32_MAX;
