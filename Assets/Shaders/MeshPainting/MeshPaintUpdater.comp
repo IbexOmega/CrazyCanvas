@@ -96,7 +96,7 @@ void main()
 			// Do not paint if they are in the same team. But they can remove paint.
 			float isRemove = 1.f - step(0.5f, float(paintMode));
 			float isSameTeam = 1.f - step(0.5f, abs(float(instanceTeam) - float(teamMode)));
-			valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
+			valid *= isRemove*isSameTeam + (1.f - isRemove)*(1.f - isSameTeam);
 
 			// Apply brush mask
 			vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;

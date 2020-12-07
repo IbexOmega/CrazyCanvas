@@ -213,11 +213,6 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		}
 		else
 		{
-			if (projectileHitEvent.Angle == 0)
-			{
-				LOG_WARNING("[CLIENT] Angle is 0!");
-			}
-
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
 			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
