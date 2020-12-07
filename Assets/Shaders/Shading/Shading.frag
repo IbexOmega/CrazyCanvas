@@ -45,9 +45,7 @@ void main()
 	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 	vec3 colorHDR;
 
-	/*vec2 velocity = texture(u_GBufferVelocity, in_TexCoord).xy;
-	out_Color = vec4(velocity, 0.0f, 1.0f);
-	return;*/
+	float roughness		= max(aoRoughMetalValid.g, 0.001f);
 
 	if (aoRoughMetalValid.a < 1.0f)
 	{
@@ -62,7 +60,6 @@ void main()
 	else
 	{
 		float ao		= aoRoughMetalValid.r;
-		float roughness	= max(0.05f, aoRoughMetalValid.g);
 		float metallic	= aoRoughMetalValid.b;
 		float depth 	= texture(u_GBufferDepthStencil, in_TexCoord).r;
 
@@ -77,15 +74,17 @@ void main()
 		vec3 F0 = vec3(0.04f);
 
 		F0 = mix(F0, albedo, metallic);
+
+		float inShadowDirLight = 0.0f;
 		// Directional Light
 		{
 			vec3 L = normalize(lightBuffer.DirL_Direction);
 			vec3 H = normalize(V + L);
 
 			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(positions.WorldPos, 1.0f);
-			float inShadow 			= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
+			inShadowDirLight 		= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance	= outgoingRadiance * (1.0f - inShadow);
+			vec3 incomingRadiance	= outgoingRadiance * (1.0f - inShadowDirLight);
 
 			float NDF	= Distribution(N, H, roughness);
 			float G		= Geometry(N, V, L, roughness);

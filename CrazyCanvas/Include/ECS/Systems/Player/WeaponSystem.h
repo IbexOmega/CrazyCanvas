@@ -2,7 +2,7 @@
 #include "ECS/System.h"
 #include "ECS/Components/Player/ProjectileComponent.h"
 #include "ECS/Components/Player/WeaponComponent.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
 
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
@@ -27,7 +27,7 @@ namespace LambdaEngine
 
 struct WeaponProperties
 {
-	float32	FireRate		= 4.0f;
+	float32	FireRate		= 6.0f;
 	int32	AmmoCapacity	= 50;
 	EAmmoType AmmoType		= EAmmoType::AMMO_TYPE_PAINT;
 };
@@ -74,9 +74,10 @@ public:
 
 public:
 	static bool Init();
+	static void Release();
 
-	FORCEINLINE static WeaponSystem& GetInstance() 
-	{ 
+	FORCEINLINE static WeaponSystem& GetInstance()
+	{
 		VALIDATE(s_Instance != nullptr);
 		return *s_Instance;
 	}
@@ -106,6 +107,6 @@ private:
 	static LambdaEngine::TUniquePtr<WeaponSystem> s_Instance;
 
 private:
-	float	m_ZeroDist	= 5.0f;
-	float	m_YAngle	= 0.0f;
+	float	m_ZeroDist	= 8.0f;
+	float	m_YAngle	= 5.0f;
 };

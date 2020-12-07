@@ -14,6 +14,7 @@ public:
 
 	static bool HasPlayerAuthority(const LambdaEngine::IClient* pClient);
 
+	static void SetPlayerState(const Player* pPlayer, EGameState state);
 	static void SetPlayerAlive(const Player* pPlayer, bool alive, const Player* pPlayerKiller);
 	static void SetPlayerReady(const Player* pPlayer, bool ready);
 	static void SetPlayerHost(const Player* pPlayer);
@@ -25,10 +26,11 @@ public:
 	static void SetPlayerStats(const Player* pPlayer, uint8 team, uint8 kills, uint8 deaths, uint8 flagsCaptured, uint8 flagsDefended);
 	static void KickPlayers(uint8 count);
 
+	static void Reset();
+
 protected:
 	static void Init();
 	static void Release();
-	static void Reset();
 	static void FixedTick(LambdaEngine::Timestamp deltaTime);
 
 	static bool OnPacketJoinReceived(const PacketReceivedEvent<PacketJoin>& event);

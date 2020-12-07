@@ -11,41 +11,6 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 
 /*
-* PlayerConnectedEvent
-*/
-
-struct PlayerConnectedEvent : public LambdaEngine::Event
-{
-public:
-	inline PlayerConnectedEvent(const LambdaEngine::Entity newEntity, const glm::vec3 position)
-		: Event()
-		, NewEntity(newEntity)
-		, Position(position)
-	{
-	}
-
-	DECLARE_EVENT_TYPE(PlayerConnectedEvent);
-
-	virtual LambdaEngine::String ToString() const
-	{
-		using namespace LambdaEngine;
-		return
-			"Player Connected. EntitiyID=" +
-			std::to_string(NewEntity) +
-			"Position=[" +
-			std::to_string(Position.x) +
-			", " +
-			std::to_string(Position.y) +
-			", " +
-			std::to_string(Position.z) +
-			"]";
-	}
-
-	const LambdaEngine::Entity NewEntity;
-	const glm::vec3 Position;
-};
-
-/*
 * PlayerHitEvent
 */
 
@@ -91,9 +56,9 @@ struct WeaponFiredEvent : public LambdaEngine::Event
 {
 public:
 	inline WeaponFiredEvent(
-		const LambdaEngine::Entity weaponOwnerEntity, 
-		const EAmmoType ammoType, 
-		const glm::vec3& position, 
+		const LambdaEngine::Entity weaponOwnerEntity,
+		const EAmmoType ammoType,
+		const glm::vec3& position,
 		const glm::vec3& initialVelocity,
 		const uint8 teamIndex,
 		const uint32 angle)
@@ -112,7 +77,7 @@ public:
 	virtual LambdaEngine::String ToString() const
 	{
 		using namespace LambdaEngine;
-		return String("Player fired a weapon. EntitiyID=%u", WeaponOwnerEntity);
+		return String("Player fired a weapon. Entity=%u", WeaponOwnerEntity);
 	}
 
 	const LambdaEngine::Entity WeaponOwnerEntity;
@@ -145,4 +110,63 @@ public:
 	DECLARE_EVENT_TYPE(WeaponReloadFinishedEvent);
 
 	const LambdaEngine::Entity WeaponOwnerEntity;
+};
+
+struct WeaponReloadStartedEvent : public LambdaEngine::Event
+{
+public:
+	inline WeaponReloadStartedEvent(const LambdaEngine::Entity weaponOwnerEntity) :
+		WeaponOwnerEntity(weaponOwnerEntity)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Started to reload a weapon. EntitiyID=%u", WeaponOwnerEntity);
+	}
+
+	DECLARE_EVENT_TYPE(WeaponReloadStartedEvent);
+
+	const LambdaEngine::Entity WeaponOwnerEntity;
+};
+
+struct WeaponReloadCanceledEvent : public LambdaEngine::Event
+{
+public:
+	inline WeaponReloadCanceledEvent(const LambdaEngine::Entity weaponOwnerEntity) :
+		WeaponOwnerEntity(weaponOwnerEntity)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Canceled to reload a weapon. EntitiyID=%u", WeaponOwnerEntity);
+	}
+
+	DECLARE_EVENT_TYPE(WeaponReloadCanceledEvent);
+
+	const LambdaEngine::Entity WeaponOwnerEntity;
+};
+
+struct SpectatePlayerEvent : public LambdaEngine::Event
+{
+public:
+	inline SpectatePlayerEvent(const LambdaEngine::String& name, bool isSpectating) :
+		PlayerName(name),
+		IsSpectating(isSpectating)
+	{
+	}
+
+	virtual LambdaEngine::String ToString() const
+	{
+		using namespace LambdaEngine;
+		return String("Player Spectating player " +  PlayerName);
+	}
+
+	DECLARE_EVENT_TYPE(SpectatePlayerEvent);
+
+	const LambdaEngine::String& PlayerName;
+	bool IsSpectating;
 };

@@ -3,6 +3,7 @@
 #include "Rendering/CustomRenderer.h"
 
 #include "Rendering/Core/API/CommandList.h"
+#include "Rendering/RenderGraphTypes.h"
 
 namespace LambdaEngine
 {
@@ -53,7 +54,7 @@ namespace LambdaEngine
 
 		FORCEINLINE virtual const String& GetName() const override final
 		{
-			static String name = "REFLECTIONS_DENOISE_PASS";
+			static String name = REFLECTIONS_DENOISE_PASS;
 			return name;
 		}
 

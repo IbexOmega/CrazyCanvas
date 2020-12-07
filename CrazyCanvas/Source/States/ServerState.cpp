@@ -38,10 +38,14 @@
 
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Chat/ChatManager.h"
+
 #include <windows.h>
 #include <Lmcons.h>
 
 using namespace LambdaEngine;
+
+EServerState ServerState::s_State = SERVER_STATE_LOBBY;
 
 ServerState::ServerState(const std::string& clientHostID) :
 	m_MultiplayerServer(),
@@ -70,6 +74,9 @@ ServerState::~ServerState()
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
 	EventQueue::UnregisterEventHandler<PlayerJoinedEvent>(this, &ServerState::OnPlayerJoinedEvent);
 	EventQueue::UnregisterEventHandler<PlayerStateUpdatedEvent>(this, &ServerState::OnPlayerStateUpdatedEvent);
+	EventQueue::UnregisterEventHandler<ServerStateEvent>(this, &ServerState::OnServerStateEvent);
+	EventQueue::UnregisterEventHandler<PlayerLeftEvent>(this, &ServerState::OnPlayerLeftEvent);
+	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &ServerState::OnGameOverEvent);
 }
 
 void ServerState::Init()
@@ -79,11 +86,13 @@ void ServerState::Init()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &ServerState::OnPacketGameSettingsReceived);
 	EventQueue::RegisterEventHandler<PlayerJoinedEvent>(this, &ServerState::OnPlayerJoinedEvent);
 	EventQueue::RegisterEventHandler<PlayerStateUpdatedEvent>(this, &ServerState::OnPlayerStateUpdatedEvent);
+	EventQueue::RegisterEventHandler<ServerStateEvent>(this, &ServerState::OnServerStateEvent);
+	EventQueue::RegisterEventHandler<PlayerLeftEvent>(this, &ServerState::OnPlayerLeftEvent);
+	EventQueue::RegisterEventHandler<GameOverEvent>(this, &ServerState::OnGameOverEvent);
 
 	CommonApplication::Get()->GetMainWindow()->SetTitle("Server");
 	PlatformConsole::SetTitle("Server Console");
 
-	m_MeshPaintHandler.Init();
 	m_MultiplayerServer.InitInternal();
 
 	ServerSystem::GetInstance().Start();
@@ -101,6 +110,7 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	ServerBase* pServer = event.pServer;
 
 	pEncoder->WriteUInt8(pServer->GetClientCount());
+	pEncoder->WriteUInt8(m_GameSettings.Players);
 	pEncoder->WriteString(m_GameSettings.ServerName);
 	pEncoder->WriteString(m_MapName);
 	pEncoder->WriteInt32(m_ClientHostID);
@@ -124,11 +134,18 @@ void ServerState::FixedTick(LambdaEngine::Timestamp delta)
 	m_MultiplayerServer.FixedTickMainThreadInternal(delta);
 }
 
+EServerState ServerState::GetState()
+{
+	return s_State;
+}
+
 bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& event)
 {	
 	const PacketGameSettings& packet = event.Packet;
 
-	if (PlayerManagerServer::HasPlayerAuthority(event.pClient))
+	const Player* pPlayer = PlayerManagerServer::GetPlayer(event.pClient);
+
+	if (pPlayer->IsHost())
 	{
 		m_GameSettings = packet;
 		m_MapName = LevelManager::GetLevelNames()[packet.MapID];
@@ -149,12 +166,12 @@ bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketG
 		LOG_INFO("FlagsToWin: %hhu", packet.FlagsToWin);
 		LOG_INFO("Visible:    %s", packet.Visible ? "True" : "False");
 		LOG_INFO("ChangeTeam: %s\n", packet.ChangeTeam ? "True" : "False");
-		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor0 );
-		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor1 );
+		LOG_INFO("Team 1 Color Index: %d\n", packet.TeamColor1 );
+		LOG_INFO("Team 2 Color Index: %d\n", packet.TeamColor2 );
 	}
 	else
 	{
-		LOG_ERROR("Unauthorised Client tried to exectute a server command!");
+		LOG_ERROR("Player [%s] tried to change server settings while not being the host", pPlayer->GetName().c_str());
 	}
 
 	return true;
@@ -164,42 +181,142 @@ bool ServerState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event
 {
 	using namespace LambdaEngine;
 
-	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+	const Player* pPlayer = event.pPlayer;
+	EGameState gameState = pPlayer->GetState();
 
-	EGameState gameState = event.pPlayer->GetState();
-
-	if (gameState == GAME_STATE_LOADING)
+	if (gameState == GAME_STATE_SETUP)
 	{
-		for (auto& pair : players)
+		if (GetState() == SERVER_STATE_LOBBY)
 		{
-			if (pair.second.GetState() != gameState)
-				return false;
+			SetState(SERVER_STATE_SETUP);
 		}
-
-		// Load Match
+		else
 		{
-			const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
-
-			MatchDescription matchDescription =
-			{
-				.LevelHash	= levelHashes[m_GameSettings.MapID],
-				.GameMode	= m_GameSettings.GameMode,
-				.MaxScore	= m_GameSettings.FlagsToWin,
-			};
-			Match::CreateMatch(&matchDescription);
-			Match::BeginLoading();
+			LOG_ERROR("Player [%s] tried to setup a match but the server is not in the lobby state", pPlayer->GetName().c_str());
 		}
+	}
+	else if (gameState == GAME_STATE_LOADING)
+	{
+		TryLoadMatch();
 	}
 	else if (gameState == GAME_STATE_LOADED)
 	{
-		for (auto& pair : players)
+		if (GetState() == SERVER_STATE_LOADING)
 		{
-			if (pair.second.GetState() != gameState)
-				return false;
-		}
+			const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+			for (auto& pair : players)
+			{
+				if (pair.second.GetState() != gameState)
+					return false;
+			}
 
-		Match::StartMatch();
+			SetState(SERVER_STATE_PLAYING);
+		}
+		else
+		{
+			LOG_ERROR("Player [%s] tried to start a match but the server is not in the loading state", pPlayer->GetName().c_str());
+		}
 	}
 
 	return true;
+}
+
+void ServerState::TryLoadMatch()
+{
+	if (GetState() != SERVER_STATE_SETUP)
+		return;
+
+	const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+	for (auto& pair : players)
+	{
+		if (pair.second.GetState() != GAME_STATE_LOADING)
+			return;
+	}
+
+	SetState(SERVER_STATE_LOADING);
+
+	//Reset stats
+	for (auto& pair : players)
+	{
+		const Player* pP = &pair.second;
+		PlayerManagerServer::SetPlayerStats(pP, pP->GetTeam(), 0, 0, 0, 0);
+	}
+
+	// Load Match
+	{
+		const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& levelHashes = LevelManager::GetLevelHashes();
+
+		MatchDescription matchDescription =
+		{
+			.LevelHash = levelHashes[m_GameSettings.MapID],
+			.GameMode = m_GameSettings.GameMode,
+			.MaxScore = m_GameSettings.FlagsToWin,
+		};
+
+		if (!Match::CreateMatch(&matchDescription))
+			LOG_ERROR("Failed to create match");
+
+		Match::BeginLoading();
+	}
+}
+
+bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
+{
+	EServerState state = event.State;
+	if (state == SERVER_STATE_LOBBY)
+	{
+		ChatManager::Clear();
+		Match::ResetMatch();
+		PlayerManagerServer::Reset();
+
+		const THashTable<uint64, Player>& players = PlayerManagerServer::GetPlayers();
+		for (auto& pair : players)
+		{
+			const Player* pPlayer = &pair.second;
+			PlayerManagerServer::SetPlayerReady(pPlayer, false);
+			PlayerManagerServer::SetPlayerState(pPlayer, EGameState::GAME_STATE_LOBBY);
+			PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
+		}
+
+		ServerHelper::SetIgnoreNewClients(false);
+	}
+	else if (state == SERVER_STATE_SETUP)
+	{
+		ServerHelper::SetIgnoreNewClients(true);
+		ServerHelper::SetTimeout(Timestamp::Seconds(15));
+	}
+	else if (state == SERVER_STATE_PLAYING)
+	{
+		ServerHelper::ResetTimeout();
+		Match::StartMatch();
+	}
+	return true;
+}
+
+bool ServerState::OnPlayerLeftEvent(const PlayerLeftEvent& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	if (PlayerManagerServer::GetPlayerCount() == 1)
+	{
+		SetState(SERVER_STATE_LOBBY);
+	}
+	else
+	{
+		TryLoadMatch();
+	}
+	return false;
+}
+
+bool ServerState::OnGameOverEvent(const GameOverEvent& event)
+{
+	UNREFERENCED_VARIABLE(event);
+	SetState(SERVER_STATE_LOBBY);
+	return false;
+}
+
+void ServerState::SetState(EServerState state)
+{
+	s_State = state;
+	ServerStateEvent event(s_State);
+	EventQueue::SendEventImmediate(event);
 }

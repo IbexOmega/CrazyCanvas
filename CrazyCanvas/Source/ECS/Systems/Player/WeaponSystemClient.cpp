@@ -2,6 +2,8 @@
 #include "ECS/Components/Player/Player.h"
 #include "ECS/ECSCore.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 #include "Resources/Material.h"
 #include "Resources/ResourceManager.h"
 
@@ -9,11 +11,25 @@
 
 #include "Math/Random.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 #include "Match/Match.h"
+
+#include "Resources/ResourceCatalog.h"
 
 /*
 * WeaponSystemClients
 */
+
+WeaponSystemClient::WeaponSystemClient()
+{
+	LambdaEngine::EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &WeaponSystemClient::OnPlayerAliveUpdated);
+}
+
+WeaponSystemClient::~WeaponSystemClient()
+{
+	LambdaEngine::EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &WeaponSystemClient::OnPlayerAliveUpdated);
+}
 
 void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
 {
@@ -62,65 +78,73 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
 		Entity playerEntity = weaponComponent.WeaponOwner;
 
-		const TeamComponent& teamComponent = pTeamComponents->GetConstData(playerEntity);
+		TeamComponent teamComponent;
 
-		// Foreign Players
-		if (m_ForeignPlayerEntities.HasElement(playerEntity))
+		if (pTeamComponents->GetConstIf(playerEntity, teamComponent))
 		{
-			PacketComponent<PacketPlayerActionResponse>&	packets			= pPlayerResponsePackets->GetData(playerEntity);
-			const TArray<PacketPlayerActionResponse>&		receivedPackets	= packets.GetPacketsReceived();
-			for (const PacketPlayerActionResponse& response : receivedPackets)
+			// Foreign Players
+			if (m_ForeignPlayerEntities.HasElement(playerEntity))
 			{
-				if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
+				PacketComponent<PacketPlayerActionResponse>& packets = pPlayerResponsePackets->GetData(playerEntity);
+				const TArray<PacketPlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
+				for (const PacketPlayerActionResponse& response : receivedPackets)
 				{
-					Fire(weaponEntity,
-						weaponComponent,
-						response.FiredAmmo,
-						response.WeaponPosition,
-						response.WeaponVelocity,
-						teamComponent.TeamIndex,
-						response.Angle);
+					if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
+					{
+						Fire(weaponEntity,
+							weaponComponent,
+							response.FiredAmmo,
+							response.WeaponPosition,
+							response.WeaponVelocity,
+							teamComponent.TeamIndex,
+							response.Angle);
+					}
+				}
+
+				continue;
+			}
+
+			// Local Player
+			PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
+			auto waterAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+			VALIDATE(waterAmmo != weaponComponent.WeaponTypeAmmo.end())
+
+			auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+			VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
+
+			const bool hasAmmo = (waterAmmo->second.first > 0) || (paintAmmo->second.first > 0);
+			const bool hasFullAmmo = (waterAmmo->second.first >= waterAmmo->second.second) && (paintAmmo->second.first >= paintAmmo->second.second);
+			const bool isReloading = weaponComponent.ReloadClock > 0.0f;
+			const bool onCooldown = weaponComponent.CurrentCooldown > 0.0f;
+
+			if (!hasAmmo && !isReloading)
+			{
+				StartReload(weaponComponent, playerActions);
+			}
+
+			if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
+			{
+				// Reload if we are not reloading
+				if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading && !hasFullAmmo)
+				{
+					StartReload(weaponComponent, playerActions);
+				}
+				else if (!onCooldown) // If we did not hit the reload try and shoot
+				{
+					if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
+					{
+						TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
+					}
+					else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
+					{
+						TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
+					}
 				}
 			}
 
-			continue;
+			// Update reload and cooldown timers
+			UpdateWeapon(weaponComponent, dt);
 		}
-
-		// Local Player
-		PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
-		auto waterAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
-		VALIDATE(waterAmmo != weaponComponent.WeaponTypeAmmo.end())
-
-		auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
-		VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
-		
-		const bool hasAmmo		= (waterAmmo->second.first > 0) || (paintAmmo->second.first > 0);
-		const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
-		const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
-		if (!hasAmmo && !isReloading)
-		{
-			StartReload(weaponComponent, playerActions);
-		}
-
-		// Reload if we are not reloading
-		if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading)
-		{
-			StartReload(weaponComponent, playerActions);
-		}
-		else if (!onCooldown) // If we did not hit the reload try and shoot
-		{
-			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
-			{
-				TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
-			}
-			else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
-			{
-				TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
-			}
-		}
-
-		// Update reload and cooldown timers
-		UpdateWeapon(weaponComponent, dt);
 	}
 }
 
@@ -131,8 +155,48 @@ void WeaponSystemClient::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent
 	WeaponSystem::Fire(weaponEntity, weaponComponent, ammoType, position, velocity, playerTeam, angle);
 
 	// Play gun fire and spawn particles
-	ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(m_GunFireGUID);
-	pSound->PlayOnceAt(position, velocity, 0.2f, 1.0f);
+	ECSCore* pECS = ECSCore::GetInstance();
+	const auto* pWeaponLocalComponents = pECS->GetComponentArray<WeaponLocalComponent>();
+
+	// Play 2D sound if local player shooting else play 3D sound
+	if (pWeaponLocalComponents != nullptr && pWeaponLocalComponents->HasComponent(weaponEntity))
+	{
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_2D_GUID);
+		pSound->PlayOnce(0.5f);
+	}
+	else
+	{
+		ISoundEffect3D* pSound = ResourceManager::GetSoundEffect3D(ResourceCatalog::WEAPON_SOUND_GUNFIRE_3D_GUID);
+		pSound->PlayOnceAt(position, velocity, 0.25f, 1.0f);
+	}
+}
+
+bool WeaponSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
+{
+	using namespace LambdaEngine;
+
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+
+	if (event.pPlayer == pPlayer)
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+		for (Entity weaponEntity : m_WeaponEntities)
+		{
+			WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
+
+			if (weaponComponent.WeaponOwner == pPlayer->GetEntity())
+			{
+				for (auto& ammo : weaponComponent.WeaponTypeAmmo)
+				{
+					ammo.second.first = AMMO_CAPACITY;
+				}				
+			}
+		}
+	}
+	return false;
 }
 
 bool WeaponSystemClient::InitInternal()
@@ -177,19 +241,6 @@ bool WeaponSystemClient::InitInternal()
 		RegisterSystem(TYPE_NAME(WeaponSystemClient), systemReg);
 	}
 
-	// Create soundeffects
-	m_GunFireGUID	= ResourceManager::LoadSoundEffect3DFromFile("gun.wav");
-	if (m_GunFireGUID == GUID_NONE)
-	{
-		return false;
-	}
-
-	m_OutOfAmmoGUID = ResourceManager::LoadSoundEffect2DFromFile("out_of_ammo.wav");
-	if (m_OutOfAmmoGUID == GUID_NONE)
-	{
-		return false;
-	}
-
 	return true;
 }
 
@@ -213,6 +264,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		if (isReloading)
 		{
 			AbortReload(weaponComponent);
+
 		}
 
 		//Calculate Weapon Fire Properties (Position, Velocity and Team)
@@ -240,7 +292,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 	else
 	{
 		// Play out of ammo
-		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(m_OutOfAmmoGUID);
+		ISoundEffect2D* pSound = ResourceManager::GetSoundEffect2D(ResourceCatalog::WEAPON_SOUND_OUTOFAMMO_2D_GUID);
 		pSound->PlayOnce(1.0f, 1.0f);
 
 		return false;

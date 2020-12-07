@@ -10,7 +10,7 @@
 
 #include "Engine/EngineConfig.h"
 #include "ECS/ECSCore.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 
@@ -132,16 +132,16 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferBound);
 
 		// Fetching render targets
-		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE") 
+		if (resourceName == "INTERMEDIATE_OUTPUT_IMAGE")
 		{
 			m_IntermediateOutputImage = MakeSharedRef(ppPerImageTextureViews[0]);
 		}
-		
+
 		// Writing textures to DescriptorSets
 		if (resourceName == SCENE_ALBEDO_MAPS)
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
-			
+
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
@@ -157,7 +157,7 @@ namespace LambdaEngine
 		else if (resourceName == SCENE_NORMAL_MAPS)
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
-			
+
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
@@ -173,7 +173,7 @@ namespace LambdaEngine
 		else if (resourceName == SCENE_COMBINED_MATERIAL_MAPS)
 		{
 			constexpr DescriptorSetIndex setIndex = 1U;
-			
+
 			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet1 != nullptr)
 			{
@@ -258,7 +258,7 @@ namespace LambdaEngine
 		if (resourceName == SCENE_MAT_PARAM_BUFFER)
 		{
 			constexpr DescriptorSetIndex setIndex = 0U;
-			
+
 			m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("Player Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
 			if (m_DescriptorSet0 != nullptr)
 			{
@@ -356,7 +356,7 @@ namespace LambdaEngine
 				m_DescriptorSetList2.Resize(m_DrawCount);
 				m_DescriptorSetList3.Clear();
 				m_DescriptorSetList3.Resize(m_DrawCount);
-				
+
 				m_DirtyUniformBuffers = true;
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
@@ -365,8 +365,6 @@ namespace LambdaEngine
 				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
 				const ComponentArray<WeaponComponent>* pWeaponComponents = pECSCore->GetComponentArray<WeaponComponent>();
-
-				LOG_MESSAGE("JA FIM: %u", m_DrawCount);
 
 				m_PlayerData.Clear();
 				TArray<WeaponData> weapons;
@@ -390,7 +388,7 @@ namespace LambdaEngine
 								{
 									weapons.PushBack({ .EntityId = entity, .DrawArgIndex = d, .InstanceIndex = i});
 								}
-								else 
+								else
 								{
 									// Set player data for distance and weapon sorting
 									PlayerData playerData;
@@ -468,65 +466,6 @@ namespace LambdaEngine
 						m_PlayerData[i].TeamId = 0;
 					}
 				}
-
-				// Get Paint Mask Texture from each player & weapon
-				for (uint32 d = 0; d < count; d++)
-				{
-					constexpr DescriptorSetIndex setIndex = 3U;
-
-					// Create a new descriptor or use an old descriptor
-					m_DescriptorSetList3[d] = m_DescriptorCache.GetDescriptorSet("Player Renderer Descriptor Set 3 - Draw arg-" + std::to_string(d), m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get(), false);
-
-					if (m_DescriptorSetList3[d] != nullptr)
-					{
-						const DrawArg& drawArg = pDrawArgs[d];
-
-						TArray<TextureView*> textureViews;
-						TextureView* defaultMask = ResourceManager::GetTextureView(GUID_TEXTURE_DEFAULT_MASK_MAP);
-						textureViews.PushBack(defaultMask);
-
-						for (uint32 i = 0; i < drawArg.InstanceCount; i++)
-						{
-							DrawArgExtensionGroup* extensionGroup = drawArg.ppExtensionGroups[i];
-
-							if (extensionGroup)
-							{
-								// We can assume there is only one extension, because this render stage has a DrawArgMask of 2 which is one specific extension.
-								uint32 numExtensions = extensionGroup->ExtensionCount;
-								for (uint32 e = 0; e < numExtensions; e++)
-								{
-									uint32 flag = extensionGroup->pExtensionFlags[e];
-									bool inverted;
-									uint32 meshPaintFlag = EntityMaskManager::GetExtensionFlag(MeshPaintComponent::Type(), inverted);
-									uint32 invertedUInt = uint32(inverted);
-
-									if ((flag & meshPaintFlag) != invertedUInt)
-									{
-										DrawArgExtensionData& extension = extensionGroup->pExtensions[e];
-										TextureView* pTextureView = extension.ppTextureViews[0];
-										textureViews.PushBack(pTextureView);
-									}
-								}
-							}
-						}
-
-						// Set descriptor to give GPU access to paint mask textures
-						Sampler* sampler = Sampler::GetNearestSampler();
-						uint32 bindingIndex = 0;
-
-						m_DescriptorSetList3[d]->WriteTextureDescriptors(
-								textureViews.GetData(),
-								&sampler,
-								ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, textureViews.GetSize(),
-								EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-								false
-							);
-					}
-					else
-					{
-						LOG_ERROR("[PlayerRenderer]: Failed to update descriptors for drawArgs paint masks");
-					}
-				}
 			}
 			else
 			{
@@ -598,8 +537,8 @@ namespace LambdaEngine
 
 
 	void PlayerRenderer::RenderCull(bool renderEnemy,
-									CommandList* pCommandList, 
-									uint64& pipelineId) 
+									CommandList* pCommandList,
+									uint64& pipelineId)
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
@@ -610,14 +549,14 @@ namespace LambdaEngine
 		{
 			m_PlayerData[i].Distance2ToViewer = glm::distance2(m_Viewer.Positon, m_PlayerData[i].Position);
 		}
-		
+
 		std::sort(m_PlayerData.Begin(), m_PlayerData.End(),
 			[&](const PlayerData pd1, PlayerData pd2) {return pd1.Distance2ToViewer < pd2.Distance2ToViewer; });
 
-		for (auto& player : m_PlayerData) 
+		for (auto& player : m_PlayerData)
 		{
 			bool drawingVisiblePlayer = player.DrawArgIndex != m_Viewer.DrawArgIndex;
-			
+
 			// Skip drawing local player
 			if (drawingVisiblePlayer)
 			{
@@ -639,7 +578,6 @@ namespace LambdaEngine
 				pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
 				pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-				pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
 				pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 
 				// Draw player weapon
@@ -649,7 +587,6 @@ namespace LambdaEngine
 					pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, &player.TeamId, sizeof(uint32), 0);
 					pCommandList->BindIndexBuffer(drawArgWeapon.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-					pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList3[player.Weapon.DrawArgIndex].Get(), m_PipelineLayout.Get(), 3); // Paint Masks
 					pCommandList->DrawIndexInstanced(drawArgWeapon.IndexCount, 1, 0, 0, player.Weapon.InstanceIndex);
 				}
 			}
@@ -718,14 +655,6 @@ namespace LambdaEngine
 		combinedMaterialMapsDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		combinedMaterialMapsDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
-		// PaintMaskTextures
-		DescriptorBindingDesc paintMaskDesc = {};
-		paintMaskDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
-		paintMaskDesc.DescriptorCount = 6000;
-		paintMaskDesc.Binding = 0;
-		paintMaskDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		paintMaskDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
-
 		// LightBuffer
 		DescriptorBindingDesc lightBufferDesc = {};
 		lightBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
@@ -770,10 +699,6 @@ namespace LambdaEngine
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
 		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc };
 
-		// maps to SET = 3 (DRAW_EXTENSION_SET_INDEX)
-		DescriptorSetLayoutDesc descriptorSetLayoutDesc3 = {};
-		descriptorSetLayoutDesc3.DescriptorBindings = { paintMaskDesc };
-
 		ConstantRangeDesc constantRangeFragmentDesc = { };
 		constantRangeFragmentDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		constantRangeFragmentDesc.SizeInBytes = sizeof(uint32);
@@ -781,7 +706,7 @@ namespace LambdaEngine
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "Player Renderer Pipeline Layout";
-		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2, descriptorSetLayoutDesc3 };
+		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
 		pipelineLayoutDesc.ConstantRanges = { constantRangeFragmentDesc };
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
@@ -869,7 +794,7 @@ namespace LambdaEngine
 		colorAttachmentDesc.FinalState = pColorAttachmentDesc->FinalState;
 
 		RenderPassAttachmentDesc depthAttachmentDesc = {};
-		
+
 		depthAttachmentDesc.Format = pDepthStencilAttachmentDesc->Format; // FORMAT_D24_UNORM_S8_UINT
 		depthAttachmentDesc.SampleCount = 1;
 		depthAttachmentDesc.LoadOp = ELoadOp::LOAD_OP_LOAD;
@@ -972,7 +897,7 @@ namespace LambdaEngine
 		pipelineStateDesc2.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
 
 		m_PipelineStateIDFrontCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc2);
-		
+
 		ManagedGraphicsPipelineStateDesc pipelineStateDesc3 = {};
 		pipelineStateDesc3.DebugName = "Player Renderer Pipeline No Cull State";
 		pipelineStateDesc3.RenderPass = m_RenderPass;
@@ -1009,5 +934,4 @@ namespace LambdaEngine
 		return true;
 
 	}
-		
 }

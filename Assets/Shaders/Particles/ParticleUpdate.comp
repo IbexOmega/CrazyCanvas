@@ -61,7 +61,7 @@ void UpdateParticleTransform(vec3 position, SEmitter emitter, uint particleIndex
 {
 	particle.Transform[3].xyz = position;
 	
-	float scale = mix(particle.EndRadius, particle.BeginRadius, particle.CurrentLife / emitter.LifeTime);
+	float scale = mix(particle.EndRadius, particle.BeginRadius, max(particle.CurrentLife / emitter.LifeTime, 0.0f));
 	ASInstance.Transform[0].x = scale;
 	ASInstance.Transform[1].y = scale;
 	ASInstance.Transform[2].z = scale;
@@ -121,8 +121,7 @@ void main()
 
 		particle.Velocity += (particle.Acceleration + GLOBAL_DOWN*emitter.Gravity) * dt;
 
-        // If we will skip to bounce the particles, this should not be named Bounciness. If not, this should be removed.
-		if(particle.Bounciness > 1.5f)
+		if(particle.ShouldStop > 0.5f)
 		{
 			particle.Velocity = vec3(0.f);
 		}
@@ -136,7 +135,7 @@ void main()
 			const float OUT_OF_REACH = 10000.f;
 			UpdateParticleTransform(vec3(OUT_OF_REACH), emitter, particleIndex, particle, ASInstance);
 
-			particle.WasCreated = true;
+			particle.WasCreated = !emitter.OneTime;
 		}
 
 		// Should only happen if it is an emitter that repeats.
@@ -149,10 +148,12 @@ void main()
 			particle.Velocity = (emitterTransform*vec4(particle.StartVelocity, 0.f)).xyz;
 			particle.Acceleration = (emitterTransform*vec4(particle.StartAcceleration, 0.f)).xyz;
 			particle.TileIndex = emitter.FirstAnimationIndex;
+			particle.ShouldStop = 0.f;
 		}
 
-		float t = clamp(particle.CurrentLife, 0.f, emitter.LifeTime)/emitter.LifeTime;
-		particle.TileIndex = emitter.FirstAnimationIndex + emitter.AnimationCount-1 - clamp(uint(t*emitter.AnimationCount), 0, emitter.AnimationCount-1);
+		// uncomment for animation, but this will remove random offset of tileindex per particle
+		// float t = clamp(particle.CurrentLife, 0.f, emitter.LifeTime)/emitter.LifeTime;
+		// particle.TileIndex = emitter.FirstAnimationIndex + uint(emitter.AnimationCount * t);
 
 		// Update ASInstance data and write particleIndex to customIndex
 		ASInstance.HitMask_CustomProperties = ((particleIndex << 8) >> 8) | ((ASInstance.HitMask_CustomProperties >> 24) << 24);

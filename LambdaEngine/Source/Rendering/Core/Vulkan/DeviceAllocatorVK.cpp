@@ -57,12 +57,12 @@ namespace LambdaEngine
 #ifdef LAMBDA_DEVELOPMENT
 			if (m_pHead->pNext != nullptr)
 			{
-				LOG_WARNING("[DeviceMemoryPageVK]: Memoryleak detected, m_pHead->pNext is not nullptr");
+				LOG_WARNING("Memoryleak detected, m_pHead->pNext is not nullptr");
 			}
 
 			if (m_pHead->pPrevious != nullptr)
 			{
-				LOG_WARNING("[DeviceMemoryPageVK]: Memoryleak detected, m_pHead->pPrevious is not nullptr");
+				LOG_WARNING("Memoryleak detected, m_pHead->pPrevious is not nullptr");
 			}
 #endif
 			DeviceMemoryBlockVK* pIterator = m_pHead;
@@ -94,7 +94,7 @@ namespace LambdaEngine
 			VkResult result = m_pDevice->AllocateMemory(&m_DeviceMemory, sizeInBytes, m_MemoryIndex);
 			if (result != VK_SUCCESS)
 			{
-				LOG_VULKAN_ERROR(result, "[DeviceMemoryPageVK]: Failed to allocate memory");
+				LOG_VULKAN_ERROR(result, "Failed to allocate memory");
 				return false;
 			}
 			else
@@ -385,7 +385,7 @@ namespace LambdaEngine
 				{
 					if ((pIterator->Offset + pIterator->TotalSizeInBytes) > (pIterator->pNext->Offset))
 					{
-						D_LOG_WARNING("[DeviceMemoryPageVK]: Overlap found");
+						LOG_DEBUG("Overlap found");
 						return false;
 					}
 				}
@@ -410,7 +410,7 @@ namespace LambdaEngine
 				pIterator = pIterator->pNext;
 			}
 
-			/* When we have reached the tail we start going backwards and check so 
+			/* When we have reached the tail we start going backwards and check so
 			that the order in the array is the same as when we traversed forward*/
 			while (pTail != nullptr)
 			{

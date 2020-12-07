@@ -1,5 +1,7 @@
 #include "Lobby/PlayerManagerServer.h"
 
+#include "Networking/API/NetworkDebugger.h"
+
 #include "Game/Multiplayer/MultiplayerUtils.h"
 
 #include "Multiplayer/ServerHelper.h"
@@ -12,6 +14,8 @@
 #include "Events/PlayerEvents.h"
 
 #include "Application/API/Events/EventQueue.h"
+
+#include "States/ServerState.h"
 
 using namespace LambdaEngine;
 
@@ -60,7 +64,7 @@ void PlayerManagerServer::FixedTick(Timestamp deltaTime)
 			Player* pPlayer = GetPlayerNoConst(pClient->GetUID());
 			if (pPlayer)
 			{
-				pPlayer->m_Ping = (uint16)pClient->GetStatistics()->GetPing().AsMilliSeconds();
+				pPlayer->m_Ping = (uint16)pClient->GetStatistics()->GetPing();
 				PacketPlayerPing packet;
 				packet.Ping = pPlayer->m_Ping;
 				packet.UID	= pPlayer->m_UID;
@@ -126,6 +130,8 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 		SetPlayerHost(pPlayer);
 	}
 
+	NetworkDebugger::RegisterClientName(pClient, pPlayer->GetName());
+
 	return true;
 }
 
@@ -157,7 +163,7 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 			if (player.m_State != packet.State)
 			{
 				player.m_State = packet.State;
-				
+
 				ServerHelper::SendBroadcast(packet, nullptr, pClient);
 
 				PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
@@ -168,22 +174,20 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 		{
 			if (player.IsHost())
 			{
-				ServerHelper::SetIgnoreNewClients(true);
-
 				for (auto& pair : s_Players)
 				{
 					Player& p = pair.second;
+					p.m_State = packet.State;
+
 					if (p != player)
 					{
-						p.m_State = packet.State;
 						packet.UID = p.m_UID;
-
 						ServerHelper::SendBroadcast(packet);
-
-						PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
-						EventQueue::SendEventImmediate(playerStateUpdatedEvent);
 					}
 				}
+				
+				PlayerStateUpdatedEvent playerStateUpdatedEvent(&player);
+				EventQueue::SendEventImmediate(playerStateUpdatedEvent);
 			}
 		}
 	}
@@ -218,7 +222,7 @@ bool PlayerManagerServer::OnPacketPlayerReadyReceived(const PacketReceivedEvent<
 void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 {
 	bool wasHost = HandlePlayerLeft(pClient->GetUID());
-	
+
 	PacketLeave packet;
 	packet.UID = pClient->GetUID();
 	ServerHelper::SendBroadcast(packet, nullptr, pClient);
@@ -227,12 +231,46 @@ void PlayerManagerServer::HandlePlayerLeftServer(LambdaEngine::IClient* pClient)
 	{
 		SetPlayerHost(&(s_Players.begin()->second));
 	}
+
+	if (s_Players.size() < 2 || ServerState::GetState() != SERVER_STATE_LOBBY)
+		return;
+
+	TArray<const Player*> playersTeam0;
+	TArray<const Player*> playersTeam1;
+	GetPlayersOfTeam(playersTeam0, 1);
+	GetPlayersOfTeam(playersTeam1, 2);
+	int32 delta = playersTeam0.GetSize() - playersTeam1.GetSize();
+	if (glm::abs(delta) >= 2)
+	{
+		Player* pPlayer = &(s_Players.begin()->second);
+		pPlayer->m_Team = delta > 0 ? 2 : 1;
+		PacketPlayerScore packetPlayerScore;
+		FillPacketPlayerScore(&packetPlayerScore, pPlayer);
+		ServerHelper::SendBroadcast(packetPlayerScore, nullptr, pClient);
+	}
 }
 
 bool PlayerManagerServer::HasPlayerAuthority(const IClient* pClient)
 {
 	const Player* pPlayer = GetPlayer(pClient);
 	return pPlayer != nullptr && pPlayer->IsHost();
+}
+
+void PlayerManagerServer::SetPlayerState(const Player* pPlayer, EGameState state)
+{
+	if (pPlayer->m_State != state)
+	{
+		Player* pPl = const_cast<Player*>(pPlayer);
+		pPl->m_State = state;
+
+		PacketPlayerState packet;
+		packet.UID		= pPl->m_UID;
+		packet.State	= pPl->m_State;
+		ServerHelper::SendBroadcast(packet);
+
+		PlayerStateUpdatedEvent event(pPlayer);
+		EventQueue::SendEventImmediate(event);
+	}
 }
 
 void PlayerManagerServer::SetPlayerAlive(const Player* pPlayer, bool alive, const Player* pPlayerKiller)
@@ -466,9 +504,9 @@ void PlayerManagerServer::FillPacketPlayerScore(PacketPlayerScore* pPacket, cons
 
 void PlayerManagerServer::AutoSelectTeam(Player* pPlayer)
 {
-	TArray<const Player*> pPlayersTeam0;
 	TArray<const Player*> pPlayersTeam1;
-	GetPlayersOfTeam(pPlayersTeam0, 0);
+	TArray<const Player*> pPlayersTeam2;
 	GetPlayersOfTeam(pPlayersTeam1, 1);
-	pPlayer->m_Team = pPlayersTeam0.GetSize() > pPlayersTeam1.GetSize() ? 1 : 0;
+	GetPlayersOfTeam(pPlayersTeam2, 2);
+	pPlayer->m_Team = pPlayersTeam1.GetSize() > pPlayersTeam2.GetSize() ? 2 : 1;
 }

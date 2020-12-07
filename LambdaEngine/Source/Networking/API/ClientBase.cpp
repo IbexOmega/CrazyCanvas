@@ -18,8 +18,9 @@ namespace LambdaEngine
 		m_pSocket(nullptr),
 		m_pHandler(desc.Handler),
 		m_PingInterval(desc.PingInterval),
-		m_PingTimeout(desc.PingTimeout),
+		m_PingTimeoutDefault(desc.PingTimeout),
 		m_UsePingSystem(desc.UsePingSystem),
+		m_PingTimeout(desc.PingTimeout),
 		m_LastPingTimestamp(0),
 		m_State(STATE_DISCONNECTED),
 		m_SendDisconnectPacket(false),
@@ -46,7 +47,7 @@ namespace LambdaEngine
 			GetPacketManager()->SetEndPoint(ipEndPoint);
 			if (StartThreads())
 			{
-				LOG_WARNING("[ClientBase]: Connecting...");
+				LOG_WARNING("Connecting...");
 				return true;
 			}
 		}
@@ -59,7 +60,7 @@ namespace LambdaEngine
 		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientBase::ReturnPacket");
 #else
 		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
-#endif	
+#endif
 	}
 
 	void ClientBase::Disconnect(const std::string& reason)
@@ -88,11 +89,24 @@ namespace LambdaEngine
 
 	NetworkSegment* ClientBase::GetFreePacket(uint16 packetType)
 	{
+		SegmentPool* pSegmentPool = GetPacketManager()->GetSegmentPool();
+
 #ifdef LAMBDA_CONFIG_DEBUG
-		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment("ClientBase")->SetType(packetType);
+		NetworkSegment* pSegment = pSegmentPool->RequestFreeSegment("ClientBase");
 #else
-		return GetPacketManager()->GetSegmentPool()->RequestFreeSegment()->SetType(packetType);
+		NetworkSegment* pSegment = pSegmentPool->RequestFreeSegment();
 #endif
+		if (pSegment)
+		{
+			pSegment->SetType(packetType);
+		}
+		else
+		{
+			m_SendDisconnectPacket = false;
+			Disconnect("No more free packets!");
+		}
+
+		return pSegment;
 	}
 
 	EClientState ClientBase::GetState() const
@@ -100,7 +114,7 @@ namespace LambdaEngine
 		return m_State;
 	}
 
-	const NetworkStatistics* ClientBase::GetStatistics() const
+	NetworkStatistics* ClientBase::GetStatistics()
 	{
 		return GetPacketManager()->GetStatistics();
 	}
@@ -114,7 +128,7 @@ namespace LambdaEngine
 	{
 		if (!IsConnected())
 		{
-			LOG_WARNING("[ClientBase]: Can not send packet before a connection has been established");
+			LOG_WARNING("Can not send packet before a connection has been established");
 			return false;
 		}
 
@@ -126,7 +140,7 @@ namespace LambdaEngine
 	{
 		if (!IsConnected())
 		{
-			LOG_WARNING("[ClientBase]: Can not send packet before a connection has been established");
+			LOG_WARNING("Can not send packet before a connection has been established");
 			return false;
 		}
 
@@ -136,19 +150,38 @@ namespace LambdaEngine
 
 	uint64 ClientBase::GetUID() const
 	{
-		return GetStatistics()->GetRemoteSalt();
+		return GetPacketManager()->GetStatistics()->GetRemoteSalt();
+	}
+
+	void ClientBase::SetTimeout(Timestamp time)
+	{
+		m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
+		m_PingTimeout = time;
+	}
+
+	void ClientBase::ResetTimeout()
+	{
+		SetTimeout(m_PingTimeoutDefault);
 	}
 
 	void ClientBase::SendConnect()
 	{
-		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_CONNNECT), this);
-		TransmitPackets();
+		NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_CONNNECT);
+		if (pSegment)
+		{
+			GetPacketManager()->EnqueueSegmentReliable(pSegment, this);
+			TransmitPackets();
+		}
 	}
 
 	void ClientBase::SendDisconnect()
 	{
-		GetPacketManager()->EnqueueSegmentReliable(GetFreePacket(NetworkSegment::TYPE_DISCONNECT), this);
-		TransmitPackets();
+		NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_DISCONNECT);
+		if (pSegment)
+		{
+			GetPacketManager()->EnqueueSegmentReliable(pSegment, this);
+			TransmitPackets();
+		}
 	}
 
 	void ClientBase::FixedTick(Timestamp delta)
@@ -184,13 +217,9 @@ namespace LambdaEngine
 				if (timeSinceLastPacketSent >= m_PingInterval)
 				{
 					m_LastPingTimestamp = EngineLoop::GetTimeSinceStart();
-					NetworkSegment* pPacket = GetFreePacket(NetworkSegment::TYPE_PING);
-					BinaryEncoder encoder(pPacket);
-					NetworkStatistics& pStatistics = GetPacketManager()->m_Statistics;
-					encoder.WriteUInt32(pStatistics.GetPacketsSent());
-					encoder.WriteUInt32(pStatistics.GetPacketsReceived());
-					pStatistics.UpdatePacketsSentFixed();
-					SendReliable(pPacket);
+					NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_PING);
+					if(pSegment)
+						SendReliable(pSegment);
 				}
 			}
 		}
@@ -204,7 +233,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
 			m_BufferIndex = (m_BufferIndex + 1) % 2;
 		}
-		
+
 		for (NetworkSegment* pPacket : packets)
 		{
 			ASSERT(pPacket->GetBufferSize() > 0);
@@ -240,7 +269,7 @@ namespace LambdaEngine
 				GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientBase::DecodeReceivedPackets");
 #else
 				GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
-#endif	
+#endif
 			}
 		}
 	}
@@ -257,15 +286,18 @@ namespace LambdaEngine
 			ASSERT(answer != 0);
 
 			NetworkSegment* pResponse = GetFreePacket(NetworkSegment::TYPE_CHALLENGE);
-			BinaryEncoder encoder(pResponse);
-			encoder.WriteUInt64(answer);
-			GetPacketManager()->EnqueueSegmentReliable(pResponse, this);
+			if (pResponse)
+			{
+				BinaryEncoder encoder(pResponse);
+				encoder.WriteUInt64(answer);
+				GetPacketManager()->EnqueueSegmentReliable(pResponse, this);
+			}
 		}
 		else if (packetType == NetworkSegment::TYPE_ACCEPTED)
 		{
 			if (m_State == STATE_CONNECTING)
 			{
-				LOG_INFO("[ClientBase]: Connected");
+				LOG_INFO("Connected");
 				m_State = STATE_CONNECTED;
 				m_pHandler->OnConnected(this);
 			}
@@ -289,12 +321,7 @@ namespace LambdaEngine
 		}
 		else if (packetType == NetworkSegment::TYPE_PING)
 		{
-			BinaryDecoder decoder(pPacket);
-			uint32 packetsSentByRemote		= decoder.ReadUInt32() + 1;
-			uint32 packetsReceivedByRemote	= decoder.ReadUInt32();
-			NetworkStatistics& statistics = GetPacketManager()->m_Statistics;
-			statistics.SetPacketsSentByRemote(packetsSentByRemote);
-			statistics.SetPacketsReceivedByRemote(packetsReceivedByRemote);
+
 		}
 		else
 		{
@@ -338,8 +365,8 @@ namespace LambdaEngine
 			m_pSocket->Close();
 			SAFEDELETE(m_pSocket);
 		}
-		
-		LOG_INFO("[ClientBase]: Disconnected");
+
+		LOG_INFO("Disconnected");
 		m_State = STATE_DISCONNECTED;
 		if (m_pHandler)
 			m_pHandler->OnDisconnected(this, m_Reason);
@@ -347,7 +374,7 @@ namespace LambdaEngine
 
 	void ClientBase::OnTerminationRequested(const std::string& reason)
 	{
-		LOG_WARNING("[ClientBase]: Disconnecting... [%s]", reason.c_str());
+		LOG_WARNING("Disconnecting... [%s]", reason.c_str());
 		m_State = STATE_DISCONNECTING;
 		m_Reason = reason;
 		m_pHandler->OnDisconnecting(this, reason);

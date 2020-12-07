@@ -97,35 +97,6 @@
           <Rectangle  x:Name="ServerBrowse" Grid.ColumnSpan="6" Grid.Column="2" Fill="#FF25252B" Stroke="Black" Margin="0,0,5,0" Grid.RowSpan="28"/>
           <TextBlock Grid.Column="3" Grid.Row="1" FontSize="20" Margin="0,0,-100,0"  Foreground="White" Text="List Of Servers" HorizontalAlignment="Right" VerticalAlignment="Center" />
           <TabControl x:Name="SERVERS" Margin="0,20" Grid.Column="2" Grid.ColumnSpan="6" Background="#FF181919" Grid.Row="4" Grid.RowSpan="22">
-            <TabItem x:Name="LOCAL" Header="Local Servers">
-              <Grid Grid.Column="1" Grid.ColumnSpan="2">
-                <Grid.RowDefinitions>
-                  <RowDefinition/>
-                  <RowDefinition/>
-                  <RowDefinition/>
-                  <RowDefinition/>
-                  <RowDefinition/>
-                  <RowDefinition/>
-                  <RowDefinition/>
-                </Grid.RowDefinitions>
-                <Grid x:Name="LOCAL_SERVER_LIST_CONTENT"  Grid.Row="0">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                    <ColumnDefinition/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="0">Name</TextBlock>
-                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="1">Map</TextBlock>
-                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="2">Players</TextBlock>
-                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="3">Ping</TextBlock>
-                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="4">Status</TextBlock>
-                </Grid>
-                <ListBox x:Name="LOCAL_SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="10" Margin="5,0,10,0" Background="#FF171717">
-                </ListBox>
-              </Grid>
-            </TabItem>
             <TabItem x:Name="SAVED" Header="Saved Servers">
               <Grid Grid.Column="1" Grid.ColumnSpan="2">
                 <Grid.RowDefinitions>
@@ -156,10 +127,38 @@
                 </ListBox>
               </Grid>
             </TabItem>
+            <TabItem x:Name="LOCAL" Header="Local Servers">
+              <Grid Grid.Column="1" Grid.ColumnSpan="2">
+                <Grid.RowDefinitions>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid x:Name="LOCAL_SERVER_LIST_CONTENT"  Grid.Row="0">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="0">Name</TextBlock>
+                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="1">Map</TextBlock>
+                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="2">Players</TextBlock>
+                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="3">Ping</TextBlock>
+                  <TextBlock Foreground="#FFB2B2B2"  Grid.Column="4">Status</TextBlock>
+                </Grid>
+                <ListBox x:Name="LOCAL_SERVER_LIST" Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="10" Margin="5,0,10,0" Background="#FF171717">
+                </ListBox>
+              </Grid>
+            </TabItem>
           </TabControl>
-          <Button Click="OnButtonRefreshClick" Content="Refresh" Grid.Column="6" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center"/>
 
-          <Button Click="OnButtonHostGameClick" Content="Host Game"  Grid.Column="3" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
+          <Button Click="OnButtonHostGameClick" Visibility="Collapsed" Content="Host Game"  Grid.Column="3" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
             <Button.Triggers>
               <EventTrigger RoutedEvent="Button.Click">
                 <BeginStoryboard>
@@ -204,17 +203,6 @@
             </EventTrigger>
 
           </Button.Triggers>
-          <Button Click="OnButtonErrorClick" Content="Error" Grid.Column="1" Grid.Row="25" Grid.RowSpan="26" Background="#FF171717" Foreground="White" Margin="15,0" UseLayoutRounding="True" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Padding="2" ScrollViewer.CanContentScroll="True" VerticalAlignment="Center">
-            <Button.Triggers>
-              <EventTrigger RoutedEvent="Button.Click">
-                <BeginStoryboard>
-                  <Storyboard TargetName="ERROR_BOX_CONTAINER" TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)">
-                    <DoubleAnimation Duration="0:0:1" From="0" To="1" Storyboard.TargetName="ERROR_BOX_CONTAINER" Storyboard.TargetProperty="(Grid.Background).(Brush.Opacity)"/>
-                  </Storyboard>
-                </BeginStoryboard>
-              </EventTrigger>
-            </Button.Triggers>
-          </Button>
 
         </Grid>
       </Grid>
@@ -260,5 +248,5 @@
 
   </Grid>
 
-  <Button Grid.Column="0" Margin="20" Content="Back"  Click="OnButtonBackClick" HorizontalAlignment="Center" VerticalAlignment="Bottom"  Padding="20"  MinWidth="220" FontSize="22"/>
+  <Button Grid.Column="0" Grid.Row="2" Margin="20" Content="Back"  Click="OnButtonBackClick" HorizontalAlignment="Center" VerticalAlignment="Bottom"  Padding="20"  MinWidth="220" FontSize="22"/>
 </Grid>

@@ -13,8 +13,11 @@
 #include "Rendering/RenderGraph.h"
 #include "Rendering/EntityMaskManager.h"
 
+#include "RenderStages/MeshPaintUpdater.h"
+#include "RenderStages/HealthCompute.h"
+#include "RenderStages/FirstPersonWeaponRenderer.h"
 #include "RenderStages/PlayerRenderer.h"
-#include "RenderStages/PaintMaskRenderer.h"
+#include "RenderStages/Projectiles/ProjectileRenderer.h"
 #include "States/BenchmarkState.h"
 #include "States/MainMenuState.h"
 #include "States/PlaySessionState.h"
@@ -31,11 +34,13 @@
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Player/HealthComponent.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
 #include "Lobby/PlayerManagerClient.h"
 #include "Lobby/PlayerManagerServer.h"
+#include "Lobby/ServerManager.h"
 
 #include "Chat/ChatManager.h"
 
@@ -43,9 +48,15 @@
 #include "GUI/DamageIndicatorGUI.h"
 #include "GUI/EnemyHitIndicatorGUI.h"
 #include "GUI/GameOverGUI.h"
+#include "GUI/EscapeMenuGUI.h"
+#include "GUI/PromptGUI.h"
+#include "GUI/KillFeedGUI.h"
+#include "GUI/ScoreBoardGUI.h"
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
+
+#include "Debug/Profiler.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -64,13 +75,36 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
 
+	const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
+
 	if (stateStr == "crazycanvas" || stateStr == "sandbox" || stateStr == "benchmark")
 	{
-		ClientSystem::Init(pGameName);
+		ClientSystemDesc desc = {};
+		desc.Name					= pGameName;
+		desc.PoolSize				= 4096;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 5.0f;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(5);
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+
+		ClientSystem::Init(desc);
 	}
 	else if (stateStr == "server")
 	{
-		ServerSystem::Init(pGameName);
+		ServerSystemDesc desc = {};
+		desc.Name					= pGameName;
+		desc.PoolSize				= 4096;
+		desc.MaxRetries				= 10;
+		desc.ResendRTTMultiplier	= 5.0f;
+		desc.Protocol				= EProtocolParser::FromString(protocol);
+		desc.PingInterval			= Timestamp::Seconds(1);
+		desc.PingTimeout			= Timestamp::Seconds(5);
+		desc.UsePingSystem			= EngineConfig::GetBoolProperty(CONFIG_OPTION_NETWORK_PING_SYSTEM);
+		desc.MaxClients				= 10;
+
+		ServerSystem::Init(desc);
 	}
 
 	if (!ResourceCatalog::Init())
@@ -101,9 +135,21 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	PacketType::Init();
 	PacketTranscoderSystem::GetInstance().Init();
 
-	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PlayerRenderer());
-	RenderSystem::GetInstance().AddCustomRenderer(DBG_NEW PaintMaskRenderer());
-	RenderSystem::GetInstance().InitRenderGraphs();
+	RenderSystem& renderSystem = RenderSystem::GetInstance();
+	renderSystem.AddCustomRenderer(DBG_NEW MeshPaintUpdater());
+
+	if (stateStr == "server")
+	{
+		renderSystem.AddCustomRenderer(DBG_NEW HealthCompute());
+	}
+	else
+	{
+		renderSystem.AddCustomRenderer(DBG_NEW PlayerRenderer());
+		renderSystem.AddCustomRenderer(DBG_NEW FirstPersonWeaponRenderer());
+		renderSystem.AddCustomRenderer(DBG_NEW ProjectileRenderer(RenderAPI::GetDevice()));
+	}
+
+	renderSystem.InitRenderGraphs();
 
 	InitRendererResources();
 
@@ -128,10 +174,15 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 
-	if(MultiplayerUtils::IsServer())
+	if (MultiplayerUtils::IsServer())
+	{
 		PlayerManagerServer::Init();
+	}	
 	else
+	{
+		ServerManager::Init();
 		PlayerManagerClient::Init();
+	}
 
 	ChatManager::Init();
 }
@@ -143,20 +194,31 @@ CrazyCanvas::~CrazyCanvas()
 		LOG_ERROR("Level Manager Release Failed");
 	}
 
+	m_MeshPaintHandler.Release();
 	ChatManager::Release();
 	PlayerManagerBase::Release();
 	PacketType::Release();
+
+	if(!LambdaEngine::MultiplayerUtils::IsServer())
+		ServerManager::Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 {
+	m_MeshPaintHandler.Tick(delta);
 	Render(delta);
 }
 
 void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 {
 	if (LambdaEngine::MultiplayerUtils::IsServer())
-		PlayerManagerServer::FixedTick(delta);
+	{
+		PROFILE_FUNCTION("PlayerManagerServer::FixedTick", PlayerManagerServer::FixedTick(delta));
+	}
+	else
+	{
+		PROFILE_FUNCTION("ServerManager::Tick", ServerManager::Tick());
+	}
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)
@@ -174,9 +236,13 @@ bool CrazyCanvas::RegisterGUIComponents()
 {
 	Noesis::RegisterComponent<CountdownGUI>();
 	Noesis::RegisterComponent<GameOverGUI>();
+	Noesis::RegisterComponent<EscapeMenuGUI>();
 	Noesis::RegisterComponent<DamageIndicatorGUI>();
 	Noesis::RegisterComponent<EnemyHitIndicatorGUI>();
 	Noesis::RegisterComponent<HUDGUI>();
+	Noesis::RegisterComponent<KillFeedGUI>();
+	Noesis::RegisterComponent<PromptGUI>();
+	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
 
 	return true;
@@ -190,9 +256,9 @@ bool CrazyCanvas::InitRendererResources()
 	{
 		// Test Skybox
 		GUID_Lambda cubemapTexID = ResourceManager::LoadTextureCubeFromPanormaFile(
-			"Skybox/daytime.hdr",
+			"Skybox/CartoonSkyboxHomemade.hdr",
 			EFormat::FORMAT_R16G16B16A16_SFLOAT,
-			512,
+			1024,
 			true);
 
 		Texture*		pCubeTexture		= ResourceManager::GetTexture(cubemapTexID);
@@ -224,6 +290,8 @@ bool CrazyCanvas::InitRendererResources()
 		RenderSystem::GetInstance().GetRenderGraph()->UpdateResource(&cubeTextureUpdateDesc);
 	}
 
+	m_MeshPaintHandler.Init();
+
 	return true;
 }
 
@@ -231,7 +299,15 @@ bool CrazyCanvas::BindComponentTypeMasks()
 {
 	using namespace LambdaEngine;
 
-	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false);	// Bit = 0xF
+	// NOTE: Previous implementation had a comment that said the bitmask was 0xF, even though
+	// the value that is being set is 0x10. This seems to be assumed on other places but doesn't seem to cause
+	// any notable errors, but might have to be looked at later.
+	EntityMaskManager::BindTypeToExtensionDesc(WeaponLocalComponent::Type(), { 0 }, false, 0x10);	// Bit = 0x10
+
+	// Used to calculate health on the server for players only
+	EntityMaskManager::BindTypeToExtensionDesc(HealthComponent::Type(),	{ 0 }, false, 0x20);	// Bit = 0x20
+
+	EntityMaskManager::BindTypeToExtensionDesc(ProjectileComponent::Type(), { 0 }, false, 0x40);	// Bit = 0x40
 
 	EntityMaskManager::Finalize();
 

@@ -25,7 +25,7 @@ bool ResourceCatalog::Init()
 
 	//Player
 	{
-		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", PLAYER_MESH_GUID, PLAYER_IDLE_GUIDs);
+		ResourceManager::LoadMeshFromFile("Player/Idle.glb", PLAYER_MESH_GUID, PLAYER_IDLE_GUIDs);
 
 #ifdef USE_ALL_ANIMATIONS
 		PLAYER_RUN_GUIDs					= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
@@ -37,6 +37,7 @@ bool ResourceCatalog::Init()
 #endif
 
 		PLAYER_STEP_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
+		PLAYER_DEATH_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/DeathSound.mp3");
 	}
 
 	// Projectile
@@ -44,7 +45,7 @@ bool ResourceCatalog::Init()
 		ResourceManager::LoadMeshFromFile("sphere.obj", PROJECTILE_MESH_GUID);
 
 		MaterialProperties projectileMaterialProperties;
-		projectileMaterialProperties.Metallic = 0.5f;
+		projectileMaterialProperties.Metallic = 0.8f;
 		projectileMaterialProperties.Roughness = 0.1f;
 		projectileMaterialProperties.Albedo = glm::vec4(0.34, 0.85, 1.0f, 1.0f);
 
@@ -61,6 +62,18 @@ bool ResourceCatalog::Init()
 	//Weapon
 	{
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", WEAPON_MESH_GUID, WEAPON_MATERIAL_GUID);
+		ResourceManager::LoadMeshFromFile("Gun/GunFirstPerson.glb", WEAPON_FIRST_PERSON_MESH_GUID);
+
+		// Soundeffects
+		WEAPON_SOUND_GUNFIRE_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/Shootsound.mp3");
+		WEAPON_SOUND_GUNFIRE_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Weapon/Shootsound.mp3");
+		WEAPON_SOUND_OUTOFAMMO_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/WaterSound.mp3");
+	}
+
+	// General Sound Effects
+	{
+		SOUND_EFFECT_SPLASH0_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/HitSound0.mp3");
+		SOUND_EFFECT_SPLASH1_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Player/HitSound1.mp3");
 	}
 
 	return true;

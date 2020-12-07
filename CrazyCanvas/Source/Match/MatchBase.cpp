@@ -7,6 +7,14 @@
 
 #include "Events/GameplayEvents.h"
 
+#include "Game/PlayerIndexHelper.h"
+
+MatchBase::MatchBase()
+{
+	using namespace LambdaEngine;
+	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
+}
+
 MatchBase::~MatchBase()
 {
 	using namespace LambdaEngine;
@@ -19,9 +27,6 @@ MatchBase::~MatchBase()
 bool MatchBase::Init(const MatchDescription* pDesc)
 {
 	using namespace LambdaEngine;
-
-	// Register eventhandlers
-	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &MatchBase::OnWeaponFired);
 
 	m_pLevel = LevelManager::LoadLevel(pDesc->LevelHash);
 	m_MatchDesc = *pDesc;
@@ -53,18 +58,32 @@ void MatchBase::FixedTick(LambdaEngine::Timestamp deltaTime)
 	FixedTickInternal(deltaTime);
 }
 
-void MatchBase::SetScore(uint32 teamIndex, uint32 score)
+bool MatchBase::SetScore(uint8 teamIndex, uint32 score)
 {
-	VALIDATE(teamIndex < m_Scores.GetSize());
-	m_Scores[teamIndex] = score;
+	uint32 index = teamIndex - 1;
+	VALIDATE(index < m_Scores.GetSize());
+	if (m_Scores[index] != score)
+	{
+		m_Scores[index] = score;
+		return true;
+	}
+	return false;
 }
 
 void MatchBase::ResetMatch()
 {
-	for (uint32 i = 0; i < m_MatchDesc.NumTeams; i++)
+	for (uint8 i = 0; i < m_Scores.GetSize(); i++)
 	{
-		SetScore(i, 0);
+		m_Scores[i] = 0;
 	}
 
+	LambdaEngine::PlayerIndexHelper::Reset();
+
+	SAFEDELETE(m_pLevel);
+
+	m_GameModeHasFlag = false;
 	m_HasBegun = false;
+	m_MatchBeginTimer = 0.0f;
+
+	ResetMatchInternal();
 }

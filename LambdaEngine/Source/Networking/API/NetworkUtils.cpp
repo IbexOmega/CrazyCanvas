@@ -5,13 +5,18 @@
 #include "Networking/API/ServerBase.h"
 #include "Networking/API/ClientBase.h"
 
+#include "Networking/API/NetworkDebugger.h"
+
 #include "Networking/API/UDP/ISocketUDP.h"
+
+#include "Debug/Profiler.h"
 
 namespace LambdaEngine
 {
 	bool NetworkUtils::Init()
 	{
 		IPAddress::InitStatic();
+		NetworkDebugger::Init();
 		return true;
 	}
 
@@ -22,11 +27,11 @@ namespace LambdaEngine
 
 	void NetworkUtils::FixedTick(Timestamp dt)
 	{
-		ServerBase::FixedTickStatic(dt);
-		ClientBase::FixedTickStatic(dt);
-		NetworkDiscovery::FixedTickStatic(dt);
-		NetWorker::FixedTickStatic(dt);
-		ClientRemoteBase::FixedTickStatic(dt);
+		PROFILE_FUNCTION("ServerBase::FixedTickStatic", ServerBase::FixedTickStatic(dt));
+		PROFILE_FUNCTION("ClientBase::FixedTickStatic", ClientBase::FixedTickStatic(dt));
+		PROFILE_FUNCTION("NetworkDiscovery::FixedTickStatic", NetworkDiscovery::FixedTickStatic(dt));
+		PROFILE_FUNCTION("NetWorker::FixedTickStatic", NetWorker::FixedTickStatic(dt));
+		PROFILE_FUNCTION("ClientRemoteBase::FixedTickStatic", ClientRemoteBase::FixedTickStatic(dt));
 	}
 
 	void NetworkUtils::PreRelease()

@@ -1,5 +1,18 @@
 {
     "levels": [
+		{
+			"name": "Canvas Map",
+			"modules": [
+				{
+					"filename": "CanvasMap.glb",
+					"translation": {
+						"x": 0.0,
+						"y": 0.0,
+						"z": 0.0
+                    }
+                }
+            ]
+        },
         {
             "name": "Test Level 0",
             "modules": [
@@ -66,10 +79,10 @@
             ]
         },
         {
-            "name": "Canvas Map",
+            "name": "Empty plane",
             "modules": [
                 {
-                    "filename": "CanvasMap.glb",
+                    "filename": "empty_plane.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,
@@ -79,14 +92,27 @@
             ]
         },
         {
-            "name": "Empty plane",
+            "name": "Subdivided Plane",
             "modules": [
                 {
-                    "filename": "empty_plane.glb",
+                    "filename": "SubdividedPlane.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,
                         "z": 0.0
+                    }
+                }
+            ]
+        },
+        {
+			"name": "CanvasMapSubdivde",
+			"modules": [
+				{
+					"filename": "CanvasMapSubdivde.glb",
+					"translation": {
+						"x": 0.0,
+						"y": 0.0,
+						"z": 0.0
                     }
                 }
             ]

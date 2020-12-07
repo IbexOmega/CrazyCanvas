@@ -37,13 +37,15 @@ namespace LambdaEngine
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
 		virtual EClientState GetState() const override;
-		virtual const NetworkStatistics* GetStatistics() const override;
+		virtual NetworkStatistics* GetStatistics() override;
 		virtual IClientRemoteHandler* GetHandler() override;
 		bool Connect(const IPEndPoint& ipEndPoint);
 		void ReturnPacket(NetworkSegment* pPacket);
 		virtual bool SendUnreliable(NetworkSegment* packet) override;
 		virtual bool SendReliable(NetworkSegment* packet, IPacketListener* listener = nullptr) override;
 		virtual uint64 GetUID() const override;
+		virtual void SetTimeout(Timestamp time) override;
+		virtual void ResetTimeout() override;
 
 	protected:
 		ClientBase(const ClientDesc& desc);
@@ -82,6 +84,7 @@ namespace LambdaEngine
 		String m_Reason;
 		Timestamp m_PingInterval;
 		Timestamp m_PingTimeout;
+		Timestamp m_PingTimeoutDefault;
 		Timestamp m_LastPingTimestamp;
 		bool m_UsePingSystem;
 		SpinLock m_LockReceivedPackets;

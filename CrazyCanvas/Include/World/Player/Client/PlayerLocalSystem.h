@@ -18,7 +18,7 @@ class PlayerLocalSystem : public ReplaySystem<PlayerGameState, PacketPlayerActio
 {
 public:
 	DECL_UNIQUE_CLASS(PlayerLocalSystem);
-	
+
 	PlayerLocalSystem();
 	virtual ~PlayerLocalSystem() = default;
 
@@ -46,5 +46,6 @@ private:
 
 private:
 	LambdaEngine::IDVector m_Entities;
+	LambdaEngine::IDVector m_FlagEntities;
 	PlayerActionSystem m_PlayerActionSystem;
 };

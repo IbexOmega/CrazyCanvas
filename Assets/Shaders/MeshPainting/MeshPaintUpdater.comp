@@ -1,0 +1,159 @@
+#version 460
+#extension GL_ARB_separate_shader_objects : enable
+#extension GL_ARB_shader_draw_parameters : enable
+#extension GL_GOOGLE_include_directive : enable
+
+#include "../Defines.glsl"
+#include "../Noise.glsl"
+
+#define WORK_GROUP_INVOCATIONS 32
+layout(local_size_x = WORK_GROUP_INVOCATIONS, local_size_y = 1, local_size_z = 1) in;
+
+// Pushconstants
+layout(push_constant) uniform PushConstants
+{
+	uint VertexCount;
+	uint ShouldResetServer;
+} u_PC;
+
+layout(binding = 0, set = 0) uniform HitPointsBuffer				{ SUnwrapData Val[10]; }	u_HitPointsBuffer;
+
+// SET 1
+// Vertex data
+layout(binding = 0, set = 1) restrict buffer Vertices{ SVertex Val[]; }					b_Vertices;
+layout(binding = 1, set = 1) restrict readonly buffer Instances { SInstance Val[]; }	b_Instances;
+layout(binding = 2, set = 1) restrict readonly buffer Meshlets {SMeshlet Val[]; }		b_Meshlets;
+layout(binding = 3, set = 1) restrict readonly buffer UniqueIndices {uint Val[]; }		b_UniqueIndices;
+layout(binding = 4, set = 1) restrict readonly buffer PrimitiveIndices {uint Val[]; }	b_PrimitiveIndices;
+
+layout(binding = 0, set = 2) uniform sampler2D u_BrushMaskTexture;
+
+vec2 rotate(in vec2 v, float a)
+{
+	float c = cos(a);
+	float s = sin(a);
+	mat2 r = mat2(vec2(c, s), vec2(-s, c));
+	return r * v;
+}
+
+void main()
+{
+	// Return in case this thread is outside of our ParticleCount
+	uint totalInvocations = gl_NumWorkGroups.x * gl_WorkGroupSize.x;
+	uint vertexIndex = gl_GlobalInvocationID.x;
+
+	//Assume only the first instance will be painted. This is because they would share vertices, which will not look good.
+	uint instanceIndex = 0;
+	SInstance instance = b_Instances.Val[instanceIndex];
+	mat4 normalTransform = instance.Transform;
+	uint instanceTeam = instance.TeamIndex;
+
+	const vec3 GLOBAL_UP	= vec3(0.0f, 1.0f, 0.0f);
+	const float BRUSH_SIZE	= 1.0f;
+	const float PAINT_DEPTH = BRUSH_SIZE * 2.0f;
+
+	while (vertexIndex < u_PC.VertexCount)
+	{
+		SVertex vertex = b_Vertices.Val[vertexIndex];
+		vec3 worldPosition		= (instance.Transform * vec4(vertex.Position.xyz, 1.0f)).xyz;
+		vec3 normal             = normalize((normalTransform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+
+        uint shouldClear = 0;
+
+		uint paintCount = uint(u_HitPointsBuffer.Val[0].TargetPosition.w);
+		for (uint hitPointIndex = 0; hitPointIndex < paintCount; hitPointIndex++)
+		{
+			SUnwrapData unwrapData = u_HitPointsBuffer.Val[hitPointIndex];
+
+			vec3 normal 			= normalize(normal);
+			vec3 targetPosition		= unwrapData.TargetPosition.xyz;
+			vec3 direction			= normalize(unwrapData.TargetDirectionXYZAngleW.xyz);
+
+			vec3 targetPosToWorldPos = worldPosition - targetPosition;
+
+			uint teamMode = unwrapData.TeamMode;
+			uint paintMode = unwrapData.PaintMode;
+			uint remoteMode = unwrapData.RemoteMode;
+
+			float valid = step(0.0f, dot(normal, -direction)); // Checks if looking from infront, else 0
+			float len = abs(dot(targetPosToWorldPos, direction));
+			valid *= 1.0f - step(PAINT_DEPTH, len);
+			vec3 projectedPosition = targetPosition + len * direction;
+
+			// Calculate uv-coordinates for a square encapsulating the sphere.
+			vec3 up = GLOBAL_UP;
+			if(abs(abs(dot(direction, up)) - 1.0f) < EPSILON)
+				up = vec3(0.0f, 0.0f, 1.0f);
+			vec3 right	= normalize(cross(direction, up));
+			up			= normalize(cross(right, direction));
+
+			float u		= (dot(-targetPosToWorldPos, right) / BRUSH_SIZE * 1.5f) * 0.5f + 0.5f;
+			float v		= (dot(-targetPosToWorldPos, up) / BRUSH_SIZE * 1.5f) * 0.5f + 0.5f;
+			vec2 maskUV = vec2(u, v);
+			maskUV = rotate(maskUV-0.5f, unwrapData.TargetDirectionXYZAngleW.a)+0.5f;
+
+			// Do not paint if they are in the same team. But they can remove paint.
+			float isRemove = 1.f - step(0.5f, float(paintMode));
+			float isSameTeam = 1.f - step(0.5f, abs(float(instanceTeam) - float(teamMode)));
+			valid *= isRemove + (1.f - isRemove)*(1.f - isSameTeam);
+
+			// Apply brush mask
+			vec4 brushMask = texture(u_BrushMaskTexture, maskUV).rgba;
+			float dist = 1.f;
+
+			if(brushMask.a > 0.001f && maskUV.x > 0.0f && maskUV.x < 1.0f && maskUV.y > 0.0f && maskUV.y < 1.0f && valid > 0.5f)
+			{
+                dist = 0.f;				
+
+				// Paint mode 1 is normal paint. Paint mode 0 is remove paint (See enum in MeshPaintTypes.h for enum)
+				uint teamSC = floatBitsToUint(vertex.Position.w);
+				uint client = (teamSC >> 4) & 0x0F;
+				uint server = teamSC & 0x0F;
+
+				// Client
+				if (remoteMode == 1)
+				{
+					client = (teamMode * paintMode) & 0x0F;
+				}
+				// Server
+				else if (remoteMode == 2)
+				{
+					server = (teamMode * paintMode) & 0x0F;
+				}
+
+				teamSC = (client << 4) | server;
+				vertex.Position.w = uintBitsToFloat(teamSC);
+
+				// Remove paint
+				if(paintMode == 0)
+				{
+					dist = 1.f;
+					vertex.Normal.w = dist;
+				}
+			}
+
+			vertex.Normal.w = min(vertex.Normal.w, dist);
+
+            shouldClear = shouldClear | unwrapData.ClearClient;
+		}
+
+        // Clear client
+        if(shouldClear != 0)
+        {
+            uint teamSC = floatBitsToUint(vertex.Position.w);
+            uint server = teamSC & 0x0F; // Only use server side.
+            vertex.Position.w = uintBitsToFloat(server);
+            vertex.Normal.w = 1.f - float(step(1, int(server)));
+        }
+
+		if(u_PC.ShouldResetServer != 0)
+		{
+			vertex.Position.w = uintBitsToFloat(0);
+			vertex.Normal.w = 1.f;
+		}
+
+		b_Vertices.Val[vertexIndex] = vertex;
+
+		vertexIndex += totalInvocations;
+	}
+}

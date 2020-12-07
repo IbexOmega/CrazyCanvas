@@ -5,7 +5,6 @@
 
 #include "Networking/API/NetworkUtils.h"
 
-
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
 
@@ -15,67 +14,62 @@
 
 #include "States/LobbyState.h"
 #include "States/PlaySessionState.h"
+#include "States/MultiplayerState.h"
 
 #include "GUI/MultiplayerGUI.h"
 #include "GUI/Core/GUIApplication.h"
 
 #include "NoesisPCH.h"
 
+#include "NsGui/Rectangle.h"
+
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
 
-#include <string>
-#include <sstream>
-#include <wchar.h>
-
-#include "Math\Random.h"
+#include "Math/Random.h"
 
 #include "Multiplayer/ClientHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
 
 #include "Lobby/PlayerManagerClient.h"
+#include "Lobby/ServerManager.h"
 
+#include <string>
+#include <sstream>
+#include <wchar.h>
 #include <windows.h>
 #include <Lmcons.h>
+#include <Psapi.h>
+#include "Utilities/StringUtilities.h"
+
+#define SERVER_ITEM_COLUMNS 5
 
 using namespace LambdaEngine;
 using namespace Noesis;
 
-MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
-	m_ServerList(),
-	m_Servers(),
-	m_ClientHostID(-1)
+MultiplayerGUI::MultiplayerGUI(MultiplayerState* pMultiplayerState) :
+	m_ClientHostID(-1),
+	m_pMulitplayerState(pMultiplayerState)
 {
-	Noesis::GUI::LoadComponent(this, xamlFile.c_str());
+	Noesis::GUI::LoadComponent(this, "Multiplayer.xaml");
 
-	EventQueue::RegisterEventHandler<ServerDiscoveredEvent>(this, &MultiplayerGUI::OnServerResponse);
-	EventQueue::RegisterEventHandler<ClientConnectedEvent>(this, &MultiplayerGUI::OnClientConnected);
+	m_pGridServers			= FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
+	m_pListBoxServersLAN	= FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST");
+	m_pListBoxServersSaved	= FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST");
+	m_pTextBoxAddress		= FrameworkElement::FindName<TextBox>("IP_ADDRESS");
+	m_pTextBoxName			= FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
 
-	const char* pIP = "81.170.143.133:4444";
+	//m_pTextBoxAddress->SetText("81.170.143.133:4444");
 
-	FrameworkElement::FindName<TextBox>("IP_ADDRESS")->SetText(pIP);
-	//m_RayTracingEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING);
-	m_ServerList.Init(FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST"), FrameworkElement::FindName<ListBox>("LOCAL_SERVER_LIST"));
-	
 	ErrorPopUpClose();
 	NotiPopUpClose();
-
-	TArray<ServerInfo> serverInfos;
-	uint16 defaultPort = (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
-	SavedServerSystem::LoadServers(serverInfos, defaultPort);
-
-	for (ServerInfo& serverInfo : serverInfos)
-	{
-		HandleServerInfo(serverInfo);
-		ClientHelper::AddNetworkDiscoveryTarget(serverInfo.EndPoint.GetAddress());
-	}
 
 	// Use Host name as default In Game name
 	DWORD length = UNLEN + 1;
 	char name[UNLEN + 1];
 	GetUserNameA(name, &length);
-	
+
 	LambdaEngine::String nameStr = name;
 	TextBox* pNameTextBox = FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
 	pNameTextBox->SetMaxLength(MAX_NAME_LENGTH - 1);
@@ -86,8 +80,166 @@ MultiplayerGUI::MultiplayerGUI(const LambdaEngine::String& xamlFile) :
 
 MultiplayerGUI::~MultiplayerGUI()
 {
-	EventQueue::UnregisterEventHandler<ServerDiscoveredEvent>(this, &MultiplayerGUI::OnServerResponse);
-	EventQueue::UnregisterEventHandler<ClientConnectedEvent>(this, &MultiplayerGUI::OnClientConnected);
+
+}
+
+void MultiplayerGUI::AddServerLAN(const ServerInfo& serverInfo)
+{
+	Grid* pGrid = CreateServerItem(serverInfo);
+
+	m_pGridServers->SetColumn(pGrid, 1);
+	m_pGridServers->SetColumnSpan(pGrid, 2);
+	m_pGridServers->SetRow(pGrid, 4);
+
+	m_pListBoxServersLAN->GetItems()->Add(pGrid);
+
+	if (m_ClientHostID == serverInfo.ClientHostID)
+	{
+		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
+	}
+}
+
+void MultiplayerGUI::AddServerSaved(const ServerInfo& serverInfo)
+{
+	Grid* pGrid = CreateServerItem(serverInfo);
+
+	m_pGridServers->SetColumn(pGrid, 1);
+	m_pGridServers->SetColumnSpan(pGrid, 2);
+	m_pGridServers->SetRow(pGrid, 4);
+
+	m_pListBoxServersSaved->GetItems()->Add(pGrid);
+}
+
+void MultiplayerGUI::RemoveServerLAN(const ServerInfo& serverInfo)
+{
+	Grid* pGrid = DeleteServerItem(serverInfo);
+	m_pListBoxServersLAN->GetItems()->Remove(pGrid);
+}
+
+void MultiplayerGUI::RemoveServerSaved(const ServerInfo& serverInfo)
+{
+	Grid* pGrid = DeleteServerItem(serverInfo);
+	m_pListBoxServersSaved->GetItems()->Remove(pGrid);
+}
+
+void MultiplayerGUI::UpdateServerLAN(const ServerInfo& serverInfo)
+{
+	LambdaEngine::String name;
+	ServerInfoToUniqeString(serverInfo, name);
+	Grid* pGrid = FrameworkElement::FindName<Grid>(name.c_str());
+	if (pGrid)
+	{
+		UpdateServerItem(pGrid, serverInfo);
+	}
+}
+
+void MultiplayerGUI::UpdateServerSaved(const ServerInfo& serverInfo)
+{
+	LambdaEngine::String name;
+	ServerInfoToUniqeString(serverInfo, name);
+	Grid* pGrid = FrameworkElement::FindName<Grid>(name.c_str());
+	if (pGrid)
+	{
+		UpdateServerItem(pGrid, serverInfo);
+	}
+}
+
+Grid* MultiplayerGUI::CreateServerItem(const ServerInfo& serverInfo)
+{
+	Grid* pGrid = new Grid();
+
+	for (int i = 0; i < SERVER_ITEM_COLUMNS; i++)
+	{
+		Ptr<ColumnDefinition> columnDef = *new ColumnDefinition();
+		GridLength gridLength = GridLength(20, GridUnitType_Star);
+		columnDef->SetWidth(gridLength);
+		pGrid->GetColumnDefinitions()->Add(columnDef);
+	}
+
+	Ptr<TextBlock> serverName = *new TextBlock();
+	Ptr<TextBlock> mapName = *new TextBlock();
+	Ptr<TextBlock> players = *new TextBlock();
+	Ptr<TextBlock> ping = *new TextBlock();
+	Ptr<Noesis::Rectangle> isOnline = *new Noesis::Rectangle();
+	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
+
+	isOnline->SetFill(new SolidColorBrush());
+
+	pGrid->GetChildren()->Add(serverName);
+	pGrid->GetChildren()->Add(mapName);
+	pGrid->GetChildren()->Add(players);
+	pGrid->GetChildren()->Add(ping);
+	pGrid->GetChildren()->Add(isOnline);
+
+	pGrid->SetColumn(serverName, 0);
+	pGrid->SetColumn(mapName, 1);
+	pGrid->SetColumn(players, 2);
+	pGrid->SetColumn(ping, 3);
+	pGrid->SetColumn(isOnline, 4);
+
+	UpdateServerItem(pGrid, serverInfo);
+
+	LambdaEngine::String name;
+	ServerInfoToUniqeString(serverInfo, name);
+	FrameworkElement::GetView()->GetContent()->RegisterName(name.c_str(), pGrid);
+
+	return pGrid;
+}
+
+Grid* MultiplayerGUI::DeleteServerItem(const ServerInfo& serverInfo)
+{
+	LambdaEngine::String name;
+	ServerInfoToUniqeString(serverInfo, name);
+	Grid* pGrid = FrameworkElement::FindName<Grid>(name.c_str());
+	FrameworkElement::GetView()->GetContent()->UnregisterName(name.c_str());
+	return pGrid;
+}
+
+void MultiplayerGUI::UpdateServerItem(Grid* pGrid, const ServerInfo& serverInfo)
+{
+	TextBlock* pName				= (TextBlock*)pGrid->GetChildren()->Get(0);
+	TextBlock* pMapName				= (TextBlock*)pGrid->GetChildren()->Get(1);
+	TextBlock* pPlayerCount			= (TextBlock*)pGrid->GetChildren()->Get(2);
+	TextBlock* pPing				= (TextBlock*)pGrid->GetChildren()->Get(3);
+	Noesis::Rectangle* pIsOnline	= (Noesis::Rectangle*)pGrid->GetChildren()->Get(4);
+
+	SolidColorBrush* pBrush = (SolidColorBrush*)pIsOnline->GetFill();
+
+	pName->SetText(serverInfo.Name.c_str());
+	pMapName->SetText(serverInfo.IsOnline ? serverInfo.MapName.c_str() : "-");
+	pPing->SetText((serverInfo.IsOnline ? std::to_string(serverInfo.Ping) + " ms" : "-").c_str());
+	pPlayerCount->SetText(serverInfo.IsOnline ? (std::to_string(serverInfo.Players) + "/" + std::to_string(serverInfo.MaxPlayers)).c_str() : "-");
+	pBrush->SetColor(serverInfo.IsOnline ? Color::Green() : Color::Red());
+}
+
+void MultiplayerGUI::ServerInfoToUniqeString(const ServerInfo& serverInfo, LambdaEngine::String& str) const
+{
+	str = std::to_string(serverInfo.ServerUID) + std::to_string(serverInfo.IsLAN);
+}
+
+const ServerInfo* MultiplayerGUI::GetServerInfoFromGrid(const THashTable<uint64, ServerInfo>& servers, Grid* pGrid) const
+{
+	for (auto& server : servers)
+	{
+		const ServerInfo& serverInfo = server.second;
+		LambdaEngine::String name;
+		ServerInfoToUniqeString(serverInfo, name);
+		Grid* pGridServer = FrameworkElement::FindName<Grid>(name.c_str());
+
+		if (pGridServer == pGrid)
+			return &serverInfo;
+	}
+	return nullptr;
+}
+
+const char* MultiplayerGUI::GetPlayerName() const
+{
+	return m_pTextBoxName->GetText();
+}
+
+bool MultiplayerGUI::HasHostedServer() const
+{
+	return m_ClientHostID != -1;
 }
 
 bool MultiplayerGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -96,9 +248,7 @@ bool MultiplayerGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pE
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonBackClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonConnectClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonRefreshClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonErrorOKClick);
-	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonErrorClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonHostGameClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonJoinClick);
 	return false;
@@ -113,125 +263,24 @@ void MultiplayerGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noe
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
-bool MultiplayerGUI::OnServerResponse(const LambdaEngine::ServerDiscoveredEvent& event)
-{
-	BinaryDecoder* pDecoder = event.pDecoder;
-
-	ServerInfo serverInfo;
-	serverInfo.Ping			= (uint16)event.Ping.AsMilliSeconds();
-	serverInfo.LastUpdate	= EngineLoop::GetTimeSinceStart();
-	serverInfo.EndPoint		= *event.pEndPoint;
-	serverInfo.ServerUID	= event.ServerUID;
-	serverInfo.IsLAN		= event.IsLAN;
-	serverInfo.IsOnline		= true;
-
-	pDecoder->ReadUInt8(serverInfo.Players);
-	pDecoder->ReadString(serverInfo.Name);
-	pDecoder->ReadString(serverInfo.MapName);
-	int32 clientHostID = pDecoder->ReadInt32();
-
-	HandleServerInfo(serverInfo);
-
-	if (m_ClientHostID == clientHostID)
-	{
-		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
-	}
-
-	return true;
-}
-
-void MultiplayerGUI::HandleServerInfo(ServerInfo& serverInfo, bool forceSave)
-{
-	ServerInfo& currentInfo = m_Servers[serverInfo.EndPoint.GetAddress()];
-
-	LambdaEngine::String oldName = currentInfo.Name;
-
-	if (currentInfo != serverInfo)
-	{
-		currentInfo = serverInfo;
-		if (currentInfo.GridUI)
-		{
-			m_ServerList.UpdateServerInfo(currentInfo);
-		}
-		else
-		{
-			Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
-			m_ServerList.AddServer(pServerGrid, currentInfo);
-		}
-	}
-	else
-	{
-		currentInfo = serverInfo;
-	}
-
-	if (oldName != serverInfo.Name || forceSave)
-		SavedServerSystem::SaveServers(m_Servers);
-}
-
-bool MultiplayerGUI::HasHostedServer() const
-{
-	return m_ClientHostID != -1;
-}
-
-bool MultiplayerGUI::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
-{
-	LambdaEngine::String inGameName = FrameworkElement::FindName<TextBox>("IN_GAME_NAME")->GetText();
-
-	State* pLobbyState = DBG_NEW LobbyState(inGameName, HasHostedServer());
-	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
-
-	return false;
-}
-
-void MultiplayerGUI::FixedTick(LambdaEngine::Timestamp delta)
-{
-	UNREFERENCED_VARIABLE(delta);
-	CheckServerStatus();
-}
-
 void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	LambdaEngine::String address	= FrameworkElement::FindName<TextBox>("IP_ADDRESS")->GetText();
+	LambdaEngine::String address	= m_pTextBoxAddress->GetText();
 	bool isEndpointValid			= false;
 	uint16 defaultPort				= (uint16)EngineConfig::GetUint32Property(EConfigOption::CONFIG_OPTION_NETWORK_PORT);
 	IPEndPoint endPoint				= IPEndPoint::Parse(address, defaultPort, &isEndpointValid);
 
 	if (isEndpointValid)
 	{
-		IPAddress* pAddress = endPoint.GetAddress();
-		ClientHelper::AddNetworkDiscoveryTarget(pAddress);
-
-		ServerInfo& serverInfo = m_Servers[pAddress];
-		serverInfo.EndPoint = endPoint;
-
-		HandleServerInfo(serverInfo, true);
-		ClientSystem::GetInstance().Connect(endPoint);
+		m_pMulitplayerState->ConnectToServer(endPoint, true);
 	}
 	else
 	{
 		ErrorPopUp(CONNECT_ERROR_INVALID);
 	}
-}
-
-void MultiplayerGUI::OnButtonRefreshClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	// Grid* pServerGrid = FrameworkElement::FindName<Grid>("FIND_SERVER_CONTAINER");
-
-	// TabItem* pLocalServers = FrameworkElement::FindName<TabItem>("LOCAL");
-}
-
-void MultiplayerGUI::OnButtonErrorClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
-{
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	ErrorPopUp(OTHER_ERROR);
 }
 
 void MultiplayerGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -252,13 +301,8 @@ void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const
 		//start Server with populated struct
 		NotiPopUP(HOST_NOTIFICATION);
 
-#if defined(LAMBDA_CONFIG_DEBUG)
-		StartUpServer("../Build/bin/Debug-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
-#elif defined(LAMBDA_CONFIG_RELEASE)
-		StartUpServer("../Build/bin/Release-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
-#elif defined(LAMBDA_CONFIG_PRODUCTION)
-		StartUpServer("../Build/bin/Production-windows-x86_64-x64/CrazyCanvas/Server.exe", "--state=server");
-#endif
+		StartUpServer("--state=server");
+
 		//LambdaEngine::GUIApplication::SetView(nullptr);
 	}
 }
@@ -269,13 +313,32 @@ void MultiplayerGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noe
 	UNREFERENCED_VARIABLE(args);
 
 	TabItem* pTab = FrameworkElement::FindName<TabItem>("LOCAL");
-	const char* GUI_ID = pTab->GetIsSelected() ? "LOCAL_SERVER_LIST" : "SAVED_SERVER_LIST";
-	ListBox* pBox = FrameworkElement::FindName<ListBox>(GUI_ID);
+	ListBox* pBox = pTab->GetIsSelected() ? m_pListBoxServersLAN : m_pListBoxServersSaved;
 	Grid* pSelectedItem = (Grid*)pBox->GetSelectedItem();
 
 	if (pSelectedItem)
 	{
-		if (JoinSelectedServer(pSelectedItem))
+		const THashTable<uint64, ServerInfo>& serversLAN = ServerManager::GetServersLAN();
+		const ServerInfo* pServerInfo = GetServerInfoFromGrid(serversLAN, pSelectedItem);
+
+		bool result = false;
+
+		if (pServerInfo)
+		{
+			result = m_pMulitplayerState->ConnectToServer(pServerInfo->EndPoint, false);
+		}
+		else
+		{
+			const THashTable<uint64, ServerInfo>& serversWAN = ServerManager::GetServersWAN();
+			pServerInfo = GetServerInfoFromGrid(serversWAN, pSelectedItem);
+
+			if (pServerInfo)
+			{
+				result = m_pMulitplayerState->ConnectToServer(pServerInfo->EndPoint, false);
+			}
+		}
+
+		if (result)
 			NotiPopUP(JOIN_NOTIFICATION);
 		else
 			ErrorPopUp(JOIN_ERROR_OFFLINE);
@@ -286,69 +349,33 @@ void MultiplayerGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noe
 	}
 }
 
-bool MultiplayerGUI::JoinSelectedServer(Noesis::Grid* pGrid)
+bool MultiplayerGUI::StartUpServer(const std::string& commandLine)
 {
-	for (auto& server : m_Servers)
-	{
-		const ServerInfo& serverInfo = server.second;
+	// Get application (.exe) path
+	HANDLE processHandle = NULL;
+	WString filePath;
 
-		if (serverInfo.GridUI == pGrid)
+	processHandle = GetCurrentProcess();
+	if (processHandle != NULL)
+	{
+		TCHAR filename[MAX_PATH];
+		if (GetModuleFileNameEx(processHandle, NULL, filename, MAX_PATH) > 0)
 		{
-			if (serverInfo.IsOnline)
-			{
-				return ClientSystem::GetInstance().Connect(serverInfo.EndPoint);;
-			}
+			filePath = WString(filename);
+		}
+		else
+		{
+			LOG_ERROR("Failed to get current process file path - cannot start server");
 			return false;
 		}
 	}
-	return false;
-}
 
-bool MultiplayerGUI::CheckServerStatus()
-{
-	TArray<IPAddress*> serversToRemove;
-
-	Timestamp timeSinceStart = EngineLoop::GetTimeSinceStart();
-	Timestamp deltaTime;
-	static Timestamp timeout = Timestamp::Seconds(5);
-
-	for (auto& server : m_Servers)
-	{
-		deltaTime = timeSinceStart - server.second.LastUpdate;
-
-		if (deltaTime > timeout)
-		{
-			ServerInfo& serverInfo = server.second;
-
-			if (serverInfo.IsLAN)
-			{
-				ListBox* pParentBox = (ListBox*)serverInfo.GridUI->GetParent();
-				pParentBox->GetItems()->Remove(serverInfo.GridUI);
-				serversToRemove.PushBack(serverInfo.EndPoint.GetAddress());
-			}
-			else if(serverInfo.IsOnline)
-			{
-				serverInfo.IsOnline = false;
-				m_ServerList.UpdateServerInfo(serverInfo);
-			}
-		}
-	}
-
-	for (IPAddress* address : serversToRemove)
-		m_Servers.erase(address);
-
-	return false;
-}
-
-bool MultiplayerGUI::StartUpServer(const std::string& applicationName, const std::string& commandLine)
-{
 	//additional Info
 	STARTUPINFOA lpStartupInfo;
 	PROCESS_INFORMATION lpProcessInfo;
-
 	m_ClientHostID = Random::Int32();
 
-	std::string finalCLine = applicationName + " " + commandLine + " " + std::to_string(m_ClientHostID);
+	std::string finalCLine = ConvertToAscii(filePath) + " " + commandLine + " " + std::to_string(m_ClientHostID);
 
 	// set the size of the structures
 	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));

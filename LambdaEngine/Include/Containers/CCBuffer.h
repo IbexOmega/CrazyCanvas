@@ -2,7 +2,7 @@
 
 #include "Types.h"
 
-//Minimalistic Constant Cicular Buffer
+//Minimalistic Constant Circular Buffer
 
 namespace LambdaEngine
 {
@@ -10,28 +10,20 @@ namespace LambdaEngine
 	class CCBuffer
 	{
 	public:
-		T& Read()
+		bool HasNewData() const
 		{
-			T& value = m_Buffer[m_ReadHead++];
-			m_ReadHead %= N;
-			return value;
-		}	
-		
-		T& ReadFrom(int32 index)
-		{
-			m_ReadHead = index;
-			return Read();
+			return m_ReadHead != m_WriteHead;
 		}
 
-		T& Peek()
+		bool Read(T& value)
 		{
-			return m_Buffer[m_ReadHead];
+			value = m_Buffer[m_ReadHead];
+			if (!HasNewData())
+				return false;
+
+			m_ReadHead = (m_ReadHead + 1) % N;
+			return true;
 		}		
-		
-		T& PeekAt(int32 index)
-		{
-			return m_Buffer[index];
-		}
 
 		void Write(const T& value)
 		{
@@ -39,9 +31,10 @@ namespace LambdaEngine
 			m_WriteHead %= N;
 		}
 
-		void WriteAt(const T& value, uint32 index)
+		void Clear()
 		{
-			m_Buffer[index % N] = value;
+			m_WriteHead = 0;
+			m_ReadHead = 0;
 		}
 
 	private:

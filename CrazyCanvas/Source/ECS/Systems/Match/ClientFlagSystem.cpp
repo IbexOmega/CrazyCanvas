@@ -173,11 +173,11 @@ void ClientFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp delta
 			switch (editedPacket.FlagPacketType)
 			{
 			case EFlagPacketType::FLAG_PACKET_TYPE_PICKED_UP:
-				OnFlagPickedUp(MultiplayerUtils::GetEntity(editedPacket.PickedUpNetworkUID), flagEntity);
-				break;
+					OnFlagPickedUp(MultiplayerUtils::GetEntity(editedPacket.PickedUpNetworkUID), flagEntity);
+					break;
 			case EFlagPacketType::FLAG_PACKET_TYPE_DROPPED:
-				OnFlagDropped(flagEntity, editedPacket.DroppedPosition);
-				break;
+					OnFlagDropped(flagEntity, editedPacket.DroppedPosition);
+					break;
 			}
 		}
 	}

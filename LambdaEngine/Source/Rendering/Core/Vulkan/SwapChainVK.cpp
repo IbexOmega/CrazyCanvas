@@ -41,7 +41,7 @@ namespace LambdaEngine
 			uint64 bufferRefCount		= m_Buffers[i]->Release();
 			if (bufferRefCount > 0 || bufferViewRefCount > 0)
 			{
-				LOG_ERROR("[SwapChainVK]: All external references to all buffers must be released before calling Release or ResizeBuffers");
+				LOG_ERROR("All external references to all buffers must be released before calling Release or ResizeBuffers");
 				DEBUGBREAK();
 			}
 #else
@@ -58,7 +58,7 @@ namespace LambdaEngine
 		reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->FlushBarriers();
 		m_Desc.pQueue->Release();
 		m_Desc.pWindow->Release();
-		
+
 		// Destroy semaphores
 		for (uint32 i = 0; i < m_Desc.BufferCount; i++)
 		{
@@ -67,7 +67,7 @@ namespace LambdaEngine
 				vkDestroySemaphore(m_pDevice->Device, m_ImageSemaphores[i], nullptr);
 				m_ImageSemaphores[i] = VK_NULL_HANDLE;
 			}
-			
+
 			if (m_RenderSemaphores[i] != VK_NULL_HANDLE)
 			{
 				vkDestroySemaphore(m_pDevice->Device, m_RenderSemaphores[i], nullptr);
@@ -101,6 +101,9 @@ namespace LambdaEngine
 		CommandQueueVK* pVkQueue = reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue);
 		pVkQueue->Flush();
 
+		PreSwapChainRecreatedEvent preEvent(m_Desc.Width, m_Desc.Height);
+		EventQueue::SendEventImmediate(preEvent);
+
 		ReleaseInternal();
 		ReleaseSurface();
 
@@ -115,6 +118,9 @@ namespace LambdaEngine
 		{
 			return result;
 		}
+
+		PostSwapChainRecreatedEvent postEvent(m_Desc.Width, m_Desc.Height);
+		EventQueue::SendEventImmediate(postEvent);
 
 		AquireNextBufferIndex();
 		return AquireNextImage();
@@ -142,24 +148,24 @@ namespace LambdaEngine
 			VkResult result = vkCreateSemaphore(m_pDevice->Device, &semaphoreInfo, nullptr, &m_ImageSemaphores[i]);
 			if (result != VK_SUCCESS)
 			{
-				LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create Semaphore");
+				LOG_VULKAN_ERROR(result, "Failed to create Semaphore");
 				return false;
 			}
 
 			result = vkCreateSemaphore(m_pDevice->Device, &semaphoreInfo, nullptr, &m_RenderSemaphores[i]);
 			if (result != VK_SUCCESS)
 			{
-				LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create Semaphore");
+				LOG_VULKAN_ERROR(result, "Failed to create Semaphore");
 				return false;
 			}
 
 			String name = pDesc->DebugName + " ImageSemaphore[" + std::to_string(i) + "]";
 			m_pDevice->SetVulkanObjectName(name, reinterpret_cast<uint64>(m_ImageSemaphores[i]), VK_OBJECT_TYPE_SEMAPHORE);
-			D_LOG_MESSAGE("[SwapChainVK]: Created Semaphore %p", m_ImageSemaphores[i]);
+			LOG_DEBUG("Created Semaphore %p", m_ImageSemaphores[i]);
 
 			name = pDesc->DebugName + " RenderSemaphore[" + std::to_string(i) + "]";
 			m_pDevice->SetVulkanObjectName(name, reinterpret_cast<uint64>(m_RenderSemaphores[i]), VK_OBJECT_TYPE_SEMAPHORE);
-			D_LOG_MESSAGE("[SwapChainVK]: Created Semaphore %p", m_RenderSemaphores[i]);
+			LOG_DEBUG("Created Semaphore %p", m_RenderSemaphores[i]);
 		}
 
 		m_Desc = *pDesc;
@@ -191,23 +197,23 @@ namespace LambdaEngine
 		m_Desc.Width	= newSize.width;
 		m_Desc.Height	= newSize.height;
 
-		D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain size w: %u h: %u", newSize.width, newSize.height);
+		LOG_DEBUG("Chosen SwapChain size w: %u h: %u", newSize.width, newSize.height);
 
 		VkSurfaceCapabilitiesKHR capabilities = { };
 		VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
+			LOG_VULKAN_ERROR(result, "Failed to get surface capabilities");
 			return result;
 		}
 
 		if (m_Desc.BufferCount < capabilities.minImageCount || m_Desc.BufferCount > capabilities.maxImageCount)
 		{
-			LOG_ERROR("[SwapChainVK]: Number of buffers(=%u) is not supported. MinBuffers=%u MaxBuffers=%u", m_Desc.BufferCount, capabilities.minImageCount, capabilities.maxImageCount);
+			LOG_ERROR("Number of buffers(=%u) is not supported. MinBuffers=%u MaxBuffers=%u", m_Desc.BufferCount, capabilities.minImageCount, capabilities.maxImageCount);
 			return VK_ERROR_UNKNOWN;
 		}
 
-		D_LOG_MESSAGE("[SwapChainVK]: Number of buffers in SwapChain '%u'", m_Desc.BufferCount);
+		LOG_DEBUG("Number of buffers in SwapChain '%u'", m_Desc.BufferCount);
 
 		// Create swapchain
 		VkSwapchainCreateInfoKHR info = { };
@@ -232,14 +238,14 @@ namespace LambdaEngine
 		result = vkCreateSwapchainKHR(m_pDevice->Device, &info, nullptr, &m_SwapChain);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create SwapChain");
-			
+			LOG_VULKAN_ERROR(result, "Failed to create SwapChain");
+
 			m_SwapChain = VK_NULL_HANDLE;
 			return result;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[SwapChainVK]: Created SwapChain");
+			LOG_DEBUG("Created SwapChain");
 			m_SemaphoreIndex = 0;
 		}
 
@@ -252,7 +258,7 @@ namespace LambdaEngine
 		result = vkGetSwapchainImagesKHR(m_pDevice->Device, m_SwapChain, &imageCount, textures.GetData());
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to retrive SwapChain-Images");
+			LOG_VULKAN_ERROR(result, "Failed to retrive SwapChain-Images");
 			return result;
 		}
 
@@ -290,7 +296,7 @@ namespace LambdaEngine
 			textureViewDesc.ArrayCount		= 1;
 			textureViewDesc.Miplevel		= 0;
 			textureViewDesc.ArrayIndex		= 0;
-			
+
 			if (!m_BufferViews[i])
 			{
 				m_BufferViews[i] = DBG_NEW TextureViewVK(m_pDevice);
@@ -316,7 +322,7 @@ namespace LambdaEngine
 			info.pNext = nullptr;
 			info.flags = 0;
 			info.pView = m_Desc.Window->GetView();
-			
+
 			result = vkCreateMacOSSurfaceMVK(m_pDevice->Instance, &info, nullptr, &m_Surface);
 			if (result != VK_SUCCESS)
 			{
@@ -332,7 +338,7 @@ namespace LambdaEngine
 			info.flags		= 0;
 			info.hwnd		= reinterpret_cast<HWND>(m_Desc.pWindow->GetHandle());
 			info.hinstance	= PlatformApplication::Get().GetInstanceHandle();
-			
+
 			result = vkCreateWin32SurfaceKHR(m_pDevice->Instance, &info, nullptr, &m_Surface);
 			if (result != VK_SUCCESS)
 			{
@@ -343,12 +349,12 @@ namespace LambdaEngine
 
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to create surface for SwapChain");
+			LOG_VULKAN_ERROR(result, "Failed to create surface for SwapChain");
 			return result;
 		}
 		else
 		{
-			D_LOG_MESSAGE("[SwapChainVK]: Created Surface");
+			LOG_DEBUG("Created Surface");
 		}
 
 		// Check for presentationsupport
@@ -357,7 +363,7 @@ namespace LambdaEngine
 		vkGetPhysicalDeviceSurfaceSupportKHR(m_pDevice->PhysicalDevice, queueFamilyIndex, m_Surface, &presentSupport);
 		if (!presentSupport)
 		{
-			LOG_ERROR("[SwapChainVK]: Queue does not support presentation");
+			LOG_ERROR("Queue does not support presentation");
 			return VK_ERROR_UNKNOWN;
 		}
 
@@ -366,7 +372,7 @@ namespace LambdaEngine
 		result = vkGetPhysicalDeviceSurfaceFormatsKHR(m_pDevice->PhysicalDevice, m_Surface, &formatCount, nullptr);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
+			LOG_VULKAN_ERROR(result, "Failed to get surface capabilities");
 			return result;
 		}
 
@@ -387,7 +393,7 @@ namespace LambdaEngine
 
 		if (m_VkFormat.format != VK_FORMAT_UNDEFINED)
 		{
-			D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain format '%s'", VkFormatToString(m_VkFormat.format));
+			LOG_DEBUG("Chosen SwapChain format '%s'", VkFormatToString(m_VkFormat.format));
 		}
 		else
 		{
@@ -405,7 +411,7 @@ namespace LambdaEngine
 		result = vkGetPhysicalDeviceSurfacePresentModesKHR(m_pDevice->PhysicalDevice, m_Surface, &presentModeCount, nullptr);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface presentation modes");
+			LOG_VULKAN_ERROR(result, "Failed to get surface presentation modes");
 			return result;
 		}
 
@@ -439,7 +445,7 @@ namespace LambdaEngine
 			}
 		}
 
-		D_LOG_MESSAGE("[SwapChainVK]: Chosen SwapChain PresentationMode '%s'", VkPresentatModeToString(m_PresentationMode));
+		LOG_DEBUG("Chosen SwapChain PresentationMode '%s'", VkPresentatModeToString(m_PresentationMode));
 
 		return result;
 	}
@@ -452,7 +458,7 @@ namespace LambdaEngine
 		VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Failed to get surface capabilities");
+			LOG_VULKAN_ERROR(result, "Failed to get surface capabilities");
 			return extent;
 		}
 
@@ -487,7 +493,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: vkAcquireNextImageKHR failed");
+			LOG_VULKAN_ERROR(result, "vkAcquireNextImageKHR failed");
 		}
 
 		return result;
@@ -501,7 +507,7 @@ namespace LambdaEngine
 		}
 
 		VkSemaphore waitSemaphores[] = { m_RenderSemaphores[m_SemaphoreIndex] };
-		
+
 		// Perform empty submit on queue for signaling the semaphore
 		VkSubmitInfo submitInfo = { };
 		submitInfo.sType				= VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -517,7 +523,7 @@ namespace LambdaEngine
 		VkResult result = vkQueueSubmit(reinterpret_cast<CommandQueueVK*>(m_Desc.pQueue)->GetQueue(), 1, &submitInfo, VK_NULL_HANDLE);
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Submit failed");
+			LOG_VULKAN_ERROR(result, "Submit failed");
 			return false;
 		}
 
@@ -544,7 +550,7 @@ namespace LambdaEngine
 
 		if (result != VK_SUCCESS)
 		{
-			LOG_VULKAN_ERROR(result, "[SwapChainVK]: Present failed");
+			LOG_VULKAN_ERROR(result, "Present failed");
 			return false;
 		}
 
@@ -568,13 +574,13 @@ namespace LambdaEngine
 		m_Desc.Height	= height;
 		m_Desc.pQueue->Flush();
 
-		PreSwapChainRecreatedEvent preEvent = {};
+		PreSwapChainRecreatedEvent preEvent(m_Desc.Width, m_Desc.Height);
 		EventQueue::SendEventImmediate(preEvent);
 		ReleaseInternal();
 
 		if (InitInternal() == VK_SUCCESS)
 		{
-			PostSwapChainRecreatedEvent postEvent = {};
+			PostSwapChainRecreatedEvent postEvent(m_Desc.Width, m_Desc.Height);
 			EventQueue::SendEventImmediate(postEvent);
 			return true;
 		}

@@ -15,13 +15,33 @@
 
 #include "Resources/ResourceCatalog.h"
 
+#include "Application/API/CommonApplication.h"
+#include "World/Player/PlayerActionSystem.h"
+#include "Input/API/Input.h"
+
+#include "Application/API/PlatformConsole.h"
+
+#include "Match/Match.h"
+
 using namespace LambdaEngine;
+
+LobbyState::LobbyState(const PacketGameSettings& gameSettings, const Player* pPlayer) : 
+	m_Name(pPlayer->GetName()),
+	m_IsHost(pPlayer->IsHost()),
+	m_IsReplayLobby(true),
+	m_GameSettings(gameSettings)
+{
+	
+}
 
 LobbyState::LobbyState(const LambdaEngine::String& name, bool isHost) :
 	m_Name(name),
-	m_IsHost(isHost)
+	m_IsHost(isHost),
+	m_IsReplayLobby(false),
+	m_GameSettings()
 {
-
+	LambdaEngine::String defaultName = name.length() + 9 > (MAX_NAME_LENGTH - 1) ? name : (name + "'s server");
+	strcpy(m_GameSettings.ServerName, defaultName.c_str());
 }
 
 LobbyState::~LobbyState()
@@ -54,26 +74,41 @@ void LobbyState::Init()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGameSettings>>(this, &LobbyState::OnPacketGameSettingsReceived);
 	EventQueue::RegisterEventHandler<ClientDisconnectedEvent>(this, &LobbyState::OnClientDisconnected);
 	
+	CommonApplication::Get()->SetMouseVisibility(true);
+	PlayerActionSystem::SetMouseEnabled(false);
+	Input::PushInputMode(EInputLayer::GUI);
+
 	DisablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
 
-	m_LobbyGUI = *new LobbyGUI();
+	m_LobbyGUI = *new LobbyGUI(&m_GameSettings);
 	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
-	m_LobbyGUI->InitGUI(m_Name);
+	m_LobbyGUI->InitGUI();
 
-	PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
-}
+	ChatManager::Clear();
+	Match::ResetMatch();
 
-void LobbyState::Tick(LambdaEngine::Timestamp delta)
-{
-
-}
-
-void LobbyState::FixedTick(LambdaEngine::Timestamp delta)
-{
-
+	if (!m_IsReplayLobby)
+	{
+		PlatformConsole::SetTitle((String("Crazy Canvas Console - ") + m_Name).c_str());
+		PlayerManagerClient::Reset();
+		PlayerManagerClient::RegisterLocalPlayer(m_Name, m_IsHost);
+	}
+	else
+	{
+		const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
+		for (auto& pair : players)
+		{
+			const Player& player = pair.second;
+			m_LobbyGUI->AddPlayer(player);
+			if (player.IsHost())
+			{
+				m_LobbyGUI->UpdatePlayerHost(player);
+			}
+		}
+	}
 }
 
 bool LobbyState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
@@ -95,7 +130,7 @@ bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 	{
 		if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 		{
-			State* pStartingState = DBG_NEW PlaySessionState(m_LobbyGUI->GetSettings());
+			State* pStartingState = DBG_NEW PlaySessionState(m_GameSettings);
 			StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 		}
 	}

@@ -5,7 +5,7 @@
 
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/Player.h"
-#include "ECS/Components/Team/TeamComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
 
 #include "ECS/ECSCore.h"
 
@@ -28,18 +28,21 @@ HUDSystem::~HUDSystem()
 
 	EventQueue::UnregisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
+	EventQueue::UnregisterEventHandler<WeaponReloadStartedEvent>(this, &HUDSystem::OnWeaponReloadStartedEvent);
+	EventQueue::UnregisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::UnregisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
 	EventQueue::UnregisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::UnregisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 	EventQueue::UnregisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
+	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &HUDSystem::OnPacketTeamScored);
 }
 
 void HUDSystem::Init()
 {
-
 	SystemRegistration systemReg = {};
 	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
@@ -95,14 +98,18 @@ void HUDSystem::Init()
 
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &HUDSystem::OnWeaponFired);
 	EventQueue::RegisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
+	EventQueue::RegisterEventHandler<WeaponReloadStartedEvent>(this, &HUDSystem::OnWeaponReloadStartedEvent);
+	EventQueue::RegisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::RegisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &HUDSystem::OnPlayerAliveUpdated);
 	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 	EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
-
+	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &HUDSystem::OnPacketTeamScored);
+	
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
@@ -110,7 +117,7 @@ void HUDSystem::Init()
 	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 	for (auto& player : players)
 	{
-		m_HUDGUI->AddPlayer(player.second);
+		m_HUDGUI->GetScoreBoard()->AddPlayer(player.second);
 	}
 
 	GUIApplication::SetView(m_View);
@@ -134,7 +141,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 	for (Entity player : m_PlayerEntities)
 	{
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
-		m_HUDGUI->UpdateScore();
+
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
 
 		{
@@ -191,17 +198,21 @@ void HUDSystem::FixedTick(Timestamp delta)
 		}
 	}
 
+
+
 	static bool activeButtonChanged = false;
 	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
-		m_HUDGUI->DisplayScoreboardMenu(true);
+		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
 	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
-		m_HUDGUI->DisplayScoreboardMenu(false);
+		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
 	}
+
+	m_HUDGUI->FixedTick(delta);
 }
 
 bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
@@ -212,11 +223,11 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity playerWeapon : m_WeaponEntities)
+		for (Entity weapon : m_WeaponEntities)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(weapon);
 
-			if (pPlayerLocalComponents->HasComponent(weaponComponent.WeaponOwner) && m_HUDGUI)
+			if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
 				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
 			}
@@ -231,30 +242,75 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
 		for (Entity playerWeapon : m_WeaponEntities)
 		{
 			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
 
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && m_HUDGUI)
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_PAINT);
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, EAmmoType::AMMO_TYPE_WATER);
+				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
 			}
 		}
 	}
 	return false;
 }
 
+bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+
+		for (Entity playerWeapon : m_WeaponEntities)
+		{
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			{
+				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
+				PromptMessage("Reloading", true);
+			}
+		}
+	}
+	return false;
+}
+
+bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		ECSCore* pECS = ECSCore::GetInstance();
+		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+
+		for (Entity playerWeapon : m_WeaponEntities)
+		{
+			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			{
+				m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
+			}
+		}
+	}
+
+	return false;
+}
+
 bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
 {
-	m_HUDGUI->UpdateAllPlayerProperties(*event.pPlayer);
+	m_HUDGUI->GetScoreBoard()->UpdateAllPlayerProperties(*event.pPlayer);
+
 	return false;
 }
 
 bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 {
-	m_HUDGUI->UpdatePlayerProperty(
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerProperty(
 		event.pPlayer->GetUID(),
 		EPlayerProperty::PLAYER_PROPERTY_PING,
 		std::to_string(event.pPlayer->GetPing()));
@@ -264,14 +320,75 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
 
-	m_HUDGUI->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
+
+	if (pPlayer->IsDead())
+	{
+		if(event.pPlayerKiller)
+			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), event.pPlayerKiller->GetName(), event.pPlayer->GetTeam());
+		else
+			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), "Server", event.pPlayer->GetTeam());
+	}
+
+	if (pPlayer == PlayerManagerClient::GetPlayerLocal())
+	{
+		if (pPlayer->IsDead())
+		{
+
+			ECSCore* pECS = ECSCore::GetInstance();
+			const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
+
+			for (Entity playerWeapon : m_WeaponEntities)
+			{
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (pPlayer->GetEntity() == weaponComponent.WeaponOwner && m_HUDGUI)
+				{
+					m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
+				}
+			}
+
+			m_HUDGUI->ShowHUD(false);
+
+			if (event.pPlayerKiller)
+			{
+				String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
+				PromptMessage(promptText, false);
+			}
+			else
+			{
+				String promptText = "You Were Killed By The Server";
+				PromptMessage(promptText, false);
+			}
+		}
+		else
+			m_HUDGUI->ShowHUD(true);
+	}
+
 	return false;
 }
 
 bool HUDSystem::OnMatchCountdownEvent(const MatchCountdownEvent& event)
 {
 	m_HUDGUI->UpdateCountdown(event.CountDownTime);
+
+	return false;
+}
+
+bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& event)
+{
+	String promptText = " ";
+
+	const PacketTeamScored& packet = event.Packet;
+	const Player* pFlagCapturer = PlayerManagerClient::GetPlayer(packet.PlayerUID);
+
+	if (pFlagCapturer)
+		promptText = pFlagCapturer->GetName() + " Captured The Flag!";
+	else
+		promptText = "Team " + std::to_string(packet.TeamIndex) + " Scored!";
+
+	PromptMessage(promptText, false, packet.TeamIndex);
 
 	return false;
 }
@@ -340,6 +457,12 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 	return false;
 }
 
+bool HUDSystem::OnSpectatePlayerEvent(const SpectatePlayerEvent& event)
+{
+	m_HUDGUI->DisplaySpectateText(event.PlayerName, event.IsSpectating);
+	return false;
+}
+
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
@@ -347,25 +470,25 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 
 	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
 
-	PlayerPair mostKills((uint8)0, nullptr);
-	PlayerPair mostFlags((uint8)0, nullptr);
-	PlayerPair mostDeaths((uint8)0, nullptr);
+	PlayerPair mostKills((int16)-1, nullptr);
+	PlayerPair mostFlags((int16)-1, nullptr);
+	PlayerPair mostDeaths((int16)-1, nullptr);
 
 	for (auto& pair : playerMap)
 	{
 		const Player* pPlayer = &pair.second;
 
-		uint8 kills = pPlayer->GetKills();
-		uint8 deaths = pPlayer->GetDeaths();
-		uint8 flags = pPlayer->GetFlagsCaptured();
+		int16 kills = pPlayer->GetKills();
+		int16 deaths = pPlayer->GetDeaths();
+		int16 flags = pPlayer->GetFlagsCaptured();
 
-		if (kills >= mostKills.first)
+		if (kills > mostKills.first || (kills == mostKills.first && mostKills.second->GetUID() < pPlayer->GetUID()))
 			mostKills = std::make_pair(kills, pPlayer);
 
-		if (deaths >= mostDeaths.first)
+		if (deaths > mostDeaths.first || (deaths == mostDeaths.first && mostDeaths.second->GetUID() < pPlayer->GetUID()))
 			mostDeaths = std::make_pair(deaths, pPlayer);
 
-		if (flags >= mostFlags.first)
+		if (flags > mostFlags.first || (flags == mostFlags.first && mostFlags.second->GetUID() < pPlayer->GetUID()))
 			mostFlags = std::make_pair(flags, pPlayer);
 	}
 
@@ -378,4 +501,9 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 {
 	m_HUDGUI->SetWindowSize(event.Width, event.Height);
 	return false;
+}
+
+void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
+{
+	m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
 }

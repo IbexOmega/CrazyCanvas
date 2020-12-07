@@ -8,8 +8,8 @@
 #include "../Helpers.glsl"
 
 layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
-layout(binding = 0, set = DRAW_EXTENSIONS_SET_INDEX) uniform sampler2D u_PaintMaskTextures[];
 #include "../MeshPaintHelper.glsl"
+#include "../MeshPaintFunc.glsl"
 
 layout(location = 0) in flat uint	in_MaterialSlot;
 layout(location = 1) in vec3		in_WorldPosition;
@@ -19,7 +19,8 @@ layout(location = 4) in vec3		in_Bitangent;
 layout(location = 5) in vec2		in_TexCoord;
 layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
-layout(location = 8) in flat uint	in_ExtensionIndex;
+layout(location = 8) in vec4		in_PaintInfo4;
+layout(location = 9) in float 		in_PaintDist;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
 
@@ -47,7 +48,10 @@ void main()
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, in_TexCoord, in_ExtensionIndex);
+	uint packedPaintInfo = 0;
+	float dist = 1.f;
+	GetVec4ToPackedPaintInfoAndDistance(in_WorldPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
+	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, dist);
 
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
@@ -63,9 +67,9 @@ void main()
 	//2
 	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal				= normalize(TBN * normalize(shadingNormal));
-	shadingNormal				= mix(shadingNormal, paintDescription.Normal, paintDescription.Interpolation);
+    shadingNormal               = mix(shadingNormal, normalize(paintDescription.Normal + shadingNormal * 0.2f), paintDescription.Interpolation);
 	out_Compact_Normal			= PackNormal(shadingNormal);
-	
+
 	//3
 	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * vec2(0.5f, -0.5f);
 	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f);

@@ -7,6 +7,8 @@
 
 #include "Log/Log.h"
 
+#include "Engine/EngineLoop.h"
+
 namespace LambdaEngine
 {
 	PacketTransceiverBase::PacketTransceiverBase() :
@@ -18,7 +20,7 @@ namespace LambdaEngine
 
 	}
 
-	int32 PacketTransceiverBase::Transmit(SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& segments, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics)
+	uint32 PacketTransceiverBase::Transmit(SegmentPool* pSegmentPool, std::set<NetworkSegment*, NetworkSegmentUIDOrder>& segments, std::set<uint32>& reliableUIDsSent, const IPEndPoint& ipEndPoint, NetworkStatistics* pStatistics)
 	{
 		if (segments.empty())
 			return 0;
@@ -28,18 +30,20 @@ namespace LambdaEngine
 		int32 bytesTransmitted = 0;
 
 		header.Sequence = pStatistics->RegisterPacketSent();
-		header.Salt = pStatistics->GetSalt();
-		header.Ack = pStatistics->GetLastReceivedSequenceNr();
-		header.AckBits = pStatistics->GetReceivedSequenceBits();
+		header.Salt		= pStatistics->GetSalt();
+		header.Ack		= pStatistics->GetLastReceivedSequenceNr();
+		header.AckBits	= pStatistics->GetReceivedSequenceBits();
+
+		//LOG_ERROR("%d: PacketTransceiverBase::Transmit(%s), SEQ: %d", (int32)EngineLoop::GetTimeSinceStart().AsMilliSeconds(), (*segments.begin())->ToString().c_str(), header.Sequence);
 
 		PacketTranscoder::EncodeSegments(m_pSendBuffer, MAXIMUM_SEGMENT_SIZE, pSegmentPool, segments, reliableUIDsSent, bytesWritten, &header);
 
 		pStatistics->RegisterBytesSent(bytesWritten);
 
 		if (!TransmitData(m_pSendBuffer, bytesWritten, bytesTransmitted, ipEndPoint))
-			return -1;
+			return UINT32_MAX;
 		else if (bytesWritten != bytesTransmitted)
-			return -1;
+			return UINT32_MAX;
 
 		pStatistics->RegisterSegmentSent(header.Segments);
 
@@ -56,7 +60,21 @@ namespace LambdaEngine
 		return m_BytesReceived > 0;
 	}
 
-	bool PacketTransceiverBase::ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& segments, TArray<uint32>& newAcks, NetworkStatistics* pStatistics)
+	/*String decimal_to_binary(uint64 n)
+	{
+		String str;
+
+		for (int64 c = 63; c >= 0; c--)
+		{
+			if ((n >> c) & 1)
+				str += "1";
+			else
+				str += "0";
+		}
+		return  str;
+	}*/
+
+	bool PacketTransceiverBase::ReceiveEnd(SegmentPool* pSegmentPool, TArray<NetworkSegment*>& segments, TSet<uint32>& newAcks, NetworkStatistics* pStatistics)
 	{
 		PacketTranscoder::Header header;
 		if (!PacketTranscoder::DecodeSegments(m_pReceiveBuffer, (uint16)m_BytesReceived, pSegmentPool, segments, &header))
@@ -69,6 +87,9 @@ namespace LambdaEngine
 		OnReceiveEnd(&header, newAcks, pStatistics);
 
 		pStatistics->RegisterPacketReceived((uint32)segments.GetSize(), m_BytesReceived);
+
+
+		//LOG_ERROR("%d: PacketTransceiverBase::ReceiveEnd(%s), ACK: %d, JA %llu, ACKBITS: %s", (int32)EngineLoop::GetTimeSinceStart().AsMilliSeconds(), (*segments.begin())->ToString().c_str(), header.Ack, header.AckBits, decimal_to_binary(header.AckBits).c_str());
 
 		return true;
 	}

@@ -1,5 +1,7 @@
 #include "ECS/ECSCore.h"
 
+#include "Debug/Profiler.h"
+
 namespace LambdaEngine
 {
 	ECSCore* ECSCore::s_pInstance = DBG_NEW ECSCore();
@@ -17,10 +19,10 @@ namespace LambdaEngine
 	void ECSCore::Tick(Timestamp deltaTime)
 	{
 		m_DeltaTime = deltaTime;
-		PerformComponentRegistrations();
-		PerformComponentDeletions();
-		PerformEntityDeletions();
-		m_JobScheduler.Tick((float32)deltaTime.AsSeconds());
+		PROFILE_FUNCTION("ECSCore::PerformComponentRegistrations", PerformComponentRegistrations());
+		PROFILE_FUNCTION("ECSCore::PerformComponentDeletions", PerformComponentDeletions());
+		PROFILE_FUNCTION("ECSCore::PerformEntityDeletions", PerformEntityDeletions());
+		PROFILE_FUNCTION("m_JobScheduler.Tick", m_JobScheduler.Tick((float32)deltaTime.AsSeconds()));
 		m_ComponentStorage.ResetDirtyFlags();
 
 #ifdef LAMBDA_DEVELOPMENT

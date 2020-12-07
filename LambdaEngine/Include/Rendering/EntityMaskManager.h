@@ -6,6 +6,9 @@
 
 #include "Rendering/RenderGraphTypes.h"
 
+#include "ECS/ComponentOwner.h"
+#include "Game/ECS/Components/Rendering/RenderMaskComponent.h"
+
 namespace LambdaEngine
 {
 	class Texture;
@@ -20,6 +23,16 @@ namespace LambdaEngine
 
 	class EntityMaskManager
 	{
+		class RenderMaskComponentOwner : public ComponentOwner
+		{
+			friend EntityMaskManager;
+
+		private:
+			void Init();
+
+			void RenderMaskComponentDestructor(RenderMaskComponent& renderMaskComponent, Entity entity);
+		};
+
 		struct ComponentBit
 		{
 			uint32		Flag		= 0x0;
@@ -45,7 +58,7 @@ namespace LambdaEngine
 
 		static const DrawArgExtensionDesc& GetExtensionDescFromExtensionFlag(uint32 flag);
 
-		static void BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType);
+		static void BindTypeToExtensionDesc(const ComponentType* pType, DrawArgExtensionDesc extensionDesc, bool invertOnNewComponentType, uint32 bitmask);
 
 	private:
 		static void CopyDrawArgExtensionData(DrawArgExtensionData& dest, const DrawArgExtensionData* pSrc);
@@ -56,5 +69,7 @@ namespace LambdaEngine
 		inline static THashTable<uint32, DrawArgExtensionDesc>			s_ExtensionMaskToExtensionDescMap;
 		inline static uint32 s_DefaultMask = 1;
 		inline static uint32 s_Finalized = false;
+
+		inline static RenderMaskComponentOwner s_RenderMaskComponentOwner;
 	};
 }

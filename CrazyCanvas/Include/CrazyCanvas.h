@@ -9,6 +9,8 @@
 
 #include <argh/argh.h>
 
+#include "MeshPaint/MeshPaintHandler.h"
+
 class CrazyCanvas : public LambdaEngine::Game, public LambdaEngine::ApplicationEventHandler
 {
 public:
@@ -25,4 +27,7 @@ private:
 	bool RegisterGUIComponents();
 	bool InitRendererResources();
 	bool BindComponentTypeMasks();
+
+private:
+	MeshPaintHandler m_MeshPaintHandler;
 };

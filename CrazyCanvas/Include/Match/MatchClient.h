@@ -3,6 +3,7 @@
 #include "Match/MatchBase.h"
 
 #include "Events/PacketEvents.h"
+#include "Events/PlayerEvents.h"
 
 #include "Multiplayer/Packet/PacketCreateLevelObject.h"
 #include "Multiplayer/Packet/PacketTeamScored.h"
@@ -12,15 +13,20 @@
 #include "Multiplayer/Packet/PacketMatchStart.h"
 #include "Multiplayer/Packet/PacketMatchBegin.h"
 
+
+
 class MatchClient : public MatchBase
 {
 public:
-	MatchClient() = default;
+	MatchClient();
 	~MatchClient();
+
+	virtual void KillPlaneCallback(LambdaEngine::Entity killPlaneEntity, LambdaEngine::Entity otherEntity) override final;
 
 protected:
 	virtual bool InitInternal() override final;
 	virtual void TickInternal(LambdaEngine::Timestamp deltaTime) override final;
+	virtual bool ResetMatchInternal() override final;
 
 	virtual bool OnWeaponFired(const WeaponFiredEvent& event) override final;
 
@@ -28,12 +34,14 @@ protected:
 	bool OnPacketTeamScoredReceived(const PacketReceivedEvent<PacketTeamScored>& event);
 	bool OnPacketDeleteLevelObjectReceived(const PacketReceivedEvent<PacketDeleteLevelObject>& event);
 	bool OnPacketMatchStartReceived(const PacketReceivedEvent<PacketMatchStart>& event);
-	bool OnPacketMatchReadyReceived(const PacketReceivedEvent<PacketMatchReady>& event);
 	bool OnPacketMatchBeginReceived(const PacketReceivedEvent<PacketMatchBegin>& event);
 	bool OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameOver>& event);
 
+	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
+
 private:
 	bool m_ClientSideBegun = false;
+	bool m_HasStarted = false;
 
 	float32 m_CountdownHideTimer = 0.0f;
 	

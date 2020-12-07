@@ -12,6 +12,7 @@
 
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Player/WeaponComponent.h"
+#include "ECS/Components/Misc/DestructionComponent.h"
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Player/WeaponSystem.h"
 
@@ -62,6 +63,7 @@
 #include "Multiplayer/Packet/PacketType.h"
 #include "Multiplayer/SingleplayerInitializer.h"
 
+#include "Physics/CollisionGroups.h"
 #include "Resources/ResourceCatalog.h"
 
 #include <imgui.h>
@@ -89,11 +91,11 @@ void SandboxState::Init()
 
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
-	m_MeshPaintHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
 	// Initialize Systems
 	TrackSystem::GetInstance().Init();
+	m_DestructionSystem.Init();
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SandboxState::OnKeyPressed);
 
@@ -109,7 +111,7 @@ void SandboxState::Init()
 
 		MatchDescription matchDescription =
 		{
-			.LevelHash = levelHashes[7]
+			.LevelHash = levelHashes[9]
 		};
 
 		Match::CreateMatch(&matchDescription);
@@ -123,8 +125,8 @@ void SandboxState::Init()
 
 	// Set Team Colors
 	{
-		TeamHelper::SetTeamColor(0, glm::vec3(1.0f, 1.0f, 0.0f));
-		RenderSystem::GetInstance().SetPaintMaskColor(2, glm::vec3(1.0f, 1.0f, 0.0f));
+		TeamHelper::SetTeamColor(1, 3);
+		RenderSystem::GetInstance().SetPaintMaskColor(1, TeamHelper::GetTeamColor(1));
 	}
 
 	// Load character
@@ -160,18 +162,62 @@ void SandboxState::Init()
 		pECS->AddComponent<MeshComponent>(entity, meshComp);
 	}
 
+	// Sphere grid
+	{
+		GUID_Lambda sphereMeshGUID;
+		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
+		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
+
+		uint32 gridRadius = 5;
+
+		for (uint32 y = 0; y < gridRadius; y++)
+		{
+			const float32 roughness = y / float32(gridRadius - 1);
+
+			for (uint32 x = 0; x < gridRadius; x++)
+			{
+				const float32 metallic = x / float32(gridRadius - 1);
+
+				MaterialProperties materialProperties;
+				materialProperties.Albedo = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+				materialProperties.Roughness = roughness;
+				materialProperties.Metallic = metallic;
+
+				MeshComponent sphereMeshComp = {};
+				sphereMeshComp.MeshGUID = sphereMeshGUID;
+				sphereMeshComp.MaterialGUID = ResourceManager::LoadMaterialFromMemory(
+					"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					GUID_TEXTURE_DEFAULT_COLOR_MAP,
+					materialProperties);
+
+				glm::vec3 position(-float32(gridRadius) * 0.5f + x, 2.0f + y, 5.0f);
+				glm::vec3 scale(1.0f);
+
+				Entity entity = pECS->CreateEntity();
+				pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+				pECS->AddComponent<PositionComponent>(entity, { true, position });
+				pECS->AddComponent<ScaleComponent>(entity, { true, scale });
+				pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
+			}
+		}
+	}
+
 	// Robot
 	{
 		TArray<GUID_Lambda> animations;
 		GUID_Lambda robotMeshGUID;
-		ResourceManager::LoadMeshFromFile("Robot/Rumba Dancing.fbx", robotMeshGUID, animations);
+		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", robotMeshGUID, animations);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
-		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Robot/Running.fbx");
-		TArray<GUID_Lambda> walking		= ResourceManager::LoadAnimationsFromFile("Robot/Standard Walk.fbx");
-		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Robot/Thriller.fbx");
-		TArray<GUID_Lambda> reload		= ResourceManager::LoadAnimationsFromFile("Robot/Reloading.fbx");
+		TArray<GUID_Lambda> running		= ResourceManager::LoadAnimationsFromFile("Player/Run.glb");
+		TArray<GUID_Lambda> walking		= ResourceManager::LoadAnimationsFromFile("Player/RunBackwardMirrored.glb");
+		TArray<GUID_Lambda> thriller	= ResourceManager::LoadAnimationsFromFile("Player/StrafeLeft.glb");
+		TArray<GUID_Lambda> reload		= ResourceManager::LoadAnimationsFromFile("Player/StrafeRight.glb");
 
 		MaterialProperties materialProperties;
 		materialProperties.Albedo		= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -205,11 +251,34 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_0", 512, 512, true));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
+
+		{
+			const CharacterColliderCreateInfo colliderInfo =
+			{
+				.Entity = entity,
+				.Position = pECS->GetComponent<PositionComponent>(entity),
+				.Rotation = pECS->GetComponent<RotationComponent>(entity),
+				.CollisionGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+								 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.EntityID = entity
+			};
+
+			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+			CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+				colliderInfo,
+				std::max(0.0f, 1.7f - 2.0f * 0.2f),
+				0.2f);
+
+			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+		}
 
 		position = glm::vec3(0.0f, 0.8f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("walking", animations[0]));
@@ -221,11 +290,34 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_1", 512, 512, true));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
 		pECS->AddComponent<TeamComponent>(entity, { 1 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
+
+		{
+			const CharacterColliderCreateInfo colliderInfo =
+			{
+				.Entity = entity,
+				.Position = pECS->GetComponent<PositionComponent>(entity),
+				.Rotation = pECS->GetComponent<RotationComponent>(entity),
+				.CollisionGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+								 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.EntityID = entity
+			};
+
+			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+			CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+				colliderInfo,
+				std::max(0.0f, 1.7f - 2.0f * 0.2f),
+				0.2f);
+
+			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+		}
 
 		position = glm::vec3(-3.5f, 0.75f, 0.0f);
 		robotAnimationComp.pGraph = DBG_NEW AnimationGraph(DBG_NEW AnimationState("running", running[0]));
@@ -237,11 +329,34 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_2", 512, 512, true));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
-		pECS->AddComponent<TeamComponent>(entity, { 0 });
+		pECS->AddComponent<TeamComponent>(entity, { 2 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
+
+		{
+			const CharacterColliderCreateInfo colliderInfo =
+			{
+				.Entity = entity,
+				.Position = pECS->GetComponent<PositionComponent>(entity),
+				.Rotation = pECS->GetComponent<RotationComponent>(entity),
+				.CollisionGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+								 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.EntityID = entity
+			};
+
+			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+			CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+				colliderInfo,
+				std::max(0.0f, 1.7f - 2.0f * 0.2f),
+				0.2f);
+
+			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+		}
 
 		position = glm::vec3(3.5f, 0.75f, 0.0f);
 
@@ -273,32 +388,55 @@ void SandboxState::Init()
 		pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() });
 		pECS->AddComponent<AnimationComponent>(entity, robotAnimationComp);
 		pECS->AddComponent<MeshComponent>(entity, robotMeshComp);
-		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity, "RobotUnwrappedTexture_3", 512, 512, true));
+		pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 		pECS->AddComponent<PlayerBaseComponent>(entity, {});
 		pECS->AddComponent<PlayerRelatedComponent>(entity, {});
-		pECS->AddComponent<TeamComponent>(entity, { 0 });
+		pECS->AddComponent<TeamComponent>(entity, { 2 });
 		EntityMaskManager::AddExtensionToEntity(entity, PlayerRelatedComponent::Type(), nullptr);
+
+		{
+			const CharacterColliderCreateInfo colliderInfo =
+			{
+				.Entity = entity,
+				.Position = pECS->GetComponent<PositionComponent>(entity),
+				.Rotation = pECS->GetComponent<RotationComponent>(entity),
+				.CollisionGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+				.CollisionMask = (uint32)FCollisionGroup::COLLISION_GROUP_STATIC |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+								 (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG |
+								 (uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				.EntityID = entity
+			};
+
+			PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+			CharacterColliderComponent characterColliderComponent = pPhysicsSystem->CreateCharacterCapsule(
+				colliderInfo,
+				std::max(0.0f, 1.7f - 2.0f * 0.2f),
+				0.2f);
+
+			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
+		}
 	}
 
 	// Emitter
 	{
-		//Entity entity = pECS->CreateEntity();
-		//pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 4.0f, 0.0f } });
-		//pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		//pECS->AddComponent<ParticleEmitterComponent>(entity,
-		//	ParticleEmitterComponent{
-		//		.ParticleCount = 5,
-		//		.EmitterShape = EEmitterShape::TUBE,
-		//		.Velocity = 1.0f,
-		//		.Acceleration = 0.0f,
-		//		.BeginRadius = 0.5f,
-		//		.TileIndex = 16,
-		//		.AnimationCount = 4,
-		//		.FirstAnimationIndex = 16,
-		//		.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
-		//	}
-		//);
+		Entity entity = pECS->CreateEntity();
+		pECS->AddComponent<PositionComponent>(entity, { true, {-2.0f, 2.0f, 5.0f } });
+		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+		pECS->AddComponent<ParticleEmitterComponent>(entity,
+			ParticleEmitterComponent{
+				.ParticleCount = 5,
+				.EmitterShape = EEmitterShape::TUBE,
+				.Velocity = 1.0f,
+				.Acceleration = 0.0f,
+				.BeginRadius = 0.5f,
+				.AnimationCount = 4,
+				.FirstAnimationIndex = 0,
+				.Color = glm::vec4(0.7f, 0.5f, 0.3f, 1.f)
+			}
+		);
 	}
+
 
 
 	// Create dirLight
@@ -313,7 +451,7 @@ void SandboxState::Init()
 	//	pECS->AddComponent<RotationComponent>(m_DirLight, { true, glm::quatLookAt(glm::normalize(glm::vec3(0.5f, -1.0f, 0.5f)), g_DefaultUp) });
 	//	pECS->AddComponent<DirectionalLightComponent>(m_DirLight, directionalLightComponent);
 
-	//	D_LOG_INFO("[LevelObjectCreator]: Created Directional Light");
+	//	LOG_DEBUG("Created Directional Light");
 	//}
 
 	//Preload some resources
@@ -436,7 +574,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 				m_Emitters[modIndex] = e;
 
 				pECSCore->AddComponent<PositionComponent>(e, { true, {0.0f, 2.0f + Random::Float32(-1.0f, 1.0f), -4.f + float(modIndex) } });
-				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), float(modIndex % 3U), float(modIndex % 5U)))) });
+				pECSCore->AddComponent<RotationComponent>(e, { true,	GetRotationQuaternion(glm::normalize(glm::vec3(float(modIndex % 2U), 5.0f + float(modIndex % 3U), float(modIndex % 5U)))) });
 				pECSCore->AddComponent<ParticleEmitterComponent>(e, ParticleEmitterComponent{
 					.OneTime = true,
 					.Explosive = 0.9f,
@@ -447,8 +585,7 @@ void SandboxState::Tick(LambdaEngine::Timestamp delta)
 					.Gravity = Random::Float32(-5.0f, 5.0f),
 					.LifeTime = Random::Float32(1.0f, 3.0f),
 					.BeginRadius = 0.1f + Random::Float32(0.0f, 0.5f),
-					.TileIndex = 14,
-					.FirstAnimationIndex = 14,
+					.FirstAnimationIndex = 6,
 					.Color = glm::vec4(modIndex % 2U, modIndex % 3U, modIndex % 5U, 1.0f),
 				});
 			}

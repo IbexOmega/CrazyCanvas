@@ -4,6 +4,7 @@
 #extension GL_GOOGLE_include_directive : enable
 
 #include "../Defines.glsl"
+#include "../MeshPaintFunc.glsl"
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;
 
@@ -18,9 +19,13 @@ layout(location = 4) out vec3 out_Bitangent;
 layout(location = 5) out vec2 out_TexCoord;
 layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
-layout(location = 8) out flat uint out_ExtensionIndex;
-layout(location = 9) out flat uint out_InstanceIndex;
-layout(location = 10) out vec3 out_ViewDirection;
+layout(location = 8) out flat uint out_InstanceIndex;
+layout(location = 9) out vec3 out_ViewDirection;
+
+// Mesh painting
+layout(location = 10) out vec4 out_PaintInfo4;
+layout(location = 11) out float out_PaintDist;
+layout(location = 12) out vec3 out_LocalPosition;
 
 void main()
 {
@@ -44,9 +49,12 @@ void main()
 	out_Bitangent			= bitangent;
 	out_TexCoord			= vertex.TexCoord.xy;
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
-    out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
     out_InstanceIndex		= gl_InstanceIndex;
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
+	
+	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
+	out_PaintDist 			= vertex.Normal.w;
+	out_LocalPosition		= vec3(vertex.Tangent.x, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 	gl_Position = out_ClipPosition;

@@ -7,7 +7,7 @@
 
 #include "Lobby/Player.h"
 
-#define VALIDATE_PACKET_TYPE(T) ASSERT_MSG(T::Type() != 0, "Packet type [%s] not registered!", #T)
+#define VALIDATE_PACKET_TYPE(T) ASSERT_MSG(T::GetType() != 0, "Packet type [%s] not registered!", #T)
 
 class ServerHelper
 {
@@ -31,14 +31,15 @@ public:
 
 	static void DisconnectPlayer(const Player* pPlayer, const LambdaEngine::String& reason);
 
-	//static class LambdaEngine::ClientRemoteBase* GetClient(uint64 uid);
+	static void SetTimeout(LambdaEngine::Timestamp time);
+	static void ResetTimeout();
 };
 
 template<class T>
 bool ServerHelper::Send(LambdaEngine::IClient* pClient, const T& packet, LambdaEngine::IPacketListener* pListener)
 {
 	VALIDATE_PACKET_TYPE(T)
-	return pClient->SendReliableStruct<T>(packet, T::Type(), pListener);
+	return pClient->SendReliableStruct<T>(packet, T::GetType(), pListener);
 }
 
 template<class T>
@@ -54,7 +55,7 @@ bool ServerHelper::SendBroadcast(const T& packet, LambdaEngine::IPacketListener*
 {
 	VALIDATE_PACKET_TYPE(T)
 	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
-	return pServer->SendReliableStructBroadcast<T>(packet, T::Type(), pListener, pExcludeClient);
+	return pServer->SendReliableStructBroadcast<T>(packet, T::GetType(), pListener, pExcludeClient);
 }
 
 template<class T>
@@ -62,5 +63,5 @@ bool ServerHelper::SendToAllPlayers(const T& packet, LambdaEngine::IPacketListen
 {
 	VALIDATE_PACKET_TYPE(T)
 	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
-	return pServer->SendReliableStructBroadcast<T>(packet, T::Type(), pListener, pServer->GetClient(pExcludePlayer->GetUID()));
+	return pServer->SendReliableStructBroadcast<T>(packet, T::GetType(), pListener, pServer->GetClient(pExcludePlayer->GetUID()));
 }

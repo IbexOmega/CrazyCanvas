@@ -6,8 +6,8 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{DBBF083E-7BCF-4D86-B8CA-0618508C4FA5}
 AppName=Crazy Canvas
-AppVersion=0.3
-;AppVerName=Crazy Canvas 0.3
+AppVersion=0.9
+AppVerName=Crazy Canvas 0.9
 AppPublisher=Ibex Omega
 AppPublisherURL=https://github.com/IbexOmega
 AppSupportURL=https://github.com/IbexOmega
@@ -23,7 +23,7 @@ OutputBaseFilename=InstallCrazyCanvas
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
-SetupIconFile=CrazyCanvas.ico
+SetupIconFile=Assets/CrazyCanvas.ico
 UsePreviousAppDir=no
 
 [Languages]
@@ -36,10 +36,10 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "Build\bin\Production-windows-x86_64-x64\CrazyCanvas\CrazyCanvas.exe"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "Assets\*"; DestDir: "{app}\Assets"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "Build\bin\Production-windows-x86_64-x64\CrazyCanvas\*"; DestDir: "{app}\bin"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "CrazyCanvas\engine_config_client.json"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "CrazyCanvas\engine_config_crazycanvas.json"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "CrazyCanvas\engine_config_server.json"; DestDir: "{app}\bin"; Flags: ignoreversion
 Source: "CrazyCanvas\key_bindings.json"; DestDir: "{app}\bin"; Flags: ignoreversion
+Source: "CrazyCanvas\Saved_Servers.json"; DestDir: "{app}\bin"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

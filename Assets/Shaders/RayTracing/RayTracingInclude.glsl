@@ -3,7 +3,7 @@
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
 
-const float RAY_NORMAL_OFFSET   = 0.1f;
+const float RAY_NORMAL_OFFSET   = 0.05f;
 
 struct SPrimaryPayload
 {
@@ -52,15 +52,14 @@ layout(binding = 4,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAlbedo
 layout(binding = 5,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferAORoughMetalValid;
 layout(binding = 6,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferCompactNormal;
 layout(binding = 7,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferDepthStencil;
-layout(binding = 8,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_PaintMaskTextures[];
-layout(binding = 9,		set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
-layout(binding = 10,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
-layout(binding = 11,	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_TextureAtlases[];
-layout(binding = 12,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
-layout(binding = 13,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
-layout(binding = 14,	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
-layout(binding = 15,	set = TEXTURE_SET_INDEX) uniform sampler2DArray u_BlueNoiseLUTs;
-layout(binding = 16,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_Reflections;
-layout(binding = 17,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	u_BRDF_PDF;
+layout(binding = 8,		set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
+layout(binding = 9,		set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
+layout(binding = 10,	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_TextureAtlases[];
+layout(binding = 11,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
+layout(binding = 12,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
+layout(binding = 13,	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
+layout(binding = 14,	set = TEXTURE_SET_INDEX) uniform sampler2DArray u_BlueNoiseLUTs;
+layout(binding = 15,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_Reflections;
+layout(binding = 16,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	u_BRDF_PDF;
 
 #include "../MeshPaintHelper.glsl"

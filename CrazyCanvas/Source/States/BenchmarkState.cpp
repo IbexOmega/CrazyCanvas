@@ -63,6 +63,7 @@ BenchmarkState::~BenchmarkState()
 	SAFEDELETE(m_pLevel);
 
 	SingleplayerInitializer::Release();
+	WeaponSystem::Release();
 }
 
 void BenchmarkState::Init()
@@ -78,7 +79,6 @@ void BenchmarkState::Init()
 
 	// Initialize event handlers
 	m_AudioEffectHandler.Init();
-	m_MeshPaintHandler.Init();
 	EventQueue::RegisterEventHandler<WeaponFiredEvent>(this, &BenchmarkState::OnWeaponFired);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketCreateLevelObject>>(this, &BenchmarkState::OnPacketCreateLevelObjectReceived);
 

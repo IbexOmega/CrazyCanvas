@@ -2,6 +2,8 @@
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 
+#include "Debug/Profiler.h"
+
 MultiplayerClient::MultiplayerClient() :
 	m_PlayerLocal(),
 	m_PlayerForeignSystem(),
@@ -13,6 +15,7 @@ MultiplayerClient::MultiplayerClient() :
 MultiplayerClient::~MultiplayerClient()
 {
 	SAFEDELETE(m_pFlagSystem);
+	SAFEDELETE(m_pShowerSystem);
 }
 
 void MultiplayerClient::Init()
@@ -25,6 +28,9 @@ void MultiplayerClient::Init()
 
 	m_pFlagSystem = DBG_NEW ClientFlagSystem();
 	m_pFlagSystem->Init();
+
+	m_pShowerSystem = DBG_NEW ClientShowerSystem();
+	m_pShowerSystem->Init();
 }
 
 void MultiplayerClient::TickMainThread(LambdaEngine::Timestamp deltaTime)
@@ -34,11 +40,13 @@ void MultiplayerClient::TickMainThread(LambdaEngine::Timestamp deltaTime)
 
 void MultiplayerClient::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
-	m_PlayerForeignSystem.FixedTickMainThread(deltaTime);
+	PROFILE_FUNCTION("m_PlayerForeignSystem->FixedTickMainThread", m_PlayerForeignSystem.FixedTickMainThread(deltaTime));
 
-	m_ReplaySystem.FixedTickMainThread(deltaTime);
+	PROFILE_FUNCTION("m_ReplaySystem->FixedTickMainThread", m_ReplaySystem.FixedTickMainThread(deltaTime));
 
-	m_pFlagSystem->FixedTick(deltaTime);
+	PROFILE_FUNCTION("m_pFlagSystem->FixedTick", m_pFlagSystem->FixedTick(deltaTime));
+
+	PROFILE_FUNCTION("m_pShowerSystem->FixedTick", m_pShowerSystem->FixedTick(deltaTime));
 }
 
 void MultiplayerClient::PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime)

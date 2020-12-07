@@ -4,6 +4,8 @@
 
 #include "Lobby/Player.h"
 
+#include "Log/Log.h"
+
 #define DECLARE_PLAYER_EVENT_TYPE(Type) \
 		DECLARE_EVENT_TYPE(Type); \
 		public: \

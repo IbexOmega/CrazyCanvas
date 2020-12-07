@@ -11,6 +11,8 @@
 
 #include "GUI/HUDGUI.h"
 
+#include "Multiplayer/Packet/PacketTeamScored.h"
+
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
@@ -32,19 +34,26 @@ public:
 
 	bool OnWeaponFired(const WeaponFiredEvent& event);
 	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
+	bool OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event);
+	bool OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& event);
 	bool OnProjectileHit(const ProjectileHitEvent& event);
+	bool OnSpectatePlayerEvent(const SpectatePlayerEvent& event);
 	bool OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event);
 	bool OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event);
 	bool OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event);
 	bool OnGameOver(const GameOverEvent& event);
 	bool OnWindowResized(const LambdaEngine::WindowResizedEvent& event);
 
+	void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
+
 private:
 	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);
+	bool OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& event);
 	bool OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity);
 	bool RemoveProjectedEntity(LambdaEngine::Entity projectedEntity);
 
 private:
+
 	LambdaEngine::IDVector m_PlayerEntities;
 	LambdaEngine::IDVector m_ForeignPlayerEntities;
 	LambdaEngine::IDVector m_WeaponEntities;
