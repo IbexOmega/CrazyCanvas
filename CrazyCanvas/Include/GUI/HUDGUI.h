@@ -24,6 +24,7 @@
 #include "NsGui/Collection.h"
 #include "NsGui/StackPanel.h"
 #include "NsGui/Rectangle.h"
+#include "NsGui/TransformGroup.h"
 #include "NsGui/Ellipse.h"
 #include "NsGui/ObservableCollection.h"
 #include "NsGui/Button.h"
@@ -111,7 +112,7 @@ private:
 
 	void InitScore();
 
-	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
+	void TranslateIndicator(Noesis::TransformGroup* pTranslation, LambdaEngine::Entity entity);
 	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
 	void SetRenderStagesInactive();
 
