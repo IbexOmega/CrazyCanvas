@@ -74,24 +74,6 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 
 	bool transferMemory = false;
 
-	// Reset memory if needed
-	// if ((m_ResetPointBuffer && s_Collisions.IsEmpty()) || (m_PreviousPointsSize > s_Collisions.GetSize()))
-	// {
-	// 	byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
-	// 	UnwrapData dummyData = {};
-	// 	dummyData.TargetPosition.w = 0.f;
-	// 	for (uint32 i = 0; i < 10; i++)
-	// 	{
-	// 		uint64 step = uint64(i) * sizeof(UnwrapData);
-	// 		memcpy(pBufferMapping + step, &dummyData, sizeof(UnwrapData));
-	// 	}
-	// 	m_pPointsBuffer->Unmap();
-
-	// 	m_PreviousPointsSize = 0;
-	// 	m_ResetPointBuffer = false;
-	// 	transferMemory = true;
-	// }
-
 	// Load buffer with new data
 	if (!s_Collisions.IsEmpty())
 	{
@@ -105,7 +87,6 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 			s_ShouldReset = false;
 		}
 
-		LOG_WARNING("[TICK] s_Collisions size: %d, Copy data ...", s_Collisions.GetSize());
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		memcpy(pBufferMapping, s_Collisions.GetData(), s_Collisions.GetSize() * sizeof(UnwrapData));
 		m_pPointsBuffer->Unmap();
@@ -125,7 +106,6 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	// Transfer to GPU
 	if (transferMemory)
 	{
-		LOG_WARNING("[TICK] UpdateResource");
 		Buffer* buf = m_pPointsBuffer.Get();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= "HIT_POINTS_BUFFER";
