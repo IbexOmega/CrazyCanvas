@@ -8,6 +8,7 @@
 
 namespace LambdaEngine
 {
+	class ISoundEffect3D;
 	struct KeyPressedEvent;
 }
 
@@ -23,5 +24,9 @@ private:
 	bool OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEvent);
 
 private:
+	// Map player entities (not camera entities) to their current ping entities
+	LambdaEngine::IDDVector<LambdaEngine::Entity> m_PlayerPings;
 	LambdaEngine::IDVector m_LocalPlayerCamera;
+
+	LambdaEngine::ISoundEffect3D* m_pPingSound = nullptr;
 };
