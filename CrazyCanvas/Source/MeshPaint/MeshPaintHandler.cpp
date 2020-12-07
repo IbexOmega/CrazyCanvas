@@ -189,9 +189,22 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			paintMode = EPaintMode::REMOVE;
 		}
 
-		if (projectileHitEvent.CollisionInfo0.Entity != projectileHitEvent.CollisionInfo1.Entity)
+		ProjectileComponent projComp = {};
+		bool isSameEntity = false;
+		bool isCollinfo0 = ECSCore::GetInstance()->GetConstComponentIf(projectileHitEvent.CollisionInfo0.Entity, projComp);
+		if (!isCollinfo0)
 		{
-			const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
+			ECSCore::GetInstance()->GetConstComponentIf(projectileHitEvent.CollisionInfo1.Entity, projComp);
+			isSameEntity = projComp.Owner == projectileHitEvent.CollisionInfo0.Entity;
+		}
+		else
+		{
+			isSameEntity = projComp.Owner == projectileHitEvent.CollisionInfo1.Entity;
+		}
+
+		if (!isSameEntity)
+		{
+			const EntityCollisionInfo& collisionInfo = isCollinfo0 ? projectileHitEvent.CollisionInfo0 : projectileHitEvent.CollisionInfo1;
 			if (MultiplayerUtils::IsServer())
 			{
 				remoteMode = ERemoteMode::SERVER;
