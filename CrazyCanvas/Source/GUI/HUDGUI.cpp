@@ -329,9 +329,8 @@ void HUDGUI::UpdateKillFeedTimer(LambdaEngine::Timestamp delta)
 	m_pKillFeedGUI->UpdateFeedTimer(delta);
 }
 
-void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity)
+void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity, IndicatorTypeGUI indicatorType)
 {
-
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
@@ -347,7 +346,11 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 	{
 		translation->SetY(glm::clamp(windowSpacePos.y, (-m_WindowSize.y + 100) * 0.5f, (m_WindowSize.y - 100) * 0.5f));
 		translation->SetX(glm::clamp(windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
-		SetIndicatorOpacity(glm::clamp(vecLength, 0.1f, 1.0f), entity);
+
+		if (indicatorType == IndicatorTypeGUI::FLAG_INDICATOR)
+		{
+			SetIndicatorOpacity(glm::clamp(vecLength, 0.1f, 1.0f), entity);
+		}
 	}
 	else
 	{
@@ -358,7 +361,7 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 
 		translation->SetX(glm::clamp(-windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
 	}
-	
+
 	TranslateIndicator(translation, entity);
 }
 
@@ -461,7 +464,7 @@ void HUDGUI::InitGUI()
 	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
 	m_pCarryFlagBorder = FrameworkElement::FindName<Border>("CarryFlagBorder");
 	m_CarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
-	
+
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
@@ -473,7 +476,7 @@ void HUDGUI::InitGUI()
 	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
 	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
 
-	{ // init CarryFlagIndicator and LookAtGrid colors  
+	{ // init CarryFlagIndicator and LookAtGrid colors
 
 		Ptr<Noesis::RadialGradientBrush> gradientBrush = *new Noesis::RadialGradientBrush();
 		const glm::vec3& teamGradientColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam() == 1 ? 2 : 1);
@@ -675,6 +678,7 @@ void HUDGUI::SetIndicatorOpacity(float32 value, Entity entity)
 	auto indicator = m_ProjectedElements.find(entity);
 	VALIDATE(indicator != m_ProjectedElements.end())
 
-	Noesis::Ellipse* pTarget = (Noesis::Ellipse*)indicator->second->GetChildren()->Get(0);
+	UIElement* pChildElement = indicator->second->GetChildren()->Get(0);
+	Noesis::Ellipse* pTarget = reinterpret_cast<Noesis::Ellipse*>(pChildElement);
 	pTarget->GetFill()->SetOpacity(value);
 }

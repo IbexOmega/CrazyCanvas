@@ -18,7 +18,6 @@ void NameplateSystem::Init()
 {
 	using namespace LambdaEngine;
 
-	// Register system
 	{
 		EntitySubscriberRegistration subscriberReg;
 		subscriberReg.EntitySubscriptionRegistrations =

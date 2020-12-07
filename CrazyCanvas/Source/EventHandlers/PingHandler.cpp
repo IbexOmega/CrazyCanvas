@@ -21,6 +21,22 @@ void PingHandler::Init()
 {
 	using namespace LambdaEngine;
 
+	EntitySubscriberRegistration subscriberReg;
+	subscriberReg.EntitySubscriptionRegistrations =
+	{
+		{
+			.pSubscriber = &m_LocalPlayerCamera,
+			.ComponentAccesses =
+			{
+				{ NDA, CameraComponent::Type() },
+				{ NDA, PositionComponent::Type() },
+				{ NDA, RotationComponent::Type() }
+			}
+		}
+	};
+
+	SubscribeToEntities(subscriberReg);
+
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PingHandler::OnKeyPress);
 }
 
@@ -47,8 +63,7 @@ bool PingHandler::OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEvent)
 			{
 				ECSCore* pECS = ECSCore::GetInstance();
 
-				const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
-				const Entity camEntity = pLocalPlayer->GetEntity();
+				const Entity camEntity = m_LocalPlayerCamera.Front();
 				const glm::vec3& camPos = pECS->GetConstComponent<PositionComponent>(camEntity).Position;
 				const glm::vec3 camDir = GetForward(pECS->GetConstComponent<RotationComponent>(camEntity).Quaternion);
 
@@ -63,8 +78,11 @@ bool PingHandler::OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEvent)
 				if (pPhysicsSystem->Raycast(camPos, camDir, MAX_PING_DISTANCE, raycastHit, &rayFilterData))
 				{
 					// The player was looking at static geometry whilst pressing the ping button. Create the ping marker.
+					const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
+					const glm::vec3 pingPos = { raycastHit.position.x, raycastHit.position.y, raycastHit.position.z };
+
 					const Entity pingEntity = pECS->CreateEntity();
-					pECS->AddComponent(pingEntity, PositionComponent({ .Position = camPos }));
+					pECS->AddComponent(pingEntity, PositionComponent({ .Position = pingPos }));
 					pECS->AddComponent(pingEntity, TeamComponent({ .TeamIndex = pLocalPlayer->GetTeam() }));
 					pECS->AddComponent(pingEntity, ProjectedGUIComponent({ .GUIType = IndicatorTypeGUI::PING_INDICATOR }));
 					pECS->AddComponent(pingEntity, DestructionComponent({ .TimeLeft = PING_DURATION }));

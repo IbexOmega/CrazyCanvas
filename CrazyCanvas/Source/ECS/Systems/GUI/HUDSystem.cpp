@@ -187,7 +187,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 			m_EnemyHitEventsToProcess.Clear();
 		}
 
-
+		const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 		for (Entity camera : m_CameraEntities)
 		{
 			const ViewProjectionMatricesComponent& viewProjMat = pViewProjMats->GetConstData(camera);
@@ -198,7 +198,8 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
 
-				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity);
+				const IndicatorTypeGUI indicatorType = pProjectedGUIComponents->GetConstData(entity).GUIType;
+				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity, indicatorType);
 			}
 		}
 	}
@@ -428,7 +429,7 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 	return false;
 }
 
-bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
+void HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
@@ -444,15 +445,11 @@ bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 	{
 		m_HUDGUI->CreateProjectedPingGUIElement(projectedEntity);
 	}
-
-	return false;
 }
 
-bool HUDSystem::RemoveProjectedEntity(LambdaEngine::Entity projectedEntity)
+void HUDSystem::RemoveProjectedEntity(LambdaEngine::Entity projectedEntity)
 {
 	m_HUDGUI->RemoveProjectedGUIElement(projectedEntity);
-
-	return false;
 }
 
 bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
