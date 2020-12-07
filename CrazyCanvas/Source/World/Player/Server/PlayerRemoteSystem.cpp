@@ -108,7 +108,6 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 				packet.InAir = playerControllerState.touchedShape == nullptr;
 
 				packet.Angle = currentGameState.Angle;
-				LOG_WARNING("[PlayerRemoteSystem] Angle = %d", currentGameState.Angle);
 				playerActionResponseComponent.SendPacket(packet);
 
 				if (constPositionComponent.Position != netPosComponent.Position)
