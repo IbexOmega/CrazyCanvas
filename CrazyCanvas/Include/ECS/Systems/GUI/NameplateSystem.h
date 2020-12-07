@@ -7,7 +7,7 @@
 
 class HUDSystem;
 
-class NameplateSystem : LambdaEngine::System
+class NameplateSystem : LambdaEngine::EntitySubscriber
 {
 public:
 	NameplateSystem(HUDSystem* pHUDSystem);
@@ -15,13 +15,15 @@ public:
 
 	void Init();
 
-	void Tick(LambdaEngine::Timestamp deltaTime) override final;
+	void FixedTick(LambdaEngine::Timestamp deltaTime);
 
 private:
 	LambdaEngine::IDVector m_ForeignPlayers;
 	LambdaEngine::IDVector m_LocalPlayerCamera;
 
-	uint8 m_LocalPlayerTeam = UINT8_MAX;
+	/*	If the local player looked at a teammate last frame, this will be set to that teammate's entity.
+		Otherwise it's UINT32_MAX. */
+	LambdaEngine::Entity m_PreviouslyViewedTeammate = UINT32_MAX;
 
 	HUDSystem* m_pHUDSystem;
 };
