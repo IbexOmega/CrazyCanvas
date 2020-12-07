@@ -42,6 +42,7 @@ public:
 	void OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
 	// Controls
 	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -70,6 +71,8 @@ private:
 	bool			m_MeshShadersEnabled	= false;
 	bool			m_FullscreenEnabled		= false;
 	bool			m_EscapeMenuEnabled		= false;
+
+	int32	m_NewReflectionsSPP = 0;
 
 	bool			m_EscapeActive			= false;
 	bool			m_MouseEnabled			= false;

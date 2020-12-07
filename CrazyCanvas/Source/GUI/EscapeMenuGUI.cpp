@@ -20,6 +20,7 @@
 
 #include "Game/ECS/Systems/CameraSystem.h"
 
+#include "Rendering/RenderGraph.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
@@ -69,6 +70,7 @@ bool EscapeMenuGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEv
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeControlsClick);
 	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnVolumeSliderChanged);
 	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnFOVSliderChanged);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnReflectionsSPPSliderChanged);
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyControlsClick);
@@ -217,6 +219,9 @@ void EscapeMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, c
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
+	//SPP
+	EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
+
 	EngineConfig::WriteToFile();
 
 	OnButtonBackClick(pSender, args);
@@ -230,6 +235,20 @@ void EscapeMenuGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, 
 
 	//FOV
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	//SPP
+	struct
+	{
+		int32 SPP;
+	} rayTracingPushConstant;
+
+	rayTracingPushConstant.SPP = EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP);
+
+	PushConstantsUpdate pushContantUpdate = {};
+	pushContantUpdate.RenderStageName	= "RAY_TRACING";
+	pushContantUpdate.pData				= &rayTracingPushConstant;
+	pushContantUpdate.DataSize			= sizeof(rayTracingPushConstant);
+	RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushContantUpdate);
 
 	SetDefaultSettings();
 
@@ -267,6 +286,26 @@ void EscapeMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noe
 {
 	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
+}
+
+void EscapeMenuGUI::OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pReflectionsSPPSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+
+	m_NewReflectionsSPP = int32(pReflectionsSPPSlider->GetValue());
+
+	struct
+	{
+		int32 SPP;
+	} rayTracingPushConstant;
+
+	rayTracingPushConstant.SPP = m_NewReflectionsSPP;
+
+	PushConstantsUpdate pushContantUpdate = {};
+	pushContantUpdate.RenderStageName	= "RAY_TRACING";
+	pushContantUpdate.pData				= &rayTracingPushConstant;
+	pushContantUpdate.DataSize			= sizeof(rayTracingPushConstant);
+	RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushContantUpdate);
 }
 
 void EscapeMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -350,6 +389,10 @@ void EscapeMenuGUI::SetDefaultSettings()
 	//Set initial FOV
 	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
 	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	//Set initial SPP
+	Noesis::Slider* pReflectionsSPPSlider = FrameworkElement::FindName<Slider>("ReflectionsSPPSlider");
+	pReflectionsSPPSlider->SetValue(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
 
 	SetDefaultKeyBindings();
 

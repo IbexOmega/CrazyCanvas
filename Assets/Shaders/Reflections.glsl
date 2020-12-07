@@ -11,13 +11,12 @@
     //Constants
 	#define REFLECTION_REJECT_THRESHOLD         0.35f
     #define BRDF_TAIL_TRUNCATION_BIAS           0.85f //This is only used when using normal GGX sampling, when sampling the GGX ditribution of visible normals this is actually not necessary to avoid fireflies
-    #define TEMPORAL_REUSE_MAX_HISTORY_LENGTH   24.0f
+    #define TEMPORAL_REUSE_MAX_HISTORY_LENGTH   64.0f
     #define BRDF_DENOISING_MIN_KERNEL_RADIUS    0
-    #define BRDF_DENOISING_MAX_KERNEL_RADIUS    3
+    #define BRDF_DENOISING_MAX_KERNEL_RADIUS    2
     #define GAUSSIAN_FILTER_LEVEL_0             0.01f
     #define GAUSSIAN_FILTER_LEVEL_1             0.05f
     #define GAUSSIAN_FILTER_LEVEL_2             0.1f
-    #define REFLECTION_SPP                      1
 #else
     //Constants
 	#define REFLECTION_REJECT_THRESHOLD         0.0f
@@ -25,5 +24,4 @@
     #define TEMPORAL_REUSE_MAX_HISTORY_LENGTH   0.0f
     #define BRDF_DENOISING_MIN_KERNEL_RADIUS    0
     #define BRDF_DENOISING_MAX_KERNEL_RADIUS    0
-    #define REFLECTION_SPP                      1
 #endif

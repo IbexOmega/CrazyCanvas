@@ -4550,6 +4550,9 @@ namespace LambdaEngine
 
 			pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
 
+			if (pRenderStage->ExternalPushConstants.DataSize > 0)
+				pComputeCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
+
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
 				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
 
@@ -4580,6 +4583,9 @@ namespace LambdaEngine
 			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 			pComputeCommandList->BindRayTracingPipeline(pRenderStage->pPipelineState);
+
+			if (pRenderStage->ExternalPushConstants.DataSize > 0)
+				pComputeCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
 
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
 				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);

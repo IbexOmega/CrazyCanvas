@@ -427,7 +427,7 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(m_pBlitStage);
 			}
 
-			//Blit Stage
+			//Reflection Denoise Pass
 			{
 				m_pReflectionsDenoisePass = DBG_NEW ReflectionsDenoisePass();
 				m_pReflectionsDenoisePass->Init();
@@ -497,6 +497,22 @@ namespace LambdaEngine
 			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers					= Sampler::GetNearestSamplerToBind();
 			resourceUpdateDesc.ExternalTextureUpdate.SamplerCount				= 1;
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
+		//Set Push Constants
+		{
+			struct
+			{
+				int32 SPP;
+			} rayTracingPushConstant;
+
+			rayTracingPushConstant.SPP = EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP);
+
+			PushConstantsUpdate pushContantUpdate = {};
+			pushContantUpdate.RenderStageName	= "RAY_TRACING";
+			pushContantUpdate.pData				= &rayTracingPushConstant;
+			pushContantUpdate.DataSize			= sizeof(rayTracingPushConstant);
+			RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushContantUpdate);
 		}
 
 		UpdateBuffers();

@@ -20,7 +20,8 @@ namespace LambdaEngine
 	constexpr const char* RENDER_GRAPH_LINE_RENDERER_STAGE_NAME			= "RENDER_STAGE_LINE_RENDERER";
 	constexpr const char* RENDER_GRAPH_MESH_PAINT_UPDATER_NAME			= "RENDER_STAGE_MESH_PAINT_UPDATER";
 	constexpr const char* RENDER_GRAPH_FIRST_PERSON_WEAPON_STAGE_NAME	= "RENDER_STAGE_FIRST_PERSON_WEAPON";
-	constexpr const char* BLIT_STAGE								= "BLIT_STAGE";
+	constexpr const char* BLIT_STAGE									= "BLIT_STAGE";
+	constexpr const char* REFLECTIONS_DENOISE_PASS						= "REFLECTIONS_DENOISE_PASS";
 
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT			= "BACK_BUFFER_TEXTURE";
 

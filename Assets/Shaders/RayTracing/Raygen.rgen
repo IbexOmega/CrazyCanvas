@@ -9,7 +9,7 @@
 #include "../Defines.glsl"
 #include "BxDF.glsl"
 
-#define MAX_BOUNCES 2
+#define MAX_BOUNCES 8
 
 layout(location = 0) rayPayloadEXT SPrimaryPayload s_PrimaryPayload;
 
@@ -184,7 +184,7 @@ void main()
 	const ivec3 blueNoiseSize 		= textureSize(u_BlueNoiseLUTs, 0);	
 	const uint numSampleVariatesPerBounce	= 4;
 	const uint numSampleVariatesPerSample 	= (MAX_BOUNCES + 1) * numSampleVariatesPerBounce;
-	const uint numSampleVariatesPerFrame	= REFLECTION_SPP * numSampleVariatesPerSample;
+	const uint numSampleVariatesPerFrame	= pc_ReflectionSettings.SPP * numSampleVariatesPerSample;
 
 	vec3 albedo_start = texelFetch(u_GBufferAlbedo, pixelCoords, 0).rgb;
 	
@@ -212,12 +212,12 @@ void main()
 	const uint 		sbtRecordStride    	= 0;
 	const uint 		missIndex          	= 0;
 	const float 	Tmin              	= 0.001f;
-	const float 	Tmax              	= 10000.0f;
+	const float 	Tmax              	= 300.0f;
 	const int 		payload       		= 0;
 
 	vec3 l_o_tot = vec3(0.0f);
 
-	for (int s = 0; s < REFLECTION_SPP; s++)
+	for (int s = 0; s < pc_ReflectionSettings.SPP; s++)
 	{
 		vec3 l_o = vec3(0.0f);
 		vec3 throughput = vec3(1.0f);
@@ -281,11 +281,14 @@ void main()
 			reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
 	#else
 
-			if (s_PrimaryPayload.Roughness > 0.0f)
+			if (s_PrimaryPayload.Roughness > 0.025f)
 			{
 				//We brake if the surface we hit is rough, we only allow this for first bounce
 				break;
 			}
+
+			//Treat the surface as a mirror reflection if we pass the above check
+			s_PrimaryPayload.Roughness = 0.0f;
 
 			uint baseBounceSampleVariateIndex = baseSampleVariateIndex + b * numSampleVariatesPerBounce;
 			u_Surface_BRDF = vec4( 	GenerateSample(baseBounceSampleVariateIndex + 0, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
@@ -347,7 +350,7 @@ void main()
 		l_o_tot += l_o;
 	}
 
-	l_o_tot /= float(REFLECTION_SPP);
+	l_o_tot /= float(pc_ReflectionSettings.SPP);
 
 	//Reinhard Tone-Mapping
 	vec3 colorLDR = l_o_tot / (l_o_tot + vec3(1.0f));

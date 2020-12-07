@@ -136,16 +136,18 @@
                         <CheckBox x:Name="MeshShaderCheckBox" Grid.Column="1" VerticalAlignment="Center" />
                     </Grid>
 
-                    <!--Ray Tracing Toggle-->
-                    <!-- <Grid>
+                    <!--Reflections SPP-->
+                    <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*" />
-                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1.5*" />
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width=".3*" />
                         </Grid.ColumnDefinitions>
 
-                        <Label Content="Ray Tracing" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
-                        <CheckBox x:Name="RayTracingCheckBox" Grid.Column="1" VerticalAlignment="Center" />
-                    </Grid> -->
+                        <Label Content="Rays per Pixel" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                        <Slider x:Name="ReflectionsSPPSlider" ValueChanged="OnReflectionsSPPSliderChanged" Grid.Column="1" VerticalAlignment="Center" Minimum="1" Maximum="16" TickFrequency="1" IsSnapToTickEnabled="True" />
+                        <TextBox Text="{ Binding ElementName=ReflectionsSPPSlider, Path=Value, UpdateSourceTrigger=PropertyChanged }" Grid.Column="2" HorizontalAlignment="Right" TextAlignment="Center" Width="40" />
+                    </Grid>
 
                     <!--Fullscreen Toggle-->
                     <Grid>

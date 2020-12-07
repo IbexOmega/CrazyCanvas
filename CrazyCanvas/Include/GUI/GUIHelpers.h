@@ -51,6 +51,7 @@ FORCEINLINE void DisablePlaySessionsRenderstages()
 	rs.SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON",	true);
 	rs.SetRenderStageSleeping("SHADING_PASS",						true);
 	rs.SetRenderStageSleeping(BLIT_STAGE,							true);
+	rs.SetRenderStageSleeping(REFLECTIONS_DENOISE_PASS,				true);
 	rs.SetRenderStageSleeping("RENDER_STAGE_PROJECTILES",			true);
 
 	rs.SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
@@ -81,6 +82,7 @@ FORCEINLINE void EnablePlaySessionsRenderstages()
 	rs.SetRenderStageSleeping("PLAYER_PASS",						false);
 	rs.SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON",	false);
 	rs.SetRenderStageSleeping("SHADING_PASS",						false);
+	rs.SetRenderStageSleeping(REFLECTIONS_DENOISE_PASS,				false);
 	rs.SetRenderStageSleeping(BLIT_STAGE,							false);
 	rs.SetRenderStageSleeping("RENDER_STAGE_PROJECTILES",			false);
 
