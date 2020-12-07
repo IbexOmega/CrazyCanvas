@@ -611,6 +611,47 @@ void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, 
 	}
 }
 
+void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
+{
+	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
+
+	Noesis::Ptr<Noesis::Border> pingBorderIndicator = *new Noesis::Border();
+
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+
+	translation->SetY(100.0f);
+	translation->SetX(100.0f);
+
+	gridIndicator->SetRenderTransform(translation);
+	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+
+	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
+
+	strokeBrush->SetColor(Noesis::Color::Black());
+	brush->SetColor(Noesis::Color::Orange());
+
+	gridIndicator->SetHeight(25);
+	gridIndicator->SetWidth(25);
+
+	pingBorderIndicator->SetHeight(25);
+	pingBorderIndicator->SetWidth(25);
+
+	pingBorderIndicator->SetBorderBrush(strokeBrush);
+	pingBorderIndicator->SetBorderThickness(2);
+
+	pingBorderIndicator->SetBackground(brush);
+
+	gridIndicator->GetChildren()->Add(pingBorderIndicator);
+
+	m_ProjectedElements[entity] = gridIndicator;
+
+	if (m_pHUDGrid->GetChildren()->Add(gridIndicator) == -1)
+	{
+		LOG_ERROR("Could not add Proj Element");
+	}
+}
+
 void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
 {
 	auto indicator = m_ProjectedElements.find(entity);

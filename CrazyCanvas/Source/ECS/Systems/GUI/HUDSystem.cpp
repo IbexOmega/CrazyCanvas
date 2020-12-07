@@ -74,7 +74,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_ProjectedGUIEntities,
 			.ComponentAccesses =
 			{
-				{ R,	ProjectedGUIComponent::Type() }
+				{ R, ProjectedGUIComponent::Type() }, { R, TeamComponent::Type() }, { R, PositionComponent::Type() }
 			},
 			.OnEntityAdded		= std::bind_front(&HUDSystem::OnProjectedEntityAdded, this),
 			.OnEntityRemoval	= std::bind_front(&HUDSystem::RemoveProjectedEntity, this)
@@ -445,7 +445,7 @@ bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 	}
 	else
 	{
-		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex);
+		m_HUDGUI->CreateProjectedPingGUIElement(projectedEntity);
 	}
 
 	return false;
