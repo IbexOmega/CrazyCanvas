@@ -264,18 +264,25 @@
     </Grid>
 
     <!--Settings grid-->
-    <Viewbox Stretch="Uniform" Grid.ColumnSpan="2" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#101010">
-        <Grid x:Name="SettingsGrid" Background="#CC101010" Visibility="Collapsed">
+    <Viewbox Stretch="UniformToFill" Grid.ColumnSpan="2" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid x:Name="SettingsGrid" Background="#CC101010" Visibility="Collapsed" MinWidth="16" MinHeight="9" Height="1080" Width="1920">
             <Grid.RowDefinitions>
+                <RowDefinition Height="2*"/>
                 <RowDefinition Height="1*"/>
                 <RowDefinition Height="6*"/>
             </Grid.RowDefinitions>
 
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
             <!--Title-->
-            <Label Content="Settings" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Label Content="Settings" Grid.Row="1" Grid.Column="1" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
             <!--Settings-->
-            <StackPanel Grid.Row="1" Margin="200 0 200 200">
+            <StackPanel Grid.Row="2" Grid.Column="1">
                 <!--Mesh Shader Toggle-->
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -284,7 +291,7 @@
                     </Grid.ColumnDefinitions>
 
                     <Label Content="Mesh Shader" Foreground="White" FontSize="29.333" />
-                    <CheckBox x:Name="MeshShaderCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+                    <CheckBox x:Name="MeshShaderCheckBox" Grid.Column="1" VerticalAlignment="Center"/>
                 </Grid>
                 
                 <!--Fullscreen Toggle-->
@@ -346,19 +353,26 @@
     </Viewbox>
 
      <!--Controls grid-->
-    <Viewbox Stretch="Uniform" Grid.ColumnSpan="2" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+    <Viewbox Stretch="UniformToFill" Grid.ColumnSpan="2" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
        
-        <Grid x:Name="ControlsGrid" Background="#CC101010" Visibility="Collapsed">
+        <Grid x:Name="ControlsGrid" Background="#CC101010" Visibility="Collapsed" Height="1080" Width="1920">
             <Grid.RowDefinitions>
+                <RowDefinition Height="1*"/>
                 <RowDefinition Height="1*"/>
                 <RowDefinition Height="6*"/>
             </Grid.RowDefinitions>
+
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
             
             <!--Title-->
-            <Label Content="Controls" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <Label Content="Controls" Grid.Row="1" Grid.Column="1" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
             <!--Controls-->
-            <StackPanel Grid.Row="1" Margin="200 0 200 20">
+            <StackPanel Grid.Row="2" Grid.Column="1">
                 <!--Movement Title-->
                 <Grid>
                     <Grid.ColumnDefinitions>
