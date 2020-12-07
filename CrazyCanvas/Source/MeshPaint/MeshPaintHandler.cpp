@@ -105,6 +105,7 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 			s_ShouldReset = false;
 		}
 
+		LOG_WARNING("[TICK] s_Collisions size: %d, Copy data ...", s_Collisions.GetSize());
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
 		memcpy(pBufferMapping, s_Collisions.GetData(), s_Collisions.GetSize() * sizeof(UnwrapData));
 		m_pPointsBuffer->Unmap();
@@ -124,6 +125,7 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	// Transfer to GPU
 	if (transferMemory)
 	{
+		LOG_WARNING("[TICK] UpdateResource");
 		Buffer* buf = m_pPointsBuffer.Get();
 		ResourceUpdateDesc resourceUpdateDesc				= {};
 		resourceUpdateDesc.ResourceName						= "HIT_POINTS_BUFFER";
@@ -211,6 +213,11 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		}
 		else
 		{
+			if (projectileHitEvent.Angle == 0)
+			{
+				LOG_WARNING("[CLIENT] Angle is 0!");
+			}
+
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
 			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
