@@ -17,6 +17,7 @@
 #include "Multiplayer/Packet/PacketGameSettings.h"
 
 #include "Application/API/Events/KeyEvents.h"
+#include "Application/API/Events/MouseEvents.h"
 
 class LobbyGUI : public Noesis::Grid
 {
@@ -58,8 +59,17 @@ public:
 	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
 	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+
+	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
 private:
 	// Helpers
@@ -72,6 +82,7 @@ private:
 	Noesis::Grid* GetPlayerGrid(const Player& player);
 
 	bool OnKeyPressedEvent(const LambdaEngine::KeyPressedEvent& event);
+	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 	void TrySendChatMessage();
 	void SendGameSettings() const;
 	void UpdatePlayersLabel();
@@ -82,21 +93,32 @@ private:
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
 
-	Noesis::StackPanel* m_pTeam1StackPanel			= nullptr;
-	Noesis::StackPanel* m_pTeam2StackPanel			= nullptr;
-	Noesis::ScrollViewer* m_pChatScrollViewer		= nullptr;
-	Noesis::StackPanel* m_pChatPanel				= nullptr;
-	Noesis::StackPanel* m_pSettingsNamesStackPanel	= nullptr;
-	Noesis::StackPanel* m_pSettingsHostStackPanel	= nullptr;
-	Noesis::StackPanel* m_pSettingsClientStackPanel	= nullptr;
-	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
-	Noesis::Label*		m_pPlayersLabel				= nullptr;
-	Noesis::Label*		m_pTeam1Label				= nullptr;
-	Noesis::Label*		m_pTeam2Label				= nullptr;
-	Noesis::Grid*		m_pSettingsGrid				= nullptr;
+	Noesis::StackPanel*		m_pTeam1StackPanel			= nullptr;
+	Noesis::StackPanel*		m_pTeam2StackPanel			= nullptr;
+	Noesis::ScrollViewer*	m_pChatScrollViewer			= nullptr;
+	Noesis::StackPanel*		m_pChatPanel				= nullptr;
+	Noesis::StackPanel*		m_pSettingsNamesStackPanel	= nullptr;
+	Noesis::StackPanel*		m_pSettingsHostStackPanel	= nullptr;
+	Noesis::StackPanel*		m_pSettingsClientStackPanel	= nullptr;
+	Noesis::TextBox*		m_pChatInputTextBox			= nullptr;
+	Noesis::Label*			m_pPlayersLabel				= nullptr;
+	Noesis::Label*			m_pTeam1Label				= nullptr;
+	Noesis::Label*			m_pTeam2Label				= nullptr;
+	Noesis::Grid*			m_pSettingsGrid				= nullptr;
+	Noesis::Grid*			m_pControlsGrid				= nullptr;
 
 	PacketGameSettings* m_pGameSettings;
 	bool m_IsInitiated;
+
+	bool			m_MeshShadersEnabled				= false;
+	bool			m_FullscreenEnabled					= false;
+
+	bool 			m_ListenToCallbacks = false;
+	bool			m_MouseEnabled		= false;
+
+	Noesis::Button* m_pSetKeyButton = nullptr;
+	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
+	float32 m_LookSensitivityPercentageToSet = 0.0f;
 
 private:
 	static constexpr const char* SETTING_SERVER_NAME			= "SERVER_NAME";
