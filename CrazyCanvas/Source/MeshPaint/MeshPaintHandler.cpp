@@ -190,53 +190,44 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		}
 
 		ProjectileComponent projComp = {};
-		bool isSameEntity = false;
 		bool isCollinfo0 = ECSCore::GetInstance()->GetConstComponentIf(projectileHitEvent.CollisionInfo0.Entity, projComp);
 		if (!isCollinfo0)
 		{
 			ECSCore::GetInstance()->GetConstComponentIf(projectileHitEvent.CollisionInfo1.Entity, projComp);
-			isSameEntity = projComp.Owner == projectileHitEvent.CollisionInfo0.Entity;
+		}
+
+		const EntityCollisionInfo& collisionInfo = isCollinfo0 ? projectileHitEvent.CollisionInfo0 : projectileHitEvent.CollisionInfo1;
+		if (MultiplayerUtils::IsServer())
+		{
+			remoteMode = ERemoteMode::SERVER;
+			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
+			// LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			// 	VEC_TO_ARG(collisionInfo.Position),
+			// 	VEC_TO_ARG(collisionInfo.Direction),
+			// 	PAINT_MODE_TO_STR(paintMode),
+			// 	REMOTE_MODE_TO_STR(remoteMode),
+			// 	team, projectileHitEvent.Angle);
+
+			// Send the server's paint point to all clients.
+			PacketProjectileHit packet;
+			SET_TEAM_INDEX(packet.Info, team);
+			SET_PAINT_MODE(packet.Info, paintMode);
+			packet.Position = collisionInfo.Position;
+			packet.Direction = collisionInfo.Direction;
+			packet.Angle = projectileHitEvent.Angle;
+			ServerHelper::SendBroadcast(packet);
 		}
 		else
 		{
-			isSameEntity = projComp.Owner == projectileHitEvent.CollisionInfo1.Entity;
-		}
-
-		if (!isSameEntity)
-		{
-			const EntityCollisionInfo& collisionInfo = isCollinfo0 ? projectileHitEvent.CollisionInfo0 : projectileHitEvent.CollisionInfo1;
-			if (MultiplayerUtils::IsServer())
-			{
-				remoteMode = ERemoteMode::SERVER;
-				AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-				// LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-				// 	VEC_TO_ARG(collisionInfo.Position),
-				// 	VEC_TO_ARG(collisionInfo.Direction),
-				// 	PAINT_MODE_TO_STR(paintMode),
-				// 	REMOTE_MODE_TO_STR(remoteMode),
-				// 	team, projectileHitEvent.Angle);
-
-				// Send the server's paint point to all clients.
-				PacketProjectileHit packet;
-				SET_TEAM_INDEX(packet.Info, team);
-				SET_PAINT_MODE(packet.Info, paintMode);
-				packet.Position = collisionInfo.Position;
-				packet.Direction = collisionInfo.Direction;
-				packet.Angle = projectileHitEvent.Angle;
-				ServerHelper::SendBroadcast(packet);
-			}
-			else
-			{
-				// If it is a client, paint it on the temporary mask and save the point.
-				remoteMode = ERemoteMode::CLIENT;
-				AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-				// LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-				// 	VEC_TO_ARG(collisionInfo.Position),
-				// 	VEC_TO_ARG(collisionInfo.Direction),
-				// 	PAINT_MODE_TO_STR(paintMode),
-				// 	REMOTE_MODE_TO_STR(remoteMode),
-				// 	team, projectileHitEvent.Angle);
-			}
+			// If it is a client, paint it on the temporary mask and save the point.
+			remoteMode = ERemoteMode::CLIENT;
+			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
+			// LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			// 	VEC_TO_ARG(collisionInfo.Position),
+			// 	VEC_TO_ARG(collisionInfo.Direction),
+			// 	PAINT_MODE_TO_STR(paintMode),
+			// 	REMOTE_MODE_TO_STR(remoteMode),
+			// 	team, projectileHitEvent.Angle);
 		}
 	}
 
