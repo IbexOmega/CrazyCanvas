@@ -151,7 +151,7 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
 		}
-		
+
 		//Team Indicator
 		{
 			LevelObjectOnLoadDesc levelObjectDesc =
@@ -199,7 +199,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 	if (!MultiplayerUtils::IsServer())
 	{
 		// Can be good to keep if we want statiuc directional lights later
-		
+
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		DirectionalLightComponent directionalLightComponent =
@@ -399,7 +399,7 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Team Indicator, defaulting to 0...");
 		teamComponent.TeamIndex = 0;
 	}
-	 
+
 	// Modify material of mesh component to represent team color
 	glm::vec3 teamColor = TeamHelper::GetTeamColor(teamComponent.TeamIndex);
 
@@ -572,8 +572,8 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 }
 
 ELevelObjectType LevelObjectCreator::CreateSpectateMapPoint(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 
@@ -1378,7 +1378,8 @@ bool LevelObjectCreator::CreateProjectile(
 				/* Shape Type */		EShapeType::SIMULATION,
 				/* Geometry Type */		EGeometryType::SPHERE,
 				/* Geometry Params */	{ .Radius = 0.3f },
-				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC |
+										FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
 				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
 				/* EntityID*/			desc.WeaponOwner,

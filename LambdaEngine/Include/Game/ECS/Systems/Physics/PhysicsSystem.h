@@ -7,6 +7,7 @@
 #include "Math/Math.h"
 #include "Physics/PhysX/ErrorCallback.h"
 #include "Physics/PhysX/PhysX.h"
+#include "Physics/PhysX/RaycastQueryFilterCallback.h"
 #include "Physics/PhysX/QueryFilterCallback.h"
 
 #include <variant>
@@ -139,6 +140,13 @@ namespace LambdaEngine
 		uint32 EntityID;					// Entity ID, this makes sure that entities cannot collide with colliders that has the same ID as them
 	};
 
+	struct RaycastFilterData
+	{
+		CollisionGroup IncludedGroup;
+		CollisionGroup ExcludedGroup;
+		Entity ExcludedEntity;
+	};
+
 	class PhysicsSystem : public System, public ComponentOwner, public PxSimulationEventCallback
 	{
 	public:
@@ -170,9 +178,10 @@ namespace LambdaEngine
 
 		/**
 		 * @param raycastHit Will contain hit data if there was a hit
+		 * @param excludedGroup CollisionGroup mask that excludes any entities
 		 * @return True if there was a hit, otherwise false.
 		*/
-		bool Raycast(const glm::vec3& origin, const glm::vec3& direction, float32 maxDistance, PxRaycastHit& raycastHit);
+		bool Raycast(const glm::vec3& origin, const glm::vec3& direction, float32 maxDistance, PxRaycastHit& raycastHit, const RaycastFilterData* pFilterData = nullptr);
 
 		/* Implement PxSimulationEventCallback */
 		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs) override final;
@@ -255,5 +264,6 @@ namespace LambdaEngine
 		PxMaterial* m_pMaterial;
 
 		QueryFilterCallback m_QueryFilterCallback;
+		RaycastQueryFilterCallback m_RaycastQueryFilterCallback;
 	};
 }
