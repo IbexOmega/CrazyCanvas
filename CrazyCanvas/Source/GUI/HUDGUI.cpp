@@ -404,7 +404,7 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	pGameOverGUI->SetMostFlagsStats((uint8)mostFlags.first, mostFlags.second->GetName());
 }
 
-void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex)
+void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, uint8 teamIndex)
 {
 	PromptGUI* pPromptGUI = nullptr;
 
@@ -618,11 +618,18 @@ void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
 	Noesis::Ptr<Noesis::Border> pingBorderIndicator = *new Noesis::Border();
 
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+	Noesis::Ptr<Noesis::RotateTransform> rotation = *new RotateTransform();
 
 	translation->SetY(100.0f);
 	translation->SetX(100.0f);
 
+	rotation->SetCenterX(0.0f);
+	rotation->SetCenterY(0.0f);
+
+	rotation->SetAngle(45.0f);
+
 	gridIndicator->SetRenderTransform(translation);
+	gridIndicator->SetRenderTransform(rotation);
 	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();

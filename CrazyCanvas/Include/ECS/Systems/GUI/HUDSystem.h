@@ -46,7 +46,7 @@ public:
 	bool OnGameOver(const GameOverEvent& event);
 	bool OnWindowResized(const LambdaEngine::WindowResizedEvent& event);
 
-	void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
+	void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, uint8 teamIndex = UINT8_MAX);
 
 	void DisplayNamePlate(const LambdaEngine::String& name, bool isLookingAtTeamPlayer);
 
