@@ -120,6 +120,7 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 	pAmmoState->second.first--;
 
 	// Fire event
+	LOG_WARNING("[Fire] Angle = %d", angle);
 	WeaponFiredEvent firedEvent(
 		weaponComponent.WeaponOwner,
 		ammoType,

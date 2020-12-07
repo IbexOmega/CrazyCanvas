@@ -274,7 +274,7 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
 
 		uint32 angle = Random::UInt32(0, 360);
-
+		LOG_WARNING("[TryFire] Angle = %d", angle);
 		// For creating entity
 		Fire(weaponEntity, weaponComponent, ammoType, firePosition, fireVelocity, playerTeam, angle);
 
