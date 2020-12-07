@@ -1378,8 +1378,8 @@ bool LevelObjectCreator::CreateProjectile(
 				/* Shape Type */		EShapeType::SIMULATION,
 				/* Geometry Type */		EGeometryType::SPHERE,
 				/* Geometry Params */	{ .Radius = 0.3f },
-				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC |
-										FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
+				/* CollisionGroup */	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
+										(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
 				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
 				/* EntityID*/			desc.WeaponOwner,
