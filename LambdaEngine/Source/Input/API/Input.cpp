@@ -138,13 +138,9 @@ namespace LambdaEngine
 
 	void Input::Tick()
 	{
-		std::scoped_lock<SpinLock> keyboardLock(s_WriteBufferLockKeyboard);
-		std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
-
 		uint8 inputMode = ConvertInputModeUINT8(s_InputModeStack.top());
 
-		s_KeyboardStates[inputMode][0] = s_KeyboardStates[inputMode][1];
-		s_MouseStates[inputMode][0] = s_MouseStates[inputMode][1];
+		UpdateReadIndex(inputMode);
 	}
 
 	void Input::Disable()

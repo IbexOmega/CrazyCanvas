@@ -25,6 +25,7 @@ namespace LambdaEngine
 		static bool ChangeKeyBinding(EAction action, String keyOrButton);
 		static void SetLookSensitivity(float32 sensitivity);
 		static bool IsActive(EAction action);
+		static bool IsActiveGlobal(EAction action);
 		static bool IsBoundToKey(EAction action);
 		static bool IsActionBoundToKey(EAction action, EKey key);
 		static bool IsBoundToMouseButton(EAction action);

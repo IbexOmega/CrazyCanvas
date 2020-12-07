@@ -7,6 +7,7 @@
 #include "ECS/Components/Player/Player.h"
 #include "Game/ECS/Components/Team/TeamComponent.h"
 
+
 #include "ECS/ECSCore.h"
 
 #include "Input/API/Input.h"
@@ -30,6 +31,8 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
 	EventQueue::UnregisterEventHandler<WeaponReloadStartedEvent>(this, &HUDSystem::OnWeaponReloadStartedEvent);
 	EventQueue::UnregisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
+	EventQueue::UnregisterEventHandler<FlagPickedUpEvent>(this, &HUDSystem::OnFlagPickedUpEvent);
+	EventQueue::UnregisterEventHandler<FlagDroppedEvent>(this, &HUDSystem::OnFlagDroppedEvent);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::UnregisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
@@ -54,7 +57,7 @@ void HUDSystem::Init()
 			}
 		},
 		{
-			.pSubscriber = &m_PlayerEntities,
+			.pSubscriber = &m_LocalPlayerEntities,
 			.ComponentAccesses =
 			{
 				{ R, HealthComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
@@ -71,7 +74,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_ProjectedGUIEntities,
 			.ComponentAccesses =
 			{
-				{ R,	ProjectedGUIComponent::Type() }
+				{ R, ProjectedGUIComponent::Type() }, { R, TeamComponent::Type() }, { R, PositionComponent::Type() }
 			},
 			.OnEntityAdded		= std::bind_front(&HUDSystem::OnProjectedEntityAdded, this),
 			.OnEntityRemoval	= std::bind_front(&HUDSystem::RemoveProjectedEntity, this)
@@ -102,6 +105,8 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::RegisterEventHandler<FlagPickedUpEvent>(this, &HUDSystem::OnFlagPickedUpEvent);
+	EventQueue::RegisterEventHandler<FlagDroppedEvent>(this, &HUDSystem::OnFlagDroppedEvent);
 	EventQueue::RegisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
@@ -138,7 +143,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 	const ComponentArray<ViewProjectionMatricesComponent>* pViewProjMats = pECS->GetComponentArray<ViewProjectionMatricesComponent>();
 	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
-	for (Entity player : m_PlayerEntities)
+	for (Entity player : m_LocalPlayerEntities)
 	{
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
 
@@ -198,15 +203,13 @@ void HUDSystem::FixedTick(Timestamp delta)
 		}
 	}
 
-
-
 	static bool activeButtonChanged = false;
-	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
+	if (InputActionSystem::IsActiveGlobal(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
 		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
-	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
+	else if (!InputActionSystem::IsActiveGlobal(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
 		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
@@ -294,6 +297,38 @@ bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& eve
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
 				m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
+			}
+		}
+	}
+
+	return false;
+}
+
+bool HUDSystem::OnFlagPickedUpEvent(const FlagPickedUpEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		for (Entity player : m_LocalPlayerEntities)
+		{
+			if (event.PlayerEntity == player)
+			{
+				m_HUDGUI->DisplayCarryFlagIndicator(event.FlagEntity, true);
+			}
+		}
+	}
+
+	return false;
+}
+
+bool HUDSystem::OnFlagDroppedEvent(const FlagDroppedEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		for (Entity player : m_LocalPlayerEntities)
+		{
+			if (event.PlayerEntity == player)
+			{
+				m_HUDGUI->DisplayCarryFlagIndicator(event.FlagEntity, false);
 			}
 		}
 	}
@@ -407,7 +442,7 @@ bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 	}
 	else
 	{
-		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex);
+		m_HUDGUI->CreateProjectedPingGUIElement(projectedEntity);
 	}
 
 	return false;
