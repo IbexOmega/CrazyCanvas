@@ -231,6 +231,11 @@ namespace LambdaEngine
 		return GetKey(action) != EKey::KEY_UNKNOWN;
 	}
 
+	bool InputActionSystem::IsActionBoundToKey(EAction action, EKey key)
+	{
+		return GetKey(action) == key;
+	}
+
 	bool InputActionSystem::IsBoundToMouseButton(EAction action)
 	{
 		return GetMouseButton(action) != EMouseButton::MOUSE_BUTTON_UNKNOWN;

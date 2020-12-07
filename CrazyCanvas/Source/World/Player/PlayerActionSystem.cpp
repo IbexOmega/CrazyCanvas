@@ -46,13 +46,11 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 {
 	UNREFERENCED_VARIABLE(deltaTime);
 
-	ECSCore* pECS = ECSCore::GetInstance();
-
 	// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
 	float addedPitch = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
 	float addedYaw = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
-	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+	const EInputLayer currentInputLayer = Input::GetCurrentInputmode();
 
 	if (m_MouseEnabled && (currentInputLayer == EInputLayer::GAME || currentInputLayer  == EInputLayer::DEAD))
 	{
@@ -75,14 +73,15 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 
 	if ((glm::abs(addedPitch) > 0.0f || glm::abs(addedYaw) > 0.0f) && CommonApplication::Get()->GetMainWindow()->IsActiveWindow())
 	{
+		ECSCore* pECS = ECSCore::GetInstance();
 		ComponentArray<RotationComponent>* pRotationComponents = pECS->GetComponentArray<RotationComponent>();
 		RotationComponent& rotationComponent = pRotationComponents->GetData(entityPlayer);
 
 		const float MAX_PITCH = glm::half_pi<float>() - 0.01f;
 
-		glm::vec3 forward = GetForward(rotationComponent.Quaternion);
-		float currentPitch = glm::clamp(GetPitch(forward) + addedPitch, -MAX_PITCH, MAX_PITCH);
-		float currentYaw = GetYaw(forward) + addedYaw;
+		const glm::vec3 forward = GetForward(rotationComponent.Quaternion);
+		const float currentPitch = glm::clamp(GetPitch(forward) + addedPitch, -MAX_PITCH, MAX_PITCH);
+		const float currentYaw = GetYaw(forward) + addedYaw;
 
 		rotationComponent.Quaternion =
 			glm::angleAxis(currentYaw, g_DefaultUp) *		// Yaw

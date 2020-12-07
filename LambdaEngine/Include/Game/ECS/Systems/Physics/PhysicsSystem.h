@@ -144,7 +144,7 @@ namespace LambdaEngine
 	{
 		CollisionGroup IncludedGroup;
 		CollisionGroup ExcludedGroup;
-		Entity ExcludedEntity;
+		Entity ExcludedEntity = UINT32_MAX;
 	};
 
 	class PhysicsSystem : public System, public ComponentOwner, public PxSimulationEventCallback

@@ -14,6 +14,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "EventHandlers/AudioEffectHandler.h"
+#include "EventHandlers/PingHandler.h"
 
 #include "Multiplayer/MultiplayerClient.h"
 
@@ -72,6 +73,7 @@ private:
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
+	PingHandler m_PingHandler;
 
 	/* Commands */
 	bool m_UpdateShaders = false;

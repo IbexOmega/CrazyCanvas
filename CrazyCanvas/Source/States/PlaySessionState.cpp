@@ -118,6 +118,7 @@ void PlaySessionState::Init()
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
+	m_PingHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
 	// Init Systems

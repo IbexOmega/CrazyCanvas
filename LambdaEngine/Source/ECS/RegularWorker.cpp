@@ -26,8 +26,8 @@ namespace LambdaEngine
 
 		const RegularJob regularJob =
 		{
-			/* Function */		std::bind(&RegularWorker::Tick, this),
 			/* Components */	RegularWorker::GetUniqueComponentAccesses(regularWorkInfo.EntitySubscriberRegistration),
+			/* Function */		std::bind(&RegularWorker::Tick, this),
 			/* TickPeriod */	m_TickPeriod,
 			/* Accumulator */	0.0f
 		};
