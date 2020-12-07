@@ -84,6 +84,12 @@
             <TextBlock x:Name="SPECTATE_TEXT" Visibility="Hidden" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="2.5" HorizontalAlignment="Center" VerticalAlignment="Center" Text="" Foreground="White" FontSize="48" />
         </Viewbox>
 
+        <Viewbox Grid.Column="8" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="2" Margin="0,0,25,0">  
+            <Grid MinWidth="150" MinHeight="150" >
+                <uc:KillFeedGUI x:Name="KILL_FEED"/>
+            </Grid>
+        </Viewbox>
+
         <Viewbox Grid.Column="0" Grid.ColumnSpan="10" Grid.Row="0" Grid.RowSpan="15" Stretch="Fill">
 
             <Grid x:Name="HUD_GRID" MinWidth="1920" MinHeight="1080">
@@ -125,9 +131,7 @@
                 <uc:PromptGUI x:Name="SMALLPROMPT" Grid.Row="10" Grid.Column="4" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
 
-                <Grid Grid.Column="8" Grid.ColumnSpan="2" Grid.Row="1" Grid.RowSpan="2" Margin="0,0,25,0">
-                    <uc:KillFeedGUI x:Name="KILL_FEED"/>
-                </Grid>
+
 
                 <Grid x:Name="HEALTH_DISPLAY_GRID"  Grid.Column="0" Grid.ColumnSpan="4" Grid.Row="9" Grid.RowSpan="4" Margin="25,0,-25,-25">
 
