@@ -48,6 +48,8 @@
 
 #include "Game/PlayerIndexHelper.h"
 
+#include "MeshPaint/MeshPaintHandler.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -346,7 +348,10 @@ void MatchServer::SpawnPlayer(const Player& player)
 			packet.NetworkUID				= playerEntity;
 			packet.Player.WeaponNetworkUID	= childComp.GetEntityWithTag("weapon");
 			ServerHelper::SendBroadcast(packet);
+
+			MeshPaintHandler::ResetServer(playerEntity);
 		}
+		MeshPaintHandler::ResetClient();
 	}
 	else
 	{
