@@ -7,7 +7,7 @@
 #include "../Helpers.glsl"
 #include "../Reflections.glsl"
 
-layout (local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+layout (local_size_x_id = 0, local_size_y_id = 1, local_size_z = 1) in;
 
 layout(binding = 0,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D u_DenoisedReflections;
 layout(binding = 1,	set = TEXTURE_SET_INDEX) uniform sampler2D u_Reflections;
@@ -148,10 +148,4 @@ void main()
 #endif
 
     imageStore(u_DenoisedReflections, p, vec4(current_Radiance_Valid.rgb, historyLength));
-    //imageStore(u_DenoisedReflections, p, vec4(vec2(p) - reprojLoc, 0.0f, 1.0f));
-    //imageStore(u_DenoisedReflections, p, vec4(mix(vec3(1.0f, 0.0f, 0.0f), current_Radiance_Valid.rgb, validReprojection), historyLength));
-    //imageStore(u_DenoisedReflections, p, mix(vec4(1.0f, 0.0f, 0.0f, 1.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f), validReprojection));
-
-    //float zRejection = float((abs(prev_z_Values.x - current_z_Values.y) / (current_z_Values.z + 1e-4f)) > 2.0f);
-    //imageStore(u_DenoisedReflections, p, vec4(zRejection, 0.0f, 0.0f, 1.0f));
 }

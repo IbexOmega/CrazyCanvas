@@ -15,7 +15,7 @@ namespace LambdaEngine
 	class GraphicsDevice;
 	class IAudioDevice;
 
-	constexpr const uint32 NUM_BLUE_NOISE_LUTS = 128;
+	constexpr const uint32 NUM_BLUE_NOISE_LUTS = 16;
 
 	//Meshes
 

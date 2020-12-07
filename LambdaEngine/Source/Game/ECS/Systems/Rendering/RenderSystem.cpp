@@ -15,6 +15,7 @@
 #include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
 #include "Rendering/StagingBufferCache.h"
+#include "Rendering/RT/ReflectionsDenoisePass.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -413,12 +414,20 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
-			//GUI Renderer
+			//Blit Stage
 			{
 				m_pBlitStage = DBG_NEW BlitStage();
 				m_pBlitStage->Init();
 
 				renderGraphDesc.CustomRenderers.PushBack(m_pBlitStage);
+			}
+
+			//Blit Stage
+			{
+				m_pReflectionsDenoisePass = DBG_NEW ReflectionsDenoisePass();
+				m_pReflectionsDenoisePass->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pReflectionsDenoisePass);
 			}
 
 			// Other Custom Renderers constructed in game
@@ -519,6 +528,7 @@ namespace LambdaEngine
 			}
 		}
 
+		SAFEDELETE(m_pReflectionsDenoisePass);
 		SAFEDELETE(m_pBlitStage);
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);

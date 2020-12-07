@@ -56,6 +56,7 @@ namespace LambdaEngine
 	class ParticleCollider;
 	class LightRenderer;
 	class BlitStage;
+	class ReflectionsDenoisePass;
 
 	struct CameraComponent;
 	struct RenderGraphStructureDesc;
@@ -536,15 +537,16 @@ namespace LambdaEngine
 		ParticleManager				m_ParticleManager;
 
 		// Custom Renderers
-		BlitStage*					m_pBlitStage			= nullptr;
-		LineRenderer*				m_pLineRenderer			= nullptr;
-		LightRenderer*				m_pLightRenderer		= nullptr;
-		PaintMaskRenderer*			m_pPaintMaskRenderer	= nullptr;
-		ParticleRenderer*			m_pParticleRenderer		= nullptr;
-		ParticleUpdater*			m_pParticleUpdater		= nullptr;
-		ParticleCollider*			m_pParticleCollider		= nullptr;
-		ASBuilder*					m_pASBuilder			= nullptr;
-		class LightProbeRenderer*	m_pLightProbeRenderer	= nullptr;
+		ReflectionsDenoisePass*		m_pReflectionsDenoisePass	= nullptr;
+		BlitStage*					m_pBlitStage				= nullptr;
+		LineRenderer*				m_pLineRenderer				= nullptr;
+		LightRenderer*				m_pLightRenderer			= nullptr;
+		PaintMaskRenderer*			m_pPaintMaskRenderer		= nullptr;
+		ParticleRenderer*			m_pParticleRenderer			= nullptr;
+		ParticleUpdater*			m_pParticleUpdater			= nullptr;
+		ParticleCollider*			m_pParticleCollider			= nullptr;
+		ASBuilder*					m_pASBuilder				= nullptr;
+		class LightProbeRenderer*	m_pLightProbeRenderer		= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
 #ifdef RENDER_SYSTEM_DEBUG

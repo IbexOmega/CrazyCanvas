@@ -1509,6 +1509,8 @@ namespace LambdaEngine
 						TextureViewDesc textureViewDesc		= {};
 						SamplerDesc		samplerDesc			= {};
 
+						bool isDepthStencil = pResourceDesc->TextureParams.TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT;
+
 						textureDesc.DebugName			= !isCubeTexture ? pResourceDesc->Name + " Texture" : pResourceDesc->Name + " Texture Cube";
 						textureDesc.MemoryType			= pResourceDesc->MemoryType;
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
@@ -1530,6 +1532,12 @@ namespace LambdaEngine
 						textureViewDesc.ArrayCount		= arrayCount;
 						textureViewDesc.Miplevel		= 0U;
 						textureViewDesc.ArrayIndex		= 0U;
+
+						if (!isDepthStencil)
+						{
+							textureDesc.Flags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+							textureViewDesc.Flags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+						}
 
 						samplerDesc.DebugName			= pResourceDesc->Name + " Sampler";
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
