@@ -203,15 +203,13 @@ void HUDSystem::FixedTick(Timestamp delta)
 		}
 	}
 
-
-
 	static bool activeButtonChanged = false;
-	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
+	if (InputActionSystem::IsActiveGlobal(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
 		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
-	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
+	else if (!InputActionSystem::IsActiveGlobal(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
 		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
@@ -435,7 +433,6 @@ bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 	const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(projectedEntity);
-
 
 	if (projectedGUIComponent.GUIType == IndicatorTypeGUI::FLAG_INDICATOR)
 	{
