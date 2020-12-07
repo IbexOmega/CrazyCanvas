@@ -177,13 +177,12 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 	if (projectileHitEvent.AmmoType != EAmmoType::AMMO_TYPE_NONE)
 	{
 		EPaintMode paintMode = EPaintMode::NONE;
-		ETeam team = ETeam::NONE;
+		ETeam team = projectileHitEvent.Team;
 		ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
 
 		if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
 		{
 			paintMode = EPaintMode::PAINT;
-			team = projectileHitEvent.Team;
 		}
 		else if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_WATER)
 		{
@@ -195,12 +194,12 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		{
 			remoteMode = ERemoteMode::SERVER;
 			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-			LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-				VEC_TO_ARG(collisionInfo.Position),
-				VEC_TO_ARG(collisionInfo.Direction),
-				PAINT_MODE_TO_STR(paintMode),
-				REMOTE_MODE_TO_STR(remoteMode),
-				team, projectileHitEvent.Angle);
+			// LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			// 	VEC_TO_ARG(collisionInfo.Position),
+			// 	VEC_TO_ARG(collisionInfo.Direction),
+			// 	PAINT_MODE_TO_STR(paintMode),
+			// 	REMOTE_MODE_TO_STR(remoteMode),
+			// 	team, projectileHitEvent.Angle);
 
 			// Send the server's paint point to all clients.
 			PacketProjectileHit packet;
@@ -216,12 +215,12 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
 			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-			LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-				VEC_TO_ARG(collisionInfo.Position),
-				VEC_TO_ARG(collisionInfo.Direction),
-				PAINT_MODE_TO_STR(paintMode),
-				REMOTE_MODE_TO_STR(remoteMode),
-				team, projectileHitEvent.Angle);
+			// LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			// 	VEC_TO_ARG(collisionInfo.Position),
+			// 	VEC_TO_ARG(collisionInfo.Direction),
+			// 	PAINT_MODE_TO_STR(paintMode),
+			// 	REMOTE_MODE_TO_STR(remoteMode),
+			// 	team, projectileHitEvent.Angle);
 		}
 	}
 
