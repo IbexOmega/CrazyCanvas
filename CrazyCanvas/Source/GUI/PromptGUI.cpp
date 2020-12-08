@@ -28,25 +28,23 @@ bool PromptGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent,
 	return false;
 }
 
-void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, const uint8 teamIndex)
+void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, uint8 teamIndex)
 {
 	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
 
 	UNREFERENCED_VARIABLE(teamIndex);
 
-	/*if (teamIndex != UINT8_MAX)
+	if (teamIndex != UINT8_MAX)
 	{
-		glm::vec3 promptColor = TeamHelper::GetTeamColor(teamIndex);
-		Noesis::Color color(promptColor.r, promptColor.g, promptColor.b);
-
-		pBrush->SetColor(color);
+		Noesis::Style* pStyle = FrameworkElement::FindResource<Noesis::Style>("PromptTextStyle");
+		m_pPromptTextblock->SetStyle(pStyle);
 	}
 	else
-		pBrush->SetColor(Noesis::Color::Red());*/
+	{
+		pBrush->SetColor(Noesis::Color::Red());
+		m_pPromptTextblock->SetForeground(pBrush);
+	}
 
-	pBrush->SetColor(Noesis::Color::White());
-
-	m_pPromptTextblock->SetForeground(pBrush);
 
 	m_pPromptTextblock->SetText(promptMessage.c_str());
 	m_pPromptVisibilityStoryboard->Begin();

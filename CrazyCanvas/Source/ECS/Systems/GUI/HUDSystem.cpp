@@ -534,7 +534,7 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 	return false;
 }
 
-void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
+void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, uint8 teamIndex)
 {
 	m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
 }

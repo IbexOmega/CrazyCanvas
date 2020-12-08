@@ -331,7 +331,15 @@ void HUDGUI::UpdateKillFeedTimer(LambdaEngine::Timestamp delta)
 
 void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity, IndicatorTypeGUI indicatorType)
 {
-	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new Noesis::TranslateTransform();
+	Noesis::Ptr<Noesis::RotateTransform> rotation = *new RotateTransform();
+	Noesis::Ptr<Noesis::TransformGroup> transformGroup = *new Noesis::TransformGroup();
+
+	if (indicatorType == IndicatorTypeGUI::PING_INDICATOR)
+		rotation->SetAngle(45.0f);
+
+	transformGroup->GetChildren()->Add(rotation);
+	transformGroup->GetChildren()->Add(translation);
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
 
@@ -362,7 +370,9 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 		translation->SetX(glm::clamp(-windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
 	}
 
-	TranslateIndicator(translation, entity);
+	TranslateIndicator(transformGroup, entity);
+
+
 }
 
 void HUDGUI::SetWindowSize(uint32 width, uint32 height)
@@ -407,7 +417,7 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	pGameOverGUI->SetMostFlagsStats((uint8)mostFlags.first, mostFlags.second->GetName());
 }
 
-void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex)
+void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, uint8 teamIndex)
 {
 	PromptGUI* pPromptGUI = nullptr;
 
@@ -464,7 +474,7 @@ void HUDGUI::InitGUI()
 	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
 	m_pCarryFlagBorder = FrameworkElement::FindName<Border>("CarryFlagBorder");
 	m_pCarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
-
+	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
@@ -620,13 +630,25 @@ void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
 
 	Noesis::Ptr<Noesis::Border> pingBorderIndicator = *new Noesis::Border();
 
-	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new Noesis::TranslateTransform();
+	Noesis::Ptr<Noesis::RotateTransform> rotation = *new Noesis::RotateTransform();
+
+	Noesis::Ptr<Noesis::TransformGroup> transformGroup = *new Noesis::TransformGroup();
+
+	transformGroup->GetChildren()->Add(rotation);
+	transformGroup->GetChildren()->Add(translation);
 
 	translation->SetY(100.0f);
 	translation->SetX(100.0f);
 
-	gridIndicator->SetRenderTransform(translation);
+	rotation->SetCenterX(0.0f);
+	rotation->SetCenterY(0.0f);
+
+	rotation->SetAngle(45.0f);
+
 	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+
+	gridIndicator->SetRenderTransform(transformGroup);
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
 	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
@@ -665,7 +687,7 @@ void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
 	m_ProjectedElements.erase(indicator->first);
 }
 
-void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, Entity entity)
+void HUDGUI::TranslateIndicator(Noesis::TransformGroup* pTranslation, Entity entity)
 {
 	auto indicator = m_ProjectedElements.find(entity);
 	VALIDATE(indicator != m_ProjectedElements.end())
