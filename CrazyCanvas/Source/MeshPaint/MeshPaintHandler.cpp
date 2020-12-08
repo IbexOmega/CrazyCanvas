@@ -187,12 +187,12 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 				team,
 				projectileHitEvent.Angle);
 
-			LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-			 	VEC_TO_ARG(collisionInfo.Position),
-			 	VEC_TO_ARG(collisionInfo.Direction),
-			 	PAINT_MODE_TO_STR(paintMode),
-			 	REMOTE_MODE_TO_STR(remoteMode),
-			 	team, projectileHitEvent.Angle);
+			// LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			//  	VEC_TO_ARG(collisionInfo.Position),
+			//  	VEC_TO_ARG(collisionInfo.Direction),
+			//  	PAINT_MODE_TO_STR(paintMode),
+			//  	REMOTE_MODE_TO_STR(remoteMode),
+			//  	team, projectileHitEvent.Angle);
 
 			// Send the server's paint point to all clients.
 			PacketProjectileHit packet;
@@ -208,12 +208,12 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
 			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-			LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-			 	VEC_TO_ARG(collisionInfo.Position),
-			 	VEC_TO_ARG(collisionInfo.Direction),
-			 	PAINT_MODE_TO_STR(paintMode),
-			 	REMOTE_MODE_TO_STR(remoteMode),
-			 	team, projectileHitEvent.Angle);
+			// LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			//  	VEC_TO_ARG(collisionInfo.Position),
+			//  	VEC_TO_ARG(collisionInfo.Direction),
+			//  	PAINT_MODE_TO_STR(paintMode),
+			//  	REMOTE_MODE_TO_STR(remoteMode),
+			//  	team, projectileHitEvent.Angle);
 		}
 	}
 
@@ -233,17 +233,17 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	{
 		// Allways clear client side when receiving hit from the server.
 		ResetClient();
-		LOG_WARNING("[FROM SERVER] CLEAR CLIENT");
+		// LOG_WARNING("[FROM SERVER] CLEAR CLIENT");
 
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
 		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
-		LOG_WARNING("[FROM SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-			VEC_TO_ARG(packet.Position),
-			VEC_TO_ARG(packet.Direction),
-			PAINT_MODE_TO_STR(paintMode),
-			REMOTE_MODE_TO_STR(remoteMode),
-			team, packet.Angle);
+		// LOG_WARNING("[FROM SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+		// 	VEC_TO_ARG(packet.Position),
+		// 	VEC_TO_ARG(packet.Direction),
+		// 	PAINT_MODE_TO_STR(paintMode),
+		// 	REMOTE_MODE_TO_STR(remoteMode),
+		// 	team, packet.Angle);
 	}
 
 	return true;
