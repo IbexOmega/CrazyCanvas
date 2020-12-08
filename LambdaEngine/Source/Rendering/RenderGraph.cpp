@@ -362,20 +362,27 @@ namespace LambdaEngine
 			if (renderStageIt != m_RenderStageMap.end())
 			{
 				RenderStage* pRenderStage = &m_pRenderStages[renderStageIt->second];
-
-				if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+				
+				if (pRenderStage->UsesCustomRenderer)
 				{
-					if (pRenderStage->ExternalPushConstants.pData == nullptr)
-					{
-						pRenderStage->ExternalPushConstants.pData = DBG_NEW byte[pRenderStage->ExternalPushConstants.MaxDataSize];
-					}
-
-					memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
-					pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+					pRenderStage->pCustomRenderer->UpdatePushConstants(pDesc->pData, pDesc->DataSize);
 				}
 				else
 				{
-					LOG_ERROR("Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+					if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+					{
+						if (pRenderStage->ExternalPushConstants.pData == nullptr)
+						{
+							pRenderStage->ExternalPushConstants.pData = DBG_NEW byte[pRenderStage->ExternalPushConstants.MaxDataSize];
+						}
+
+						memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
+						pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+					}
+					else
+					{
+						LOG_ERROR("Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+					}
 				}
 			}
 			else
@@ -1512,11 +1519,13 @@ namespace LambdaEngine
 						TextureViewDesc textureViewDesc		= {};
 						SamplerDesc		samplerDesc			= {};
 
+						bool isDepthStencil = pResourceDesc->TextureParams.TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT;
+
 						textureDesc.DebugName			= !isCubeTexture ? pResourceDesc->Name + " Texture" : pResourceDesc->Name + " Texture Cube";
 						textureDesc.MemoryType			= pResourceDesc->MemoryType;
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
 						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
-						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
+						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags | FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST;
 						textureDesc.Width				= uint32(pResourceDesc->TextureParams.XDimVariable);
 						textureDesc.Height				= uint32(pResourceDesc->TextureParams.YDimVariable);
 						textureDesc.Depth				= 1U;
@@ -1533,6 +1542,12 @@ namespace LambdaEngine
 						textureViewDesc.ArrayCount		= arrayCount;
 						textureViewDesc.Miplevel		= 0U;
 						textureViewDesc.ArrayIndex		= 0U;
+
+						if (!isDepthStencil)
+						{
+							textureDesc.Flags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+							textureViewDesc.Flags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+						}
 
 						samplerDesc.DebugName			= pResourceDesc->Name + " Sampler";
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
@@ -4086,18 +4101,18 @@ namespace LambdaEngine
 	{
 		if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE_1D)
 		{
-			pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth * m_WindowHeight);
+			pRenderStage->Dimensions.x = uint32(ceil(pRenderStage->Parameters.XDimVariable * m_WindowWidth * m_WindowHeight));
 		}
 		else
 		{
 			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE)
 			{
-				pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth);
+				pRenderStage->Dimensions.x = uint32(ceil(pRenderStage->Parameters.XDimVariable * m_WindowWidth));
 			}
 
 			if (pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::RELATIVE)
 			{
-				pRenderStage->Dimensions.y = uint32(pRenderStage->Parameters.YDimVariable * m_WindowHeight);
+				pRenderStage->Dimensions.y = uint32(ceil(pRenderStage->Parameters.YDimVariable * m_WindowHeight));
 			}
 		}
 	}
@@ -4542,6 +4557,9 @@ namespace LambdaEngine
 
 			pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
 
+			if (pRenderStage->ExternalPushConstants.DataSize > 0)
+				pComputeCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
+
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
 				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
 
@@ -4572,6 +4590,9 @@ namespace LambdaEngine
 			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 			pComputeCommandList->BindRayTracingPipeline(pRenderStage->pPipelineState);
+
+			if (pRenderStage->ExternalPushConstants.DataSize > 0)
+				pComputeCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
 
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
 				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
