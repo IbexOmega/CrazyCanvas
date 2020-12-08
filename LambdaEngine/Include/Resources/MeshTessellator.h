@@ -12,16 +12,16 @@ namespace LambdaEngine
 	private:
 		struct SPushConstantData
 		{
-			uint32 triangleCount		= 0;
-			uint32 maxTesselationLevels = 0;
-			uint32 outerBorder			= 0;
+			uint32 OutputMaxVertexCount	= 0;
 		};
 
 		struct SCalculationData
 		{
 			glm::mat4 ScaleMatrix;
 			uint32 PrimitiveCounter;
-			glm::vec3 Padding;
+			float MaxInnerLevelTess;
+			float MaxOuterLevelTess;
+			float Padding;
 		};
 
 	public:
@@ -29,6 +29,7 @@ namespace LambdaEngine
 		void Release();
 
 		void Tessellate(Mesh* pMesh);
+		void ReleaseTessellationBuffers();
 
 		static MeshTessellator& GetInstance() { return s_Instance; }
 
@@ -69,10 +70,6 @@ namespace LambdaEngine
 		Buffer* m_pOutVertexFirstStagingBuffer = nullptr;
 		Buffer* m_pOutVertexSecondStagingBuffer = nullptr;
 		Buffer* m_pOutVertexBuffer = nullptr;
-
-		Buffer* m_pOutIndicesFirstStagingBuffer = nullptr;
-		Buffer* m_pOutIndicesSecondStagingBuffer = nullptr;
-		Buffer* m_pOutIndicesBuffer = nullptr;
 
 	private:
 		static MeshTessellator s_Instance;

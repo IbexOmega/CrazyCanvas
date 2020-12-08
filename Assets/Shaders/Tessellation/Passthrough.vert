@@ -17,7 +17,7 @@ void main()
     SVertex vertex = b_InVertices.val[gl_VertexIndex]; 
     out_PosW = vertex.Position.w;
     out_Normal = vertex.Normal;
-    out_Tangent = vertex.Tangent;
-    out_TexCoord = vertex.TexCoord;
+    out_Tangent = vec4(vertex.Tangent.xyz, 0.0f);
+    out_TexCoord = vec4(vertex.TexCoord.xy, 0.0f, 0.0f);
     gl_Position = vec4(vertex.Position.xyz, 1.f);
 }

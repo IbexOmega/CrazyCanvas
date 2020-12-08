@@ -2252,6 +2252,9 @@ namespace LambdaEngine
 			}
 		}
 
+		// Release MeshTessellation Buffers
+		MeshTessellator::GetInstance().ReleaseTessellationBuffers();
+
 		return true;
 	}
 
