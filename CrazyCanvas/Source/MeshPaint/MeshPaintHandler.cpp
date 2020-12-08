@@ -13,6 +13,8 @@
 
 #include "Utilities/StringUtilities.h"
 
+#include "Rendering/LineRenderer.h"
+
 /*
 * MeshPaintHandler
 */
@@ -195,9 +197,8 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		ECSCore::GetInstance()->GetComponentIf<RotationComponent>(playerEntity, rotComp);
 		glm::quat playerRotation = rotComp.Quaternion;
 
-		glm::mat4 playerTransform = glm::toMat4(playerRotation);
-		playerTransform = glm::translate(playerTransform, playerPosition);
-		playerTransform = glm::inverse(playerTransform);
+		glm::mat4 playerTransform = glm::toMat4(glm::inverse(playerRotation));
+		playerTransform = glm::translate(playerTransform, -playerPosition);
 		
 		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
 		if (MultiplayerUtils::IsServer())
@@ -269,6 +270,12 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 
 	if (!MultiplayerUtils::IsServer())
 	{
+		static uint32 id = UINT32_MAX;
+		TArray<glm::vec3> points;
+		points.PushBack(packet.LocalPosition);
+		points.PushBack(packet.LocalPosition - packet.LocalDirection);
+		id = LineRenderer::UpdateLineGroup(id, points, glm::vec3(1.f, 0.f, 1.f));
+
 		// Allways clear client side when receiving hit from the server.
 		ResetClient();
 		LOG_WARNING("[FROM SERVER] CLEAR CLIENT");
