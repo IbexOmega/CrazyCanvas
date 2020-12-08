@@ -8,6 +8,7 @@
 #include "Rendering/Core/API/PipelineLayout.h"
 
 #include "Application/API/Events/WindowEvents.h"
+#include "Application/API/Events/KeyEvents.h"
 
 namespace LambdaEngine
 {
@@ -87,6 +88,7 @@ namespace LambdaEngine
 		bool InitHistoryTextures();
 
 		bool OnWindowResized(const WindowResizedEvent& windowResizedEvent);
+		bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);
 
 	public:
 		static FORCEINLINE AARenderer* GetInstance()
@@ -112,6 +114,7 @@ namespace LambdaEngine
 		TArray<TSharedRef<TextureView>>	m_TAAHistoryViews;
 		uint32 m_Width;
 		uint32 m_Height;
+		uint64 m_Tick = 0;
 
 		bool m_NeedsUpdate = true;
 		EAAMode m_AAMode;

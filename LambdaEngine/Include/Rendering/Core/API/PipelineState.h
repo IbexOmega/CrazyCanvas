@@ -63,7 +63,7 @@ namespace LambdaEngine
 		EBlendOp				BlendOpAlpha				= EBlendOp::BLEND_OP_ADD;
 		EBlendFactor			SrcBlendAlpha				= EBlendFactor::BLEND_FACTOR_ONE;
 		EBlendFactor			DstBlendAlpha				= EBlendFactor::BLEND_FACTOR_ZERO;
-		FColorComponentFlags	RenderTargetComponentMask	= FColorComponentFlag::COLOR_COMPONENT_FLAG_NONE;
+		FColorComponentFlags	RenderTargetComponentMask	= FColorComponentFlag::COLOR_COMPONENT_FLAG_ALL;
 		bool					BlendEnabled				= false;
 	};
 

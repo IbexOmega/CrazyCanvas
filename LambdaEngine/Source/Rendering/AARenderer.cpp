@@ -14,7 +14,7 @@ namespace LambdaEngine
 {
 	AARenderer::AARenderer()
 		: CustomRenderer()
-		, m_AAMode(EAAMode::AAMODE_TAA)
+		, m_AAMode(EAAMode::AAMODE_FXAA)
 		, m_TAAHistory()
 		, m_TAAHistoryViews()
 		, m_CommandLists()
@@ -132,12 +132,8 @@ namespace LambdaEngine
 			}
 		}
 
-		if (!InitHistoryTextures())
-		{
-			return false;
-		}
-
 		EventQueue::RegisterEventHandler(this, &AARenderer::OnWindowResized);
+		EventQueue::RegisterEventHandler(this, &AARenderer::OnKeyPressed);
 		return true;
 	}
 
@@ -183,8 +179,31 @@ namespace LambdaEngine
 			return false;
 		}
 
-		renderPassDesc.DebugName			= "TAA RenderPass";
-		renderPassDesc.Attachments			= { colorAttachmentDesc };
+		RenderPassAttachmentDesc historyAttachmentDesc = {};
+		historyAttachmentDesc.Format			= EFormat::FORMAT_R8G8B8A8_UNORM;
+		historyAttachmentDesc.SampleCount		= 1;
+		historyAttachmentDesc.LoadOp			= ELoadOp::LOAD_OP_LOAD;
+		historyAttachmentDesc.StoreOp			= EStoreOp::STORE_OP_STORE;
+		historyAttachmentDesc.StencilLoadOp		= ELoadOp::LOAD_OP_DONT_CARE;
+		historyAttachmentDesc.StencilStoreOp	= EStoreOp::STORE_OP_DONT_CARE;
+		historyAttachmentDesc.InitialState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+		historyAttachmentDesc.FinalState		= ETextureState::TEXTURE_STATE_SHADER_READ_ONLY;
+
+		subpassDesc.RenderTargetStates = 
+		{ 
+			ETextureState::TEXTURE_STATE_RENDER_TARGET,
+			ETextureState::TEXTURE_STATE_RENDER_TARGET
+		};
+
+		subpassDesc.DepthStencilAttachmentState	= ETextureState::TEXTURE_STATE_DONT_CARE;
+
+		renderPassDesc.DebugName	= "TAA RenderPass";
+		renderPassDesc.Attachments	= 
+		{ 
+			historyAttachmentDesc,
+			colorAttachmentDesc,
+		};
+
 		renderPassDesc.Subpasses			= { subpassDesc };
 		renderPassDesc.SubpassDependencies	= { subpassDependencyDesc };
 
@@ -198,10 +217,11 @@ namespace LambdaEngine
 
 		// Create Descriptor Heap and allocate descriptorsets
 		{
-			const uint32 NUM_SAMPLERS	= 4;
-			const uint32 NUM_BUFFERS	= 1;
-			const uint32 NUM_DESCRIPTOR_SETS	= 3;
-			const uint32 NEEDED_DESCRIPTOR_SETS = NUM_FRAMES * NUM_DESCRIPTOR_SETS;
+			constexpr uint32 NUM_SAMPLERS	= (4 * 2) + 1;
+			constexpr uint32 NUM_BUFFERS	= 1;
+			constexpr uint32 NUM_DESCRIPTOR_SETS = 3 * 3;
+
+			const uint32 NEEDED_DESCRIPTOR_SETS	= NUM_FRAMES * NUM_DESCRIPTOR_SETS;
 			const uint32 NEEDED_SAMPLER_COUNT	= NUM_FRAMES * NUM_SAMPLERS;
 			const uint32 NEEDED_BUFFER_COUNT	= NUM_FRAMES * NUM_BUFFERS;
 
@@ -259,21 +279,24 @@ namespace LambdaEngine
 					m_TAABufferDescriptorSets.EmplaceBack(taaBufferSet);
 				}
 
-				name = "TAA Texture DescriptorSet[" + std::to_string(i) + "]";
-				TSharedRef<DescriptorSet> taaTextureSet = RenderAPI::GetDevice()->CreateDescriptorSet(
-					name,
-					m_TAALayout.Get(),
-					1,
-					m_DescriptorHeap.Get());
-				if (!taaTextureSet)
+				for (uint32 j = 0; j < 2; j++)
 				{
-					LOG_ERROR("[AARenderer] Failed to create '%s'", name.c_str());
-					DEBUGBREAK();
-					return false;
-				}
-				else
-				{
-					m_TAATextureDescriptorSets.EmplaceBack(taaTextureSet);
+					name = "TAA Texture DescriptorSet[" + std::to_string(i) + ", " + std::to_string(j) + "]";
+					TSharedRef<DescriptorSet> taaTextureSet = RenderAPI::GetDevice()->CreateDescriptorSet(
+						name,
+						m_TAALayout.Get(),
+						1,
+						m_DescriptorHeap.Get());
+					if (!taaTextureSet)
+					{
+						LOG_ERROR("[AARenderer] Failed to create '%s'", name.c_str());
+						DEBUGBREAK();
+						return false;
+					}
+					else
+					{
+						m_TAATextureDescriptorSets.EmplaceBack(taaTextureSet);
+					}
 				}
 			}
 		}
@@ -332,6 +355,7 @@ namespace LambdaEngine
 
 		// Default BlendAttachmentStateDesc
 		BlendAttachmentStateDesc blendAttachmentState = { };
+		blendAttachmentState.BlendEnabled = false;
 
 		{
 			GUID_Lambda taaShader = ResourceManager::LoadShaderFromFile(
@@ -345,16 +369,29 @@ namespace LambdaEngine
 				return false;
 			}
 
-			ManagedGraphicsPipelineStateDesc taaStateDesc;
+			ManagedGraphicsPipelineStateDesc taaStateDesc = { };
 			taaStateDesc.DebugName		= "TAA State";
-			taaStateDesc.RenderPass		= m_RenderPass;
+			taaStateDesc.RenderPass		= m_TAARenderPass;
 			taaStateDesc.PipelineLayout = m_TAALayout;
-			taaStateDesc.BlendState.BlendAttachmentStates = { blendAttachmentState };
-			taaStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
-			taaStateDesc.DepthStencilState.DepthTestEnable			= false;
-			taaStateDesc.DepthStencilState.DepthBoundsTestEnable	= false;
+
 			taaStateDesc.VertexShader.ShaderGUID	= FullscreenShader;
 			taaStateDesc.PixelShader.ShaderGUID		= taaShader;
+
+			taaStateDesc.BlendState.BlendAttachmentStates = 
+			{ 
+				blendAttachmentState,
+				blendAttachmentState
+			};
+
+			taaStateDesc.RasterizerState.RasterizerDiscardEnable	= false;
+			taaStateDesc.RasterizerState.CullMode					= ECullMode::CULL_MODE_NONE;
+			taaStateDesc.DepthStencilState.DepthWriteEnable			= false;
+			taaStateDesc.DepthStencilState.DepthTestEnable			= false;
+			taaStateDesc.DepthStencilState.DepthBoundsTestEnable	= false;
+
+			taaStateDesc.SampleMask		= 0xfffffff;
+			taaStateDesc.Subpass		= 0;
+			taaStateDesc.SampleCount	= 1;
 
 			m_TAAState = PipelineStateManager::CreateGraphicsPipelineState(&taaStateDesc);
 			if (m_TAAState == 0)
@@ -376,16 +413,25 @@ namespace LambdaEngine
 				return false;
 			}
 
-			ManagedGraphicsPipelineStateDesc fxaaStateDesc;
+			ManagedGraphicsPipelineStateDesc fxaaStateDesc = {};
 			fxaaStateDesc.DebugName			= "FXAA State";
 			fxaaStateDesc.RenderPass		= m_RenderPass;
 			fxaaStateDesc.PipelineLayout	= m_FXAALayout;
-			fxaaStateDesc.BlendState.BlendAttachmentStates = { blendAttachmentState };
-			fxaaStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
-			fxaaStateDesc.DepthStencilState.DepthTestEnable			= false;
-			fxaaStateDesc.DepthStencilState.DepthBoundsTestEnable	= false;
+			
 			fxaaStateDesc.VertexShader.ShaderGUID	= FullscreenShader;
 			fxaaStateDesc.PixelShader.ShaderGUID	= fxaaShader;
+
+			fxaaStateDesc.BlendState.BlendAttachmentStates = { blendAttachmentState };
+			
+			fxaaStateDesc.RasterizerState.RasterizerDiscardEnable	= false;
+			fxaaStateDesc.RasterizerState.CullMode					= ECullMode::CULL_MODE_NONE;
+			fxaaStateDesc.DepthStencilState.DepthWriteEnable		= false;
+			fxaaStateDesc.DepthStencilState.DepthTestEnable			= false;
+			fxaaStateDesc.DepthStencilState.DepthBoundsTestEnable	= false;
+
+			fxaaStateDesc.SampleMask	= 0xfffffff;
+			fxaaStateDesc.Subpass		= 0;
+			fxaaStateDesc.SampleCount	= 1;
 
 			m_FXAAState = PipelineStateManager::CreateGraphicsPipelineState(&fxaaStateDesc);
 			if (m_FXAAState == 0)
@@ -395,7 +441,7 @@ namespace LambdaEngine
 			}
 		}
 
-		return true;
+		return InitHistoryTextures();
 	}
 
 	void AARenderer::UpdateTextureResource(
@@ -474,6 +520,8 @@ namespace LambdaEngine
 			return;
 		}
 
+		m_Tick++;
+
 		TSharedRef<CommandAllocator>	commandAllocator	= m_CommandAllocators[modFrameIndex];
 		TSharedRef<CommandList>			commandList			= m_CommandLists[modFrameIndex];
 		TSharedRef<const Texture>		backBuffer		= m_BackBuffers[backBufferIndex];
@@ -501,29 +549,14 @@ namespace LambdaEngine
 			clearColorDesc.Color[1] = 0.0f;
 			clearColorDesc.Color[2] = 0.0f;
 			clearColorDesc.Color[3] = 1.0f;
-
-			BeginRenderPassDesc beginRenderPassDesc;
-			beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
-			beginRenderPassDesc.ppRenderTargets		= &backBufferView;
-			beginRenderPassDesc.RenderTargetCount	= 1;
-			beginRenderPassDesc.pDepthStencil		= nullptr;
-			beginRenderPassDesc.Width				= width;
-			beginRenderPassDesc.Height				= height;
-			beginRenderPassDesc.Flags				= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-			beginRenderPassDesc.pClearColors		= &clearColorDesc;
-			beginRenderPassDesc.ClearColorCount		= 1;
-			beginRenderPassDesc.Offset.x			= 0;
-			beginRenderPassDesc.Offset.y			= 0;
-
-			commandList->BeginRenderPass(&beginRenderPassDesc);
 			
-			Viewport viewport;
-			viewport.Height		= height;
-			viewport.Width		= width;
-			viewport.x			= 0.0f;
-			viewport.y			= 0.0f;
+			Viewport viewport = { };
+			viewport.MinDepth	= 0.0f;
 			viewport.MaxDepth	= 1.0f;
-			viewport.MaxDepth	= 0.0f;
+			viewport.Width		= float32(width);
+			viewport.Height		= -float32(height);
+			viewport.x			= 0.0f;
+			viewport.y			= float32(height);
 			commandList->SetViewports(&viewport, 0, 1);
 
 			ScissorRect scissorRect;
@@ -533,20 +566,47 @@ namespace LambdaEngine
 			scissorRect.y		= 0.0f;
 			commandList->SetScissorRects(&scissorRect, 0, 1);
 
+			BeginRenderPassDesc beginRenderPassDesc;
+			const TextureView* ppRenderTargets[2];
 			if (m_AAMode == EAAMode::AAMODE_TAA)
 			{
+				const uint32 renderTargetIndex = ((m_Tick + 1) & 1);
+				ppRenderTargets[0] = m_TAAHistoryViews[renderTargetIndex].Get();
+				ppRenderTargets[1] = backBufferView.Get();
+				beginRenderPassDesc.RenderTargetCount	= 2;
+				beginRenderPassDesc.pRenderPass			= m_TAARenderPass.Get();
+
 				PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_TAAState);
 				commandList->BindGraphicsPipeline(pPipelineState);
+
 				commandList->BindDescriptorSetGraphics(m_TAABufferDescriptorSets[modFrameIndex].Get(), m_TAALayout.Get(), 0);
+				
+				const uint32 historyIndex		= (m_Tick & 1);
+				const uint32 descriptorSetIndex = (modFrameIndex * 2) + historyIndex;
 				commandList->BindDescriptorSetGraphics(m_TAATextureDescriptorSets[modFrameIndex].Get(), m_TAALayout.Get(), 1);
 			}
 			else if (m_AAMode == EAAMode::AAMODE_FXAA)
 			{
+				ppRenderTargets[0] = backBufferView.Get();
+				beginRenderPassDesc.RenderTargetCount	= 1;
+				beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
+
 				PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_FXAAState);
 				commandList->BindGraphicsPipeline(pPipelineState);
 				commandList->BindDescriptorSetGraphics(m_FXAADescriptorSets[modFrameIndex].Get(), m_FXAALayout.Get(), 0);
 			}
 
+			beginRenderPassDesc.ppRenderTargets = ppRenderTargets;
+			beginRenderPassDesc.pDepthStencil	= nullptr;
+			beginRenderPassDesc.Width			= width;
+			beginRenderPassDesc.Height			= height;
+			beginRenderPassDesc.Flags			= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+			beginRenderPassDesc.pClearColors	= &clearColorDesc;
+			beginRenderPassDesc.ClearColorCount	= 1;
+			beginRenderPassDesc.Offset.x		= 0;
+			beginRenderPassDesc.Offset.y		= 0;
+
+			commandList->BeginRenderPass(&beginRenderPassDesc);
 			commandList->DrawInstanced(3, 1, 0, 0);
 			commandList->EndRenderPass();
 		}
@@ -557,22 +617,28 @@ namespace LambdaEngine
 
 	void AARenderer::WriteDescriptorSets()
 	{
-		const uint32 numDescriptorSets = m_TAATextureDescriptorSets.GetSize();
-		for (uint32 i = 0; i < numDescriptorSets; i++)
+		// TAA Buffer Descriptor
+		uint32 numTAADescriptorSets = m_TAABufferDescriptorSets.GetSize();
+		for (uint32 i = 0; i < numTAADescriptorSets; i++)
 		{
 			TSharedRef<DescriptorSet>& taaBufferSet = m_TAABufferDescriptorSets[i];
 			if (m_PerFrameBuffer)
 			{
-				uint64 offset	= 0;
-				uint64 size		= m_PerFrameBuffer->GetDesc().SizeInBytes;
+				uint64 offset = 0;
+				uint64 size = m_PerFrameBuffer->GetDesc().SizeInBytes;
 				taaBufferSet->WriteBufferDescriptors(
-					&m_PerFrameBuffer, 
-					&offset, 
-					&size, 
-					0, 1, 
+					&m_PerFrameBuffer,
+					&offset,
+					&size,
+					0, 1,
 					EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
 			}
+		}
 
+		// TAA Texture Descriptors
+		numTAADescriptorSets = m_TAATextureDescriptorSets.GetSize();
+		for (uint32 i = 0; i < numTAADescriptorSets; i++)
+		{
 			TSharedRef<DescriptorSet>& taaTextureSet = m_TAATextureDescriptorSets[i];
 			if (m_IntermediateOutputView)
 			{
@@ -585,13 +651,16 @@ namespace LambdaEngine
 					false);
 			}
 			
-			if (m_TAAHistoryViews.GetSize() > i)
+			if (!m_TAAHistoryViews.IsEmpty())
 			{
-				TSharedRef<TextureView>& taaHistoryView = m_TAAHistoryViews[i];
+				const uint32 index = i;
+				const uint32 historyIndex = (index & 0x1);
+
+				TSharedRef<TextureView>& taaHistoryView = m_TAAHistoryViews[historyIndex];
 				if (taaHistoryView)
 				{
 					taaTextureSet->WriteTextureDescriptors(
-						&taaHistoryView, 
+						&taaHistoryView,
 						Sampler::GetLinearSamplerToBind(),
 						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 						1, 1, 
@@ -622,10 +691,32 @@ namespace LambdaEngine
 					false);
 			}
 		}
+
+		// FXAA Descriptors
+		const uint32 numFXAADescriptorSets = m_FXAADescriptorSets.GetSize();
+		for (uint32 i = 0; i < numFXAADescriptorSets; i++)
+		{
+			TSharedRef<DescriptorSet>& set = m_FXAADescriptorSets[i];
+			if (m_IntermediateOutputView)
+			{
+				set->WriteTextureDescriptors(
+					&m_IntermediateOutputView,
+					Sampler::GetLinearSamplerToBind(),
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					0, 1,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					false);
+			}
+		}
 	}
 	
 	bool AARenderer::InitHistoryTextures()
 	{
+		if (m_CommandAllocators.IsEmpty() || m_CommandLists.IsEmpty())
+		{
+			return false;
+		}
+
 		if (m_Width == 0 || m_Height == 0)
 		{
 			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
@@ -656,7 +747,6 @@ namespace LambdaEngine
 
 		TSharedRef<CommandAllocator>&	commandAllocator	= m_CommandAllocators[0];
 		TSharedRef<CommandList>&		commandList			= m_CommandLists[0];
-
 		commandAllocator->Reset();
 		commandList->Begin(nullptr);
 
@@ -717,5 +807,23 @@ namespace LambdaEngine
 		WriteDescriptorSets();
 
 		return true;
+	}
+	
+	bool AARenderer::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
+	{
+		if (keyPressedEvent.Key == EKey::KEY_KEYPAD_1)
+		{
+			m_AAMode = EAAMode::AAMODE_NONE;
+		}
+		else if (keyPressedEvent.Key == EKey::KEY_KEYPAD_2)
+		{
+			m_AAMode = EAAMode::AAMODE_FXAA;
+		}
+		else if (keyPressedEvent.Key == EKey::KEY_KEYPAD_3)
+		{
+			m_AAMode = EAAMode::AAMODE_TAA;
+		}
+
+		return false;
 	}
 }

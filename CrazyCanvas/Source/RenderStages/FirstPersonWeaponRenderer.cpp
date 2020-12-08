@@ -1,26 +1,29 @@
 #include "RenderStages/FirstPersonWeaponRenderer.h"
-#include "Application/API/CommonApplication.h"
+
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/PipelineState.h"
 #include "Rendering/Core/API/TextureView.h"
 #include "Rendering/EntityMaskManager.h"
-
 #include "Rendering/RenderAPI.h"
 #include "Rendering/Core/API/GraphicsDevice.h"
+#include "Rendering/RenderGraph.h"
+#include "Rendering/AARenderer.h"
+
+#include "Application/API/CommonApplication.h"
 
 #include "ECS/ECSCore.h"
+#include "ECS/Components/Player/WeaponComponent.h"
+
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Player/PlayerRelatedComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/MeshPaintComponent.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
+
 #include "Engine/EngineConfig.h"
 
-
-#include "Rendering/RenderGraph.h"
-#include "ECS/Components/Player/WeaponComponent.h"
 #include "Resources/ResourceCatalog.h"
 
 namespace LambdaEngine
@@ -533,19 +536,27 @@ namespace LambdaEngine
 		constexpr uint32 SAMPLES = 16;
 		const uint64 sampleIndex = tick % SAMPLES;
 
-		// Generate jitter
-		prevjitter = jitter;
-		jitter = Math::Hammersley2D(sampleIndex, SAMPLES);
-		jitter = (jitter * 2.0f) - 1.0f;
-		
-		glm::vec2 clipSpaceJitter = jitter / glm::vec2(float32(width), float32(height));
-		clipSpaceJitter.y = -clipSpaceJitter.y;
-
 		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, float32(width) / float32(height), 0.1f, 100.0f);
 		glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0f), g_DefaultUp);
 
-		const glm::mat4 offset = glm::translate(glm::vec3(clipSpaceJitter, 0.0f));
-		projection = offset * projection;
+		// Generate jitter
+		if (AARenderer::GetInstance()->GetAAMode() == EAAMode::AAMODE_TAA)
+		{
+			prevjitter	= jitter;
+			jitter		= Math::Hammersley2D(sampleIndex, SAMPLES);
+			jitter		= (jitter * 2.0f) - 1.0f;
+
+			glm::vec2 clipSpaceJitter = jitter / glm::vec2(float32(width), float32(height));
+			clipSpaceJitter.y = -clipSpaceJitter.y;
+
+			const glm::mat4 offset = glm::translate(glm::vec3(clipSpaceJitter, 0.0f));
+			projection = offset * projection;
+		}
+		else
+		{
+			prevjitter	= glm::vec2(0.0f);
+			jitter		= glm::vec2(0.0f);
+		}
 
 		// Weapon Transformations
 		FrameBuffer fb;
