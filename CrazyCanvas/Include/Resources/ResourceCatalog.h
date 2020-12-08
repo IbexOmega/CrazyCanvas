@@ -30,6 +30,7 @@ public:
 	inline static LambdaEngine::TArray<GUID_Lambda> PLAYER_STRAFE_LEFT_GUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> PLAYER_STRAFE_RIGHT_GUIDs;
 	inline static GUID_Lambda PLAYER_STEP_SOUND_GUID = GUID_NONE;
+	inline static GUID_Lambda PLAYER_JUMP_SOUND_GUID = GUID_NONE;
 	inline static GUID_Lambda PLAYER_DEATH_SOUND_GUID = GUID_NONE;
 
 	// Projectile
