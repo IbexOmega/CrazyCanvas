@@ -24,7 +24,7 @@
 
 #include "Engine/EngineLoop.h"
 
-//#define PRINT_FUNC
+#define PRINT_FUNC
 
 namespace LambdaEngine
 {
@@ -215,11 +215,11 @@ namespace LambdaEngine
 
 	void GUIRenderer::UpdateTexture(Noesis::Texture* pTexture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* pData)
 	{
-		EndCurrentRenderPass();
-
 #ifdef PRINT_FUNC
 		LOG_INFO("UpdateTexture");
 #endif
+
+		EndCurrentRenderPass();
 
 		CommandList*	pCommandList	= BeginOrGetUtilityCommandList();
 		GUITexture*		pGUITexture		= reinterpret_cast<GUITexture*>(pTexture);
@@ -255,15 +255,20 @@ namespace LambdaEngine
 		VALIDATE(pSurface != nullptr);
 		
 		m_pCurrentRenderTarget = reinterpret_cast<GUIRenderTarget*>(pSurface);
-		EndCurrentRenderPass();
 
 #ifdef PRINT_FUNC
 		LOG_INFO("SetRenderTarget W: %u, H: %u", m_pCurrentRenderTarget->GetDesc()->Width, m_pCurrentRenderTarget->GetDesc()->Height);
 #endif
+
+		EndCurrentRenderPass();
 	}
 
 	void GUIRenderer::BeginTile(const Noesis::Tile& tile, uint32_t surfaceWidth, uint32_t surfaceHeight)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("BeginTile W: %u, H: %u", surfaceWidth, surfaceHeight);
+#endif
+
 		UNREFERENCED_VARIABLE(surfaceWidth);
 		UNREFERENCED_VARIABLE(surfaceHeight);
 		
@@ -289,19 +294,15 @@ namespace LambdaEngine
 		scissorRect.y		= tile.y;
 
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
-
-#ifdef PRINT_FUNC
-		LOG_INFO("BeginTile W: %u, H: %u", surfaceWidth, surfaceHeight);
-#endif
 	}
 
 	void GUIRenderer::EndTile()
 	{
-		EndCurrentRenderPass();
-		m_TileBegun					= false;
 #ifdef PRINT_FUNC
 		LOG_INFO("EndTile");
 #endif
+		EndCurrentRenderPass();
+		m_TileBegun					= false;
 
 		ResumeRenderPass();
 	}
@@ -319,15 +320,14 @@ namespace LambdaEngine
 
 	void GUIRenderer::EndRender()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("EndRender");
+#endif
 		EndCurrentRenderPass();
 		m_RenderPassBegun = false;
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
 		pCommandList->End();
-
-#ifdef PRINT_FUNC
-		LOG_INFO("EndRender");
-#endif
 	}
 
 	void* GUIRenderer::MapVertices(uint32_t bytes)
@@ -416,6 +416,10 @@ namespace LambdaEngine
 
 	void GUIRenderer::DrawBatch(const Noesis::Batch& batch)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("DrawBatch");
+#endif
+
 		const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
 		CommandList* pRenderCommandList = BeginOrGetRenderCommandList();
 
@@ -911,13 +915,13 @@ namespace LambdaEngine
 		// If we are currently rendering we exit the current renderpass
 		if (m_IsInRenderPass)
 		{
+#ifdef PRINT_FUNC
+			LOG_INFO("Ending RenderPass");
+#endif
 			CommandList* pCommandList = BeginOrGetRenderCommandList();
 			pCommandList->EndRenderPass();
 
 			m_IsInRenderPass = false;
-#ifdef PRINT_FUNC
-			LOG_INFO("Ending RenderPass");
-#endif
 		}
 	}
 

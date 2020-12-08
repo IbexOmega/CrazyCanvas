@@ -25,6 +25,9 @@ namespace LambdaEngine
 	class GUIRenderTarget : public Noesis::RenderTarget
 	{
 	public:
+		DECL_REMOVE_COPY(GUIRenderTarget);
+		DECL_REMOVE_MOVE(GUIRenderTarget);
+
 		GUIRenderTarget();
 		~GUIRenderTarget();
 
