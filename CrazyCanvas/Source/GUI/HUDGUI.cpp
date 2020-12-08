@@ -306,15 +306,15 @@ void HUDGUI::DisplayCarryFlagIndicator(Entity flagEntity, bool isCarrying)
 	{
 		grid->second->SetVisibility(Visibility::Visibility_Hidden);
 
-		m_CarryFlagIndicator->SetVisibility(Visibility::Visibility_Visible);
-		m_CarryFlagIndicatorStoryBoard->Begin();
+		m_pCarryFlagIndicator->SetVisibility(Visibility::Visibility_Visible);
+		m_pCarryFlagIndicatorStoryBoard->Begin();
 	}
 	else
 	{
 		grid->second->SetVisibility(Visibility::Visibility_Visible);
 
-		m_CarryFlagIndicator->SetVisibility(Visibility::Visibility_Collapsed);
-		m_CarryingFlagResetStoryBoard->Begin();
+		m_pCarryFlagIndicator->SetVisibility(Visibility::Visibility_Collapsed);
+		m_pCarryingFlagResetStoryBoard->Begin();
 	}
 
 }
@@ -460,14 +460,14 @@ void HUDGUI::InitGUI()
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
 	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
 	m_pCarryFlagBorder = FrameworkElement::FindName<Border>("CarryFlagBorder");
-	m_CarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
+	m_pCarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
 	
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
 
-	m_CarryFlagIndicatorStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagStoryBoard");
-	m_CarryingFlagResetStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagResetStoryBoard");
+	m_pCarryFlagIndicatorStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagStoryBoard");
+	m_pCarryingFlagResetStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagResetStoryBoard");
 
 
 	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
