@@ -46,7 +46,8 @@ public:
 	void AddSettingColorBox(
 		const LambdaEngine::String& settingKey,
 		const LambdaEngine::String& settingText,
-		const LambdaEngine::TArray<glm::vec3>& settingColors,
+		const glm::vec3* pSettingColors, 
+		uint32 numSettingColors,
 		uint8 defaultIndex);
 
 	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::String& settingValue);
