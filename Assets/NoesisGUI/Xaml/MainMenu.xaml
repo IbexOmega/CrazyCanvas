@@ -106,6 +106,21 @@
                 <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" VerticalAlignment="Center" />
             </Grid>
 
+            <!--AA Dropdown-->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <Label Content="Anti-Aliasing" Foreground="White" FontSize="29.333" />
+                <ComboBox x:Name="AAComboBox" VerticalAlignment="Center" Grid.Column="1" FontSize="20" Foreground="White" IsEditable="True" Height="25" IsReadOnly="True" Padding="2 2 0 0">
+                    <TextBlock Text="NONE" />
+                    <TextBlock Text="FXAA" />
+                    <TextBlock Text="TAA" />
+                </ComboBox>
+            </Grid>
+
             <!--Volume-->
             <Grid>
                 <Grid.ColumnDefinitions>
