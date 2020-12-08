@@ -43,7 +43,6 @@ void NameplateSystem::Init()
 
 		SubscribeToEntities(subscriberReg);
 	}
-
 }
 
 void NameplateSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
