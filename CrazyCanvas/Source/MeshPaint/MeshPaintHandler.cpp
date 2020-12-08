@@ -17,6 +17,7 @@
 */
 
 LambdaEngine::TArray<MeshPaintHandler::UnwrapData> MeshPaintHandler::s_Collisions;
+LambdaEngine::SpinLock MeshPaintHandler::s_SpinLock;
 
 MeshPaintHandler::~MeshPaintHandler()
 {
@@ -128,6 +129,8 @@ void MeshPaintHandler::AddHitPoint(
 	ETeam team,
 	uint32 angle)
 {
+	std::scoped_lock<LambdaEngine::SpinLock> lock(s_SpinLock);
+
 	UnwrapData data = {};
 	data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
 	data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>((float)angle)};

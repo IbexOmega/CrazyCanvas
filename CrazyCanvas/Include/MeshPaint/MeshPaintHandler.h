@@ -12,6 +12,8 @@
 
 #include <queue>
 
+#include "Threading/API/SpinLock.h"
+
 /*
 * Helpers
 */
@@ -84,5 +86,6 @@ private:
 
 private:
 	static LambdaEngine::TArray<UnwrapData> s_Collisions;
+	static LambdaEngine::SpinLock s_SpinLock;
 	inline static bool	s_ShouldReset = false;
 };
