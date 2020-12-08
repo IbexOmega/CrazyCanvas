@@ -42,6 +42,8 @@ namespace LambdaEngine
 			uint32 subImageCount,
 			bool backBufferBound) override final;
 
+		virtual void UpdatePushConstants(const void* pData, uint32 dataSize) override final;
+
 		virtual void Render(
 			uint32 modFrameIndex,
 			uint32 backBufferIndex,
@@ -71,6 +73,8 @@ namespace LambdaEngine
 		bool m_Initialized = false;
 		uint32 m_ModFrameIndex = 0;
 		uint32 m_BackBufferCount = 0;
+
+		byte m_PushConstantData[MAX_PUSH_CONSTANT_SIZE];
 
 		CommandAllocator** m_ppCommandAllocators = nullptr;
 		CommandList** m_ppCommandLists = nullptr;

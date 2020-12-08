@@ -64,7 +64,8 @@ layout(binding = 16,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	
 
 layout(push_constant) uniform ReflectionSettings
 {
-	layout(offset = 0) int SPP;
+	int GlossyEnabled;
+	int SPP;
 } pc_ReflectionSettings;
 
 #include "../MeshPaintHelper.glsl"

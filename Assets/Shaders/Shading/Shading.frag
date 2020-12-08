@@ -36,6 +36,12 @@ layout(binding = 11, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_BRDF_PDF;
 
 layout(location = 0) out vec4 out_Color;
 
+layout(push_constant) uniform ReflectionSettings
+{
+	int GlossyEnabled;
+	int SPP;
+} pc_ReflectionSettings;
+
 void main()
 {
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
@@ -139,7 +145,7 @@ void main()
 		
 		vec3 ambient;
 
-		if (aoRoughMetalValid.g <= REFLECTION_REJECT_THRESHOLD)
+		if (aoRoughMetalValid.g <= mix(SPECULAR_REFLECTION_REJECT_THRESHOLD, GLOSSY_REFLECTION_REJECT_THRESHOLD, float(pc_ReflectionSettings.GlossyEnabled)))
 		{
 			vec3 reflectionColor = texture(u_Reflections, in_TexCoord).rgb;
 			vec4 BRDF_PDF = texture(u_BRDF_PDF, in_TexCoord);

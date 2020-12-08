@@ -503,16 +503,31 @@ namespace LambdaEngine
 		{
 			struct
 			{
+				int32 GlossyEnabled;
 				int32 SPP;
 			} rayTracingPushConstant;
 
+			rayTracingPushConstant.GlossyEnabled = int32(EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS));
 			rayTracingPushConstant.SPP = EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP);
 
 			PushConstantsUpdate pushContantUpdate = {};
-			pushContantUpdate.RenderStageName	= "RAY_TRACING";
-			pushContantUpdate.pData				= &rayTracingPushConstant;
-			pushContantUpdate.DataSize			= sizeof(rayTracingPushConstant);
-			RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushContantUpdate);
+			pushContantUpdate.pData = &rayTracingPushConstant;
+			pushContantUpdate.DataSize = sizeof(rayTracingPushConstant);
+
+			{
+				pushContantUpdate.RenderStageName = "RAY_TRACING";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
+
+			{
+				pushContantUpdate.RenderStageName = "SHADING_PASS";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
+
+			{
+				pushContantUpdate.RenderStageName = "REFLECTIONS_DENOISE_PASS";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
 		}
 
 		UpdateBuffers();

@@ -217,8 +217,18 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
-	//SPP
-	EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
+	// Glossy
+	{
+		//Enabled
+		Noesis::CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<CheckBox>("GlossyReflectionsCheckBox");
+		bool glossyEnabled = pGlossyReflectionsCheckbox->GetIsChecked().GetValue();
+		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, glossyEnabled);
+
+		//SPP
+		EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
+
+		ChangeGlossySettings(glossyEnabled, m_NewReflectionsSPP);
+	}
 
 	EngineConfig::WriteToFile();
 
@@ -232,19 +242,10 @@ void MainMenuGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, co
 	//FOV
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
 
-	//SPP
-	struct
-	{
-		int32 SPP;
-	} rayTracingPushConstant;
-
-	rayTracingPushConstant.SPP = EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP);
-
-	PushConstantsUpdate pushContantUpdate = {};
-	pushContantUpdate.RenderStageName	= "RAY_TRACING";
-	pushContantUpdate.pData				= &rayTracingPushConstant;
-	pushContantUpdate.DataSize			= sizeof(rayTracingPushConstant);
-	RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushContantUpdate);
+	//Glossy
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
 
 	OnButtonBackClick(pSender, args);
 }
@@ -285,18 +286,9 @@ void MainMenuGUI::OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, 
 
 	m_NewReflectionsSPP = int32(pReflectionsSPPSlider->GetValue());
 
-	struct
-	{
-		int32 SPP;
-	} rayTracingPushConstant;
-
-	rayTracingPushConstant.SPP = m_NewReflectionsSPP;
-
-	PushConstantsUpdate pushContantUpdate = {};
-	pushContantUpdate.RenderStageName	= "RAY_TRACING";
-	pushContantUpdate.pData				= &rayTracingPushConstant;
-	pushContantUpdate.DataSize			= sizeof(rayTracingPushConstant);
-	RenderSystem::GetInstance().GetRenderGraph()->UpdatePushConstants(&pushContantUpdate);
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		m_NewReflectionsSPP);
 }
 
 /*
@@ -377,9 +369,13 @@ void MainMenuGUI::SetDefaultSettings()
 	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
 	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
 
+	//Set initial Glossy Toggle
+	CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<CheckBox>("GlossyReflectionsCheckBox");
+	pGlossyReflectionsCheckbox->SetIsChecked(EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS));
+
 	//Set initial SPP
 	Noesis::Slider* pReflectionsSPPSlider = FrameworkElement::FindName<Slider>("ReflectionsSPPSlider");
-	pReflectionsSPPSlider->SetValue(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
+	pReflectionsSPPSlider->SetValue(float32(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP)));
 
 	SetDefaultKeyBindings();
 

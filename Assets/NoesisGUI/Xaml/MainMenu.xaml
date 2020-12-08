@@ -81,7 +81,18 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Mesh Shader" Foreground="White" FontSize="29.333" />
-                <CheckBox x:Name="MeshShaderCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+                <CheckBox x:Name="MeshShaderCheckBox" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" />
+            </Grid>
+
+            <!--Glossy Toggle-->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <Label Content="Glossy Reflections" Foreground="White" FontSize="29.333" />
+                <CheckBox x:Name="GlossyReflectionsCheckBox" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" />
             </Grid>
 
             <!--Reflections SPP-->
@@ -105,7 +116,7 @@
                 </Grid.ColumnDefinitions>
 
                 <Label Content="Fullscreen" Foreground="White" FontSize="29.333" />
-                <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+                <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" />
             </Grid>
 
             <!--Volume-->

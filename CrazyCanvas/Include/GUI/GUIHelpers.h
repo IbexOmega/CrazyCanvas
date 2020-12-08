@@ -14,6 +14,8 @@
 #include "Engine/EngineConfig.h"
 #include "Rendering/RenderAPI.h"
 
+#include "Rendering/RenderGraph.h"
+
 FORCEINLINE void AddColumnDefinition(Noesis::ColumnDefinitionCollection* pColumnCollection, float width, Noesis::GridUnitType unit)
 {
 	using namespace Noesis;
@@ -95,4 +97,39 @@ FORCEINLINE void EnablePlaySessionsRenderstages()
 
 	if (rayTracingEnabled)
 		rs.SetRenderStageSleeping("RAY_TRACING",					false);
+}
+
+FORCEINLINE void ChangeGlossySettings(bool glossyEnabled, int32 spp)
+{
+	using namespace LambdaEngine;
+	RenderSystem& rs = RenderSystem::GetInstance();
+	RenderGraph* pRenderGraph = rs.GetRenderGraph();
+
+	struct
+	{
+		int32 GlossyEnabled;
+		int32 SPP;
+	} rayTracingPushConstant;
+
+	rayTracingPushConstant.GlossyEnabled	= int32(glossyEnabled);
+	rayTracingPushConstant.SPP				= spp;
+
+	PushConstantsUpdate pushContantUpdate = {};
+	pushContantUpdate.pData				= &rayTracingPushConstant;
+	pushContantUpdate.DataSize			= sizeof(rayTracingPushConstant);
+
+	{
+		pushContantUpdate.RenderStageName = "RAY_TRACING";
+		pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+	}
+
+	{
+		pushContantUpdate.RenderStageName = "SHADING_PASS";
+		pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+	}
+
+	{
+		pushContantUpdate.RenderStageName = "REFLECTIONS_DENOISE_PASS";
+		pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+	}
 }

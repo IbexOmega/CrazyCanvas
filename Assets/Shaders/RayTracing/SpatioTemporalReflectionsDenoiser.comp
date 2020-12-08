@@ -18,6 +18,12 @@ layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferVelocity
 layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferGeometricNormal;
 layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferPrevGeometricNormal;
 
+layout(push_constant) uniform ReflectionSettings
+{
+	int GlossyEnabled;
+	int SPP;
+} pc_ReflectionSettings;
+
 float ValidSample(ivec2 iImageDim, ivec2 reprojCoord, vec3 normal, vec3 prevNormal, float fwidthNormal)
 {
     bool result = true;
@@ -32,12 +38,12 @@ float ValidSample(ivec2 iImageDim, ivec2 reprojCoord, vec3 normal, vec3 prevNorm
 
 int RoughnessToKernelSize(float roughness)
 {
-    return int(ceil(mix(BRDF_DENOISING_MIN_KERNEL_RADIUS, BRDF_DENOISING_MAX_KERNEL_RADIUS, roughness / REFLECTION_REJECT_THRESHOLD)));
+    return int(ceil(mix(BRDF_DENOISING_MIN_KERNEL_RADIUS, BRDF_DENOISING_MAX_KERNEL_RADIUS, roughness / GLOSSY_REFLECTION_REJECT_THRESHOLD)));
 }
 
 int RoughnessToTemporalHistoryLength(float roughness)
 {
-    return int(ceil(mix(1, TEMPORAL_REUSE_MAX_HISTORY_LENGTH, roughness / REFLECTION_REJECT_THRESHOLD)));
+    return int(ceil(mix(1, TEMPORAL_REUSE_MAX_HISTORY_LENGTH, roughness / GLOSSY_REFLECTION_REJECT_THRESHOLD)));
 }
 
 void main()
@@ -54,8 +60,10 @@ void main()
     vec4 current_Radiance_Valid = texelFetch(u_Reflections, p, 0);
     float validSample = current_Radiance_Valid.a;
     float historyLength = validSample;
-
+    
 #if SPATIAL_BRDF_DENOISING_ENABLED || TEMPORAL_REUSE_ENABLED
+    if (pc_ReflectionSettings.GlossyEnabled == 1)
+    {
         //Sample GBuffer
         vec4 velocityfWidthNormalSample  = texelFetch(u_GBufferVelocityfWidthNormal, p, 0);
         vec2 velocity       = velocityfWidthNormalSample.xy;
@@ -64,86 +72,87 @@ void main()
         vec3 currentGeometricNormal     = OctToDir(texelFetch(u_GBufferGeometricNormal, p, 0).xy);
         float roughness = texture(u_GBufferAORoughMetalValid, texCoords).g;
 
-    if (validSample > 0.0f)
-    {
-        #if SPATIAL_BRDF_DENOISING_ENABLED 
-            vec3 weightSum = vec3(0.0f);
+        if (validSample > 0.0f)
+        {
+            #if SPATIAL_BRDF_DENOISING_ENABLED 
+                vec3 weightSum = vec3(0.0f);
 
-            vec3 minRadiance = current_Radiance_Valid.rgb;
-            vec3 maxRadiance = current_Radiance_Valid.rgb;
+                vec3 minRadiance = current_Radiance_Valid.rgb;
+                vec3 maxRadiance = current_Radiance_Valid.rgb;
 
-            const int kernelRadius = RoughnessToKernelSize(roughness);
+                const int kernelRadius = RoughnessToKernelSize(roughness);
 
-            vec4 orig_brdf_pdf = texelFetch(u_BRDF_PDF, p, 0);
+                vec4 orig_brdf_pdf = texelFetch(u_BRDF_PDF, p, 0);
 
-            for (int y = -kernelRadius; y <= kernelRadius; y++)
-            {
-                for (int x = -kernelRadius; x <= kernelRadius; x++)
+                for (int y = -kernelRadius; y <= kernelRadius; y++)
                 {
-                    //Id both 0, we are at center
-                    if (x == 0 && y == 0)
+                    for (int x = -kernelRadius; x <= kernelRadius; x++)
                     {
-                        vec3 weight = orig_brdf_pdf.rgb / orig_brdf_pdf.a;
-                        current_Radiance_Valid.rgb += current_Radiance_Valid.rgb * weight;
-                        weightSum += weight;
-                    }
-                    else
-                    {
-                        ivec2 pp = ivec2(p.x + x, p.y + y);
-                        vec3 neighborGeometricNormal     = OctToDir(texelFetch(u_GBufferGeometricNormal, pp, 0).xy);
-
-                        //Check if sample is valid
-                        float validReprojection = ValidSample(BLUR_IMAGE_SIZE, pp, currentGeometricNormal, neighborGeometricNormal, fwidthNormal);
-
-                        if (validReprojection > 0.0f)
+                        //Id both 0, we are at center
+                        if (x == 0 && y == 0)
                         {
-                            vec4 local_brdf_pdf = texelFetch(u_BRDF_PDF, pp, 0);
-                            vec3 local_Radiance = texelFetch(u_Reflections, pp, 0).rgb;
-
-                            minRadiance = min(minRadiance, local_Radiance);
-                            maxRadiance = max(maxRadiance, local_Radiance);
-
-                            vec3 weight = local_brdf_pdf.rgb / orig_brdf_pdf.a;
-                            current_Radiance_Valid.rgb += local_Radiance * weight;
+                            vec3 weight = orig_brdf_pdf.rgb / orig_brdf_pdf.a;
+                            current_Radiance_Valid.rgb += current_Radiance_Valid.rgb * weight;
                             weightSum += weight;
+                        }
+                        else
+                        {
+                            ivec2 pp = ivec2(p.x + x, p.y + y);
+                            vec3 neighborGeometricNormal     = OctToDir(texelFetch(u_GBufferGeometricNormal, pp, 0).xy);
+
+                            //Check if sample is valid
+                            float validReprojection = ValidSample(BLUR_IMAGE_SIZE, pp, currentGeometricNormal, neighborGeometricNormal, fwidthNormal);
+
+                            if (validReprojection > 0.0f)
+                            {
+                                vec4 local_brdf_pdf = texelFetch(u_BRDF_PDF, pp, 0);
+                                vec3 local_Radiance = texelFetch(u_Reflections, pp, 0).rgb;
+
+                                minRadiance = min(minRadiance, local_Radiance);
+                                maxRadiance = max(maxRadiance, local_Radiance);
+
+                                vec3 weight = local_brdf_pdf.rgb / orig_brdf_pdf.a;
+                                current_Radiance_Valid.rgb += local_Radiance * weight;
+                                weightSum += weight;
+                            }
                         }
                     }
                 }
-            }
-            
-            current_Radiance_Valid.rgb /= max(weightSum, vec3(1.0f));
-        #else
-            vec3 minRadiance = vec3(0.0f);
-            vec3 maxRadiance = vec3(1.0f / 0.0f);
-        #endif
+                
+                current_Radiance_Valid.rgb /= max(weightSum, vec3(1.0f));
+            #else
+                vec3 minRadiance = vec3(0.0f);
+                vec3 maxRadiance = vec3(1.0f / 0.0f);
+            #endif
 
-        #if TEMPORAL_REUSE_ENABLED
-            vec2 reprojTexCoords    = texCoords - velocity;
-            ivec2 reprojP           = ivec2(reprojTexCoords * vec2(BLUR_IMAGE_SIZE));
+            #if TEMPORAL_REUSE_ENABLED
+                vec2 reprojTexCoords    = texCoords - velocity;
+                ivec2 reprojP           = ivec2(reprojTexCoords * vec2(BLUR_IMAGE_SIZE));
 
-            vec3 prevGeometricNormal     = OctToDir(texelFetch(u_GBufferPrevGeometricNormal, reprojP, 0).xy);
+                vec3 prevGeometricNormal     = OctToDir(texelFetch(u_GBufferPrevGeometricNormal, reprojP, 0).xy);
 
-            //Check if reprojection is valid
-            float validReprojection = ValidSample(BLUR_IMAGE_SIZE, reprojP, currentGeometricNormal, prevGeometricNormal, fwidthNormal);
+                //Check if reprojection is valid
+                float validReprojection = ValidSample(BLUR_IMAGE_SIZE, reprojP, currentGeometricNormal, prevGeometricNormal, fwidthNormal);
 
-            //Sample Prev Radiance
-            vec4 prev_Radiance_HistoryLength = texture(u_PrevDenoisedReflections, reprojTexCoords);
+                //Sample Prev Radiance
+                vec4 prev_Radiance_HistoryLength = texture(u_PrevDenoisedReflections, reprojTexCoords);
 
-            //Clamp Prev Radiance to neighbors in Color Space
-            prev_Radiance_HistoryLength.rgb = clamp(prev_Radiance_HistoryLength.rgb, minRadiance, maxRadiance);
+                //Clamp Prev Radiance to neighbors in Color Space
+                prev_Radiance_HistoryLength.rgb = clamp(prev_Radiance_HistoryLength.rgb, minRadiance, maxRadiance);
 
-            //Calculate new History Length
-            float maxHistoryLength = RoughnessToTemporalHistoryLength(roughness);
-            float historyStep = 1.0f / maxHistoryLength;
-            historyLength = min(validReprojection * validSample * prev_Radiance_HistoryLength.a + historyStep, 1.0f);
+                //Calculate new History Length
+                float maxHistoryLength = RoughnessToTemporalHistoryLength(roughness);
+                float historyStep = 1.0f / maxHistoryLength;
+                historyLength = min(validReprojection * validSample * prev_Radiance_HistoryLength.a + historyStep, 1.0f);
 
-            //Mix accumulated and new information
-            current_Radiance_Valid.rgb = mix(
-                current_Radiance_Valid.rgb,
-                prev_Radiance_HistoryLength.rgb,
-                historyLength / (historyLength + historyStep));
+                //Mix accumulated and new information
+                current_Radiance_Valid.rgb = mix(
+                    current_Radiance_Valid.rgb,
+                    prev_Radiance_HistoryLength.rgb,
+                    historyLength / (historyLength + historyStep));
 
-        #endif
+            #endif
+        }
     }
 #endif
 

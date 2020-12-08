@@ -362,20 +362,27 @@ namespace LambdaEngine
 			if (renderStageIt != m_RenderStageMap.end())
 			{
 				RenderStage* pRenderStage = &m_pRenderStages[renderStageIt->second];
-
-				if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+				
+				if (pRenderStage->UsesCustomRenderer)
 				{
-					if (pRenderStage->ExternalPushConstants.pData == nullptr)
-					{
-						pRenderStage->ExternalPushConstants.pData = DBG_NEW byte[pRenderStage->ExternalPushConstants.MaxDataSize];
-					}
-
-					memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
-					pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+					pRenderStage->pCustomRenderer->UpdatePushConstants(pDesc->pData, pDesc->DataSize);
 				}
 				else
 				{
-					LOG_ERROR("Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+					if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+					{
+						if (pRenderStage->ExternalPushConstants.pData == nullptr)
+						{
+							pRenderStage->ExternalPushConstants.pData = DBG_NEW byte[pRenderStage->ExternalPushConstants.MaxDataSize];
+						}
+
+						memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
+						pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+					}
+					else
+					{
+						LOG_ERROR("Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+					}
 				}
 			}
 			else

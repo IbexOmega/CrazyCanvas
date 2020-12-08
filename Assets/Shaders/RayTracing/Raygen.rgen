@@ -149,7 +149,7 @@ void main()
 	float roughness_start         = aoRoughMetalValid.g;
 	float valid_start             = aoRoughMetalValid.a;
 
-	if (valid_start < 1.0f || roughness_start > REFLECTION_REJECT_THRESHOLD)
+	if (valid_start < 1.0f || roughness_start > mix(SPECULAR_REFLECTION_REJECT_THRESHOLD, GLOSSY_REFLECTION_REJECT_THRESHOLD, float(pc_ReflectionSettings.GlossyEnabled)))
 	{
 		imageStore(u_Reflections, pixelCoords, vec4(0.0f));
 		imageStore(u_BRDF_PDF, pixelCoords, vec4(0.0f));
@@ -165,6 +165,14 @@ void main()
 	float sampledDepth      	= texelFetch(u_GBufferDepthStencil, pixelCoords, 0).r;
 	SPositions positions_start 	= CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
 
+	//Define Sample Variables
+	const uint randomSeed 			= perFrameBuffer.RandomSeed + pixelCoords.x * gl_LaunchSizeEXT.x + pixelCoords.y;
+	const uvec3 randomSeedPoint 	= uvec3(randomSeed, randomSeed >> 10, randomSeed >> 20);
+	const ivec3 blueNoiseSize 		= textureSize(u_BlueNoiseLUTs, 0);	
+	const uint numSampleVariatesPerBounce	= 4;
+	const uint numSampleVariatesPerSample 	= (MAX_BOUNCES + 1) * numSampleVariatesPerBounce;
+	const uint numSampleVariatesPerFrame	= pc_ReflectionSettings.SPP * numSampleVariatesPerSample;
+
 	//Sample GBuffer
 	vec3 normal_start       = UnpackNormal(texelFetch(u_GBufferCompactNormal, pixelCoords, 0).xyz);
 
@@ -175,36 +183,34 @@ void main()
 	//Calculate a mirror reflection direction
 	vec3 mirrorReflDir = reflect(-w_ow_start, normal_start);
 
-#if !GLOSSY_REFLECTIONS_ENABLED
-	imageStore(u_BRDF_PDF, pixelCoords, vec4(1.0f));
-#else
-	//Define Sample Variables
-	const uint randomSeed 			= perFrameBuffer.RandomSeed + pixelCoords.x * gl_LaunchSizeEXT.x + pixelCoords.y;
-	const uvec3 randomSeedPoint 	= uvec3(randomSeed, randomSeed >> 10, randomSeed >> 20);
-	const ivec3 blueNoiseSize 		= textureSize(u_BlueNoiseLUTs, 0);	
-	const uint numSampleVariatesPerBounce	= 4;
-	const uint numSampleVariatesPerSample 	= (MAX_BOUNCES + 1) * numSampleVariatesPerBounce;
-	const uint numSampleVariatesPerFrame	= pc_ReflectionSettings.SPP * numSampleVariatesPerSample;
+	vec3 albedo_start;
+	float n_dot_o_start;
+	vec3 F0_start;
 
-	vec3 albedo_start = texelFetch(u_GBufferAlbedo, pixelCoords, 0).rgb;
-	
-	float n_dot_o_start = max(dot(normal_start, w_ow_start), 0.001f);
-	vec3 F0_start 		= F0(albedo_start, metallic_start);
+	if (pc_ReflectionSettings.GlossyEnabled == 0)
+	{
+		imageStore(u_BRDF_PDF, pixelCoords, vec4(1.0f));
+	}
+	else
+	{
+		albedo_start 	= texelFetch(u_GBufferAlbedo, pixelCoords, 0).rgb;
+		n_dot_o_start 	= max(dot(normal_start, w_ow_start), 0.001f);
+		F0_start 		= F0(albedo_start, metallic_start);
 
-	//Eval f for perfect mirror reflection
-	SBxDFEval bxdfEvalStart = Eval_f(
-		w_ow_start, 
-		normal_start,
-		mirrorReflDir,
-		albedo_start,
-		roughness_start, 
-		metallic_start,
-		F0_start);
+		//Eval f for perfect mirror reflection
+		SBxDFEval bxdfEvalStart = Eval_f(
+			w_ow_start, 
+			normal_start,
+			mirrorReflDir,
+			albedo_start,
+			roughness_start, 
+			metallic_start,
+			F0_start);
 
-	//We don't use throughput for first bounce, it's applied when shading because it causes lots of noise when used for denoising
-	//Store evaluated f to be applied in shading (after denoising)
-	imageStore(u_BRDF_PDF, pixelCoords, vec4(bxdfEvalStart.f * n_dot_o_start, bxdfEvalStart.PDF));
-#endif
+		//We don't use throughput for first bounce, it's applied when shading because it causes lots of noise when used for denoising
+		//Store evaluated f to be applied in shading (after denoising)
+		imageStore(u_BRDF_PDF, pixelCoords, vec4(bxdfEvalStart.f * n_dot_o_start, bxdfEvalStart.PDF));
+	}
 
 	const uint 		rayFlags           	= gl_RayFlagsCullBackFacingTrianglesEXT;//gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
 	const uint 		cullMask           	= 0xFF;
@@ -222,30 +228,35 @@ void main()
 		vec3 l_o = vec3(0.0f);
 		vec3 throughput = vec3(1.0f);
 
-	#if !GLOSSY_REFLECTIONS_ENABLED
-		reflDir = mirrorReflDir;
-	#else	
-		uint baseSampleVariateIndex = s * numSampleVariatesPerSample;
+		uint baseSampleVariateIndex;
+		vec4 u_Surface_BRDF;
 
-		vec4 u_Surface_BRDF = vec4( 	GenerateSample(baseSampleVariateIndex + 0, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
-										GenerateSample(baseSampleVariateIndex + 1, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
-										GenerateSample(baseSampleVariateIndex + 2, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
-										GenerateSample(baseSampleVariateIndex + 3, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize)); 
-		
-		//Sample f
-		SBxDFSample bxdfSampleStart = Sample_f(
-			w_ow_start, 
-			normal_start, 
-			n_dot_o_start, 
-			albedo_start,
-			roughness_start, 
-			metallic_start,
-			F0_start, 
-			u_Surface_BRDF);
+		if (pc_ReflectionSettings.GlossyEnabled == 0)
+		{
+			reflDir = mirrorReflDir;
+		}
+		else
+		{
+			baseSampleVariateIndex = s * numSampleVariatesPerSample;
 
-		reflDir = bxdfSampleStart.w_iw;
+			u_Surface_BRDF = vec4( 	GenerateSample(baseSampleVariateIndex + 0, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+											GenerateSample(baseSampleVariateIndex + 1, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+											GenerateSample(baseSampleVariateIndex + 2, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+											GenerateSample(baseSampleVariateIndex + 3, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize)); 
+			
+			//Sample f
+			SBxDFSample bxdfSampleStart = Sample_f(
+				w_ow_start, 
+				normal_start, 
+				n_dot_o_start, 
+				albedo_start,
+				roughness_start, 
+				metallic_start,
+				F0_start, 
+				u_Surface_BRDF);
 
-	#endif
+			reflDir = bxdfSampleStart.w_iw;
+		}
 
 		s_PrimaryPayload.HitPosition	= positions_start.WorldPos;
 		s_PrimaryPayload.Normal		    = normal_start;
@@ -271,52 +282,51 @@ void main()
 				break;
 			}
 
-			bool rejectNextReflection = (s_PrimaryPayload.Roughness > REFLECTION_REJECT_THRESHOLD);
-
-	#if !GLOSSY_REFLECTIONS_ENABLED
-			//Glossy Disabled, return if not Mirror Reflection, and reflect around normal instead of sampling BRDF
-			if (rejectNextReflection)
-				break;
-
-			reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
-	#else
-
-			if (s_PrimaryPayload.Roughness > 0.025f)
+			if (pc_ReflectionSettings.GlossyEnabled == 0)
 			{
-				//We brake if the surface we hit is rough, we only allow this for first bounce
-				break;
+				//Glossy Disabled, return if not Mirror Reflection, and reflect around normal instead of sampling BRDF
+				if (s_PrimaryPayload.Roughness > SPECULAR_REFLECTION_REJECT_THRESHOLD)
+					break;
+
+				reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
 			}
+			else
+			{
+				if (s_PrimaryPayload.Roughness > 0.025f)
+				{
+					//We brake if the surface we hit is rough, we only allow this for first bounce
+					break;
+				}
 
-			//Treat the surface as a mirror reflection if we pass the above check
-			s_PrimaryPayload.Roughness = 0.0f;
+				//Treat the surface as a mirror reflection if we pass the above check
+				s_PrimaryPayload.Roughness = 0.0f;
 
-			uint baseBounceSampleVariateIndex = baseSampleVariateIndex + b * numSampleVariatesPerBounce;
-			u_Surface_BRDF = vec4( 	GenerateSample(baseBounceSampleVariateIndex + 0, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
-									GenerateSample(baseBounceSampleVariateIndex + 1, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
-									GenerateSample(baseBounceSampleVariateIndex + 2, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
-									GenerateSample(baseBounceSampleVariateIndex + 3, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize)); 
+				uint baseBounceSampleVariateIndex = baseSampleVariateIndex + b * numSampleVariatesPerBounce;
+				u_Surface_BRDF = vec4( 	GenerateSample(baseBounceSampleVariateIndex + 0, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+										GenerateSample(baseBounceSampleVariateIndex + 1, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+										GenerateSample(baseBounceSampleVariateIndex + 2, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+										GenerateSample(baseBounceSampleVariateIndex + 3, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize)); 
 
-			vec3 w_ow 		= -reflDir;
-			vec3 w_nw 		= s_PrimaryPayload.Normal;
-			float n_dot_o 	= max(dot(w_nw, w_ow), 0.001f);
-			vec3 F0 		= F0(s_PrimaryPayload.Albedo, s_PrimaryPayload.Metallic);
+				vec3 w_ow 		= -reflDir;
+				vec3 w_nw 		= s_PrimaryPayload.Normal;
+				float n_dot_o 	= max(dot(w_nw, w_ow), 0.001f);
+				vec3 F0 		= F0(s_PrimaryPayload.Albedo, s_PrimaryPayload.Metallic);
 
-			SBxDFSample bxdfSample = Sample_f(
-				w_ow, 
-				w_nw, 
-				n_dot_o, 
-				s_PrimaryPayload.Albedo,
-				s_PrimaryPayload.Roughness, 
-				s_PrimaryPayload.Metallic,
-				F0, 
-				u_Surface_BRDF);
+				SBxDFSample bxdfSample = Sample_f(
+					w_ow, 
+					w_nw, 
+					n_dot_o, 
+					s_PrimaryPayload.Albedo,
+					s_PrimaryPayload.Roughness, 
+					s_PrimaryPayload.Metallic,
+					F0, 
+					u_Surface_BRDF);
 
-			reflDir = bxdfSample.w_iw;
+				reflDir = bxdfSample.w_iw;
 
-			//Update Throughput
-			throughput *= bxdfSample.f * n_dot_o / bxdfSample.PDF;
-	#endif
-
+				//Update Throughput
+				throughput *= bxdfSample.f * n_dot_o / bxdfSample.PDF;
+			}
 		}
 		
 		if (shadeOutput)
@@ -341,11 +351,12 @@ void main()
 			l_o = throughput * s_PrimaryPayload.Albedo;
 		}
 
-	#if !GLOSSY_REFLECTIONS_ENABLED
-		//Fake energy loss on mirror bounce
+		if (pc_ReflectionSettings.GlossyEnabled == 0)
+		{
+			//Fake energy loss on mirror bounce
 			float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
 			l_o *= bounceDarkening;
-	#endif
+		}
 
 		l_o_tot += l_o;
 	}

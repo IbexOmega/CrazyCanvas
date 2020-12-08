@@ -80,7 +80,6 @@ void main()
         }
 
     #endif
-
 #else
     filteredColor = center_Radiance_Valid.rgb;
 #endif
