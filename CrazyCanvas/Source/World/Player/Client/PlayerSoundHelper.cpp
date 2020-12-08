@@ -44,5 +44,20 @@ void PlayerSoundHelper::HandleMovementSound(
 				return;
 			}
 		}
+
+		LOG_WARNING("Velocity: %f", velocityComponent.Velocity.y);
+		if (velocityComponent.Velocity.y < -0.01f)
+		{
+			if (auto stepSoundInstanceIt = audibleComponent.SoundInstances3D.find("Landing");
+				stepSoundInstanceIt != audibleComponent.SoundInstances3D.end())
+			{
+				stepSoundInstanceIt->second->Play();
+			}
+			else
+			{
+				LOG_ERROR("[PlayerSoundHelper]: Sound effect for Jump could not be found in player audible component");
+				return;
+			}
+		}
 	}
 }
