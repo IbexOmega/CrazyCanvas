@@ -11,6 +11,7 @@
 #include <NoesisGUI/Include/NsGui/TextBlock.h>
 #include <NoesisGUI/Include/NsGui/UserControl.h>
 #include <NoesisGUI/Include/NsGui/Button.h>
+#include <NoesisGUI/Include/NsGui/ComboBox.h>
 
 #include "Math/Math.h"
 
@@ -53,6 +54,7 @@ private:
 
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
+	void SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption);
 	void SetRenderStagesInactive();
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
