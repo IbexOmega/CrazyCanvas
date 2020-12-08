@@ -76,7 +76,7 @@ void main()
 			if(entity == u_PC.EntityID)
 			{
 				// TODO: Do this to the vertex normal also!
-				wp = vec3(vertex.Tangent.x, vertex.TexCoord.z, vertex.TexCoord.w);
+				wp = vec3(vertex.Tangent.w, vertex.TexCoord.z, vertex.TexCoord.w);
 				targetPosition = paintData.LocalPositionXYZPlayerW.xyz;
 				direction = normalize(paintData.LocalDirection.xyz);
 			}
