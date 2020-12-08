@@ -132,8 +132,8 @@ namespace LambdaEngine
 			}
 		}
 
-		EventQueue::RegisterEventHandler(this, &AARenderer::OnWindowResized);
 		EventQueue::RegisterEventHandler(this, &AARenderer::OnKeyPressed);
+		EventQueue::RegisterEventHandler(this, &AARenderer::OnWindowResized);
 		return true;
 	}
 
@@ -481,6 +481,7 @@ namespace LambdaEngine
 		}
 		else if (resourceName == "BACK_BUFFER_TEXTURE")
 		{
+			m_BackBuffers.Clear();
 			for (uint32 i = 0; i < imageCount; i++)
 			{
 				TSharedRef<TextureView>	backbufferView	= MakeSharedRef(const_cast<TextureView*>(ppPerImageTextureViews[i]));
@@ -537,9 +538,9 @@ namespace LambdaEngine
 			Texture* pBackBuffer = const_cast<Texture*>(backBuffer.Get());
 			commandList->BlitTexture(
 				m_IntermediateOutput.Get(), 
-				ETextureState::TEXTURE_STATE_COPY_SRC, 
+				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
 				pBackBuffer, 
-				ETextureState::TEXTURE_STATE_COPY_DST, 
+				ETextureState::TEXTURE_STATE_RENDER_TARGET, 
 				EFilterType::FILTER_TYPE_NEAREST);
 		}
 		else
@@ -579,11 +580,10 @@ namespace LambdaEngine
 				PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_TAAState);
 				commandList->BindGraphicsPipeline(pPipelineState);
 
-				commandList->BindDescriptorSetGraphics(m_TAABufferDescriptorSets[modFrameIndex].Get(), m_TAALayout.Get(), 0);
-				
 				const uint32 historyIndex		= (m_Tick & 1);
 				const uint32 descriptorSetIndex = (modFrameIndex * 2) + historyIndex;
-				commandList->BindDescriptorSetGraphics(m_TAATextureDescriptorSets[modFrameIndex].Get(), m_TAALayout.Get(), 1);
+				commandList->BindDescriptorSetGraphics(m_TAATextureDescriptorSets[descriptorSetIndex].Get(), m_TAALayout.Get(), 1);
+				commandList->BindDescriptorSetGraphics(m_TAABufferDescriptorSets[modFrameIndex].Get(), m_TAALayout.Get(), 0);
 			}
 			else if (m_AAMode == EAAMode::AAMODE_FXAA)
 			{
@@ -601,8 +601,10 @@ namespace LambdaEngine
 			beginRenderPassDesc.Width			= width;
 			beginRenderPassDesc.Height			= height;
 			beginRenderPassDesc.Flags			= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-			beginRenderPassDesc.pClearColors	= &clearColorDesc;
-			beginRenderPassDesc.ClearColorCount	= 1;
+
+			ClearColorDesc clearColors[] = { clearColorDesc, clearColorDesc };
+			beginRenderPassDesc.pClearColors	= clearColors;
+			beginRenderPassDesc.ClearColorCount	= 2;
 			beginRenderPassDesc.Offset.x		= 0;
 			beginRenderPassDesc.Offset.y		= 0;
 
@@ -650,7 +652,29 @@ namespace LambdaEngine
 					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
 					false);
 			}
-			
+
+			if (m_VelocityView)
+			{
+				taaTextureSet->WriteTextureDescriptors(
+					&m_VelocityView,
+					Sampler::GetLinearSamplerToBind(),
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					1, 1,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					false);
+			}
+
+			if (m_DepthView)
+			{
+				taaTextureSet->WriteTextureDescriptors(
+					&m_DepthView,
+					Sampler::GetLinearSamplerToBind(),
+					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+					2, 1,
+					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+					false);
+			}
+
 			if (!m_TAAHistoryViews.IsEmpty())
 			{
 				const uint32 index = i;
@@ -663,32 +687,10 @@ namespace LambdaEngine
 						&taaHistoryView,
 						Sampler::GetLinearSamplerToBind(),
 						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-						1, 1, 
-						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, 
+						3, 1,
+						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
 						false);
 				}
-			}
-
-			if (m_VelocityView)
-			{
-				taaTextureSet->WriteTextureDescriptors(
-					&m_VelocityView,
-					Sampler::GetLinearSamplerToBind(),
-					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-					2, 1,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-					false);
-			}
-
-			if (m_DepthView)
-			{
-				taaTextureSet->WriteTextureDescriptors(
-					&m_DepthView,
-					Sampler::GetLinearSamplerToBind(),
-					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-					3, 1,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-					false);
 			}
 		}
 
@@ -740,7 +742,7 @@ namespace LambdaEngine
 		historyBuffViewDesc.ArrayCount		= 1;
 		historyBuffViewDesc.ArrayIndex		= 0;
 		historyBuffViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		historyBuffViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+		historyBuffViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
 		historyBuffViewDesc.Format			= historyBuffDesc.Format;
 		historyBuffViewDesc.Miplevel		= 0;
 		historyBuffViewDesc.MiplevelCount	= 1;
@@ -764,9 +766,10 @@ namespace LambdaEngine
 
 			commandList->TransitionBarrier(
 				taaHistory.Get(), 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_TOP, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_BOTTOM, 
-				0, 0, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_ALL_STAGES, 
+				FPipelineStageFlag::PIPELINE_STAGE_FLAG_ALL_STAGES,
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_SHADER_READ, 
+				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_SHADER_READ,
 				ETextureState::TEXTURE_STATE_UNKNOWN,
 				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
 
@@ -793,22 +796,21 @@ namespace LambdaEngine
 
 		return true;
 	}
-
+	
 	bool AARenderer::OnWindowResized(const WindowResizedEvent& windowResizedEvent)
 	{
-		// Wait for graphicsqueue
 		RenderAPI::GetGraphicsQueue()->Flush();
 
-		// Resize buffers
+		// Size
 		m_Width		= windowResizedEvent.Width;
 		m_Height	= windowResizedEvent.Height;
 
+		// Init history textures at the same time
 		InitHistoryTextures();
 		WriteDescriptorSets();
-
-		return true;
+		return false;
 	}
-	
+
 	bool AARenderer::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
 	{
 		if (keyPressedEvent.Key == EKey::KEY_KEYPAD_1)

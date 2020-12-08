@@ -11,7 +11,8 @@ layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_Depth;
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_HistoryBuffer;
 
 layout(location = 0) in vec2 in_TexCoord;
-layout(location = 0) out vec4 out_Color;
+layout(location = 0) out vec4 out_History;
+layout(location = 1) out vec4 out_Color;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer 
 {
@@ -297,5 +298,6 @@ void main()
 	currentSample.a = weight;
 #endif
 
-	out_Color = currentSample;
+	out_History	= currentSample;
+	out_Color 	= currentSample;
 }
