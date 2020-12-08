@@ -6,6 +6,7 @@
 #include "Networking/API/IPacketListener.h"
 
 #include "Lobby/Player.h"
+#include "Lobby/PlayerManagerServer.h"
 
 #define VALIDATE_PACKET_TYPE(T) ASSERT_MSG(T::GetType() != 0, "Packet type [%s] not registered!", #T)
 
@@ -25,6 +26,10 @@ public:
 
 	template<class T>
 	static bool SendToAllPlayers(const T& packet, LambdaEngine::IPacketListener* pListener = nullptr, const Player* pPlayer = nullptr);
+
+	// Sends a package to all teammates of the given player, except the player himself
+	template<class T>
+	static bool SendToAllTeammatesOfPlayer(const Player* pExcludePlayer, const T& packet, LambdaEngine::IPacketListener* pListener = nullptr);
 
 	static void SetMaxClients(uint8 clients);
 	static void SetIgnoreNewClients(bool ignore);
@@ -64,4 +69,31 @@ bool ServerHelper::SendToAllPlayers(const T& packet, LambdaEngine::IPacketListen
 	VALIDATE_PACKET_TYPE(T)
 	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
 	return pServer->SendReliableStructBroadcast<T>(packet, T::GetType(), pListener, pServer->GetClient(pExcludePlayer->GetUID()));
+}
+
+template<class T>
+bool ServerHelper::SendToAllTeammatesOfPlayer(const Player* pExcludePlayer, const T& packet, LambdaEngine::IPacketListener* pListener)
+{
+	VALIDATE_PACKET_TYPE(T)
+	LambdaEngine::TArray<const Player*> players;
+	PlayerManagerServer::GetPlayersOfTeam(players, pExcludePlayer->GetTeam());
+	LambdaEngine::ServerBase* pServer = LambdaEngine::ServerSystem::GetInstance().GetServer();
+
+	bool success = true;
+	for (const Player* pPlayer : players)
+	{
+		if (pPlayer != pExcludePlayer)
+		{
+			LambdaEngine::ClientRemoteBase* pClient = pServer->GetClient(pPlayer->GetUID());
+			if (pClient)
+			{
+				if (!Send<T>(pClient, packet, pListener))
+				{
+					success = false;
+				}
+			}
+		}
+	}
+
+	return success;
 }

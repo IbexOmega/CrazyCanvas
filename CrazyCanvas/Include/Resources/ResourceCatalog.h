@@ -46,7 +46,8 @@ public:
 	inline static GUID_Lambda WEAPON_SOUND_GUNFIRE_2D_GUID = GUID_NONE;
 	inline static GUID_Lambda WEAPON_SOUND_OUTOFAMMO_2D_GUID = GUID_NONE;
 
-	// Sounds 
-	inline static GUID_Lambda SOUND_EFFECT_SPLASH0_3D_GUID = GUID_NONE;
-	inline static GUID_Lambda SOUND_EFFECT_SPLASH1_2D_GUID = GUID_NONE;
+	// Sounds
+	inline static GUID_Lambda SOUND_EFFECT_SPLASH0_3D_GUID	= GUID_NONE;
+	inline static GUID_Lambda SOUND_EFFECT_SPLASH1_2D_GUID	= GUID_NONE;
+	inline static GUID_Lambda SOUND_EFFECT_PING				= GUID_NONE;
 };
