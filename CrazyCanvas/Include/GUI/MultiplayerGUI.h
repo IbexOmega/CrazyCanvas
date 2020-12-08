@@ -43,7 +43,6 @@ public:
 	void UpdateServerSaved(const ServerInfo& serverInfo);
 
 	const char* GetPlayerName() const;
-	bool HasHostedServer() const;
 
 private:
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
@@ -65,8 +64,7 @@ private:
 	Noesis::ListBox* m_pListBoxServersSaved;
 	Noesis::TextBox* m_pTextBoxAddress;
 	Noesis::TextBox* m_pTextBoxName;
-	
-	int32 m_ClientHostID;
+
 	MultiplayerState* m_pMulitplayerState;
 
 private:
@@ -77,8 +75,6 @@ private:
 	void NotiPopUpClose();
 
 	bool CheckServerSettings(const HostGameDescription& serverSettings);
-
-	bool StartUpServer(const std::string& commandLine);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 };
