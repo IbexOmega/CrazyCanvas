@@ -89,7 +89,7 @@ void main()
 			uint paintMode = paintData.PaintMode;
 			uint remoteMode = paintData.RemoteMode;
 
-			float valid = step(0.0f, dot(normal, -direction)); // Checks if looking from infront, else 0
+			float valid = 1.f;//step(0.0f, dot(normal, -direction)); // Checks if looking from infront, else 0
 			float len = abs(dot(targetPosToWorldPos, direction));
 			valid *= 1.0f - step(PAINT_DEPTH, len);
 			vec3 projectedPosition = targetPosition + len * direction;
