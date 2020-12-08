@@ -4,6 +4,7 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderAPI.h"
 #include "Multiplayer/ClientHelper.h"
@@ -16,7 +17,7 @@
 * MeshPaintHandler
 */
 
-LambdaEngine::TArray<MeshPaintHandler::UnwrapData> MeshPaintHandler::s_Collisions;
+LambdaEngine::TArray<MeshPaintHandler::PaintData> MeshPaintHandler::s_Collisions;
 LambdaEngine::SpinLock MeshPaintHandler::s_SpinLock;
 
 MeshPaintHandler::~MeshPaintHandler()
@@ -39,19 +40,19 @@ void MeshPaintHandler::Init()
 	// Create buffer
 	BufferDesc bufferDesc	= {};
 	bufferDesc.DebugName	= "Mesh Paint Handler Points Buffer";
-	bufferDesc.SizeInBytes	= sizeof(UnwrapData) * 10;
+	bufferDesc.SizeInBytes	= sizeof(PaintData) * 10;
 	bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 	bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 	m_pPointsBuffer			= RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 
 	{
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
-		UnwrapData dummyData = {};
+		PaintData dummyData = {};
 		dummyData.TargetPosition.w = 0.f;
 		for (uint32 i = 0; i < 10; i++)
 		{
-			uint64 step = uint64(i) * sizeof(UnwrapData);
-			memcpy(pBufferMapping + step, &dummyData, sizeof(UnwrapData));
+			uint64 step = uint64(i) * sizeof(PaintData);
+			memcpy(pBufferMapping + step, &dummyData, sizeof(PaintData));
 		}
 		m_pPointsBuffer->Unmap();
 
@@ -78,18 +79,18 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 	// Load buffer with new data
 	if (!s_Collisions.IsEmpty())
 	{
-		UnwrapData& dataFirst = s_Collisions.GetFront();
+		PaintData& dataFirst = s_Collisions.GetFront();
 		dataFirst.TargetPosition.w = (float)s_Collisions.GetSize();
 
 		if (s_ShouldReset)
 		{
-			UnwrapData& dataLast = s_Collisions.GetBack();
+			PaintData& dataLast = s_Collisions.GetBack();
 			dataLast.ClearClient = 1;
 			s_ShouldReset = false;
 		}
 
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
-		memcpy(pBufferMapping, s_Collisions.GetData(), s_Collisions.GetSize() * sizeof(UnwrapData));
+		memcpy(pBufferMapping, s_Collisions.GetData(), s_Collisions.GetSize() * sizeof(PaintData));
 		m_pPointsBuffer->Unmap();
 
 		// TODO: Current implementation limits to 10 points and
@@ -127,13 +128,18 @@ void MeshPaintHandler::AddHitPoint(
 	EPaintMode paintMode,
 	ERemoteMode remoteMode,
 	ETeam team,
-	uint32 angle)
+	uint32 angle,
+	LambdaEngine::Entity player,
+	const glm::vec3& localPosition,
+	const glm::vec3& localDirection)
 {
 	std::scoped_lock<LambdaEngine::SpinLock> lock(s_SpinLock);
 
-	UnwrapData data = {};
+	PaintData data = {};
 	data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
 	data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>((float)angle)};
+	data.LocalPositionXYZPlayerW	= glm::vec4(localPosition, glm::uintBitsToFloat(player));
+	data.LocalDirection				= glm::vec4(localDirection, 0.f);
 	data.PaintMode			= paintMode;
 	data.RemoteMode			= remoteMode;
 	data.Team				= team;
@@ -159,8 +165,6 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 
 	if (projectileHitEvent.AmmoType != EAmmoType::AMMO_TYPE_NONE)
 	{
-		static uint32 s_counter = 0;
-
 		EPaintMode paintMode = EPaintMode::NONE;
 		ETeam team = projectileHitEvent.Team;
 		ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
@@ -173,14 +177,46 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		{
 			paintMode = EPaintMode::REMOVE;
 		}
-		s_counter++;
+
+		ComponentArray<PlayerBaseComponent>* compArray = ECSCore::GetInstance()->GetComponentArray<PlayerBaseComponent>();
+		Entity playerEntity = UINT32_MAX;
+		bool isPlayer = true;
+		if (compArray->HasComponent(projectileHitEvent.CollisionInfo0.Entity))
+			playerEntity = projectileHitEvent.CollisionInfo0.Entity;
+		else if (compArray->HasComponent(projectileHitEvent.CollisionInfo1.Entity))
+			playerEntity = projectileHitEvent.CollisionInfo1.Entity;
+		else
+			isPlayer = false;
+
+		PositionComponent posComp = {};
+		ECSCore::GetInstance()->GetComponentIf<PositionComponent>(playerEntity, posComp);
+		glm::vec3 playerPosition = posComp.Position;
+		RotationComponent rotComp = {};
+		ECSCore::GetInstance()->GetComponentIf<RotationComponent>(playerEntity, rotComp);
+		glm::quat playerRotation = rotComp.Quaternion;
+
+		glm::mat4 playerTransform = glm::toMat4(playerRotation);
+		playerTransform = glm::translate(playerTransform, playerPosition);
+		playerTransform = glm::inverse(playerTransform);
+		
 		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
 		if (MultiplayerUtils::IsServer())
 		{
+			glm::vec4 projectilePos = playerTransform * glm::vec4(collisionInfo.Position, 1.f);
+			glm::vec4 projectileDir = playerTransform * glm::vec4(collisionInfo.Direction, 0.f);
+
 			remoteMode = ERemoteMode::SERVER;
-			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-			LOG_WARNING("[SERVER] [%d] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-				s_counter,
+			AddHitPoint(
+				collisionInfo.Position,
+				collisionInfo.Direction,
+				paintMode,
+				remoteMode,
+				team,
+				projectileHitEvent.Angle,
+				isPlayer,
+				projectilePos,
+				projectileDir);
+			LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
 			 	VEC_TO_ARG(collisionInfo.Position),
 			 	VEC_TO_ARG(collisionInfo.Direction),
 			 	PAINT_MODE_TO_STR(paintMode),
@@ -194,15 +230,23 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			packet.Position = collisionInfo.Position;
 			packet.Direction = collisionInfo.Direction;
 			packet.Angle = projectileHitEvent.Angle;
+			if (isPlayer)
+			{
+				packet.LocalPosition = projectilePos;
+				packet.LocalDirection = projectileDir;
+				packet.IsPlayer = true;
+			}
 			ServerHelper::SendBroadcast(packet);
 		}
 		else
 		{
+			glm::vec4 projectilePos = playerTransform * glm::vec4(collisionInfo.Position, 1.f);
+			glm::vec4 projectileDir = playerTransform * glm::vec4(collisionInfo.Direction, 0.f);
+
 			// If it is a client, paint it on the temporary mask and save the point.
-			//remoteMode = ERemoteMode::CLIENT;
-			//AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
-			LOG_WARNING("[CLIENT] [%d] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-				s_counter,
+			remoteMode = ERemoteMode::CLIENT;
+			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle, isPlayer, projectilePos, projectileDir);
+			LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
 			 	VEC_TO_ARG(collisionInfo.Position),
 			 	VEC_TO_ARG(collisionInfo.Direction),
 			 	PAINT_MODE_TO_STR(paintMode),
@@ -223,8 +267,6 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	EPaintMode	paintMode	= GET_PAINT_MODE(packet.Info);
 	ERemoteMode remoteMode	= ERemoteMode::UNDEFINED;
 
-	static uint32 s_counter = 0;
-
 	if (!MultiplayerUtils::IsServer())
 	{
 		// Allways clear client side when receiving hit from the server.
@@ -233,10 +275,8 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
-		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
-		s_counter++;
-		LOG_WARNING("[FROM SERVER] [%d] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
-			s_counter,
+		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle, packet.IsPlayer, packet.LocalPosition, packet.LocalDirection);
+		LOG_WARNING("[FROM SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
 			VEC_TO_ARG(packet.Position),
 			VEC_TO_ARG(packet.Direction),
 			PAINT_MODE_TO_STR(paintMode),

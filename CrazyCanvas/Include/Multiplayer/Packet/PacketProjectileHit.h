@@ -11,5 +11,8 @@ struct PacketProjectileHit
 	glm::vec3 Position;
 	glm::vec3 Direction;
 	uint32 Angle = 0;
+	glm::vec3 LocalPosition;
+	glm::vec3 LocalDirection;
+	bool IsPlayer = false;
 };
 #pragma pack(pop)

@@ -357,8 +357,9 @@ namespace LambdaEngine
 			SPushConstantData pushConstantData = {};
 			pushConstantData.VertexCount = m_VertexCountList[d];
 			// Check if this entity should clear its server side vertex paint.
-			pushConstantData.ShouldResetServer = (uint32)s_EntitiesToClear.contains(m_DrawArgsDescriptorSets[d].first);
-			pushConstantData.HitPointBufferValid = s_HitPointBufferValid | pushConstantData.ShouldResetServer;
+			pushConstantData.ShouldResetServer		= (uint32)s_EntitiesToClear.contains(m_DrawArgsDescriptorSets[d].first);
+			pushConstantData.HitPointBufferValid	= s_HitPointBufferValid | pushConstantData.ShouldResetServer;
+			pushConstantData.EntityID				= m_DrawArgsDescriptorSets[d].first;
 
 			pCommandList->BindDescriptorSetCompute(m_DrawArgsDescriptorSets[d].second, m_UpdatePipeline.GetPipelineLayout().Get(), 1);
 			m_UpdatePipeline.BindConstantRange(pCommandList, (void*)&pushConstantData, sizeof(pushConstantData), 0U);
