@@ -320,6 +320,37 @@ namespace LambdaEngine
 		halfHeight = halfHeight - radius;
 	}
 
+	bool PhysicsSystem::Raycast(const glm::vec3& origin, const glm::vec3& direction, float32 maxDistance, PxRaycastHit& raycastHit, const RaycastFilterData* pFilterData)
+	{
+		const PxVec3 originPX = { origin.x, origin.y, origin.z };
+		const PxVec3 directionPX = { direction.x, direction.y, direction.z };
+
+		const PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
+
+		RaycastFilterData filterData = {};
+		if (pFilterData)
+		{
+			filterData = *pFilterData;
+		}
+
+		/*	The filter data is first used in a fixed filter function, then the custom query filter callback is called.
+			See the PhysX documentation for details on the fixed filter function. */
+		PxQueryFilterData filterDataPX;
+		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+		filterDataPX.data.word0 = filterData.IncludedGroup;
+		filterDataPX.data.word1 = filterData.ExcludedGroup;
+		filterDataPX.data.word2 = filterData.ExcludedEntity;
+
+		PxRaycastBuffer raycastBuffer;
+		const bool hit = m_pScene->raycast(originPX, directionPX, maxDistance, raycastBuffer, hitFlags, filterDataPX, &m_RaycastQueryFilterCallback);
+		if (hit)
+		{
+			raycastHit = raycastBuffer.block;
+		}
+
+		return hit;
+	}
+
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
 	{
 		for (PxU32 pairIdx = 0; pairIdx < nbPairs; pairIdx++)
@@ -694,6 +725,7 @@ namespace LambdaEngine
 		filterData.word1 = (PxU32)characterColliderInfo.CollisionMask;
 		filterData.word2 = (PxU32)characterColliderInfo.EntityID;
 		pShape->setSimulationFilterData(filterData);
+		pShape->setQueryFilterData(filterData);
 
 		pShape->userData = DBG_NEW ShapeUserData();
 

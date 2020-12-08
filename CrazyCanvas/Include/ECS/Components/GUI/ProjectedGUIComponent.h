@@ -4,7 +4,7 @@
 enum class IndicatorTypeGUI
 {
 	FLAG_INDICATOR
-	//DROP_OFF_INDICATOR //example
+	//PLAYER_NAME_INDICATOR
 };
 
 

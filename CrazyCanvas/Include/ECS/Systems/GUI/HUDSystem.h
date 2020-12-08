@@ -46,6 +46,8 @@ public:
 
 	void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
 
+	void DisplayNamePlate(const LambdaEngine::String& name, bool isLookingAtTeamPlayer);
+
 private:
 	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);
 	bool OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& event);
