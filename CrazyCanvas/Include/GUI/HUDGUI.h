@@ -85,7 +85,7 @@ public:
 
 	void UpdateCountdown(uint8 countDownTime);
 
-	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal, bool isFriendly);
 	void DisplayHitIndicator();
 	void DisplayCarryFlagIndicator(LambdaEngine::Entity flagEntity, bool isCarrying);
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
