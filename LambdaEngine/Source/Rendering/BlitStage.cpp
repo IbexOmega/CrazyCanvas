@@ -91,6 +91,9 @@ namespace LambdaEngine
 		CommandList** ppSecondaryExecutionStage,
 		bool sleeping)
 	{
+		UNREFERENCED_VARIABLE(backBufferIndex);
+		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
+
 		if (sleeping)
 			return;
 
