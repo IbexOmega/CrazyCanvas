@@ -20,7 +20,7 @@ namespace LambdaEngine
 			using namespace physx;
 
 			const PxFilterData shapeFilterData = pShape->getQueryFilterData();
-			if (((filterData.word1 & shapeFilterData.word0) == 0) && filterData.word2 != shapeFilterData.word2)
+			if (((filterData.word0 & shapeFilterData.word0) != 0) && ((filterData.word1 & shapeFilterData.word0) == 0) && filterData.word2 != shapeFilterData.word2)
 			{
 				return PxQueryHitType::eBLOCK;
 			}

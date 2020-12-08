@@ -333,8 +333,6 @@ namespace LambdaEngine
 			filterData = *pFilterData;
 		}
 
-		/*	The filter data is first used in a fixed filter function, then the custom query filter callback is called.
-			See the PhysX documentation for details on the fixed filter function. */
 		PxQueryFilterData filterDataPX;
 		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
 		filterDataPX.data.word0 = filterData.IncludedGroup;
