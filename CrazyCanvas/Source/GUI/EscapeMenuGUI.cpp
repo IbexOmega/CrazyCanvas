@@ -353,10 +353,8 @@ void EscapeMenuGUI::SetDefaultSettings()
 
 	SetDefaultKeyBindings();
 
-	m_LookSensitivityPercentageToSet = InputActionSystem::GetLookSensitivityPercentage();
 	Noesis::Slider* pLookSensitivitySlider = FrameworkElement::FindName<Slider>("LookSensitivitySlider");
 	pLookSensitivitySlider->SetValue(InputActionSystem::GetLookSensitivityPercentage() * pLookSensitivitySlider->GetMaximum());
-	InputActionSystem::SetLookSensitivity(m_LookSensitivityPercentageToSet);
 
 	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing Toggle

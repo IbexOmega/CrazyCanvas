@@ -73,6 +73,7 @@ namespace LambdaEngine
 			if (strAction == s_LookSensitivityName)
 			{
 				s_CurrentLookSensitivityPercentage = s_ConfigDocument[s_LookSensitivityName.c_str()].GetFloat();
+				s_CurrentLookSensitivity = s_CurrentLookSensitivityPercentage * LOOK_SENSITIVITY_BASE;
 			}
 			else
 			{
