@@ -59,10 +59,7 @@ public:
 		EPaintMode paintMode,
 		ERemoteMode remoteMode,
 		ETeam mode,
-		uint32 angle,
-		LambdaEngine::Entity player,
-		const glm::vec3& localPosition,
-		const glm::vec3& localDirection);
+		uint32 angle);
 
 	/* Reset client data from the texture and only use the verifed server data */
 	static void ResetClient();
@@ -75,8 +72,6 @@ private:
 	{
 		glm::vec4		TargetPosition;
 		glm::vec4		TargetDirectionXYZAngleW;
-		glm::vec4		LocalPositionXYZPlayerW;
-		glm::vec4		LocalDirection;
 		EPaintMode		PaintMode			= EPaintMode::NONE;
 		ERemoteMode		RemoteMode			= ERemoteMode::UNDEFINED;
 		ETeam			Team				= ETeam::NONE;

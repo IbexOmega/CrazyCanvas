@@ -159,7 +159,7 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 			EPaintMode::PAINT,
 			ERemoteMode::CLIENT,
 			(ETeam)teamComponent.TeamIndex,
-			0, false, glm::vec3(0.f), glm::vec3(0.f));
+			0);
 
 		// Reset child components
 		if (pChildComponents->HasComponent(playerEntity))

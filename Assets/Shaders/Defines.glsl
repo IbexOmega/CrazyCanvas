@@ -216,8 +216,6 @@ struct SPaintData
 {
 	vec4 TargetPosition;
 	vec4 TargetDirectionXYZAngleW;
-	vec4 LocalPositionXYZPlayerW;
-	vec4 LocalDirection;
 	uint PaintMode;
 	uint RemoteMode;
 	uint TeamMode;

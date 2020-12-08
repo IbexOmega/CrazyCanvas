@@ -15,7 +15,6 @@ layout(push_constant) uniform PushConstants
 	uint VertexCount;
 	uint ShouldResetServer;
 	uint HitPointsBufferValid;
-	uint EntityID;
 } u_PC;
 
 layout(binding = 0, set = 0) uniform HitPointsBuffer				{ SPaintData Val[10]; }	u_HitPointsBuffer;
@@ -68,28 +67,18 @@ void main()
 		{
 			SPaintData paintData = u_HitPointsBuffer.Val[hitPointIndex];
 
-			vec3 wp = worldPosition;
 			vec3 targetPosition 	= paintData.TargetPosition.xyz;
 			vec3 direction			= normalize(paintData.TargetDirectionXYZAngleW.xyz);
 
-			uint entity = floatBitsToUint(paintData.LocalPositionXYZPlayerW.w);
-			if(entity == u_PC.EntityID)
-			{
-				// TODO: Do this to the vertex normal also!
-				wp = vec3(vertex.Tangent.w, vertex.TexCoord.z, vertex.TexCoord.w);
-				targetPosition = paintData.LocalPositionXYZPlayerW.xyz;
-				direction = normalize(paintData.LocalDirection.xyz);
-			}
-
 			vec3 normal 			= normalize(normal);
 
-			vec3 targetPosToWorldPos = wp - targetPosition;
+			vec3 targetPosToWorldPos = worldPosition - targetPosition;
 
 			uint teamMode = paintData.TeamMode;
 			uint paintMode = paintData.PaintMode;
 			uint remoteMode = paintData.RemoteMode;
 
-			float valid = 1.f;//step(0.0f, dot(normal, -direction)); // Checks if looking from infront, else 0
+			float valid = step(0.0f, dot(normal, -direction)); // Checks if looking from infront, else 0
 			float len = abs(dot(targetPosToWorldPos, direction));
 			valid *= 1.0f - step(PAINT_DEPTH, len);
 			vec3 projectedPosition = targetPosition + len * direction;

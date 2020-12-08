@@ -130,18 +130,13 @@ void MeshPaintHandler::AddHitPoint(
 	EPaintMode paintMode,
 	ERemoteMode remoteMode,
 	ETeam team,
-	uint32 angle,
-	LambdaEngine::Entity player,
-	const glm::vec3& localPosition,
-	const glm::vec3& localDirection)
+	uint32 angle)
 {
 	std::scoped_lock<LambdaEngine::SpinLock> lock(s_SpinLock);
 
 	PaintData data = {};
 	data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
 	data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>((float)angle)};
-	data.LocalPositionXYZPlayerW	= glm::vec4(localPosition, glm::uintBitsToFloat(player));
-	data.LocalDirection				= glm::vec4(localDirection, 0.f);
 	data.PaintMode			= paintMode;
 	data.RemoteMode			= remoteMode;
 	data.Team				= team;
@@ -179,33 +174,10 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 		{
 			paintMode = EPaintMode::REMOVE;
 		}
-
-		ComponentArray<PlayerBaseComponent>* compArray = ECSCore::GetInstance()->GetComponentArray<PlayerBaseComponent>();
-		Entity playerEntity = UINT32_MAX;
-		bool isPlayer = true;
-		if (compArray->HasComponent(projectileHitEvent.CollisionInfo0.Entity))
-			playerEntity = projectileHitEvent.CollisionInfo0.Entity;
-		else if (compArray->HasComponent(projectileHitEvent.CollisionInfo1.Entity))
-			playerEntity = projectileHitEvent.CollisionInfo1.Entity;
-		else
-			isPlayer = false;
-
-		PositionComponent posComp = {};
-		ECSCore::GetInstance()->GetComponentIf<PositionComponent>(playerEntity, posComp);
-		glm::vec3 playerPosition = posComp.Position;
-		RotationComponent rotComp = {};
-		ECSCore::GetInstance()->GetComponentIf<RotationComponent>(playerEntity, rotComp);
-		glm::quat playerRotation = rotComp.Quaternion;
-
-		glm::mat4 playerTransform = glm::toMat4(glm::inverse(playerRotation));
-		playerTransform = glm::translate(playerTransform, -playerPosition);
 		
 		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
 		if (MultiplayerUtils::IsServer())
 		{
-			glm::vec4 projectilePos = playerTransform * glm::vec4(collisionInfo.Position, 1.f);
-			glm::vec4 projectileDir = playerTransform * glm::vec4(collisionInfo.Direction, 0.f);
-
 			remoteMode = ERemoteMode::SERVER;
 			AddHitPoint(
 				collisionInfo.Position,
@@ -213,10 +185,8 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 				paintMode,
 				remoteMode,
 				team,
-				projectileHitEvent.Angle,
-				isPlayer,
-				projectilePos,
-				projectileDir);
+				projectileHitEvent.Angle);
+
 			LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
 			 	VEC_TO_ARG(collisionInfo.Position),
 			 	VEC_TO_ARG(collisionInfo.Direction),
@@ -231,22 +201,13 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			packet.Position = collisionInfo.Position;
 			packet.Direction = collisionInfo.Direction;
 			packet.Angle = projectileHitEvent.Angle;
-			if (isPlayer)
-			{
-				packet.LocalPosition = projectilePos;
-				packet.LocalDirection = projectileDir;
-				packet.IsPlayer = true;
-			}
 			ServerHelper::SendBroadcast(packet);
 		}
 		else
 		{
-			glm::vec4 projectilePos = playerTransform * glm::vec4(collisionInfo.Position, 1.f);
-			glm::vec4 projectileDir = playerTransform * glm::vec4(collisionInfo.Direction, 0.f);
-
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
-			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle, isPlayer, projectilePos, projectileDir);
+			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
 			LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
 			 	VEC_TO_ARG(collisionInfo.Position),
 			 	VEC_TO_ARG(collisionInfo.Direction),
@@ -270,19 +231,13 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		static uint32 id = UINT32_MAX;
-		TArray<glm::vec3> points;
-		points.PushBack(packet.LocalPosition);
-		points.PushBack(packet.LocalPosition - packet.LocalDirection);
-		id = LineRenderer::UpdateLineGroup(id, points, glm::vec3(1.f, 0.f, 1.f));
-
 		// Allways clear client side when receiving hit from the server.
 		ResetClient();
 		LOG_WARNING("[FROM SERVER] CLEAR CLIENT");
 
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
-		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle, packet.IsPlayer, packet.LocalPosition, packet.LocalDirection);
+		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
 		LOG_WARNING("[FROM SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
 			VEC_TO_ARG(packet.Position),
 			VEC_TO_ARG(packet.Direction),

@@ -19,7 +19,6 @@ namespace LambdaEngine
 			uint32 VertexCount;
 			uint32 ShouldResetServer;
 			uint32 HitPointBufferValid;
-			uint32 EntityID;
 		};
 
 	public:
