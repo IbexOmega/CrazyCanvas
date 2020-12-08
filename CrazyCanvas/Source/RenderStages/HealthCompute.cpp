@@ -223,7 +223,7 @@ void HealthCompute::Render(
 	{
 		uint32 index = PlayerIndexHelper::GetPlayerIndex(entity);
 		if (index == UINT32_MAX)
-			return;
+			continue;
 
 		pCommandList->BindDescriptorSetCompute(m_DrawArgsDescriptorSets[index], m_PipelineContext.GetPipelineLayout().Get(), 1);
 		m_PipelineContext.BindConstantRange(pCommandList, (void*)(&index), sizeof(uint32), 0);

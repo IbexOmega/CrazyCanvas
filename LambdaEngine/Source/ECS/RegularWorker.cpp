@@ -8,7 +8,7 @@ namespace LambdaEngine
 	RegularWorker::~RegularWorker()
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		if (pECS)
+		if (pECS && m_JobID != UINT32_MAX)
 			pECS->DescheduleRegularJob(m_Phase, m_JobID);
 	}
 

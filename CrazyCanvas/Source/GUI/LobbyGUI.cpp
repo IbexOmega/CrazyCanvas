@@ -635,20 +635,29 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 
 		if (setting == SETTING_CHANGE_TEAM_1_COLOR)
 		{
-			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
-			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
+			if (m_pGameSettings->TeamColor2 != (uint8)indexSelected)
+			{
+				m_pGameSettings->TeamColor1 = (uint8)indexSelected;
+				pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
+			}
 		}
 		else
 		{
-			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
-			m_pGameSettings->TeamColor2 = (uint8)indexSelected;
+			if (m_pGameSettings->TeamColor1 != (uint8)indexSelected)
+			{
+				m_pGameSettings->TeamColor2 = (uint8)indexSelected;
+				pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
+			}
 		}
 
-		pComboBox->SetBackground(pBoxColorBrush);
-		pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
+		if (pLabelColorBrush)
+		{
+			pComboBox->SetBackground(pBoxColorBrush);
+			pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
 
-		m_pChatPanel->GetChildren()->Clear();
-		ChatManager::RenotifyAllChatMessages();
+			m_pChatPanel->GetChildren()->Clear();
+			ChatManager::RenotifyAllChatMessages();
+		}
 	}
 
 	SendGameSettings();

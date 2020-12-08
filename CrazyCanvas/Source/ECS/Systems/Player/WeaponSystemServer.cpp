@@ -28,7 +28,12 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 		// Update reload and cooldown timers
 		UpdateWeapon(weaponComp, dt);
 
-		PacketComponent<PacketPlayerAction>&			actionsRecived	= pPlayerActionPackets->GetData(remotePlayerEntity);
+		PacketComponent<PacketPlayerAction> actionsRecived;
+		if (!pPlayerActionPackets->GetIf(remotePlayerEntity, actionsRecived))
+		{
+			continue;
+		}
+
 		PacketComponent<PacketPlayerActionResponse>&	responsesToSend	= pPlayerResponsePackets->GetData(remotePlayerEntity);
 		TQueue<PacketPlayerActionResponse>&				packetsToSend	= responsesToSend.GetPacketsToSend();
 		const TArray<PacketPlayerAction>&				packetsRecived	= actionsRecived.GetPacketsReceived();

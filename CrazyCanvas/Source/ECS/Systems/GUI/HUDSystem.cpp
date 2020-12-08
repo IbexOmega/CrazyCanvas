@@ -323,11 +323,13 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
 
 
-	if(pPlayer->IsDead())
+	if (pPlayer->IsDead())
+	{
 		if(event.pPlayerKiller)
 			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), event.pPlayerKiller->GetName(), event.pPlayer->GetTeam());
 		else
 			m_HUDGUI->UpdateKillFeed(event.pPlayer->GetName(), "Server", event.pPlayer->GetTeam());
+	}
 
 	if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 	{

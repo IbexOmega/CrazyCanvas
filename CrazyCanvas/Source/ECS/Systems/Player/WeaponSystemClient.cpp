@@ -78,70 +78,73 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 		WeaponComponent& weaponComponent = pWeaponComponents->GetData(weaponEntity);
 		Entity playerEntity = weaponComponent.WeaponOwner;
 
-		const TeamComponent& teamComponent = pTeamComponents->GetConstData(playerEntity);
+		TeamComponent teamComponent;
 
-		// Foreign Players
-		if (m_ForeignPlayerEntities.HasElement(playerEntity))
+		if (pTeamComponents->GetConstIf(playerEntity, teamComponent))
 		{
-			PacketComponent<PacketPlayerActionResponse>&	packets			= pPlayerResponsePackets->GetData(playerEntity);
-			const TArray<PacketPlayerActionResponse>&		receivedPackets	= packets.GetPacketsReceived();
-			for (const PacketPlayerActionResponse& response : receivedPackets)
+			// Foreign Players
+			if (m_ForeignPlayerEntities.HasElement(playerEntity))
 			{
-				if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
+				PacketComponent<PacketPlayerActionResponse>& packets = pPlayerResponsePackets->GetData(playerEntity);
+				const TArray<PacketPlayerActionResponse>& receivedPackets = packets.GetPacketsReceived();
+				for (const PacketPlayerActionResponse& response : receivedPackets)
 				{
-					Fire(weaponEntity,
-						weaponComponent,
-						response.FiredAmmo,
-						response.WeaponPosition,
-						response.WeaponVelocity,
-						teamComponent.TeamIndex,
-						response.Angle);
+					if (response.FiredAmmo != EAmmoType::AMMO_TYPE_NONE)
+					{
+						Fire(weaponEntity,
+							weaponComponent,
+							response.FiredAmmo,
+							response.WeaponPosition,
+							response.WeaponVelocity,
+							teamComponent.TeamIndex,
+							response.Angle);
+					}
 				}
+
+				continue;
 			}
 
-			continue;
-		}
+			// Local Player
+			PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
+			auto waterAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+			VALIDATE(waterAmmo != weaponComponent.WeaponTypeAmmo.end())
 
-		// Local Player
-		PacketComponent<PacketPlayerAction>& playerActions = pPlayerActionPackets->GetData(playerEntity);
-		auto waterAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
-		VALIDATE(waterAmmo != weaponComponent.WeaponTypeAmmo.end())
+			auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+			VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
 
-		auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
-		VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
-		
-		const bool hasAmmo		= (waterAmmo->second.first > 0) || (paintAmmo->second.first > 0);
-		const bool hasFullAmmo	= (waterAmmo->second.first >= 50) && (paintAmmo->second.first >= 50);
-		const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
-		const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
+			const bool hasAmmo = (waterAmmo->second.first > 0) || (paintAmmo->second.first > 0);
+			const bool hasFullAmmo = (waterAmmo->second.first >= waterAmmo->second.second) && (paintAmmo->second.first >= paintAmmo->second.second);
+			const bool isReloading = weaponComponent.ReloadClock > 0.0f;
+			const bool onCooldown = weaponComponent.CurrentCooldown > 0.0f;
 
-		if (!hasAmmo && !isReloading)
-		{
-			StartReload(weaponComponent, playerActions);
-		}
-
-		if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
-		{ 
-			// Reload if we are not reloading
-			if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading && !hasFullAmmo)
+			if (!hasAmmo && !isReloading)
 			{
 				StartReload(weaponComponent, playerActions);
 			}
-			else if (!onCooldown) // If we did not hit the reload try and shoot
+
+			if (!PlayerManagerClient::GetPlayerLocal()->IsDead())
 			{
-				if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
+				// Reload if we are not reloading
+				if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_RELOAD) && !isReloading && !hasFullAmmo)
 				{
-					TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
+					StartReload(weaponComponent, playerActions);
 				}
-				else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
+				else if (!onCooldown) // If we did not hit the reload try and shoot
 				{
-					TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
+					if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_PRIMARY))
+					{
+						TryFire(EAmmoType::AMMO_TYPE_PAINT, weaponEntity);
+					}
+					else if (InputActionSystem::IsActive(EAction::ACTION_ATTACK_SECONDARY))
+					{
+						TryFire(EAmmoType::AMMO_TYPE_WATER, weaponEntity);
+					}
 				}
 			}
-		}
 
-		// Update reload and cooldown timers
-		UpdateWeapon(weaponComponent, dt);
+			// Update reload and cooldown timers
+			UpdateWeapon(weaponComponent, dt);
+		}
 	}
 }
 

@@ -9,6 +9,8 @@ namespace LambdaEngine
 	public:
 		DECL_STATIC_CLASS(PlayerIndexHelper);
 
+		static void Reset();
+
 		/*
 		*	Converts the entity ID to a player index to be used for indexing in lists.
 		*	Creates an index if the entity has not been previously added.

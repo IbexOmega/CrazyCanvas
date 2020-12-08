@@ -49,6 +49,9 @@
 
 #include "ECS/Systems/Misc/DestructionSystem.h"
 
+#include "Rendering/ImGuiRenderer.h"
+#include "Debug/Profiler.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState* PlaySessionState::s_pInstance = nullptr;
@@ -171,8 +174,8 @@ void PlaySessionState::Tick(Timestamp delta)
 
 void PlaySessionState::FixedTick(Timestamp delta)
 {
-	m_HUDSystem.FixedTick(delta);
-	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+	PROFILE_FUNCTION("m_HUDSystem.FixedTick", m_HUDSystem.FixedTick(delta));
+	PROFILE_FUNCTION("MultiplayerBase::FixedTickMainThreadInternal", m_MultiplayerClient.FixedTickMainThreadInternal(delta));
 
 	if (!m_Initiated)
 	{

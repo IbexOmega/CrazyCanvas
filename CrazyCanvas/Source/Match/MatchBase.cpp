@@ -7,6 +7,8 @@
 
 #include "Events/GameplayEvents.h"
 
+#include "Game/PlayerIndexHelper.h"
+
 MatchBase::MatchBase()
 {
 	using namespace LambdaEngine;
@@ -74,6 +76,8 @@ void MatchBase::ResetMatch()
 	{
 		m_Scores[i] = 0;
 	}
+
+	LambdaEngine::PlayerIndexHelper::Reset();
 
 	SAFEDELETE(m_pLevel);
 
