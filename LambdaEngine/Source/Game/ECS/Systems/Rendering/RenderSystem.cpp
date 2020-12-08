@@ -15,6 +15,7 @@
 #include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
 #include "Rendering/StagingBufferCache.h"
+#include "Rendering/RT/ReflectionsDenoisePass.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -36,6 +37,7 @@
 #include "Rendering/ParticleCollider.h"
 #include "Rendering/LightProbeRenderer.h"
 #include "Rendering/RT/ASBuilder.h"
+#include "Rendering/BlitStage.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -417,6 +419,22 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
+			//Blit Stage
+			{
+				m_pBlitStage = DBG_NEW BlitStage();
+				m_pBlitStage->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pBlitStage);
+			}
+
+			//Reflection Denoise Pass
+			{
+				m_pReflectionsDenoisePass = DBG_NEW ReflectionsDenoisePass();
+				m_pReflectionsDenoisePass->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pReflectionsDenoisePass);
+			}
+
 			// Other Custom Renderers constructed in game
 			for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
 			{
@@ -465,6 +483,53 @@ namespace LambdaEngine
 			}
 		}
 
+		//Update RenderGraph with Blue Noise LUTs
+		{
+			Texture* pBlueNoiseTexture			= ResourceManager::GetTexture(GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP);
+			TextureView* pBlueNoiseTextureView	= ResourceManager::GetTextureView(GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP);
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName										= "BLUE_NOISE_LUTS";
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures					= &pBlueNoiseTexture;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews				= &pBlueNoiseTextureView;
+			resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews	= nullptr;
+			resourceUpdateDesc.ExternalTextureUpdate.TextureCount				= 1;
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers					= Sampler::GetNearestSamplerToBind();
+			resourceUpdateDesc.ExternalTextureUpdate.SamplerCount				= 1;
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
+		//Set Push Constants
+		{
+			struct
+			{
+				int32 GlossyEnabled;
+				int32 SPP;
+			} rayTracingPushConstant;
+
+			rayTracingPushConstant.GlossyEnabled = int32(EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS));
+			rayTracingPushConstant.SPP = EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP);
+
+			PushConstantsUpdate pushContantUpdate = {};
+			pushContantUpdate.pData = &rayTracingPushConstant;
+			pushContantUpdate.DataSize = sizeof(rayTracingPushConstant);
+
+			{
+				pushContantUpdate.RenderStageName = "RAY_TRACING";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
+
+			{
+				pushContantUpdate.RenderStageName = "SHADING_PASS";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
+
+			{
+				pushContantUpdate.RenderStageName = "REFLECTIONS_DENOISE_PASS";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
+		}
+
 		UpdateBuffers();
 		UpdateRenderGraph();
 
@@ -496,6 +561,8 @@ namespace LambdaEngine
 			}
 		}
 
+		SAFEDELETE(m_pReflectionsDenoisePass);
+		SAFEDELETE(m_pBlitStage);
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pLightProbeRenderer);
@@ -2426,7 +2493,7 @@ bool RenderSystem::InitIntegrationLUT()
 
 		//Update Per Frame Data
 		{
-			m_PerFrameData.FrameIndex = 0;
+			m_PerFrameData.FrameIndex = m_FrameIndex % UINT32_MAX;
 			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
 
 			UpdatePerFrameBuffer(pGraphicsCommandList);

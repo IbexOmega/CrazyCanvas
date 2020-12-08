@@ -4,17 +4,137 @@
 //#extension GL_EXT_debug_printf : enable
 
 #include "RayTracingInclude.glsl"
+#include "../Reflections.glsl"
 #include "../Helpers.glsl"
 #include "../Defines.glsl"
+#include "BxDF.glsl"
+
+#define MAX_BOUNCES 8
 
 layout(location = 0) rayPayloadEXT SPrimaryPayload s_PrimaryPayload;
 
-void GenerateCameraRay(in vec2 d, out vec3 origin, out vec3 direction)
+/*
+* Variable name explanation:
+* p - used for point
+* w - used for directions, directions are often thought of as infinitesimal parts of a solid angle we integrate over which we call Omega, therefore most directions are small omega (Omega') (see PRT)
+* l - radiance
+* _n suffix - normal
+* _o suffix - out vector
+* _i suffix - in vector
+* _h suffix - halfway (microfacet normal) vector
+* _(*)w suffix - world space
+* _(*)s suffix - surface space
+* _(*)l suffix - light space (or light related)
+* d - distances
+* u - sample variates
+*/
+
+/*
+* p_w 		- Point to shade 
+* w_nw 		- Normal direction
+* w_ow  	- direction from p_w -> prev_p_w
+* n_dot_o 	- max(dot(w_nw, w_ow), 0.0f)
+* d			- ||p_w - prev_p_w||
+* albedo	- albedo or diffuse color
+* ao		- ambient occlusion
+* roughness
+* metallic
+*/
+vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 albedo, float ao, float roughness, float metallic, vec3 F0)
 {
-	SPerFrameBuffer perFrameBuffer = u_PerFrameBuffer.val;
-	origin      = (perFrameBuffer.ViewInv * vec4(0.0f, 0.0f, 0.0f, 1.0f)).xyz;
-	vec4 target = perFrameBuffer.ProjectionInv * vec4(d.x, d.y, 1.0f, 1.0f);
-	direction   = (perFrameBuffer.ViewInv * vec4(normalize(target.xyz), 0.0f)).xyz;
+		vec3 ambient 	= vec3(0.0f);
+		vec3 l_o 		= vec3(0.0f);
+
+		SLightsBuffer lightBuffer = b_LightsBuffer.val;
+
+		// Directional Light
+		{
+			vec3 w_iw		= normalize(lightBuffer.DirL_Direction);
+			vec3 w_hw		= normalize(w_ow + w_iw);
+
+			float n_dot_i 	= max(dot(w_nw, w_iw), 0.0f);
+
+			vec4 p_l 				= lightBuffer.DirL_ProjView * vec4(p_w, 1.0f);
+			float shadow 			= DirShadowDepthTest(p_l, w_nw, w_iw, u_DirLShadowMap);
+			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
+			vec3 incomingRadiance	= outgoingRadiance * (1.0f - shadow);
+
+			float NDF   = Distribution(w_nw, w_hw, roughness);
+			float G     = Geometry(w_nw, w_ow, w_iw, roughness);
+			vec3 F      = Fresnel(F0, max(dot(w_ow, w_hw), 0.0f));
+
+			vec3 k_s = F;
+			vec3 k_d = vec3(1.0f) - k_s;
+
+			k_d *= 1.0 - metallic;
+
+			vec3 nominator      = NDF * G * F;
+			float denominator   = 4.0f * n_dot_o * n_dot_i;
+			vec3 f_Specular 	= nominator / max(denominator, 0.001f);
+			vec3 f_Diffuse 		= k_d * albedo * INV_PI;
+
+			l_o += (f_Diffuse + f_Specular) * incomingRadiance * n_dot_i;
+		}
+
+		//Point Light Loop
+		for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
+		{
+			SPointLight light = b_LightsBuffer.pointLights[i];
+
+			vec3 w_iw 	= (light.Position - p_w);
+			float d_l 	= length(w_iw);	
+			w_iw		= normalize(w_iw);
+			vec3 w_hw	= normalize(w_ow + w_iw);
+			
+			float n_dot_i = max(dot(w_nw, w_iw), 0.0f);
+
+			float shadow 			= PointShadowDepthTest(p_w, light.Position, d, w_nw, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
+			float attenuation		= max(1.0f / (d_l * d_l), 0.001f);
+			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
+			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - shadow);
+		
+			float NDF   = Distribution(w_nw, w_hw, roughness);
+			float G     = Geometry(w_nw, w_ow, w_iw, roughness);
+			vec3 F      = Fresnel(F0, max(dot(w_ow, w_hw), 0.0f));
+
+			vec3 k_s = F;
+			vec3 k_d = vec3(1.0f) - k_s;
+
+			k_d *= 1.0 - metallic;
+
+			vec3 nominator      = NDF * G * F;
+			float denominator   = 4.0f * n_dot_o * n_dot_i;
+			vec3 f_Specular 	= nominator / max(denominator, 0.001f);
+			vec3 f_Diffuse 		= k_d * albedo * INV_PI;
+
+			l_o += (f_Diffuse + f_Specular) * incomingRadiance * n_dot_i;
+		}
+
+		vec3 F_IBL		= FresnelRoughness(F0, n_dot_o, roughness);
+		vec3 k_s_IBL	= F_IBL;
+		vec3 k_d_IBL	= 1.0f - k_s_IBL;
+		k_d_IBL			*= 1.0f - metallic;
+	
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, w_nw).rgb;
+		vec3 IBL_Diffuse	= irradiance * albedo * k_d_IBL;
+	
+		const int numberOfMips	= textureQueryLevels(u_GlobalSpecularProbe);
+		vec3 w_iw_inv			= reflect(-w_ow, w_nw);
+		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, w_iw_inv, roughness * float(numberOfMips)).rgb;
+		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(n_dot_o, roughness), 0).rg;
+		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
+	
+		ambient = (IBL_Diffuse + IBL_Specular) * ao;
+
+		return ambient + l_o;
+}
+
+float GenerateSample(uint index, uvec3 p, uint numSamplesPerFrame, uvec3 blueNoiseSize)
+{
+	p.z = (p.z * numSamplesPerFrame + index);
+	p &= (blueNoiseSize - 1);
+
+	return min(texelFetch(u_BlueNoiseLUTs, ivec3(p), 0).r, 0.9999999999999f);
 }
 
 void main()
@@ -26,202 +146,225 @@ void main()
 
 	//Sample required
 	vec4 aoRoughMetalValid  = texelFetch(u_GBufferAORoughMetalValid, pixelCoords, 0);
-	float roughness         = aoRoughMetalValid.g;
-	float valid             = aoRoughMetalValid.a;
+	float roughness_start         = aoRoughMetalValid.g;
+	float valid_start             = aoRoughMetalValid.a;
 
-	if (valid < 1.0f || roughness > 0.0f)
+	if (valid_start < 1.0f || roughness_start > mix(SPECULAR_REFLECTION_REJECT_THRESHOLD, GLOSSY_REFLECTION_REJECT_THRESHOLD, float(pc_ReflectionSettings.GlossyEnabled)))
+	{
+		imageStore(u_Reflections, pixelCoords, vec4(0.0f));
+		imageStore(u_BRDF_PDF, pixelCoords, vec4(0.0f));
 		return;
+	}
 
 	//Setup convenience variables
 	SPerFrameBuffer perFrameBuffer  = u_PerFrameBuffer.val;
+	float metallic_start     	= aoRoughMetalValid.b;
+	float ao_start       		= aoRoughMetalValid.r;
 
 	//Calculate World Position
-	float sampledDepth      = texelFetch(u_GBufferDepthStencil, pixelCoords, 0).r;
-	SPositions positions    = CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+	float sampledDepth      	= texelFetch(u_GBufferDepthStencil, pixelCoords, 0).r;
+	SPositions positions_start 	= CalculatePositionsFromDepth(screenTexCoord, sampledDepth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
+
+	//Define Sample Variables
+	const uint randomSeed 			= perFrameBuffer.RandomSeed + pixelCoords.x * gl_LaunchSizeEXT.x + pixelCoords.y;
+	const uvec3 randomSeedPoint 	= uvec3(randomSeed, randomSeed >> 10, randomSeed >> 20);
+	const ivec3 blueNoiseSize 		= textureSize(u_BlueNoiseLUTs, 0);	
+	const uint numSampleVariatesPerBounce	= 4;
+	const uint numSampleVariatesPerSample 	= (MAX_BOUNCES + 1) * numSampleVariatesPerBounce;
+	const uint numSampleVariatesPerFrame	= pc_ReflectionSettings.SPP * numSampleVariatesPerSample;
 
 	//Sample GBuffer
-	vec3 normal             = UnpackNormal(texelFetch(u_GBufferCompactNormal, pixelCoords, 0).xyz);
+	vec3 normal_start       = UnpackNormal(texelFetch(u_GBufferCompactNormal, pixelCoords, 0).xyz);
 
-	//Initialize required parameters for first bounce
-	s_PrimaryPayload.HitPosition	= positions.WorldPos;
-	s_PrimaryPayload.Normal		    = normal;
-	s_PrimaryPayload.Roughness		= roughness;
-	s_PrimaryPayload.Distance       = 1.0f;
+	vec3 w_ow_start = normalize(perFrameBuffer.CameraPosition.xyz - positions_start.WorldPos);
+
+	vec3 reflDir;
 
 	//Calculate a mirror reflection direction
-	SRayDirections rayDirections = CalculateRayDirections(s_PrimaryPayload.HitPosition, normal, perFrameBuffer.CameraPosition.xyz);
-	vec3 reflDir = rayDirections.ReflDir;
+	vec3 mirrorReflDir = reflect(-w_ow_start, normal_start);
 
-	const uint MAX_BOUNCES = 8;
-	bool shadeOutput     = false;
+	vec3 albedo_start;
+	float n_dot_o_start;
+	vec3 F0_start;
 
-	const uint 		rayFlags           	= gl_RayFlagsNoneEXT;//gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
+	if (pc_ReflectionSettings.GlossyEnabled == 0)
+	{
+		imageStore(u_BRDF_PDF, pixelCoords, vec4(1.0f));
+	}
+	else
+	{
+		albedo_start 	= texelFetch(u_GBufferAlbedo, pixelCoords, 0).rgb;
+		n_dot_o_start 	= max(dot(normal_start, w_ow_start), 0.001f);
+		F0_start 		= F0(albedo_start, metallic_start);
+
+		//Eval f for perfect mirror reflection
+		SBxDFEval bxdfEvalStart = Eval_f(
+			w_ow_start, 
+			normal_start,
+			mirrorReflDir,
+			albedo_start,
+			roughness_start, 
+			metallic_start,
+			F0_start);
+
+		//We don't use throughput for first bounce, it's applied when shading because it causes lots of noise when used for denoising
+		//Store evaluated f to be applied in shading (after denoising)
+		imageStore(u_BRDF_PDF, pixelCoords, vec4(bxdfEvalStart.f * n_dot_o_start, bxdfEvalStart.PDF));
+	}
+
+	const uint 		rayFlags           	= gl_RayFlagsCullBackFacingTrianglesEXT;//gl_RayFlagsOpaqueEXT/* | gl_RayFlagsTerminateOnFirstHitEXT*/;
 	const uint 		cullMask           	= 0xFF;
 	const uint 		sbtRecordOffset    	= 0;
 	const uint 		sbtRecordStride    	= 0;
 	const uint 		missIndex          	= 0;
 	const float 	Tmin              	= 0.001f;
-	const float 	Tmax              	= 10000.0f;
+	const float 	Tmax              	= 300.0f;
 	const int 		payload       		= 0;
 
-	uint b = 0;
+	vec3 l_o_tot = vec3(0.0f);
 
-	for (; b < MAX_BOUNCES; b++)
+	for (int s = 0; s < pc_ReflectionSettings.SPP; s++)
 	{
-		shadeOutput = true;
-		
-		//Setup Ray Tracing Parameters
-		vec3 origin    = s_PrimaryPayload.HitPosition + s_PrimaryPayload.Normal * RAY_NORMAL_OFFSET;
-		vec3 direction = reflDir;
+		vec3 l_o = vec3(0.0f);
+		vec3 throughput = vec3(1.0f);
 
-		//Send Ray
-		traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, direction, Tmax, payload);
+		uint baseSampleVariateIndex;
+		vec4 u_Surface_BRDF;
 
-		//Break if we missed geometry (we don't want to reflect of the skybox)
-		if (s_PrimaryPayload.Distance < EPSILON)
+		if (pc_ReflectionSettings.GlossyEnabled == 0)
 		{
-			shadeOutput = false;
-			break;
+			reflDir = mirrorReflDir;
 		}
-
-		if (s_PrimaryPayload.Roughness > 0.0f)
+		else
 		{
-			break;
-		}
+			baseSampleVariateIndex = s * numSampleVariatesPerSample;
 
-		reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
-	}
-
-	//We don't want to shade if we reached max bounces, our fake energy loss will make the color black anyway
-	if (b == MAX_BOUNCES)
-	{
-		imageStore(u_IntermediateOutputImage, pixelCoords, vec4(0.0f));
-	}
-	else if (shadeOutput)
-	{
-		SLightsBuffer lightBuffer = b_LightsBuffer.val;
-
-		//Fake energy loss on mirror bounce
-		float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
-
-		vec3 albedo		= s_PrimaryPayload.Albedo;
-		float ao		= s_PrimaryPayload.AO;
-		float roughness	= max(0.05f, s_PrimaryPayload.Roughness);
-		float metallic	= s_PrimaryPayload.Metallic;
-
-		vec3 worldPos 		= s_PrimaryPayload.HitPosition;
-		vec3 normal 		= s_PrimaryPayload.Normal;
-		vec3 viewDir		= -reflDir;
-		float viewDistance	= s_PrimaryPayload.Distance;
-
-		float NdotV = max(dot(normal, viewDir), 0.0f);
-
-		vec3 Lo = vec3(0.0f);
-		vec3 F0 = vec3(0.04f);
-
-		F0 = mix(F0, albedo, metallic);
-
-		float inShadowDirLight = 0.0f;
-		// Directional Light
-		{
-			vec3 lightDir	= normalize(lightBuffer.DirL_Direction);
-			vec3 halfwayDir	= normalize(viewDir + lightDir);
-
-			float NdotL = max(dot(normal, lightDir), 0.0f);
-
-			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(worldPos, 1.0f);
-			inShadowDirLight			= DirShadowDepthTest(fragPosLight, normal, lightBuffer.DirL_Direction, u_DirLShadowMap);
-			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
-			vec3 incomingRadiance	= outgoingRadiance * (1.0 - inShadowDirLight);
-
-			float NDF   = Distribution(normal, halfwayDir, roughness);
-			float G     = Geometry(normal, viewDir, lightDir, roughness);
-			vec3 F      = Fresnel(F0, max(dot(viewDir, halfwayDir), 0.0f));
-
-			vec3 nominator      = NDF * G * F;
-			float denominator   = 4.0f * NdotV * NdotL;
-			vec3 specular       = nominator / max(denominator, 0.001f);
-
-			vec3 kS = F;
-			vec3 kD = vec3(1.0f) - kS;
-
-			kD *= 1.0 - metallic;
-
-			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
-		}
-
-		//Point Light Loop
-		for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
-		{
-			SPointLight light = b_LightsBuffer.pointLights[i];
-
-			vec3 lightDelta = (light.Position - worldPos);
-			float lightDistance = length(lightDelta);
+			u_Surface_BRDF = vec4( 	GenerateSample(baseSampleVariateIndex + 0, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+											GenerateSample(baseSampleVariateIndex + 1, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+											GenerateSample(baseSampleVariateIndex + 2, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+											GenerateSample(baseSampleVariateIndex + 3, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize)); 
 			
-			vec3 lightDir	= normalize(lightDelta);
-			vec3 halfwayDir	= normalize(viewDir + lightDir);
-			
-			float NdotL = max(dot(normal, lightDir), 0.0f);
+			//Sample f
+			SBxDFSample bxdfSampleStart = Sample_f(
+				w_ow_start, 
+				normal_start, 
+				n_dot_o_start, 
+				albedo_start,
+				roughness_start, 
+				metallic_start,
+				F0_start, 
+				u_Surface_BRDF);
 
-			float inShadow 			= PointShadowDepthTest(worldPos, light.Position, viewDistance, normal, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
-			float attenuation		= 1.0f / (lightDistance * lightDistance);
-			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
-			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - inShadow);
+			reflDir = bxdfSampleStart.w_iw;
+		}
+
+		s_PrimaryPayload.HitPosition	= positions_start.WorldPos;
+		s_PrimaryPayload.Normal		    = normal_start;
+
+		bool shadeOutput     = false;
+
+		uint b = 0;
 		
-			float NDF	= Distribution(normal, halfwayDir, roughness);
-			float G		= Geometry(normal, viewDir, lightDir, roughness);
-			vec3 F		= Fresnel(F0, max(dot(viewDir, halfwayDir), 0.0f));
+		for (; b < MAX_BOUNCES; b++)
+		{
+			shadeOutput = true;
+			
+			//Setup Ray Tracing Parameters
+			vec3 origin    = s_PrimaryPayload.HitPosition + s_PrimaryPayload.Normal * RAY_NORMAL_OFFSET;
 
-			vec3 nominator      = NDF * G * F;
-			float denominator   = 4.0f * NdotV * NdotL;
-			vec3 specular       = nominator / max(denominator, 0.001f);
+			//Send Ray
+			traceRayEXT(u_TLAS, rayFlags, cullMask, sbtRecordOffset, sbtRecordStride, missIndex, origin, Tmin, reflDir, Tmax, payload);
 
-			vec3 kS = F;
-			vec3 kD = vec3(1.0f) - kS;
+			//Break if we missed geometry (we don't want to reflect of the skybox)
+			if (s_PrimaryPayload.Distance < EPSILON)
+			{
+				shadeOutput = false;
+				break;
+			}
 
-			kD *= 1.0 - metallic;
+			if (pc_ReflectionSettings.GlossyEnabled == 0)
+			{
+				//Glossy Disabled, return if not Mirror Reflection, and reflect around normal instead of sampling BRDF
+				if (s_PrimaryPayload.Roughness > SPECULAR_REFLECTION_REJECT_THRESHOLD)
+					break;
 
-			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
+				reflDir = reflect(reflDir,  s_PrimaryPayload.Normal);
+			}
+			else
+			{
+				if (s_PrimaryPayload.Roughness > 0.025f)
+				{
+					//We brake if the surface we hit is rough, we only allow this for first bounce
+					break;
+				}
+
+				//Treat the surface as a mirror reflection if we pass the above check
+				s_PrimaryPayload.Roughness = 0.0f;
+
+				uint baseBounceSampleVariateIndex = baseSampleVariateIndex + b * numSampleVariatesPerBounce;
+				u_Surface_BRDF = vec4( 	GenerateSample(baseBounceSampleVariateIndex + 0, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+										GenerateSample(baseBounceSampleVariateIndex + 1, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+										GenerateSample(baseBounceSampleVariateIndex + 2, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize),
+										GenerateSample(baseBounceSampleVariateIndex + 3, randomSeedPoint, numSampleVariatesPerFrame, blueNoiseSize)); 
+
+				vec3 w_ow 		= -reflDir;
+				vec3 w_nw 		= s_PrimaryPayload.Normal;
+				float n_dot_o 	= max(dot(w_nw, w_ow), 0.001f);
+				vec3 F0 		= F0(s_PrimaryPayload.Albedo, s_PrimaryPayload.Metallic);
+
+				SBxDFSample bxdfSample = Sample_f(
+					w_ow, 
+					w_nw, 
+					n_dot_o, 
+					s_PrimaryPayload.Albedo,
+					s_PrimaryPayload.Roughness, 
+					s_PrimaryPayload.Metallic,
+					F0, 
+					u_Surface_BRDF);
+
+				reflDir = bxdfSample.w_iw;
+
+				//Update Throughput
+				throughput *= bxdfSample.f * n_dot_o / bxdfSample.PDF;
+			}
 		}
 		
-		float dotNV	= max(dot(normal, viewDir), 0.0f);
-		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
-		vec3 Ks_IBL	= F_IBL;
-		vec3 Kd_IBL	= 1.0f - Ks_IBL;
-		Kd_IBL		*= 1.0f - metallic;
-	
-		vec3 irradiance		= texture(u_GlobalDiffuseProbe, normal).rgb;
-		vec3 IBL_Diffuse	= irradiance * albedo * Kd_IBL;
-	
-		const int numberOfMips	= textureQueryLevels(u_GlobalSpecularProbe);
-		vec3 reflection			= reflect(-viewDir, normal);
-		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, reflection, roughness * float(numberOfMips)).rgb;
-		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
-		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
-	
-		vec3 ambient	= mix((IBL_Diffuse + IBL_Specular), 0.4 * albedo, inShadowDirLight) * ao;
-		vec3 colorHDR	= bounceDarkening * (ambient + Lo);
+		if (shadeOutput)
+		{
+			float n_dot_o = max(dot(s_PrimaryPayload.Normal, -reflDir), 0.0f);
+			vec3 F0 = F0(s_PrimaryPayload.Albedo, s_PrimaryPayload.Metallic);
 
-		float luminance = CalculateLuminance(colorHDR);
+			l_o = throughput * ShadePoint(
+					s_PrimaryPayload.HitPosition,
+					s_PrimaryPayload.Normal,
+					-reflDir,
+					n_dot_o,
+					s_PrimaryPayload.Distance, 
+					s_PrimaryPayload.Albedo, 
+					s_PrimaryPayload.AO, 
+					s_PrimaryPayload.Roughness, 
+					s_PrimaryPayload.Metallic,
+					F0);
+		}
+		else
+		{
+			l_o = throughput * s_PrimaryPayload.Albedo;
+		}
 
-		//Reinhard Tone-Mapping
-		vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
+		if (pc_ReflectionSettings.GlossyEnabled == 0)
+		{
+			//Fake energy loss on mirror bounce
+			float bounceDarkening = float(MAX_BOUNCES - b) / float(MAX_BOUNCES);
+			l_o *= bounceDarkening;
+		}
 
-		//Gamma Correction
-		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
-		imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
+		l_o_tot += l_o;
 	}
-	else
-	{
-		float luminance = CalculateLuminance(s_PrimaryPayload.Albedo);
 
-		//Reinhard Tone-Mapping
-		vec3 colorLDR = s_PrimaryPayload.Albedo / (s_PrimaryPayload.Albedo + vec3(1.0f));
+	l_o_tot /= float(pc_ReflectionSettings.SPP);
 
-		//Gamma Correction
-		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
+	//Clamp Radiance to force away fireflies and make denoising more effective (actually doesn't impact the result very much in a negative way)
+	l_o_tot = min(l_o_tot, 1.0f);
 
-		imageStore(u_IntermediateOutputImage, pixelCoords, vec4(finalColor, luminance));
-	}
+	imageStore(u_Reflections, pixelCoords, vec4(l_o_tot, 1.0f));
 }

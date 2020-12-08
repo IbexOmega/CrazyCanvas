@@ -5,6 +5,7 @@
 
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
+#include "../Reflections.glsl"
 
 layout(location = 0) in vec2 in_TexCoord;
 
@@ -30,8 +31,16 @@ layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube	u_PointLShadowM
 layout(binding = 7, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
 layout(binding = 8, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
 layout(binding = 9, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
+layout(binding = 10, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_Reflections;
+layout(binding = 11, set = TEXTURE_SET_INDEX) uniform sampler2D 	u_BRDF_PDF;
 
 layout(location = 0) out vec4 out_Color;
+
+layout(push_constant) uniform ReflectionSettings
+{
+	int GlossyEnabled;
+	int SPP;
+} pc_ReflectionSettings;
 
 void main()
 {
@@ -42,19 +51,16 @@ void main()
 	vec4 aoRoughMetalValid	= texture(u_GBufferAORoughMetalValid, in_TexCoord);
 	vec3 colorHDR;
 
-	const float roughness	= max(0.05f, aoRoughMetalValid.g);
+	float roughness		= max(aoRoughMetalValid.g, 0.001f);
 
-	if (aoRoughMetalValid.a < 1.0f || aoRoughMetalValid.g == 0.0f)
+	if (aoRoughMetalValid.a < 1.0f)
 	{
 		float luminance = CalculateLuminance(albedo);
 
 		//Reinhard Tone-Mapping
 		vec3 colorLDR = albedo / (albedo + vec3(1.0f));
 
-		//Gamma Correction
-		vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
-		out_Color = vec4(finalColor, luminance);
+		out_Color = vec4(colorLDR, luminance);
 		return;
 	}
 	else
@@ -65,6 +71,7 @@ void main()
 
 		SPositions positions	= CalculatePositionsFromDepth(in_TexCoord, depth, perFrameBuffer.ProjectionInv, perFrameBuffer.ViewInv);
 		vec3 N 					= UnpackNormal(texture(u_GBufferCompactNormal, in_TexCoord).xyz);
+		
 		vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - positions.WorldPos;
 		float viewDistance		= length(viewVector);
 		vec3 V 					= normalize(viewVector);
@@ -136,22 +143,36 @@ void main()
 			Lo += (kD * albedo / PI + specular) * incomingRadiance * NdotL;
 		}
 		
-		float dotNV = max(dot(N, V), 0.0f);
-		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
-		vec3 Ks_IBL	= F_IBL;
-		vec3 Kd_IBL	= vec3(1.0f) - Ks_IBL;
-		Kd_IBL		*= (1.0f - metallic);
-	
-		vec3 R				= reflect(-V, N);
-		vec3 irradiance		= texture(u_GlobalDiffuseProbe, R).rgb;
-		vec3 IBL_Diffuse	= irradiance * albedo;
-	
-		const float numberOfMips = 7.0;
-		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, R, roughness * float(numberOfMips)).rgb;
-		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
-		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
+		vec3 ambient;
 
-		vec3 ambient	= (Kd_IBL * IBL_Diffuse + IBL_Specular) * ao;
+		if (aoRoughMetalValid.g <= mix(SPECULAR_REFLECTION_REJECT_THRESHOLD, GLOSSY_REFLECTION_REJECT_THRESHOLD, float(pc_ReflectionSettings.GlossyEnabled)))
+		{
+			vec3 reflectionColor = texture(u_Reflections, in_TexCoord).rgb;
+			vec4 BRDF_PDF = texture(u_BRDF_PDF, in_TexCoord);
+
+			Lo += reflectionColor * BRDF_PDF.rgb / BRDF_PDF.a;
+			ambient = vec3(0.03) * albedo * ao;
+		}
+		else
+		{
+			float dotNV = max(dot(N, V), 0.0f);
+			vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
+			vec3 Ks_IBL	= F_IBL;
+			vec3 Kd_IBL	= 1.0f - Ks_IBL;
+			Kd_IBL		*= 1.0f - metallic;
+		
+			vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
+			vec3 IBL_Diffuse	= irradiance * albedo * Kd_IBL;
+		
+			const int numberOfMips = textureQueryLevels(u_GlobalSpecularProbe);
+			vec3 reflection			= reflect(-V, N);
+			vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, reflection, roughness * float(numberOfMips)).rgb;
+			vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
+			vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
+		
+			ambient = (IBL_Diffuse + IBL_Specular) * ao;
+		}
+		
 		colorHDR		= ambient + Lo;
 	}
 
