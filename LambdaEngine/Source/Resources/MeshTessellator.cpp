@@ -393,7 +393,6 @@ namespace LambdaEngine
 			memcpy(pMesh->Vertices.GetData(), pMapped, vertexCount * sizeof(Vertex));
 			m_pOutVertexSecondStagingBuffer->Unmap();
 			LOG_WARNING("Done");
-
 		
 			pMesh->Vertices.Resize(vertexCount);
 			TArray<Vertex> vertices = pMesh->Vertices;
