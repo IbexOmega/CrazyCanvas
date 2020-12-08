@@ -580,6 +580,11 @@ void LobbyGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesi
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
 }
 
@@ -790,8 +795,10 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	if (m_pSettingsGrid->GetVisibility() == Noesis::Visibility_Visible)
 	{
@@ -845,8 +852,10 @@ void LobbyGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const 
 
 void LobbyGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	//FOV
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
@@ -861,8 +870,10 @@ void LobbyGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Collapsed);
 
@@ -871,6 +882,9 @@ void LobbyGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const
 
 void LobbyGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	float volume = pVolumeSlider->GetValue();
 	float maxVolume = pVolumeSlider->GetMaximum();
@@ -880,6 +894,11 @@ void LobbyGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesi
 
 void LobbyGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
 }
