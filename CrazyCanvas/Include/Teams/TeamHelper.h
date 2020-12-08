@@ -18,6 +18,7 @@ public:
 	static bool Init();
 
 	static void SetTeamColor(uint8 teamIndex, uint8 colorIndex);
+	static uint8 GetTeamColorIndex(uint8 teamIndex);
 	static const glm::vec3& GetTeamColor(uint8 teamIndex);
 	static const ImageSources& GetTeamImage(uint8 teamIndex);
 	

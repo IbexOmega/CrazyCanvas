@@ -401,6 +401,7 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 	}
 	 
 	// Modify material of mesh component to represent team color
+	uint8 teamColorIndex = TeamHelper::GetTeamColorIndex(teamComponent.TeamIndex);
 	glm::vec3 teamColor = TeamHelper::GetTeamColor(teamComponent.TeamIndex);
 
 	TArray<MeshComponent> meshComponents = levelObject.MeshComponents;
@@ -431,7 +432,7 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 		}
 
 		GUID_Lambda teamMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"Team Indicator Color Material " + materialName + " Color " + glm::to_string(teamColor),
+			"Team Indicator Color Material " + materialName + " Color Index" + std::to_string(teamColorIndex),
 			loadDesc.AlbedoMapGUID		!= GUID_NONE ? loadDesc.AlbedoMapGUID  : GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			loadDesc.NormalMapGUID		!= GUID_NONE ? loadDesc.NormalMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 			loadDesc.AOMapGUID			!= GUID_NONE ? loadDesc.AOMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,

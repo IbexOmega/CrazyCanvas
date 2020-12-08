@@ -80,6 +80,13 @@ const ImageSources& TeamHelper::GetTeamImage(uint8 teamIndex)
 	return s_AvailableImageSources[s_TeamColorIndices[index]];
 }
 
+uint8 TeamHelper::GetTeamColorIndex(uint8 teamIndex)
+{
+	uint8 index = teamIndex - 1;
+	VALIDATE(index < LambdaEngine::MAX_NUM_TEAMS);
+	return s_TeamColorIndices[index];
+}
+
 void TeamHelper::SetTeamColor(uint8 teamIndex, uint8 colorIndex)
 {
 	uint8 index = teamIndex - 1;
