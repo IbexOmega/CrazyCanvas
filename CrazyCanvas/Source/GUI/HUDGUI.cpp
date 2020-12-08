@@ -254,7 +254,7 @@ void HUDGUI::UpdateCountdown(uint8 countDownTime)
 	pCountdownGUI->UpdateCountdown(countDownTime);
 }
 
-void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
+void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal, bool isFriendly)
 {
 	Noesis::Ptr<Noesis::RotateTransform> rotateTransform = *new RotateTransform();
 
@@ -289,7 +289,7 @@ void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::
 	m_pHitIndicatorGrid->SetRenderTransform(rotateTransform);
 
 	DamageIndicatorGUI* pDamageIndicatorGUI = FindName<DamageIndicatorGUI>("DAMAGE_INDICATOR");
-	pDamageIndicatorGUI->DisplayIndicator();
+	pDamageIndicatorGUI->DisplayIndicator(isFriendly);
 }
 
 void HUDGUI::DisplayHitIndicator()

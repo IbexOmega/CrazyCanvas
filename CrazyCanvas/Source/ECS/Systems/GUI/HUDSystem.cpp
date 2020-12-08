@@ -166,12 +166,17 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 		if (!m_DamageTakenEventsToProcess.IsEmpty())
 		{
-			for (ProjectileHitEvent& event : m_DamageTakenEventsToProcess)
+			for (auto& pair : m_DamageTakenEventsToProcess)
 			{
 				const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
-				const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
+				const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(pair.first.CollisionInfo1.Entity);
 
-				m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
+				bool isFriendly = false;
+
+				if (pair.second == m_LocalTeamIndex)
+					isFriendly = true;
+
+				m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), pair.first.CollisionInfo1.Normal, isFriendly);
 			}
 
 			m_DamageTakenEventsToProcess.Clear();
@@ -460,22 +465,26 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		const ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
+
+		const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
 
 		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 		{
-			m_DeferredDamageTakenHitEvents.EmplaceBack(event);
+			if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
+			{
+				uint8 projectileTeamIndex = pTeamComponents->GetConstData(projectileComponents.Owner).TeamIndex;
+
+				m_DeferredDamageTakenHitEvents.EmplaceBack(std::make_pair(event, projectileTeamIndex));
+			}
 		}
 		else
 		{
-			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			const ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
-
 			if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
 			{
 				if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
 				{
-					const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
-
 					if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex && pPlayerLocalComponents->HasComponent(projectileComponents.Owner))
 					{
 						m_DeferredEnemyHitEvents.EmplaceBack(true);

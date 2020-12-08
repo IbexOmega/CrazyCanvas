@@ -68,8 +68,8 @@ private:
 	Noesis::Ptr<Noesis::IView> m_View;
 
 	LambdaEngine::SpinLock m_DeferredEventsLock;
-	LambdaEngine::TArray<ProjectileHitEvent> m_DeferredDamageTakenHitEvents;
-	LambdaEngine::TArray<ProjectileHitEvent> m_DamageTakenEventsToProcess;
+	LambdaEngine::TArray<std::pair<ProjectileHitEvent, uint8>> m_DeferredDamageTakenHitEvents;
+	LambdaEngine::TArray<std::pair<ProjectileHitEvent, uint8>> m_DamageTakenEventsToProcess;
 
 	LambdaEngine::TArray<bool> m_DeferredEnemyHitEvents;
 	LambdaEngine::TArray<bool> m_EnemyHitEventsToProcess;
