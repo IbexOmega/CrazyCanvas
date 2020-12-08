@@ -12,6 +12,8 @@ bool TeamHelper::Init()
 		EFormat::FORMAT_R8G8B8A8_UNORM,
 		true, true);
 
+	LOG_ERROR("-----------PLAYER TEXTURE %u", s_PlayerTextureGUID);
+
 	// Create Material for "My" Team
 	{
 		MaterialProperties myTeamMaterialProperties = {};
