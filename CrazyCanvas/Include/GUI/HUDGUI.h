@@ -146,12 +146,12 @@ private:
 
 	Noesis::Grid* m_pHitIndicatorGrid			= nullptr;
 	Noesis::Grid* m_pScoreboardGrid				= nullptr;
-	Noesis::Grid* m_CarryFlagIndicator			= nullptr;
+	Noesis::Grid* m_pCarryFlagIndicator			= nullptr;
 
 	Noesis::Border* m_pCarryFlagBorder = nullptr;
 
-	Noesis::Storyboard* m_CarryFlagIndicatorStoryBoard	= nullptr;
-	Noesis::Storyboard* m_CarryingFlagResetStoryBoard	= nullptr;
+	Noesis::Storyboard* m_pCarryFlagIndicatorStoryBoard	= nullptr;
+	Noesis::Storyboard* m_pCarryingFlagResetStoryBoard	= nullptr;
 
 	Noesis::TextBlock* m_pTeam1Score = nullptr;
 	Noesis::TextBlock* m_pTeam2Score = nullptr;
