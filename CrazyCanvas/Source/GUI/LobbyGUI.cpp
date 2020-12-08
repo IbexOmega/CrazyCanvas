@@ -62,7 +62,7 @@ void LobbyGUI::InitGUI()
 	for (EGameMode gameMode : gameModes)
 		gameModeNames.PushBack(GameModeToString(gameMode));
 
-	TArray<glm::vec3> colors = TeamHelper::GetAllAvailableColors();
+	const glm::vec3* pColors = TeamHelper::GetAllAvailableColors();
 
 	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_pGameSettings->ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
@@ -72,8 +72,8 @@ void LobbyGUI::InitGUI()
 	/*AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
-	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 1 Color", colors, 0);
-	AddSettingColorBox(SETTING_CHANGE_TEAM_2_COLOR, "Team 2 Color", colors, 1);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 1 Color", pColors, NUM_TEAM_COLORS_AVAILABLE, 0);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_2_COLOR, "Team 2 Color", pColors, NUM_TEAM_COLORS_AVAILABLE, 1);
 
 	UpdateSettings(*m_pGameSettings);
 
@@ -458,7 +458,7 @@ void LobbyGUI::AddSettingComboBox(
 	settingComboBox->SetSelectedIndex(defaultIndex);
 }
 
-void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::TArray<glm::vec3>& settingColors, uint8 defaultIndex)
+void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const glm::vec3* pSettingColors, uint32 numSettingColors, uint8 defaultIndex)
 {
 	// Add setting text
 	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
@@ -477,8 +477,10 @@ void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const 
 	RegisterName(settingComboBox->GetName(), settingComboBox);
 	m_pSettingsHostStackPanel->GetChildren()->Add(settingComboBox);
 
-	for (auto& color : settingColors)
+	for (uint32 i = 0; i < numSettingColors; i++)
 	{
+		const glm::vec3& color = pSettingColors[i];
+
 		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
 		pBrush->SetColor(Color(color.r, color.g, color.b));
 

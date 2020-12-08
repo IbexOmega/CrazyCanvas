@@ -431,7 +431,7 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 		}
 
 		GUID_Lambda teamMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"TeamIndicator Color Material " + materialName,
+			"Team Indicator Color Material " + materialName + " Color " + glm::to_string(teamColor),
 			loadDesc.AlbedoMapGUID		!= GUID_NONE ? loadDesc.AlbedoMapGUID  : GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			loadDesc.NormalMapGUID		!= GUID_NONE ? loadDesc.NormalMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 			loadDesc.AOMapGUID			!= GUID_NONE ? loadDesc.AOMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,

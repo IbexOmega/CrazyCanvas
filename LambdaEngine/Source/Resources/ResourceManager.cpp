@@ -737,6 +737,9 @@ namespace LambdaEngine
 			combinedMaterialTextureDescIt != s_CombinedMaterialTextureDescriptions.end())
 		{
 			aoMetallicRoughnessGUID = combinedMaterialTextureDescIt->second;
+
+			(*ppMappedMaterial)->pAOMetallicRoughnessMap		= s_Textures[aoMetallicRoughnessGUID];
+			(*ppMappedMaterial)->pAOMetallicRoughnessMapView	= s_TextureViews[aoMetallicRoughnessGUID];
 			s_TextureRefs[aoMetallicRoughnessGUID]++;
 		}
 		else
