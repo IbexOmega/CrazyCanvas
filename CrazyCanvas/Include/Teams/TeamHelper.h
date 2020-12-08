@@ -21,7 +21,7 @@ public:
 	static uint8 GetTeamColorIndex(uint8 teamIndex);
 	static const glm::vec3& GetTeamColor(uint8 teamIndex);
 	static const ImageSources& GetTeamImage(uint8 teamIndex);
-	
+
 	//static GUID_Lambda GetTeamColorMaterialGUID(uint32 teamIndex);
 	static glm::vec3 GetAvailableColor(uint32 colorIndex);
 	static const glm::vec3* GetAllAvailableColors();
@@ -60,7 +60,6 @@ private:
 		{0.0f, 1.0f, 0.0f},
 		{1.0f, 1.0f, 0.0f},
 		{1.0f, 0.0f, 1.0f},
-		{1.0f, 0.5f, 0.75f}
 	};
 
 

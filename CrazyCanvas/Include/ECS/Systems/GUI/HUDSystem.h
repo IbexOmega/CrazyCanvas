@@ -36,6 +36,8 @@ public:
 	bool OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event);
 	bool OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event);
 	bool OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& event);
+	bool OnFlagPickedUpEvent(const FlagPickedUpEvent& event);
+	bool OnFlagDroppedEvent(const FlagDroppedEvent& event);
 	bool OnProjectileHit(const ProjectileHitEvent& event);
 	bool OnSpectatePlayerEvent(const SpectatePlayerEvent& event);
 	bool OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event);
@@ -46,15 +48,17 @@ public:
 
 	void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
 
+	void DisplayNamePlate(const LambdaEngine::String& name, bool isLookingAtTeamPlayer);
+
 private:
 	bool OnMatchCountdownEvent(const MatchCountdownEvent& event);
 	bool OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& event);
-	bool OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity);
-	bool RemoveProjectedEntity(LambdaEngine::Entity projectedEntity);
+	void OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity);
+	void RemoveProjectedEntity(LambdaEngine::Entity projectedEntity);
 
 private:
 
-	LambdaEngine::IDVector m_PlayerEntities;
+	LambdaEngine::IDVector m_LocalPlayerEntities;
 	LambdaEngine::IDVector m_ForeignPlayerEntities;
 	LambdaEngine::IDVector m_WeaponEntities;
 	LambdaEngine::IDVector m_ProjectedGUIEntities;
@@ -69,6 +73,6 @@ private:
 
 	LambdaEngine::TArray<bool> m_DeferredEnemyHitEvents;
 	LambdaEngine::TArray<bool> m_EnemyHitEventsToProcess;
-	
+
 	uint8 m_LocalTeamIndex = UINT8_MAX;
 };

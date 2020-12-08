@@ -26,8 +26,6 @@
 #include "States/MainMenuState.h"
 #include "States/ServerState.h"
 
-#include "Math/Random.h"
-
 #include "Multiplayer/ClientHelper.h"
 
 #include "Application/API/Events/EventQueue.h"
@@ -40,8 +38,6 @@
 #include <wchar.h>
 #include <windows.h>
 #include <Lmcons.h>
-#include <Psapi.h>
-#include "Utilities/StringUtilities.h"
 
 #define SERVER_ITEM_COLUMNS 5
 
@@ -49,7 +45,6 @@ using namespace LambdaEngine;
 using namespace Noesis;
 
 MultiplayerGUI::MultiplayerGUI(MultiplayerState* pMultiplayerState) :
-	m_ClientHostID(-1),
 	m_pMulitplayerState(pMultiplayerState)
 {
 	Noesis::GUI::LoadComponent(this, "Multiplayer.xaml");
@@ -59,8 +54,6 @@ MultiplayerGUI::MultiplayerGUI(MultiplayerState* pMultiplayerState) :
 	m_pListBoxServersSaved	= FrameworkElement::FindName<ListBox>("SAVED_SERVER_LIST");
 	m_pTextBoxAddress		= FrameworkElement::FindName<TextBox>("IP_ADDRESS");
 	m_pTextBoxName			= FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
-
-	//m_pTextBoxAddress->SetText("81.170.143.133:4444");
 
 	ErrorPopUpClose();
 	NotiPopUpClose();
@@ -92,11 +85,6 @@ void MultiplayerGUI::AddServerLAN(const ServerInfo& serverInfo)
 	m_pGridServers->SetRow(pGrid, 4);
 
 	m_pListBoxServersLAN->GetItems()->Add(pGrid);
-
-	if (m_ClientHostID == serverInfo.ClientHostID)
-	{
-		ClientSystem::GetInstance().Connect(serverInfo.EndPoint);
-	}
 }
 
 void MultiplayerGUI::AddServerSaved(const ServerInfo& serverInfo)
@@ -237,11 +225,6 @@ const char* MultiplayerGUI::GetPlayerName() const
 	return m_pTextBoxName->GetText();
 }
 
-bool MultiplayerGUI::HasHostedServer() const
-{
-	return m_ClientHostID != -1;
-}
-
 bool MultiplayerGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
 	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
@@ -296,15 +279,7 @@ void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if(!HasHostedServer())
-	{
-		//start Server with populated struct
-		NotiPopUP(HOST_NOTIFICATION);
-
-		StartUpServer("--state=server");
-
-		//LambdaEngine::GUIApplication::SetView(nullptr);
-	}
+	m_pMulitplayerState->StartUpServer();
 }
 
 void MultiplayerGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -346,71 +321,6 @@ void MultiplayerGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noe
 	else
 	{
 		ErrorPopUp(JOIN_ERROR);
-	}
-}
-
-bool MultiplayerGUI::StartUpServer(const std::string& commandLine)
-{
-	// Get application (.exe) path
-	HANDLE processHandle = NULL;
-	WString filePath;
-
-	processHandle = GetCurrentProcess();
-	if (processHandle != NULL)
-	{
-		TCHAR filename[MAX_PATH];
-		if (GetModuleFileNameEx(processHandle, NULL, filename, MAX_PATH) > 0)
-		{
-			filePath = WString(filename);
-		}
-		else
-		{
-			LOG_ERROR("Failed to get current process file path - cannot start server");
-			return false;
-		}
-	}
-
-	//additional Info
-	STARTUPINFOA lpStartupInfo;
-	PROCESS_INFORMATION lpProcessInfo;
-	m_ClientHostID = Random::Int32();
-
-	std::string finalCLine = ConvertToAscii(filePath) + " " + commandLine + " " + std::to_string(m_ClientHostID);
-
-	// set the size of the structures
-	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
-	lpStartupInfo.cb = sizeof(lpStartupInfo);
-	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
-
-	SetLastError(0);
-
-	if (!CreateProcessA(
-		NULL,
-		finalCLine.data(),	//Command line
-		NULL,			// Process handle not inheritable
-		NULL,			// Thread handle not inheritable
-		NULL, 
-		NULL,			// No creation flags
-		NULL,			// Use parent's environment block
-		NULL,			// Use parent's starting directory
-		&lpStartupInfo,
-		&lpProcessInfo)
-		)
-	{
-		int dError2 = GetLastError();
-
-		LOG_ERROR("Create Process LastError: %d", dError2);
-		return false;
-	}
-	else
-	{
-		LOG_MESSAGE("Create Process Success");
-
-		// Close process and thread handles. 
-		CloseHandle(lpProcessInfo.hProcess);
-		CloseHandle(lpProcessInfo.hThread);
-
-		return true;
 	}
 }
 

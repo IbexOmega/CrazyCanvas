@@ -7,6 +7,7 @@
 #include "ECS/Components/Player/Player.h"
 #include "Game/ECS/Components/Team/TeamComponent.h"
 
+
 #include "ECS/ECSCore.h"
 
 #include "Input/API/Input.h"
@@ -30,6 +31,8 @@ HUDSystem::~HUDSystem()
 	EventQueue::UnregisterEventHandler<WeaponReloadFinishedEvent>(this, &HUDSystem::OnWeaponReloadFinished);
 	EventQueue::UnregisterEventHandler<WeaponReloadStartedEvent>(this, &HUDSystem::OnWeaponReloadStartedEvent);
 	EventQueue::UnregisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
+	EventQueue::UnregisterEventHandler<FlagPickedUpEvent>(this, &HUDSystem::OnFlagPickedUpEvent);
+	EventQueue::UnregisterEventHandler<FlagDroppedEvent>(this, &HUDSystem::OnFlagDroppedEvent);
 	EventQueue::UnregisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
 	EventQueue::UnregisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
@@ -54,7 +57,7 @@ void HUDSystem::Init()
 			}
 		},
 		{
-			.pSubscriber = &m_PlayerEntities,
+			.pSubscriber = &m_LocalPlayerEntities,
 			.ComponentAccesses =
 			{
 				{ R, HealthComponent::Type() }, { R, RotationComponent::Type() }, { NDA, PlayerLocalComponent::Type() }
@@ -71,7 +74,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_ProjectedGUIEntities,
 			.ComponentAccesses =
 			{
-				{ R,	ProjectedGUIComponent::Type() }
+				{ R, ProjectedGUIComponent::Type() }, { R, TeamComponent::Type() }, { R, PositionComponent::Type() }
 			},
 			.OnEntityAdded		= std::bind_front(&HUDSystem::OnProjectedEntityAdded, this),
 			.OnEntityRemoval	= std::bind_front(&HUDSystem::RemoveProjectedEntity, this)
@@ -102,6 +105,8 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<WeaponReloadCanceledEvent>(this, &HUDSystem::OnWeaponReloadCanceledEvent);
 	EventQueue::RegisterEventHandler<MatchCountdownEvent>(this, &HUDSystem::OnMatchCountdownEvent);
 	EventQueue::RegisterEventHandler<ProjectileHitEvent>(this, &HUDSystem::OnProjectileHit);
+	EventQueue::RegisterEventHandler<FlagPickedUpEvent>(this, &HUDSystem::OnFlagPickedUpEvent);
+	EventQueue::RegisterEventHandler<FlagDroppedEvent>(this, &HUDSystem::OnFlagDroppedEvent);
 	EventQueue::RegisterEventHandler<SpectatePlayerEvent>(this, &HUDSystem::OnSpectatePlayerEvent);
 	EventQueue::RegisterEventHandler<PlayerScoreUpdatedEvent>(this, &HUDSystem::OnPlayerScoreUpdated);
 	EventQueue::RegisterEventHandler<PlayerPingUpdatedEvent>(this, &HUDSystem::OnPlayerPingUpdated);
@@ -109,7 +114,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 	EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &HUDSystem::OnPacketTeamScored);
-	
+
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
@@ -138,7 +143,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 	const ComponentArray<ViewProjectionMatricesComponent>* pViewProjMats = pECS->GetComponentArray<ViewProjectionMatricesComponent>();
 	const ComponentArray<PositionComponent>* pPositionComponents = pECS->GetComponentArray<PositionComponent>();
 
-	for (Entity player : m_PlayerEntities)
+	for (Entity player : m_LocalPlayerEntities)
 	{
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
 
@@ -182,7 +187,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 			m_EnemyHitEventsToProcess.Clear();
 		}
 
-
+		const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 		for (Entity camera : m_CameraEntities)
 		{
 			const ViewProjectionMatricesComponent& viewProjMat = pViewProjMats->GetConstData(camera);
@@ -192,21 +197,20 @@ void HUDSystem::FixedTick(Timestamp delta)
 				const PositionComponent& worldPosition = pPositionComponents->GetConstData(entity);
 
 				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
-			
-				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity);
+
+				const IndicatorTypeGUI indicatorType = pProjectedGUIComponents->GetConstData(entity).GUIType;
+				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity, indicatorType);
 			}
 		}
 	}
 
-
-
 	static bool activeButtonChanged = false;
-	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
+	if (InputActionSystem::IsActiveGlobal(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
 		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
-	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
+	else if (!InputActionSystem::IsActiveGlobal(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
 		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
@@ -294,6 +298,38 @@ bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& eve
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
 				m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
+			}
+		}
+	}
+
+	return false;
+}
+
+bool HUDSystem::OnFlagPickedUpEvent(const FlagPickedUpEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		for (Entity player : m_LocalPlayerEntities)
+		{
+			if (event.PlayerEntity == player)
+			{
+				m_HUDGUI->DisplayCarryFlagIndicator(event.FlagEntity, true);
+			}
+		}
+	}
+
+	return false;
+}
+
+bool HUDSystem::OnFlagDroppedEvent(const FlagDroppedEvent& event)
+{
+	if (!MultiplayerUtils::IsServer())
+	{
+		for (Entity player : m_LocalPlayerEntities)
+		{
+			if (event.PlayerEntity == player)
+			{
+				m_HUDGUI->DisplayCarryFlagIndicator(event.FlagEntity, false);
 			}
 		}
 	}
@@ -393,32 +429,27 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 	return false;
 }
 
-bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
+void HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 	const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(projectedEntity);
 
-
 	if (projectedGUIComponent.GUIType == IndicatorTypeGUI::FLAG_INDICATOR)
 	{
 		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 		const TeamComponent& teamComponent = pTeamComponents->GetConstData(projectedEntity);
-		m_HUDGUI->CreateProjectedGUIElement(projectedEntity, m_LocalTeamIndex, teamComponent.TeamIndex);
+		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex, teamComponent.TeamIndex);
 	}
 	else
 	{
-		m_HUDGUI->CreateProjectedGUIElement(projectedEntity, m_LocalTeamIndex);
+		m_HUDGUI->CreateProjectedPingGUIElement(projectedEntity);
 	}
-
-	return false;
 }
 
-bool HUDSystem::RemoveProjectedEntity(LambdaEngine::Entity projectedEntity)
+void HUDSystem::RemoveProjectedEntity(LambdaEngine::Entity projectedEntity)
 {
 	m_HUDGUI->RemoveProjectedGUIElement(projectedEntity);
-
-	return false;
 }
 
 bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
@@ -506,4 +537,9 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
 {
 	m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
+}
+
+void HUDSystem::DisplayNamePlate(const LambdaEngine::String& name, bool isLookingAtTeamPlayer)
+{
+	m_HUDGUI->ShowNamePlate(name, isLookingAtTeamPlayer);
 }

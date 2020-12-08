@@ -298,6 +298,27 @@ void HUDGUI::DisplayHitIndicator()
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
+void HUDGUI::DisplayCarryFlagIndicator(Entity flagEntity, bool isCarrying)
+{
+	auto grid = m_ProjectedElements.find(flagEntity);
+
+	if (isCarrying)
+	{
+		grid->second->SetVisibility(Visibility::Visibility_Hidden);
+
+		m_pCarryFlagIndicator->SetVisibility(Visibility::Visibility_Visible);
+		m_pCarryFlagIndicatorStoryBoard->Begin();
+	}
+	else
+	{
+		grid->second->SetVisibility(Visibility::Visibility_Visible);
+
+		m_pCarryFlagIndicator->SetVisibility(Visibility::Visibility_Collapsed);
+		m_pCarryingFlagResetStoryBoard->Begin();
+	}
+
+}
+
 void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex)
 {
 	m_pKillFeedGUI->AddToKillFeed(killed, killer, killedPlayerTeamIndex);
@@ -308,9 +329,8 @@ void HUDGUI::UpdateKillFeedTimer(LambdaEngine::Timestamp delta)
 	m_pKillFeedGUI->UpdateFeedTimer(delta);
 }
 
-void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity)
+void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity, IndicatorTypeGUI indicatorType)
 {
-
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
@@ -326,7 +346,11 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 	{
 		translation->SetY(glm::clamp(windowSpacePos.y, (-m_WindowSize.y + 100) * 0.5f, (m_WindowSize.y - 100) * 0.5f));
 		translation->SetX(glm::clamp(windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
-		SetIndicatorOpacity(glm::clamp(vecLength, 0.1f, 1.0f), entity);
+
+		if (indicatorType == IndicatorTypeGUI::FLAG_INDICATOR)
+		{
+			SetIndicatorOpacity(glm::clamp(vecLength, 0.1f, 1.0f), entity);
+		}
 	}
 	else
 	{
@@ -337,7 +361,7 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 
 		translation->SetX(glm::clamp(-windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
 	}
-	
+
 	TranslateIndicator(translation, entity);
 }
 
@@ -352,6 +376,16 @@ void HUDGUI::ShowHUD(const bool isVisible)
 		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
 	else
 		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
+}
+
+void HUDGUI::ShowNamePlate(const LambdaEngine::String& name, bool isLooking)
+{
+	((Noesis::TextBlock*)m_pLookAtGrid->GetChildren()->Get(0))->SetText(name.c_str());
+
+	if (isLooking)
+		m_pLookAtGrid->SetVisibility(Noesis::Visibility::Visibility_Visible);
+	else
+		m_pLookAtGrid->SetVisibility(Noesis::Visibility::Visibility_Collapsed);
 }
 
 ScoreBoardGUI* HUDGUI::GetScoreBoard() const
@@ -427,13 +461,49 @@ void HUDGUI::InitGUI()
 	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
 
 	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
-	
+	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
+	m_pCarryFlagBorder = FrameworkElement::FindName<Border>("CarryFlagBorder");
+	m_pCarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
+
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
 
+	m_pCarryFlagIndicatorStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagStoryBoard");
+	m_pCarryingFlagResetStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagResetStoryBoard");
+
+
 	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
 	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
+
+	{ // init CarryFlagIndicator and LookAtGrid colors
+
+		Ptr<Noesis::RadialGradientBrush> gradientBrush = *new Noesis::RadialGradientBrush();
+		const glm::vec3& teamGradientColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam() == 1 ? 2 : 1);
+		Noesis::Color gradientColor(teamGradientColor.r, teamGradientColor.g, teamGradientColor.b);
+		Noesis::GradientStopCollection* pGStops = new GradientStopCollection();
+		Noesis::GradientStop* pTeamGradientStopColor = new GradientStop();
+		Noesis::GradientStop* pTeamGradientStop = new GradientStop();
+
+		pTeamGradientStopColor->SetColor(gradientColor);
+		pTeamGradientStopColor->SetOffset(1.0f);
+		pGStops->Add(pTeamGradientStopColor);
+		pGStops->Add(pTeamGradientStop);
+		gradientBrush->SetGradientStops(pGStops);
+
+		m_pCarryFlagBorder->SetBackground(gradientBrush);
+
+
+		Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+		const glm::vec3& teamColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
+		Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
+
+		brush->SetColor(color);
+		brush->SetOpacity(0.25f);
+
+		m_pLookAtGrid->SetBackground(brush);
+
+	}
 
 	m_pPaintAmmoRect->SetSource(pBitmap);
 	m_pPaintDropRect->SetSource(pBitmapDrop);
@@ -486,7 +556,7 @@ void HUDGUI::SetRenderStagesInactive()
 	DisablePlaySessionsRenderstages();
 }
 
-void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
+void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
 	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
 
@@ -544,6 +614,47 @@ void HUDGUI::CreateProjectedGUIElement(Entity entity, uint8 localTeamIndex, uint
 	}
 }
 
+void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
+{
+	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
+
+	Noesis::Ptr<Noesis::Border> pingBorderIndicator = *new Noesis::Border();
+
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+
+	translation->SetY(100.0f);
+	translation->SetX(100.0f);
+
+	gridIndicator->SetRenderTransform(translation);
+	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+
+	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
+
+	strokeBrush->SetColor(Noesis::Color::Black());
+	brush->SetColor(Noesis::Color::Orange());
+
+	gridIndicator->SetHeight(25);
+	gridIndicator->SetWidth(25);
+
+	pingBorderIndicator->SetHeight(25);
+	pingBorderIndicator->SetWidth(25);
+
+	pingBorderIndicator->SetBorderBrush(strokeBrush);
+	pingBorderIndicator->SetBorderThickness(2);
+
+	pingBorderIndicator->SetBackground(brush);
+
+	gridIndicator->GetChildren()->Add(pingBorderIndicator);
+
+	m_ProjectedElements[entity] = gridIndicator;
+
+	if (m_pHUDGrid->GetChildren()->Add(gridIndicator) == -1)
+	{
+		LOG_ERROR("Could not add Proj Element");
+	}
+}
+
 void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
 {
 	auto indicator = m_ProjectedElements.find(entity);
@@ -567,6 +678,7 @@ void HUDGUI::SetIndicatorOpacity(float32 value, Entity entity)
 	auto indicator = m_ProjectedElements.find(entity);
 	VALIDATE(indicator != m_ProjectedElements.end())
 
-	Noesis::Ellipse* pTarget = (Noesis::Ellipse*)indicator->second->GetChildren()->Get(0);
+	UIElement* pChildElement = indicator->second->GetChildren()->Get(0);
+	Noesis::Ellipse* pTarget = reinterpret_cast<Noesis::Ellipse*>(pChildElement);
 	pTarget->GetFill()->SetOpacity(value);
 }
