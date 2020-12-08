@@ -20,6 +20,7 @@
 
 #include "Game/ECS/Systems/CameraSystem.h"
 
+#include "Rendering/RenderGraph.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;
@@ -69,6 +70,7 @@ bool EscapeMenuGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEv
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeControlsClick);
 	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnVolumeSliderChanged);
 	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnFOVSliderChanged);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnReflectionsSPPSliderChanged);
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyControlsClick);
@@ -227,6 +229,19 @@ void EscapeMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, c
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
+	// Glossy
+	{
+		//Enabled
+		Noesis::CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<CheckBox>("GlossyReflectionsCheckBox");
+		bool glossyEnabled = pGlossyReflectionsCheckbox->GetIsChecked().GetValue();
+		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, glossyEnabled);
+
+		//SPP
+		EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
+
+		ChangeGlossySettings(glossyEnabled, m_NewReflectionsSPP);
+	}
+
 	EngineConfig::WriteToFile();
 
 	OnButtonBackClick(pSender, args);
@@ -242,6 +257,11 @@ void EscapeMenuGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, 
 
 	//FOV
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	//Glossy
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
 
 	SetDefaultSettings();
 
@@ -291,6 +311,17 @@ void EscapeMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noe
 
 	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
+}
+
+void EscapeMenuGUI::OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pReflectionsSPPSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+
+	m_NewReflectionsSPP = int32(pReflectionsSPPSlider->GetValue());
+
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		m_NewReflectionsSPP);
 }
 
 void EscapeMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -385,6 +416,14 @@ void EscapeMenuGUI::SetDefaultSettings()
 	//Set initial FOV
 	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
 	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	//Set initial Glossy Toggle
+	CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<CheckBox>("GlossyReflectionsCheckBox");
+	pGlossyReflectionsCheckbox->SetIsChecked(EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS));
+
+	//Set initial SPP
+	Noesis::Slider* pReflectionsSPPSlider = FrameworkElement::FindName<Slider>("ReflectionsSPPSlider");
+	pReflectionsSPPSlider->SetValue(float32(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP)));
 
 	SetDefaultKeyBindings();
 
