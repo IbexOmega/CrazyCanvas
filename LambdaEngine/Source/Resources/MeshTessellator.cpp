@@ -210,7 +210,6 @@ namespace LambdaEngine
 			// Calculate max tessellation primitiveCount
 			const float MaxInnerTessLevel = 24.0f;
 			const float MaxOuterTessLevel = 24.0f;
-			const float Temporary = 80.0f;
 			// Calculate inner faces
 			uint64 innerTriCount = 0.0f;
 			if (MaxInnerTessLevel > 1.0 && uint32(MaxInnerTessLevel) % 2U == 0U) // Even
@@ -232,7 +231,7 @@ namespace LambdaEngine
 
 		
 			uint64 totalTriCount = innerTriCount + outerTriCount;
-			uint64 totalVertexCount = (totalTriCount * 3U) * (pMesh->Indices.GetSize() / 3U) * Temporary;
+			uint64 totalVertexCount = (totalTriCount * 3U) * (pMesh->Indices.GetSize() / 3U);
 		
 			uint64 newVerticesMaxSize = totalVertexCount * sizeof(Vertex);
 
@@ -378,15 +377,8 @@ namespace LambdaEngine
 			// Copy data to CPU
 
 			LOG_WARNING("Copy over new data...");
-			// TODO: Compact this and merge by distance! If merging, change the index too!
-			void* pMapped = m_pOutVertexSecondStagingBuffer->Map();
-			pMesh->Vertices.Resize(newVerticesMaxSize/sizeof(Vertex));
-			memcpy(pMesh->Vertices.GetData(), pMapped, newVerticesMaxSize);
-			m_pOutVertexSecondStagingBuffer->Unmap();
-			LOG_WARNING("Done");
-
 			SCalculationData calculationData = {};
-			pMapped = m_pCalculationDataStagingBuffer->Map();
+			void* pMapped = m_pCalculationDataStagingBuffer->Map();
 			memcpy(&calculationData, pMapped, sizeof(SCalculationData));
 			m_pCalculationDataStagingBuffer->Unmap();
 			LOG_WARNING("Done");
@@ -394,8 +386,15 @@ namespace LambdaEngine
 			LOG_WARNING("Compact data...");
 			const uint32 triangleCount = calculationData.PrimitiveCounter;
 			const uint32 vertexCount = triangleCount * 3U;
-			const uint32 indexCount = triangleCount * 3U;
 
+			// TODO: Compact this and merge by distance! If merging, change the index too!
+			pMapped = m_pOutVertexSecondStagingBuffer->Map();
+			pMesh->Vertices.Resize(vertexCount);
+			memcpy(pMesh->Vertices.GetData(), pMapped, vertexCount * sizeof(Vertex));
+			m_pOutVertexSecondStagingBuffer->Unmap();
+			LOG_WARNING("Done");
+
+		
 			pMesh->Vertices.Resize(vertexCount);
 			TArray<Vertex> vertices = pMesh->Vertices;
 			THashTable<Vertex, MeshIndexType> vertexToIndex;
@@ -547,23 +546,23 @@ namespace LambdaEngine
 		uint64 bufferSize0 = 0;
 		uint64 bufferSize1 = 0;
 
-		if ((*outFirstStagingBuffer) == nullptr || (*outFirstStagingBuffer)->GetDesc().SizeInBytes < size)
-		{
-			if ((*outFirstStagingBuffer) != nullptr)
-				SAFERELEASE((*outFirstStagingBuffer));
+		//if ((*outFirstStagingBuffer) == nullptr || (*outFirstStagingBuffer)->GetDesc().SizeInBytes < size)
+		//{
+		//	if ((*outFirstStagingBuffer) != nullptr)
+		//		SAFERELEASE((*outFirstStagingBuffer));
 
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName = name + " First Staging Buffer";
-			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			bufferDesc.SizeInBytes = size;
+		//	BufferDesc bufferDesc = {};
+		//	bufferDesc.DebugName = name + " First Staging Buffer";
+		//	bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
+		//	bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
+		//	bufferDesc.SizeInBytes = size;
 
-			(*outFirstStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		}
+		//	(*outFirstStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+		//}
 
-		void* pMapped = (*outFirstStagingBuffer)->Map();
-		memset(pMapped, clearData, size);
-		(*outFirstStagingBuffer)->Unmap();
+		//void* pMapped = (*outFirstStagingBuffer)->Map();
+		//memset(pMapped, clearData, size);
+		//(*outFirstStagingBuffer)->Unmap();
 
 		if ((*outBuffer) == nullptr || (*outBuffer)->GetDesc().SizeInBytes < size)
 		{
@@ -575,11 +574,11 @@ namespace LambdaEngine
 			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			bufferDesc.SizeInBytes = size;
-
+			stagingBufferSize = size;
 			(*outBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 
-		pCommandList->CopyBuffer((*outFirstStagingBuffer), 0, (*outBuffer), 0, size);
+		//pCommandList->CopyBuffer((*outFirstStagingBuffer), 0, (*outBuffer), 0, size);
 
 		if ((*outSecondStagingBuffer) == nullptr || (*outSecondStagingBuffer)->GetDesc().SizeInBytes < size)
 		{
@@ -591,7 +590,7 @@ namespace LambdaEngine
 			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST;
 			bufferDesc.SizeInBytes = size;
-
+			bufferSize0 = size;
 			(*outSecondStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 

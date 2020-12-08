@@ -23,8 +23,8 @@ layout(location = 3) out vec4 out_TexCoord[3];
 
 void CalculateTessLevels(inout float inner, inout float  outer[3])
 {
-    const float MAX_AREA = 40.0;
-    const float MIN_AREA = 1.0;
+    const float MAX_AREA = 20.0;
+    const float MIN_AREA = 0.1;
     mat4 scaleMatrix = b_CalculationData.ScaleMatrix;
     
     vec3 e0 = (gl_in[1].gl_Position - gl_in[2].gl_Position).xyz;
@@ -42,10 +42,10 @@ void CalculateTessLevels(inout float inner, inout float  outer[3])
     float area = length(e0) * length(e1) * 0.5f;
     float tt = min(max(max(area - MIN_AREA, 0.0f) / (MAX_AREA - MIN_AREA), 0.0f), 1.0f);
     
-    inner = mix(1.0, b_CalculationData.MaxInnerLevelTess, tt);
-   
+    inner = ceil(mix(1.0, b_CalculationData.MaxInnerLevelTess, tt));
+    
     // float t = max(min((edgeLength - MIN_LENGTH), MAX_LENGTH) / MAX_LENGTH, 0.0f) * tt;
-    float outerTess = mix(1.0, b_CalculationData.MaxOuterLevelTess, diff);
+    float outerTess = mix(1.0, b_CalculationData.MaxOuterLevelTess, diff * smoothstep(0.0f, 1.0f, tt));
 
     outer[0] = outerTess;
     outer[1] = outerTess;
