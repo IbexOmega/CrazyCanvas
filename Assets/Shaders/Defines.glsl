@@ -198,7 +198,7 @@ struct SAtlasData
 	uint	AtlasIndex;
 };
 
-struct SUnwrapData
+struct SPaintData
 {
 	vec4 TargetPosition;
 	vec4 TargetDirectionXYZAngleW;
