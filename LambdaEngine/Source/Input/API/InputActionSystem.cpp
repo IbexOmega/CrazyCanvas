@@ -73,6 +73,7 @@ namespace LambdaEngine
 			if (strAction == s_LookSensitivityName)
 			{
 				s_CurrentLookSensitivityPercentage = s_ConfigDocument[s_LookSensitivityName.c_str()].GetFloat();
+				s_CurrentLookSensitivity = s_CurrentLookSensitivityPercentage * LOOK_SENSITIVITY_BASE;
 			}
 			else
 			{
@@ -226,9 +227,35 @@ namespace LambdaEngine
 		return false;
 	}
 
+	bool InputActionSystem::IsActiveGlobal(EAction action)
+	{
+		if (s_CurrentBindings.contains(action))
+		{
+			EKey key = StringToKey(s_CurrentBindings[action]);
+			EMouseButton mouseButton = StringToButton(s_CurrentBindings[action]);
+
+			if (key != EKey::KEY_UNKNOWN)
+			{
+				return Input::IsKeyDown(Input::GetCurrentInputmode(), key);
+			}
+			else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+			{
+				return Input::GetMouseState(Input::GetCurrentInputmode()).IsButtonPressed(mouseButton);
+			}
+		}
+
+		LOG_ERROR("Action %s is not defined.", ActionToString(action));
+		return false;
+	}
+
 	bool InputActionSystem::IsBoundToKey(EAction action)
 	{
 		return GetKey(action) != EKey::KEY_UNKNOWN;
+	}
+
+	bool InputActionSystem::IsActionBoundToKey(EAction action, EKey key)
+	{
+		return GetKey(action) == key;
 	}
 
 	bool InputActionSystem::IsBoundToMouseButton(EAction action)
