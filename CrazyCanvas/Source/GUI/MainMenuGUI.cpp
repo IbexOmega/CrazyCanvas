@@ -8,6 +8,7 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"
 #include "Game/State.h"
+#include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
 #include "States/BenchmarkState.h"
 #include "States/PlaySessionState.h"
@@ -92,6 +93,11 @@ void MainMenuGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
@@ -110,6 +116,11 @@ void MainMenuGUI::OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
@@ -121,6 +132,11 @@ void MainMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const No
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
@@ -134,6 +150,11 @@ void MainMenuGUI::OnButtonExitClick(BaseComponent* pSender, const RoutedEventArg
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	CommonApplication::Get()->Terminate();
 }
 
@@ -146,6 +167,11 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
@@ -161,6 +187,11 @@ void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedE
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	State* pLobbyState = DBG_NEW MultiplayerState();
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -169,6 +200,11 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
@@ -188,6 +224,11 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	// Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
 	// m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
 	// EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	// Mesh Shader
 	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
@@ -221,6 +262,11 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 
 void MainMenuGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	SetDefaultSettings();
 
 	//FOV
@@ -234,6 +280,11 @@ void MainMenuGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, co
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
@@ -246,6 +297,11 @@ void MainMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const No
 	// Update volume for easier changing of it. Do not save it however as that should
 	// only be done when the user presses "Apply"
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pVolumeSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	float volume = pVolumeSlider->GetValue();
 	float maxVolume = pVolumeSlider->GetMaximum();
@@ -255,6 +311,11 @@ void MainMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const No
 
 void MainMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
 }
@@ -268,6 +329,11 @@ void MainMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::R
 {
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	// Starts listening to callbacks with specific button to be changed. This action is deferred to
 	// the callback functions of KeyboardCallback and MouseButtonCallback.
 
@@ -280,6 +346,11 @@ void MainMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::R
 
 void MainMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	// Go through all keys to set - and set them
 	for (auto& stringPair : m_KeysToSet)
 	{
@@ -294,6 +365,11 @@ void MainMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, con
 
 void MainMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	// Reset
 	for (auto& stringPair : m_KeysToSet)
 	{
@@ -319,6 +395,11 @@ void MainMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, co
 
 void MainMenuGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pLookSensitivitySlider = reinterpret_cast<Noesis::Slider*>(pSender);
 
 	m_LookSensitivityPercentageToSet = pLookSensitivitySlider->GetValue() / pLookSensitivitySlider->GetMaximum();

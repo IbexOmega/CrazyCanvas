@@ -109,8 +109,10 @@ void EscapeMenuGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noes
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
@@ -125,8 +127,10 @@ void EscapeMenuGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	m_MouseEnabled = !m_MouseEnabled;
 	CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
@@ -141,8 +145,10 @@ void EscapeMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const 
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
@@ -156,8 +162,10 @@ void EscapeMenuGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noe
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	ClientHelper::Disconnect("Left by choice");
 	SetRenderStagesInactive();
@@ -185,8 +193,10 @@ void EscapeMenuGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noes
 
 void EscapeMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	// NOTE: Current implementation does not allow RT toggle - code here if that changes
 	// Ray Tracing
@@ -225,8 +235,10 @@ void EscapeMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, c
 void EscapeMenuGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	//FOV
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
@@ -241,8 +253,10 @@ void EscapeMenuGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, 
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
@@ -256,6 +270,11 @@ void EscapeMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const 
 	// Update volume for easier changing of it. Do not save it however as that should
 	// only be done when the user presses "Apply"
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	float volume = pVolumeSlider->GetValue();
 	float maxVolume = pVolumeSlider->GetMaximum();
@@ -265,6 +284,11 @@ void EscapeMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const 
 
 void EscapeMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
 }
@@ -273,8 +297,10 @@ void EscapeMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis:
 {
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	// Starts listening to callbacks with specific button to be changed. This action is deferred to
 	// the callback functions of KeyboardCallback and MouseButtonCallback.
@@ -289,8 +315,10 @@ void EscapeMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis:
 void EscapeMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Go through all keys to set - and set them
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	for (auto& stringPair : m_KeysToSet)
 	{
@@ -306,8 +334,10 @@ void EscapeMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, c
 void EscapeMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Reset
+#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
+#endif
 
 	for (auto& stringPair : m_KeysToSet)
 	{
@@ -333,6 +363,11 @@ void EscapeMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, 
 
 void EscapeMenuGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pLookSensitivitySlider = reinterpret_cast<Noesis::Slider*>(pSender);
 
 	m_LookSensitivityPercentageToSet = pLookSensitivitySlider->GetValue() / pLookSensitivitySlider->GetMaximum();
