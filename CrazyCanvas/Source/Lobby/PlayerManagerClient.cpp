@@ -83,15 +83,14 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 		pPlayer->m_Team = 1;
 	}
 
+	ClientHelper::Send(packet);
+	NetworkDebugger::RegisterClientName(pClient, name);
+
 	if (isHost)
 	{
 		PlayerHostUpdatedEvent event(pPlayer);
 		EventQueue::SendEventImmediate(event);
 	}
-
-	ClientHelper::Send(packet);
-
-	NetworkDebugger::RegisterClientName(pClient, name);
 }
 
 void PlayerManagerClient::SetLocalPlayerReady(bool ready)
