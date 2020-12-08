@@ -7,7 +7,7 @@
 
 layout(location = 0) in vec2 in_TexCoord;
 
-layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_BackBuffer;
+layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_Intermediate;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -37,16 +37,16 @@ vec3 Lerp(vec3 a, vec3 b, float amountOfA)
 void main()
 {
 	vec2 texCoord = in_TexCoord;
-	vec4 m = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 0,  0));
+	vec4 m = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2( 0,  0));
 #if PASSTHROUGH
 	out_Color = vec4(m.rgb, 1.0f);
 	return;
 #endif
 
-	vec4 n = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 0, -1));
-	vec4 s = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 0,  1));
-	vec4 w = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2(-1,  0));
-	vec4 e = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 1,  0));
+	vec4 n = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2( 0, -1));
+	vec4 s = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2( 0,  1));
+	vec4 w = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2(-1,  0));
+	vec4 e = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2( 1,  0));
 	float lumaM = m.a;
 	float lumaN = n.a;
 	float lumaS = s.a;
@@ -73,7 +73,7 @@ void main()
 #endif
 
 	// Size
-	const vec2 texSize		= textureSize(u_BackBuffer, 0);
+	const vec2 texSize		= textureSize(u_Intermediate, 0);
 	const vec2 invTexSize	= vec2(1.0f) / texSize;
 
 	float lumaL		= (lumaN + lumaS + lumaW + lumaE) * 0.25f;
@@ -86,10 +86,10 @@ void main()
 	return;
 #endif
 
-	vec4 nw = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2(-1, -1));
-	vec4 sw = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2(-1,  1));
-	vec4 ne = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 1, -1));
-	vec4 se = textureLodOffset(u_BackBuffer, texCoord, 0.0f, ivec2( 1,  1));
+	vec4 nw = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2(-1, -1));
+	vec4 sw = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2(-1,  1));
+	vec4 ne = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2( 1, -1));
+	vec4 se = textureLodOffset(u_Intermediate, texCoord, 0.0f, ivec2( 1,  1));
 	float lumaNW = nw.a;
 	float lumaNE = ne.a;
 	float lumaSW = sw.a;
@@ -168,12 +168,12 @@ void main()
 	{
 		if (!done0)
 		{
-			vec4 sample0 = textureLod(u_BackBuffer, texCoord0, 0);
+			vec4 sample0 = textureLod(u_Intermediate, texCoord0, 0);
 			lumaEnd0 = sample0.a;
 		}
 		if(!done1)
 		{
-			vec4 sample1 = textureLod(u_BackBuffer, texCoord1, 0);
+			vec4 sample1 = textureLod(u_Intermediate, texCoord1, 0);
 			lumaEnd1 = sample1.a;
 		}
 		
@@ -230,7 +230,7 @@ void main()
 	
 	float	subPixelOffset	= (0.5f + (distance0 * (-1.0f / spanLength))) * stepLength;
 	vec2	finalTexCoord	= vec2(texCoord.x + (isHorizontal ? 0.0f : subPixelOffset), texCoord.y + (isHorizontal ? subPixelOffset : 0.0f));
-	vec3	colorF			= texture(u_BackBuffer, finalTexCoord).rgb;
+	vec3	colorF			= texture(u_Intermediate, finalTexCoord).rgb;
 	vec3	finalColor		= Lerp(colorL, colorF, blendL);
 	out_Color = vec4(finalColor, 1.0f);
 }

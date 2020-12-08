@@ -110,7 +110,7 @@ namespace LambdaEngine
 		m_Desc.DebugName = debugName;
 	}
 
-	Texture* TextureViewVK::GetTexture()
+	Texture* TextureViewVK::GetTexture() const
 	{
 		return m_Desc.pTexture;
 	}

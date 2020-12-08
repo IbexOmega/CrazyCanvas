@@ -35,6 +35,7 @@
 #include "Rendering/ParticleUpdater.h"
 #include "Rendering/ParticleCollider.h"
 #include "Rendering/LightProbeRenderer.h"
+#include "Rendering/AARenderer.h"
 #include "Rendering/RT/ASBuilder.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -407,6 +408,11 @@ namespace LambdaEngine
 				m_pLightProbeRenderer = DBG_NEW LightProbeRenderer();
 				m_pLightProbeRenderer->Init();
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
+
+				// Anit-Aliasing Renderer
+				m_pAARenderer = DBG_NEW AARenderer();
+				m_pAARenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pAARenderer);
 			}
 
 			//GUI Renderer
@@ -497,6 +503,7 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pLightProbeRenderer);
+		SAFEDELETE(m_pAARenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
 		SAFEDELETE(m_pParticleCollider);
@@ -779,6 +786,8 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
 			// LightProbe Renderer
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
+			// AA Renderer
+			renderGraphDesc.CustomRenderers.PushBack(m_pAARenderer);
 
 			// AS Builder
 			if (m_RayTracingEnabled)

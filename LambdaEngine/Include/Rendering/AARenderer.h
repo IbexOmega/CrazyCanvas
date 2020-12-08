@@ -7,6 +7,8 @@
 #include "Rendering/Core/API/DescriptorSet.h"
 #include "Rendering/Core/API/PipelineLayout.h"
 
+#include "Application/API/Events/WindowEvents.h"
+
 namespace LambdaEngine
 {
 	enum class EAAMode
@@ -15,6 +17,10 @@ namespace LambdaEngine
 		AAMODE_FXAA	= 1,
 		AAMODE_TAA	= 2,
 	};
+
+	/*
+	* AARenderer
+	*/
 
 	class AARenderer : public CustomRenderer
 	{
@@ -33,6 +39,14 @@ namespace LambdaEngine
 			const Sampler* const* ppPerImageSamplers,
 			uint32 imageCount,
 			uint32 subImageCount,
+			bool backBufferBound) override final;
+
+		virtual void UpdateBufferResource(
+			const String& resourceName,
+			const Buffer* const* ppBuffers,
+			uint64* pOffsets,
+			uint64* pSizesInBytes,
+			uint32 count,
 			bool backBufferBound) override final;
 
 		virtual void Render(
@@ -58,6 +72,22 @@ namespace LambdaEngine
 			return name;
 		}
 
+		FORCEINLINE void SetAAMode(EAAMode aaMode)
+		{
+			m_AAMode = aaMode;
+		}
+
+		FORCEINLINE EAAMode GetAAMode() const
+		{
+			return m_AAMode;
+		}
+
+	private:
+		void WriteDescriptorSets();
+		bool InitHistoryTextures();
+
+		bool OnWindowResized(const WindowResizedEvent& windowResizedEvent);
+
 	public:
 		static FORCEINLINE AARenderer* GetInstance()
 		{
@@ -68,15 +98,20 @@ namespace LambdaEngine
 		inline static AARenderer* s_pInstance = 0;
 
 	private:
-		const Texture*		m_pIntermediateOutput		= nullptr;
-		const TextureView*	m_pIntermediateOutputView	= nullptr;
-
-		TArray<TSharedRef<const TextureView>> m_BackBuffers;
+		TSharedRef<const Buffer>		m_PerFrameBuffer;
+		TSharedRef<const Texture>		m_IntermediateOutput;
+		TSharedRef<const TextureView>	m_IntermediateOutputView;
+		TSharedRef<const Texture>		m_Velocity;
+		TSharedRef<const TextureView>	m_VelocityView;
+		TSharedRef<const Texture>		m_Depth;
+		TSharedRef<const TextureView>	m_DepthView;
+		TArray<TSharedRef<Texture>>		m_BackBuffers;
+		TArray<TSharedRef<TextureView>>	m_BackBufferViews;
 
 		TArray<TSharedRef<Texture>>		m_TAAHistory;
 		TArray<TSharedRef<TextureView>>	m_TAAHistoryViews;
-
-		TSharedRef<RenderPass> m_RenderPass;
+		uint32 m_Width;
+		uint32 m_Height;
 
 		bool m_NeedsUpdate = true;
 		EAAMode m_AAMode;
@@ -84,13 +119,16 @@ namespace LambdaEngine
 		TArray<TSharedRef<CommandList>>			m_CommandLists;
 		TArray<TSharedRef<CommandAllocator>>	m_CommandAllocators;
 
+		TSharedRef<RenderPass> m_RenderPass;
+		TSharedRef<RenderPass> m_TAARenderPass;
 		uint64 m_TAAState;
-		TSharedRef<PipelineLayout>	m_TAALayout;
+		TSharedRef<PipelineLayout> m_TAALayout;
 		uint64 m_FXAAState;
-		TSharedRef<PipelineLayout>	m_FXAALayout;
+		TSharedRef<PipelineLayout> m_FXAALayout;
 
 		TSharedRef<DescriptorHeap>			m_DescriptorHeap;
-		TArray<TSharedRef<DescriptorSet>>	m_TAADescriptorSets;
+		TArray<TSharedRef<DescriptorSet>>	m_TAATextureDescriptorSets;
+		TArray<TSharedRef<DescriptorSet>>	m_TAABufferDescriptorSets;
 		TArray<TSharedRef<DescriptorSet>>	m_FXAADescriptorSets;
 	};
 }

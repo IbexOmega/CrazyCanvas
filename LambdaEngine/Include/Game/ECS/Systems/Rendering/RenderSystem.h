@@ -290,6 +290,7 @@ namespace LambdaEngine
 
 		bool Init();
 		bool InitRenderGraphs();
+
 		bool Release();
 
 		virtual void Tick(Timestamp deltaTime) override final;
@@ -556,6 +557,7 @@ namespace LambdaEngine
 		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
 		class LightProbeRenderer*	m_pLightProbeRenderer	= nullptr;
+		class AARenderer*			m_pAARenderer			= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
 #ifdef RENDER_SYSTEM_DEBUG
