@@ -83,9 +83,15 @@ void PacketTranscoderSystem::FixedTickMainThreadClient(LambdaEngine::Timestamp d
 				if (pSegment)
 				{
 					if (pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID))
+					{
 						pClient->SendReliable(pSegment);
+					}
 					else
+					{
 						pClient->ReturnPacket(pSegment);
+						LOG_ERROR("Failed to write packet data!");
+						DEBUGBREAK();
+					}
 				}
 			}
 		}
@@ -128,9 +134,15 @@ void PacketTranscoderSystem::FixedTickMainThreadServer(LambdaEngine::Timestamp d
 					if (pSegment)
 					{
 						if (pPacketComponent->WriteSegment(pSegment, networkComponent.NetworkUID))
+						{
 							pClient->SendReliableBroadcast(pSegment);
+						}
 						else
+						{
 							pClient->ReturnPacket(pSegment);
+							LOG_ERROR("Failed to write packet data!");
+							DEBUGBREAK();
+						}	
 					}
 				}
 			}
@@ -152,8 +164,16 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegment
 	if (packetSize != pSegment->GetBufferSize())
 		return true;
 
+	void* pEventPacketData = pEvent->Populate(event.pClient);
+
 	pSegment->ResetReadHead();
-	pSegment->Read(pEvent->Populate(event.pClient), packetSize);
+	if (!pSegment->Read(pEventPacketData, packetSize))
+	{
+		LOG_ERROR("Failed to read packet data!");
+		DEBUGBREAK();
+		return true;
+	}
+
 	EventQueue::SendEventImmediate(*pEvent);
 
 	const ComponentType* pComponentType = pEvent->GetComponentType();
@@ -173,8 +193,8 @@ bool PacketTranscoderSystem::OnPacketReceived(const LambdaEngine::NetworkSegment
 	void* pComponent = pComponents->GetRawData(entity);
 	IPacketComponent* pPacketComponent = static_cast<IPacketComponent*>(pComponent);
 	void* packetData = pPacketComponent->AddPacketReceivedBegin();
-	pSegment->ResetReadHead();
-	pSegment->Read(packetData, packetSize);
+	memcpy(packetData, pEventPacketData, packetSize);
+
 	pPacketComponent->AddPacketReceivedEnd();
 
 	return true;
