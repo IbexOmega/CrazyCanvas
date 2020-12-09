@@ -41,7 +41,7 @@ private:
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 
-	NS_IMPLEMENT_INLINE_REFLECTION_(EscapeMenuGUI, Noesis::UserControl, "CrazyCanvas.EscapeMenuGUI")
+	NS_IMPLEMENT_INLINE_REFLECTION_(EscapeMenuGUI, Noesis::UserControl, "CrazyCanvas.LobbyGUI")
 private:
 
 	// EscapeGUI

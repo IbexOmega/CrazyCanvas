@@ -28,8 +28,6 @@ using namespace Noesis;
 EscapeMenuGUI::EscapeMenuGUI()
 {
 	Noesis::GUI::LoadComponent(this, "EscapeMenuGUI.xaml");
-
-
 }
 
 EscapeMenuGUI::~EscapeMenuGUI()

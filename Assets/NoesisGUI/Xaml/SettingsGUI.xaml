@@ -18,7 +18,7 @@
     
         <!--Settings grid-->
         <Viewbox Grid.ColumnSpan="2" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-            <Grid x:Name="SettingsGrid" Background="#CC101010" Visibility="Collapsed" MinWidth="16" MinHeight="9" Height="1080" Width="1920">
+            <Grid x:Name="SettingsGrid" Background="#CC101010" Visibility="Collapsed" MinWidth="16" MinHeight="9" Height="720" Width="1280">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="2*"/>
                     <RowDefinition Height="1*"/>
@@ -32,7 +32,7 @@
                 </Grid.ColumnDefinitions>
 
                 <!--Title-->
-                <Label Content="Settings" Grid.Row="1" Grid.Column="1" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Label Content="Settings" Grid.Row="0" Grid.Column="1" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                 <!--Settings-->
                 <StackPanel Grid.Row="2" Grid.Column="1">
@@ -108,11 +108,10 @@
          <!--Controls grid-->
         <Viewbox Grid.ColumnSpan="2" Grid.RowSpan="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 
-            <Grid x:Name="ControlsGrid" Background="#CC101010" Visibility="Collapsed" Height="1080" Width="1920">
+            <Grid x:Name="ControlsGrid" Background="#CC101010" Visibility="Collapsed" Height="720" Width="1280">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*"/>
-                    <RowDefinition Height="1*"/>
-                    <RowDefinition Height="6*"/>
+                    <RowDefinition Height="7*"/>
                 </Grid.RowDefinitions>
 
                 <Grid.ColumnDefinitions>
@@ -122,10 +121,10 @@
                 </Grid.ColumnDefinitions>
 
                 <!--Title-->
-                <Label Content="Controls" Grid.Row="1" Grid.Column="1" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Label Content="Controls" Grid.Row="0" Grid.Column="1" Foreground="White" FontSize="96" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                 <!--Controls-->
-                <StackPanel Grid.Row="2" Grid.Column="1">
+                <StackPanel Grid.Row="1" Grid.Column="1">
                     <!--Movement Title-->
                     <Grid>
                         <Grid.ColumnDefinitions>
