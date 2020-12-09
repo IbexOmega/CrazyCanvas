@@ -39,12 +39,12 @@ void main()
 	SInstance instance				= b_Instances.val[gl_InstanceIndex];
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SWeaponData weaponData			= u_WeaponData.val;
+	mat4 normalTransform    = instance.Transform;
 
 	vec3 position 			= vertex.Position.xyz;
-	vec4 worldPosition		= weaponData.Model * vec4(position, 1.0f);
+	vec4 worldPosition		= normalTransform * vec4(position, 1.0f);
 	vec4 prevWorldPosition	= instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
-	mat4 normalTransform    = instance.Transform;
 
 	vec3 normal				= normalize((normalTransform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
 	vec3 tangent			= normalize((normalTransform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);

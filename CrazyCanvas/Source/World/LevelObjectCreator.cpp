@@ -1052,8 +1052,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
-				.MeshGUID = ResourceCatalog::WEAPON_MESH_GUID,
-				.MaterialGUID = ResourceCatalog::WEAPON_MATERIAL_GUID,
+				.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID,
+				.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
 			});
 
 		pECS->AddComponent<AnimationAttachedComponent>(weaponEntity, AnimationAttachedComponent
@@ -1235,6 +1235,16 @@ bool LevelObjectCreator::CreatePlayer(
 
 			pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
+
+			AnimationComponent animationComponentWeapon = {};
+			animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID)->pSkeleton;
+
+			AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
+			pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::WEAPON_FIRST_PERSON_IDLE_GUIDs[0]));
+			pAnimationGraphWeapon->TransitionToState("Idle");
+			animationComponentWeapon.pGraph = pAnimationGraphWeapon;
+
+			pECS->AddComponent<AnimationComponent>(weaponEntity, animationComponentWeapon);
 
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
