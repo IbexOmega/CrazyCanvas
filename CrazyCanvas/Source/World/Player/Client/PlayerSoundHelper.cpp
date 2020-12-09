@@ -5,19 +5,20 @@
 void PlayerSoundHelper::HandleMovementSound(
 	const LambdaEngine::VelocityComponent& velocityComponent,
 	LambdaEngine::AudibleComponent& audibleComponent,
-	const glm::i8vec3& deltaAction,
 	bool walking,
-	bool inAir)
+	bool inAir,
+	bool wasInAir)
 {
 	using namespace LambdaEngine;
 
-	bool horizontalAction = deltaAction.x != 0 || deltaAction.z != 0;
-	bool verticalAction = deltaAction.y != 0;
-	bool verticalMovement = glm::epsilonNotEqual<float32>(velocityComponent.Velocity.y, 0.0f, glm::epsilon<float32>());
+	bool horizontalMovement = 
+		glm::epsilonNotEqual<float32>(velocityComponent.Velocity.x, 0.0f, 0.5f) || 
+		glm::epsilonNotEqual<float32>(velocityComponent.Velocity.z, 0.0f, 0.5f);
+	bool verticalMovement = glm::epsilonNotEqual<float32>(velocityComponent.Velocity.y, 0.0f, 0.1f);
 
 	if (!inAir)
 	{
-		if (!walking && horizontalAction && !verticalMovement)
+		if (!walking && horizontalMovement && !verticalMovement)
 		{
 			if (auto stepSoundInstanceIt = audibleComponent.SoundInstances3D.find("Step"); 
 				stepSoundInstanceIt != audibleComponent.SoundInstances3D.end())
@@ -31,7 +32,7 @@ void PlayerSoundHelper::HandleMovementSound(
 			}
 		}
 
-		if (verticalAction)
+		if (velocityComponent.Velocity.y > 4.0f)
 		{
 			if (auto stepSoundInstanceIt = audibleComponent.SoundInstances3D.find("Jump");
 				stepSoundInstanceIt != audibleComponent.SoundInstances3D.end())
@@ -45,8 +46,7 @@ void PlayerSoundHelper::HandleMovementSound(
 			}
 		}
 
-		LOG_WARNING("Velocity: %f", velocityComponent.Velocity.y);
-		if (velocityComponent.Velocity.y < -0.01f)
+		if (wasInAir && velocityComponent.LastNonZeroVelocityComponents.y < -5.0f)
 		{
 			if (auto stepSoundInstanceIt = audibleComponent.SoundInstances3D.find("Landing");
 				stepSoundInstanceIt != audibleComponent.SoundInstances3D.end())

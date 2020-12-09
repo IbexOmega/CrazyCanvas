@@ -71,8 +71,11 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		AudibleComponent& audibleComponent						= pAudibleComponent->GetData(entity);
 		CharacterColliderComponent& characterColliderComponent	= pCharacterColliders->GetData(entity);
 
-		const PacketComponent<PacketPlayerActionResponse>& packetComponent	= pPacketComponents->GetConstData(entity);
+		physx::PxControllerState playerControllerState;
+		characterColliderComponent.pController->getState(playerControllerState);
+		bool inAir = (playerControllerState.touchedShape == nullptr);
 
+		const PacketComponent<PacketPlayerActionResponse>& packetComponent	= pPacketComponents->GetConstData(entity);
 		const TArray<PacketPlayerActionResponse>& gameStates = packetComponent.GetPacketsReceived();
 
 		if (!gameStates.IsEmpty())
@@ -119,8 +122,10 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 		PlayerSoundHelper::HandleMovementSound(
 			velocityComponent,
 			audibleComponent,
-			lastReceivedGameState.DeltaAction,
 			lastReceivedGameState.Walking,
-			lastReceivedGameState.InAir);
+			inAir,
+			characterColliderComponent.WasInAir);
+
+		characterColliderComponent.WasInAir = inAir;
 	}
 }
