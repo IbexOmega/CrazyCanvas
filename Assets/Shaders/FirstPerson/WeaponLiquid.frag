@@ -49,8 +49,9 @@ void main()
 	vec3 sampledAlbedo = b_PaintMaskColor.val[0].rgb;
 
     float isLiquid = 1.f - step(0.5f, in_PositionY); 
-
+    
     float alpha = isLiquid;
+
     vec3 color = gl_FrontFacing ? vec3(1.f, 0.f, 0.f) : vec3(0.f, 0.f, 1.f);
 	out_Color = vec4(color, alpha);
 	return;

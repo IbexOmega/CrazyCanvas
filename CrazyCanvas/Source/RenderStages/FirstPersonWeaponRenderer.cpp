@@ -1134,7 +1134,7 @@ namespace LambdaEngine
 					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
 					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
 					COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
-					false
+					true
 				}
 			};
 
