@@ -1762,7 +1762,6 @@ namespace LambdaEngine
 		void* pUserData)
 	{
 		UNREFERENCED_VARIABLE(messageType);
-		UNREFERENCED_VARIABLE(pCallbackData);
 		UNREFERENCED_VARIABLE(pUserData);
 
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)
