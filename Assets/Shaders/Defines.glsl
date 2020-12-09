@@ -101,21 +101,21 @@ struct SAreaLight
 
 struct SPointLight
 {
-    vec4    ColorIntensity;
-    vec3    Position;
+	vec4	ColorIntensity;
+	vec3	Position;
 	float	NearPlane;
 	float	FarPlane;
 	uint	TextureIndex;
 	vec2	padding0;
-    mat4    ProjView[6];
+	mat4	ProjView[6];
 };
 
 struct SLightsBuffer
 {
-    vec4        DirL_ColorIntensity;
-	vec3        DirL_Direction;
-    float		PointLightCount;
-    mat4        DirL_ProjView;
+	vec4	DirL_ColorIntensity;
+	vec3	DirL_Direction;
+	float	PointLightCount;
+	mat4	DirL_ProjView;
 };
 
 struct SPerFrameBuffer
@@ -130,6 +130,7 @@ struct SPerFrameBuffer
 	vec4 CameraRight;
 	vec4 CameraUp;
 	vec2 Jitter;
+	vec2 ViewPortSize;
 
 	uint FrameIndex;
 	uint RandomSeed;
@@ -210,19 +211,19 @@ struct SPaintData
 
 struct SAccelerationStructureInstance
 {
-    mat3x4  Transform;
-    uint    HitMask_CustomProperties;
-    uint    SBTRecordOffset_Flags;
-    uint    AccelerationStructureHandleTop32;
-    uint    AccelerationStructureHandleBottom32;
+	mat3x4	Transform;
+	uint	HitMask_CustomProperties;
+	uint	SBTRecordOffset_Flags;
+	uint	AccelerationStructureHandleTop32;
+	uint	AccelerationStructureHandleBottom32;
 };
 
 struct SParticleIndexData
 {
-    uint    EmitterIndex;
-    uint    ASInstanceIndirectIndex;
-	uint    Padding0;
-	uint    Padding1;
+	uint EmitterIndex;
+	uint ASInstanceIndirectIndex;
+	uint Padding0;
+	uint Padding1;
 };
 
 #endif

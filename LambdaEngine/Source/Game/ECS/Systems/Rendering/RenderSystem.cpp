@@ -36,6 +36,7 @@
 #include "Rendering/ParticleUpdater.h"
 #include "Rendering/ParticleCollider.h"
 #include "Rendering/LightProbeRenderer.h"
+#include "Rendering/AARenderer.h"
 #include "Rendering/RT/ASBuilder.h"
 #include "Rendering/BlitStage.h"
 
@@ -411,6 +412,11 @@ namespace LambdaEngine
 				m_pLightProbeRenderer = DBG_NEW LightProbeRenderer();
 				m_pLightProbeRenderer->Init();
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
+
+				// Anit-Aliasing Renderer
+				m_pAARenderer = DBG_NEW AARenderer();
+				m_pAARenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pAARenderer);
 			}
 
 			//GUI Renderer
@@ -566,6 +572,7 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pLightProbeRenderer);
+		SAFEDELETE(m_pAARenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
 		SAFEDELETE(m_pParticleCollider);
@@ -850,6 +857,8 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
 			// LightProbe Renderer
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
+			// AA Renderer
+			renderGraphDesc.CustomRenderers.PushBack(m_pAARenderer);
 
 			// AS Builder
 			if (m_RayTracingEnabled)
@@ -2362,12 +2371,29 @@ bool RenderSystem::InitIntegrationLUT()
 		m_PerFrameData.CamData.PrevView			= m_PerFrameData.CamData.View;
 		m_PerFrameData.CamData.PrevProjection	= m_PerFrameData.CamData.Projection;
 		m_PerFrameData.CamData.View				= viewProjComp.View;
-		m_PerFrameData.CamData.Projection		= viewProjComp.Projection;
+		m_PerFrameData.CamData.ViewPortSize		= glm::vec2(camComp.Width, camComp.Height);
+
+		if (AARenderer::GetInstance()->GetAAMode() == EAAMode::AAMODE_TAA)
+		{
+			const glm::vec2 jitterDiff = (camComp.Jitter - camComp.PrevJitter) * 0.5f;
+			m_PerFrameData.CamData.JitterDiff = jitterDiff;
+			
+			glm::vec2 clipSpaceJitter = camComp.Jitter / m_PerFrameData.CamData.ViewPortSize;
+			clipSpaceJitter.y = -clipSpaceJitter.y;
+
+			const glm::mat4 offset = glm::translate(glm::vec3(clipSpaceJitter, 0.0f));
+			m_PerFrameData.CamData.Projection = offset * viewProjComp.Projection;
+		}
+		else
+		{
+			m_PerFrameData.CamData.JitterDiff = glm::vec2(0.0f);
+			m_PerFrameData.CamData.Projection = viewProjComp.Projection;
+		}
+
 		m_PerFrameData.CamData.ViewInv			= camComp.ViewInv;
-		m_PerFrameData.CamData.ProjectionInv	= camComp.ProjectionInv;
+		m_PerFrameData.CamData.ProjectionInv	= glm::inverse(m_PerFrameData.CamData.Projection);
 		m_PerFrameData.CamData.Position			= glm::vec4(position, 0.f);
 		m_PerFrameData.CamData.Up				= glm::vec4(GetUp(rotation), 0.f);
-		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
 	}
 
 	void RenderSystem::DeleteDeviceResource(DeviceChild* pDeviceResource)

@@ -20,6 +20,7 @@
 
 #include "Game/ECS/Systems/CameraSystem.h"
 
+#include "Rendering/AARenderer.h"
 #include "Rendering/RenderGraph.h"
 
 using namespace LambdaEngine;
@@ -229,6 +230,12 @@ void EscapeMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, c
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
+	// AA
+	Noesis::ComboBox* pAAComboBox = FrameworkElement::FindName<Noesis::ComboBox>("AAComboBox");
+	LambdaEngine::String AAOption =  static_cast<TextBlock*>(pAAComboBox->GetSelectedItem())->GetText();
+	EngineConfig::SetStringProperty(EConfigOption::CONFIG_OPTION_AA, AAOption);
+	SetAA(pAAComboBox, AAOption);
+	
 	// Glossy
 	{
 		//Enabled
@@ -448,6 +455,12 @@ void EscapeMenuGUI::SetDefaultSettings()
 	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
 	NS_ASSERT(pToggleFullscreen);
 	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
+
+	// AA option
+	LambdaEngine::String AAOption = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_AA);
+	Noesis::ComboBox* pAAComboBox = FrameworkElement::FindName<Noesis::ComboBox>("AAComboBox");
+	NS_ASSERT(pAAComboBox);
+	SetAA(pAAComboBox, AAOption);
 }
 
 void EscapeMenuGUI::SetDefaultKeyBindings()
@@ -482,6 +495,26 @@ void EscapeMenuGUI::SetDefaultKeyBindings()
 		}
 	}
 }
+
+void EscapeMenuGUI::SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption)
+{
+	if (AAOption == "NONE")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_NONE);
+		pComboBox->SetSelectedIndex(0);
+	}
+	else if (AAOption == "FXAA")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_FXAA);
+		pComboBox->SetSelectedIndex(1);
+	}
+	else if (AAOption == "TAA")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_TAA);
+		pComboBox->SetSelectedIndex(2);
+	}
+}
+
 
 void EscapeMenuGUI::SetRenderStagesInactive()
 {

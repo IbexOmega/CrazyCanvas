@@ -220,7 +220,8 @@ namespace LambdaEngine
 			glm::vec4 Position			= glm::vec4(0.0f);
 			glm::vec4 Right				= glm::vec4(1.0f, 0.0f, 0.0f, 0.0f);
 			glm::vec4 Up				= glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-			glm::vec2 Jitter			= glm::vec2(0.0f);
+			glm::vec2 JitterDiff		= glm::vec2(0.0f);
+			glm::vec2 ViewPortSize		= glm::vec2(0.0f);
 		};
 
 		struct PerFrameBuffer
@@ -291,6 +292,7 @@ namespace LambdaEngine
 
 		bool Init();
 		bool InitRenderGraphs();
+
 		bool Release();
 
 		virtual void Tick(Timestamp deltaTime) override final;
@@ -559,6 +561,7 @@ namespace LambdaEngine
 		ParticleCollider*			m_pParticleCollider		= nullptr;
 		ASBuilder*					m_pASBuilder			= nullptr;
 		class LightProbeRenderer*	m_pLightProbeRenderer	= nullptr;
+		class AARenderer*			m_pAARenderer			= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
 #ifdef RENDER_SYSTEM_DEBUG
