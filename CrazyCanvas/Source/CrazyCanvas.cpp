@@ -40,6 +40,7 @@
 
 #include "Lobby/PlayerManagerClient.h"
 #include "Lobby/PlayerManagerServer.h"
+#include "Lobby/ServerManager.h"
 
 #include "Chat/ChatManager.h"
 
@@ -54,6 +55,8 @@
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
+
+#include "Debug/Profiler.h"
 
 #include <rapidjson/document.h>
 #include <rapidjson/filewritestream.h>
@@ -71,6 +74,8 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	String stateStr;
 
 	flagParser({ "--state" }, pDefaultStateStr) >> stateStr;
+
+	LOG_INFO("STATE [%s]", stateStr.c_str());
 
 	const String& protocol = EngineConfig::GetStringProperty(CONFIG_OPTION_NETWORK_PROTOCOL);
 
@@ -171,10 +176,15 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::PUSH);
 
-	if(MultiplayerUtils::IsServer())
+	if (MultiplayerUtils::IsServer())
+	{
 		PlayerManagerServer::Init();
+	}	
 	else
+	{
+		ServerManager::Init();
 		PlayerManagerClient::Init();
+	}
 
 	ChatManager::Init();
 }
@@ -190,6 +200,9 @@ CrazyCanvas::~CrazyCanvas()
 	ChatManager::Release();
 	PlayerManagerBase::Release();
 	PacketType::Release();
+
+	if(!LambdaEngine::MultiplayerUtils::IsServer())
+		ServerManager::Release();
 }
 
 void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
@@ -201,7 +214,13 @@ void CrazyCanvas::Tick(LambdaEngine::Timestamp delta)
 void CrazyCanvas::FixedTick(LambdaEngine::Timestamp delta)
 {
 	if (LambdaEngine::MultiplayerUtils::IsServer())
-		PlayerManagerServer::FixedTick(delta);
+	{
+		PROFILE_FUNCTION("PlayerManagerServer::FixedTick", PlayerManagerServer::FixedTick(delta));
+	}
+	else
+	{
+		PROFILE_FUNCTION("ServerManager::Tick", ServerManager::Tick());
+	}
 }
 
 void CrazyCanvas::Render(LambdaEngine::Timestamp)

@@ -49,6 +49,9 @@
 
 #include "ECS/Systems/Misc/DestructionSystem.h"
 
+#include "Rendering/ImGuiRenderer.h"
+#include "Debug/Profiler.h"
+
 using namespace LambdaEngine;
 
 PlaySessionState* PlaySessionState::s_pInstance = nullptr;
@@ -57,6 +60,7 @@ PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool 
 	m_Singleplayer(singlePlayer),
 	m_MultiplayerClient(),
 	m_GameSettings(gameSettings),
+	m_NameplateSystem(&m_HUDSystem),
 	m_DefferedTicks(3),
 	m_Initiated(false),
 	m_MatchReadyReceived(false),
@@ -114,10 +118,12 @@ void PlaySessionState::Init()
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
+	m_PingHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
 	// Init Systems
 	m_HUDSystem.Init();
+	m_NameplateSystem.Init();
 	m_DestructionSystem.Init();
 
 	// Commands
@@ -161,7 +167,7 @@ void PlaySessionState::Tick(Timestamp delta)
 {
 	if (m_UpdateShaders)
 	{
-		m_UpdateShaders = false; 
+		m_UpdateShaders = false;
 		EventQueue::SendEvent(ShaderRecompileEvent());
 		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}
@@ -171,8 +177,9 @@ void PlaySessionState::Tick(Timestamp delta)
 
 void PlaySessionState::FixedTick(Timestamp delta)
 {
-	m_HUDSystem.FixedTick(delta);
-	m_MultiplayerClient.FixedTickMainThreadInternal(delta);
+	PROFILE_FUNCTION("m_NameplateSystem.FixedTick", m_NameplateSystem.FixedTick(delta));
+	PROFILE_FUNCTION("m_HUDSystem.FixedTick", m_HUDSystem.FixedTick(delta));
+	PROFILE_FUNCTION("MultiplayerBase::FixedTickMainThreadInternal", m_MultiplayerClient.FixedTickMainThreadInternal(delta));
 
 	if (!m_Initiated)
 	{

@@ -2,9 +2,16 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
+#include "Audio/AudioAPI.h"
+
 #include "Lobby/PlayerManagerClient.h"
 
 #include "Containers/String.h"
+
+#include "Engine/EngineConfig.h"
+
+#include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 
 #include "Game/StateManager.h"
 
@@ -12,11 +19,14 @@
 
 #include "Multiplayer/ClientHelper.h"
 
+#include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
 
 #include "World/LevelManager.h"
 
 #include "Teams/TeamHelper.h"
+
+#include "Game/ECS/Systems/CameraSystem.h"
 
 using namespace Noesis;
 using namespace LambdaEngine;
@@ -39,6 +49,8 @@ LobbyGUI::LobbyGUI(PacketGameSettings* pGameSettings) :
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
 	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 	m_pPlayersLabel				= FrameworkElement::FindName<Label>("PlayersLabel");
+	m_pSettingsGrid				= FrameworkElement::FindName<Grid>("SettingsGrid");
+	m_pControlsGrid				= FrameworkElement::FindName<Grid>("ControlsGrid");
 
 	m_pChatInputTextBox->SetMaxLines(1);
 	m_pChatInputTextBox->SetMaxLength(128);
@@ -46,11 +58,13 @@ LobbyGUI::LobbyGUI(PacketGameSettings* pGameSettings) :
 	SetHostMode(false);
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
+	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &LobbyGUI::MouseButtonCallback);
 }
 
 LobbyGUI::~LobbyGUI()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &LobbyGUI::OnKeyPressedEvent);
+	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &LobbyGUI::MouseButtonCallback);
 }
 
 void LobbyGUI::InitGUI()
@@ -62,7 +76,7 @@ void LobbyGUI::InitGUI()
 	for (EGameMode gameMode : gameModes)
 		gameModeNames.PushBack(GameModeToString(gameMode));
 
-	TArray<glm::vec3> colors = TeamHelper::GetAllAvailableColors();
+	const glm::vec3* pColors = TeamHelper::GetAllAvailableColors();
 
 	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_pGameSettings->ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
@@ -72,10 +86,12 @@ void LobbyGUI::InitGUI()
 	/*AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
-	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 1 Color", colors, 0);
-	AddSettingColorBox(SETTING_CHANGE_TEAM_2_COLOR, "Team 2 Color", colors, 1);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 1 Color", pColors, NUM_TEAM_COLORS_AVAILABLE, 0);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_2_COLOR, "Team 2 Color", pColors, NUM_TEAM_COLORS_AVAILABLE, 1);
 
 	UpdateSettings(*m_pGameSettings);
+
+	SetDefaultSettings();
 
 	m_IsInitiated = true;
 }
@@ -205,6 +221,8 @@ void LobbyGUI::UpdatePlayerReady(const Player& player)
 	{
 		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Collapsed);
 	}
+
+	UpdateReadyButton();
 }
 
 void LobbyGUI::UpdatePlayerScore(const Player& player)
@@ -253,18 +271,21 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 
 void LobbyGUI::SetHostMode(bool isHost)
 {
-	Button* pReadyButton = FrameworkElement::FindName<Button>("ReadyButton");
+	ToggleButton* pReadyButton = FrameworkElement::FindName<ToggleButton>("ReadyButton");
 
 	if (isHost)
 	{
 		pReadyButton->SetContent("Start");
+		pReadyButton->SetIsChecked(false);
 		m_pSettingsClientStackPanel->SetVisibility(Visibility_Hidden);
 		m_pSettingsHostStackPanel->SetVisibility(Visibility_Visible);
+		UpdateReadyButton();
 		SendGameSettings();
 	}
 	else
 	{
 		pReadyButton->SetContent("Ready");
+		pReadyButton->SetIsEnabled(true);
 		m_pSettingsClientStackPanel->SetVisibility(Visibility_Visible);
 		m_pSettingsHostStackPanel->SetVisibility(Visibility_Hidden);
 	}
@@ -315,7 +336,7 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		// Update Settings Color
 		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor1->GetBackground());
 		pSolidColorBrush->SetColor(teamColor);
-		
+
 		// Update Team Label color
 		pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
 		pSolidColorBrush->SetColor(teamColor);
@@ -370,7 +391,7 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		else if (minutes == 15)
 			pSettingMaxTimeHost->SetSelectedIndex(3);
 	}
-		
+
 
 	ComboBox* pSettingFlagsToWinHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_host").c_str());
 	if (pSettingFlagsToWinHost)
@@ -458,7 +479,7 @@ void LobbyGUI::AddSettingComboBox(
 	settingComboBox->SetSelectedIndex(defaultIndex);
 }
 
-void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::TArray<glm::vec3>& settingColors, uint8 defaultIndex)
+void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const glm::vec3* pSettingColors, uint32 numSettingColors, uint8 defaultIndex)
 {
 	// Add setting text
 	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
@@ -477,8 +498,10 @@ void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const 
 	RegisterName(settingComboBox->GetName(), settingComboBox);
 	m_pSettingsHostStackPanel->GetChildren()->Add(settingComboBox);
 
-	for (auto& color : settingColors)
+	for (uint32 i = 0; i < numSettingColors; i++)
 	{
+		const glm::vec3& color = pSettingColors[i];
+
 		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
 		pBrush->SetColor(Color(color.r, color.g, color.b));
 
@@ -520,9 +543,24 @@ bool LobbyGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const ch
 	NS_CONNECT_EVENT_DEF(pSource, pEvent, pHandler);
 
 	// General
+	NS_CONNECT_EVENT(Button, Click, OnButtonBackClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonReadyClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonLeaveClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonSendMessageClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonSettingsClick);
+
+	NS_CONNECT_EVENT(Button, Click, OnButtonApplySettingsClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonCancelSettingsClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonChangeControlsClick);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnVolumeSliderChanged);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnFOVSliderChanged);
+
+	NS_CONNECT_EVENT(Button, Click, OnButtonSetKey);
+	NS_CONNECT_EVENT(Button, Click, OnButtonApplyControlsClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonCancelControlsClick);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnLookSensitivityChanged);
+
+	NS_CONNECT_EVENT(ToggleButton, IsEnabledChanged, OnReadyButtonEnabledChange);
 
 	return false;
 }
@@ -546,6 +584,19 @@ void LobbyGUI::OnButtonSendMessageClick(BaseComponent* pSender, const RoutedEven
 	TrySendChatMessage();
 }
 
+void LobbyGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
+	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
+}
+
 bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
 {
 	if (event.Key == EKey::KEY_ENTER)
@@ -560,6 +611,24 @@ bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
 	{
 		UpdatePlayersLabel();
 	}
+	return false;
+}
+
+bool LobbyGUI::MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event)
+{
+	if (m_ListenToCallbacks)
+	{
+		LambdaEngine::String mouseButtonStr = ButtonToString(event.Button);
+
+		m_pSetKeyButton->SetContent(mouseButtonStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = mouseButtonStr;
+
+		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
+
+		return true;
+	}
+
 	return false;
 }
 
@@ -583,6 +652,95 @@ void LobbyGUI::UpdatePlayersLabel()
 {
 	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 	m_pPlayersLabel->SetContent((std::to_string(players.size()) + "/" + std::to_string(m_pGameSettings->Players) + " Players").c_str());
+}
+
+void LobbyGUI::UpdateReadyButton()
+{
+	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayerLocal->IsHost())
+	{
+		Button* pReadyButton = FrameworkElement::FindName<Button>("ReadyButton");
+
+		const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
+		for (auto& pair : players)
+		{
+			const Player& player = pair.second;
+			if (&player != pPlayerLocal)
+			{
+				if (!player.IsReady() || player.GetState() != EGameState::GAME_STATE_LOBBY)
+				{
+					pReadyButton->SetIsEnabled(false);
+					return;
+				}
+			}
+		}
+
+		pReadyButton->SetIsEnabled(true);
+	}
+}
+
+void LobbyGUI::SetDefaultSettings()
+{
+	// Set inital volume
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	NS_ASSERT(pVolumeSlider);
+	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
+	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	//Set initial FOV
+	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
+	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	SetDefaultKeyBindings();
+
+	Noesis::Slider* pLookSensitivitySlider = FrameworkElement::FindName<Slider>("LookSensitivitySlider");
+	pLookSensitivitySlider->SetValue(InputActionSystem::GetLookSensitivityPercentage() * pLookSensitivitySlider->GetMaximum());
+
+	// Mesh Shader Toggle
+	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+	ToggleButton* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	NS_ASSERT(pToggleMeshShader);
+	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
+
+	// Fullscreen
+	m_FullscreenEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN);
+	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	NS_ASSERT(pToggleFullscreen);
+	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
+}
+
+void LobbyGUI::SetDefaultKeyBindings()
+{
+	TArray<EAction> actions = {
+		// Movement
+		EAction::ACTION_MOVE_FORWARD,
+		EAction::ACTION_MOVE_BACKWARD,
+		EAction::ACTION_MOVE_LEFT,
+		EAction::ACTION_MOVE_RIGHT,
+		EAction::ACTION_MOVE_JUMP,
+		EAction::ACTION_MOVE_WALK,
+
+		// Attack
+		EAction::ACTION_ATTACK_PRIMARY,
+		EAction::ACTION_ATTACK_SECONDARY,
+		EAction::ACTION_ATTACK_RELOAD,
+	};
+
+	for (EAction action : actions)
+	{
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(KeyToString(key));
+		}
+		else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(ButtonToString(mouseButton));
+		}
+	}
 }
 
 void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const SelectionChangedEventArgs& args)
@@ -658,12 +816,212 @@ void LobbyGUI::OnTextBoxChanged(BaseComponent* pSender, const RoutedEventArgs& a
 {
 	TextBox* pTextBox = static_cast<TextBox*>(pSender);
 
-	if (strcmp(m_pGameSettings->ServerName, pTextBox->GetText()) != 0) 
+	if (strcmp(m_pGameSettings->ServerName, pTextBox->GetText()) != 0)
 	{
 		strcpy(m_pGameSettings->ServerName, pTextBox->GetText());
 
 		SendGameSettings();
 	}
+}
+
+void LobbyGUI::OnReadyButtonEnabledChange(BaseComponent* pSender, const DependencyPropertyChangedEventArgs& args)
+{
+	ToggleButton* pToggleButton = static_cast<ToggleButton*>(pSender);
+
+	if (pToggleButton->GetIsEnabled())
+	{
+		SolidColorBrush* pBrush = (SolidColorBrush*)pToggleButton->GetBackground();
+		Color color;
+		Color::TryParse("#4CE244", color);
+		pBrush->SetColor(color);
+	}
+	else
+	{
+		SolidColorBrush* pBrush = (SolidColorBrush*)pToggleButton->GetBackground();
+		pBrush->SetColor(Color::Gray());
+	}
+}
+
+void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
+	if (m_pSettingsGrid->GetVisibility() == Noesis::Visibility_Visible)
+	{
+		m_pSettingsGrid->SetVisibility(Noesis::Visibility_Collapsed);
+	}
+	else if (m_pControlsGrid->GetVisibility() == Noesis::Visibility_Visible)
+	{
+		m_pControlsGrid->SetVisibility(Noesis::Visibility_Collapsed);
+		m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
+	}
+}
+
+void LobbyGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	// NOTE: Current implementation does not allow RT toggle - code here if that changes
+	// Ray Tracing
+	// Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
+	// m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
+	// EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+
+	// Mesh Shader
+	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	m_MeshShadersEnabled = pMeshShaderCheckBox->GetIsChecked().GetValue();
+	EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, m_MeshShadersEnabled);
+
+	// Fullscreen toggle
+	Noesis::CheckBox* pFullscreenCheckBox = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	bool previousState = m_FullscreenEnabled;
+	m_FullscreenEnabled = pFullscreenCheckBox->GetIsChecked().GetValue();
+	if (previousState != m_FullscreenEnabled)
+		CommonApplication::Get()->GetMainWindow()->ToggleFullscreen();
+
+	// Volume
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+
+	//FOV
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
+
+	EngineConfig::WriteToFile();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void LobbyGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
+	//FOV
+	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	SetDefaultSettings();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void LobbyGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
+	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Collapsed);
+
+	m_pControlsGrid->SetVisibility(Noesis::Visibility_Visible);
+}
+
+void LobbyGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMasterVolume(volume);
+}
+
+void LobbyGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
+	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
+}
+
+void LobbyGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	// Starts listening to callbacks with specific button to be changed. This action is deferred to
+	// the callback functions of KeyboardCallback and MouseButtonCallback.
+
+	Noesis::Button* pCalledButton = static_cast<Noesis::Button*>(pSender);
+	LambdaEngine::String buttonName = pCalledButton->GetName();
+
+	m_pSetKeyButton = FrameworkElement::FindName<Button>(buttonName.c_str());
+	m_ListenToCallbacks = true;
+}
+
+void LobbyGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Go through all keys to set - and set them
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	for (auto& stringPair : m_KeysToSet)
+	{
+		InputActionSystem::ChangeKeyBinding(StringToAction(stringPair.first), stringPair.second);
+	}
+	m_KeysToSet.clear();
+
+	InputActionSystem::SetLookSensitivity(m_LookSensitivityPercentageToSet);
+
+	OnButtonBackClick(pSender, args);
+}
+
+void LobbyGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	// Reset
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+
+	for (auto& stringPair : m_KeysToSet)
+	{
+		EAction action = StringToAction(stringPair.first);
+		EKey key = InputActionSystem::GetKey(action);
+		EMouseButton mouseButton = InputActionSystem::GetMouseButton(action);
+
+		if (key != EKey::KEY_UNKNOWN)
+		{
+			LambdaEngine::String keyStr = KeyToString(key);
+			FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(keyStr.c_str());
+		}
+		if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+		{
+			LambdaEngine::String mouseButtonStr = ButtonToString(mouseButton);
+			FrameworkElement::FindName<Button>(stringPair.first.c_str())->SetContent(mouseButtonStr.c_str());
+		}
+	}
+	m_KeysToSet.clear();
+
+	OnButtonBackClick(pSender, args);
+}
+
+void LobbyGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pLookSensitivitySlider = reinterpret_cast<Noesis::Slider*>(pSender);
+
+	m_LookSensitivityPercentageToSet = pLookSensitivitySlider->GetValue() / pLookSensitivitySlider->GetMaximum();
 }
 
 void LobbyGUI::AddColumnDefinitionStar(ColumnDefinitionCollection* columnCollection, float width)

@@ -15,6 +15,8 @@
 
 #include "World/Player/Client/PlayerSoundHelper.h"
 
+#include "Match/Match.h"
+
 using namespace LambdaEngine;
 
 PlayerForeignSystem::PlayerForeignSystem()
@@ -52,7 +54,6 @@ void PlayerForeignSystem::Init()
 void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
-	float32 dt = (float32)deltaTime.AsSeconds();
 
 	const ComponentArray<NetworkPositionComponent>* pNetPosComponents						= pECS->GetComponentArray<NetworkPositionComponent>();
 	ComponentArray<CharacterColliderComponent>* pCharacterColliders							= pECS->GetComponentArray<CharacterColliderComponent>();
@@ -76,33 +77,33 @@ void PlayerForeignSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 
 		if (!gameStates.IsEmpty())
 		{
-			for (const PacketPlayerActionResponse& gameState : gameStates)
+			const PacketPlayerActionResponse& latestGameState = gameStates.GetBack();
+
+			const RotationComponent& constRotationComponent = pRotationComponents->GetConstData(entity);
+
+			if (constRotationComponent.Quaternion != latestGameState.Rotation)
 			{
-				const RotationComponent& constRotationComponent = pRotationComponents->GetConstData(entity);
-
-				if (constRotationComponent.Quaternion != gameState.Rotation)
-				{
-					RotationComponent& rotationComponent = const_cast<RotationComponent&>(constRotationComponent);
-					rotationComponent.Quaternion = gameState.Rotation;
-					rotationComponent.Dirty = true;
-				}
-
-				if (glm::any(glm::notEqual(constNetPosComponent.Position, gameState.Position)))
-				{
-					NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
-					netPosComponent.PositionLast = positionComponent.Position;
-					netPosComponent.Position = gameState.Position;
-					netPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
-					netPosComponent.Dirty = true;
-				}
-
-				velocityComponent.Velocity = gameState.Velocity;
-
-				CharacterControllerHelper::TickForeignCharacterController(dt, characterColliderComponent, constNetPosComponent, velocityComponent);
+				RotationComponent& rotationComponent = const_cast<RotationComponent&>(constRotationComponent);
+				rotationComponent.Quaternion	= latestGameState.Rotation;
+				rotationComponent.Dirty			= true;
 			}
+
+			if (glm::any(glm::notEqual(constNetPosComponent.Position, latestGameState.Position)))
+			{
+				NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);
+				netPosComponent.PositionLast	= positionComponent.Position;
+				netPosComponent.Position		= latestGameState.Position;
+				netPosComponent.TimestampStart	= EngineLoop::GetTimeSinceStart();
+				netPosComponent.Dirty			= true;
+			}
+
+			velocityComponent.Velocity = latestGameState.Velocity;
+
+			CharacterControllerHelper::SetForeignCharacterController(characterColliderComponent, constNetPosComponent);
 		}
-		else //Data does not exist for the current frame :(
+		else if(Match::HasBegun()) //Data does not exist for the current frame :(
 		{
+			float32 dt = (float32)deltaTime.AsSeconds();
 			CharacterControllerHelper::ApplyGravity(dt, velocityComponent.Velocity);
 
 			NetworkPositionComponent& netPosComponent = const_cast<NetworkPositionComponent&>(constNetPosComponent);

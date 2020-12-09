@@ -8,6 +8,11 @@ namespace LambdaEngine
 	TArray<Entity>	PlayerIndexHelper::s_Entities;
 	uint32 			PlayerIndexHelper::s_MaxPlayers = 10;
 
+	void PlayerIndexHelper::Reset()
+	{
+		s_Entities.Clear();
+	}
+
 	uint32 PlayerIndexHelper::GetPlayerIndex(Entity entity)
 	{
 		// Check if already added

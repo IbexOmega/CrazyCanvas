@@ -4,17 +4,23 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
+#include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/RenderAPI.h"
 #include "Multiplayer/ClientHelper.h"
 #include "Multiplayer/ServerHelper.h"
 #include "RenderStages/MeshPaintUpdater.h"
 
+#include "Utilities/StringUtilities.h"
+
+#include "Rendering/LineRenderer.h"
+
 /*
 * MeshPaintHandler
 */
 
-LambdaEngine::TArray<MeshPaintHandler::UnwrapData> MeshPaintHandler::s_Collisions;
+LambdaEngine::TArray<MeshPaintHandler::PaintData> MeshPaintHandler::s_Collisions;
+LambdaEngine::SpinLock MeshPaintHandler::s_SpinLock;
 
 MeshPaintHandler::~MeshPaintHandler()
 {
@@ -36,20 +42,19 @@ void MeshPaintHandler::Init()
 	// Create buffer
 	BufferDesc bufferDesc	= {};
 	bufferDesc.DebugName	= "Mesh Paint Handler Points Buffer";
-	bufferDesc.SizeInBytes	= sizeof(UnwrapData) * 10;
+	bufferDesc.SizeInBytes	= sizeof(PaintData) * 10;
 	bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_CONSTANT_BUFFER;
 	bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 	m_pPointsBuffer			= RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 
 	{
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
-		UnwrapData dummyData = {};
+		PaintData dummyData = {};
 		dummyData.TargetPosition.w = 0.f;
-		size_t size = sizeof(UnwrapData);
 		for (uint32 i = 0; i < 10; i++)
 		{
-			uint32 step = i * (uint32)size;
-			memcpy(pBufferMapping + step, &dummyData + i, size);
+			uint64 step = uint64(i) * sizeof(PaintData);
+			memcpy(pBufferMapping + step, &dummyData, sizeof(PaintData));
 		}
 		m_pPointsBuffer->Unmap();
 
@@ -73,40 +78,21 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 
 	bool transferMemory = false;
 
-	// Reset memory if needed
-	if ((m_ResetPointBuffer && s_Collisions.IsEmpty()) || (m_PreviousPointsSize > s_Collisions.GetSize()))
-	{
-		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
-		UnwrapData dummyData = {};
-		dummyData.TargetPosition.w = 0.f;
-		uint32 size = uint32(sizeof(UnwrapData));
-		for (uint32 i = 0; i < 10; i++)
-		{
-			uint32 step = i * size;
-			memcpy(pBufferMapping + step, &dummyData + i, size);
-		}
-		m_pPointsBuffer->Unmap();
-
-		m_PreviousPointsSize = 0;
-		m_ResetPointBuffer = false;
-		transferMemory = true;
-	}
-
 	// Load buffer with new data
 	if (!s_Collisions.IsEmpty())
 	{
-		UnwrapData& dataFirst = s_Collisions.GetFront();
+		PaintData& dataFirst = s_Collisions.GetFront();
 		dataFirst.TargetPosition.w = (float)s_Collisions.GetSize();
 
 		if (s_ShouldReset)
 		{
-			UnwrapData& dataLast = s_Collisions.GetBack();
-			dataLast.ClearClient = true;
+			PaintData& dataLast = s_Collisions.GetBack();
+			dataLast.ClearClient = 1;
 			s_ShouldReset = false;
 		}
 
 		byte* pBufferMapping = reinterpret_cast<byte*>(m_pPointsBuffer->Map());
-		memcpy(pBufferMapping, s_Collisions.GetData(), s_Collisions.GetSize() * sizeof(UnwrapData));
+		memcpy(pBufferMapping, s_Collisions.GetData(), s_Collisions.GetSize() * sizeof(PaintData));
 		m_pPointsBuffer->Unmap();
 
 		// TODO: Current implementation limits to 10 points and
@@ -118,6 +104,7 @@ void MeshPaintHandler::Tick(LambdaEngine::Timestamp delta)
 		// to disable any further drawings
 		m_ResetPointBuffer = true;
 		transferMemory = true;
+		MeshPaintUpdater::SetHitPointBufferValid(true);
 	}
 
 	// Transfer to GPU
@@ -145,13 +132,15 @@ void MeshPaintHandler::AddHitPoint(
 	ETeam team,
 	uint32 angle)
 {
-	UnwrapData data = {};
+	std::scoped_lock<LambdaEngine::SpinLock> lock(s_SpinLock);
+
+	PaintData data = {};
 	data.TargetPosition				= { position.x, position.y, position.z, 1.0f };
 	data.TargetDirectionXYZAngleW	= { direction.x, direction.y, direction.z, glm::radians<float>((float)angle)};
 	data.PaintMode			= paintMode;
 	data.RemoteMode			= remoteMode;
 	data.Team				= team;
-	data.ClearClient		= false;
+	data.ClearClient		= 0;
 	s_Collisions.PushBack(data);
 }
 
@@ -174,32 +163,44 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 	if (projectileHitEvent.AmmoType != EAmmoType::AMMO_TYPE_NONE)
 	{
 		EPaintMode paintMode = EPaintMode::NONE;
-		ETeam team = ETeam::NONE;
+		ETeam team = projectileHitEvent.Team;
 		ERemoteMode remoteMode = ERemoteMode::UNDEFINED;
 
 		if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_PAINT)
 		{
 			paintMode = EPaintMode::PAINT;
-			team = projectileHitEvent.Team;
 		}
 		else if (projectileHitEvent.AmmoType == EAmmoType::AMMO_TYPE_WATER)
 		{
 			paintMode = EPaintMode::REMOVE;
 		}
-
+		
 		const EntityCollisionInfo& collisionInfo = projectileHitEvent.CollisionInfo0;
 		if (MultiplayerUtils::IsServer())
 		{
 			remoteMode = ERemoteMode::SERVER;
-			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
+			AddHitPoint(
+				collisionInfo.Position,
+				collisionInfo.Direction,
+				paintMode,
+				remoteMode,
+				team,
+				projectileHitEvent.Angle);
+
+			// LOG_WARNING("[SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			//  	VEC_TO_ARG(collisionInfo.Position),
+			//  	VEC_TO_ARG(collisionInfo.Direction),
+			//  	PAINT_MODE_TO_STR(paintMode),
+			//  	REMOTE_MODE_TO_STR(remoteMode),
+			//  	team, projectileHitEvent.Angle);
 
 			// Send the server's paint point to all clients.
 			PacketProjectileHit packet;
 			SET_TEAM_INDEX(packet.Info, team);
 			SET_PAINT_MODE(packet.Info, paintMode);
-			packet.Position		= collisionInfo.Position;
-			packet.Direction	= collisionInfo.Direction;
-			packet.Angle		= projectileHitEvent.Angle;
+			packet.Position = collisionInfo.Position;
+			packet.Direction = collisionInfo.Direction;
+			packet.Angle = projectileHitEvent.Angle;
 			ServerHelper::SendBroadcast(packet);
 		}
 		else
@@ -207,6 +208,12 @@ bool MeshPaintHandler::OnProjectileHit(const ProjectileHitEvent& projectileHitEv
 			// If it is a client, paint it on the temporary mask and save the point.
 			remoteMode = ERemoteMode::CLIENT;
 			AddHitPoint(collisionInfo.Position, collisionInfo.Direction, paintMode, remoteMode, team, projectileHitEvent.Angle);
+			// LOG_WARNING("[CLIENT] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+			//  	VEC_TO_ARG(collisionInfo.Position),
+			//  	VEC_TO_ARG(collisionInfo.Direction),
+			//  	PAINT_MODE_TO_STR(paintMode),
+			//  	REMOTE_MODE_TO_STR(remoteMode),
+			//  	team, projectileHitEvent.Angle);
 		}
 	}
 
@@ -226,10 +233,17 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 	{
 		// Allways clear client side when receiving hit from the server.
 		ResetClient();
+		// LOG_WARNING("[FROM SERVER] CLEAR CLIENT");
 
 		// Allways paint the server's paint point to the server side mask (permanent mask)
 		remoteMode = ERemoteMode::SERVER;
 		AddHitPoint(packet.Position, packet.Direction, paintMode, remoteMode, team, packet.Angle);
+		// LOG_WARNING("[FROM SERVER] Hit Pos: (%f, %f, %f), Dir: (%f, %f, %f), PaintMode: %s, RemoteMode: %s, Team: %d, Angle: %d",
+		// 	VEC_TO_ARG(packet.Position),
+		// 	VEC_TO_ARG(packet.Direction),
+		// 	PAINT_MODE_TO_STR(paintMode),
+		// 	REMOTE_MODE_TO_STR(remoteMode),
+		// 	team, packet.Angle);
 	}
 
 	return true;

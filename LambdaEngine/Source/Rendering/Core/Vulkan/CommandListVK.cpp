@@ -465,7 +465,7 @@ namespace LambdaEngine
 		vkCmdCopyImageToBuffer(m_CmdBuffer, pVkSrc->GetImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, pVkDst->GetBuffer(), 1, &copyRegion);
 	}
 
-	void CommandListVK::BlitTexture(const Texture* pSrc, ETextureState srcState, Texture* pDst, ETextureState dstState, EFilterType filter)
+	void CommandListVK::BlitTexture(const Texture* pSrc, ETextureState srcState, const Texture* pDst, ETextureState dstState, EFilterType filter)
 	{
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);

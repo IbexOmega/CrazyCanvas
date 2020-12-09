@@ -54,7 +54,7 @@ void main()
 	
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	out_PaintDist 			= vertex.Normal.w;
-	out_LocalPosition		= vec3(vertex.Tangent.x, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
+	out_LocalPosition		= vec3(vertex.Tangent.w, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 	gl_Position = out_ClipPosition;

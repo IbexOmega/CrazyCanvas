@@ -100,10 +100,11 @@ void main()
 		uint vertexIndex = b_UniqueIndices.Val[vert + meshlet.VertOffset];
 		SVertex vertex = b_Vertices.Val[vertexIndex];
 
-		vec4 worldPosition	= transform * vec4(vertex.Position.xyz, 1.0f);
-		vec3 normal			= normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
-		vec3 tangent		= normalize((transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
-		vec2 texcoord		= vertex.TexCoord.xy;
+		vec4 worldPosition		= transform * vec4(vertex.Position.xyz, 1.0f);
+		vec4 prevWorldPosition	= prevTransform * vec4(vertex.Position.xyz, 1.0f);
+		vec3 normal				= normalize((transform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
+		vec3 tangent			= normalize((transform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
+		vec2 texcoord			= vertex.TexCoord.xy;
 
 		// Material
 		out_WorldPosition[vert]	= worldPosition.xyz;

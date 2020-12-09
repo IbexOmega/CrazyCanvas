@@ -48,6 +48,8 @@
 
 #include "Game/PlayerIndexHelper.h"
 
+#include "MeshPaint/MeshPaintHandler.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -117,12 +119,12 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 					if (ImGui::TreeNode(name.c_str()))
 					{
 						if (ImGui::Button("+"))
-							InternalSetScore((uint8)s, score + 1);
+							InternalSetScore((uint8)s + 1, score + 1);
 
 						ImGui::SameLine();
 
 						if (ImGui::Button("-"))
-							InternalSetScore((uint8)s, glm::max<int32>(score - 1, 0));
+							InternalSetScore((uint8)s + 1, glm::max<int32>(score - 1, 0));
 
 						ImGui::TreePop();
 					}
@@ -346,7 +348,10 @@ void MatchServer::SpawnPlayer(const Player& player)
 			packet.NetworkUID				= playerEntity;
 			packet.Player.WeaponNetworkUID	= childComp.GetEntityWithTag("weapon");
 			ServerHelper::SendBroadcast(packet);
+
+			MeshPaintHandler::ResetServer(playerEntity);
 		}
+		MeshPaintHandler::ResetClient();
 	}
 	else
 	{
@@ -670,7 +675,7 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 
 		{
 			std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
-			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 5.0f));
+			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 10.0f));
 		}
 	}
 

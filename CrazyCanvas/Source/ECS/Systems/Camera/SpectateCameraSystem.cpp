@@ -5,6 +5,7 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Components/Player/Player.h"
 #include "ECS/Components/Match/FlagComponent.h"
+#include "ECS/Components/World/SpectateComponent.h"
 
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
@@ -23,38 +24,57 @@ SpectateCameraSystem::~SpectateCameraSystem()
 {
 	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &SpectateCameraSystem::OnMouseButtonClicked);
 	EventQueue::UnregisterEventHandler<PlayerAliveUpdatedEvent>(this, &SpectateCameraSystem::OnPlayerAliveUpdated);
+	EventQueue::UnregisterEventHandler<GameOverEvent>(this, &SpectateCameraSystem::OnGameOver);
 }
 
 void SpectateCameraSystem::Init()
 {
-	EntitySubscriberRegistration entityReg = {};
-	entityReg.EntitySubscriptionRegistrations =
+	SystemRegistration systemReg = {};
+	systemReg.SubscriberRegistration.EntitySubscriptionRegistrations =
 	{
+		{
+			.pSubscriber = &m_SpectatableEntities,
+			.ComponentAccesses =
+			{
+				{ NDA, SpectateComponent::Type() }
+			}
+		},
 		{
 			.pSubscriber = &m_CameraEntities,
 			.ComponentAccesses =
 			{
-				{ RW, CameraComponent::Type() }, 
+				{ RW, CameraComponent::Type() },
 				{ RW, OffsetComponent::Type() },
-				{ RW, ParentComponent::Type() }
-			}
-		},
-		{
-			.pSubscriber = &m_FlagSpawnEntities,
-			.ComponentAccesses =
-			{
-				{ R, TeamComponent::Type() },
-				{ NDA, FlagSpawnComponent::Type() },
+				{ RW, ParentComponent::Type() },
 			}
 		}
 	};
 
-	SubscribeToEntities(entityReg);
+	systemReg.SubscriberRegistration.AdditionalAccesses =
+	{
+		{ RW, RotationComponent::Type() },
+		{ R, TeamComponent::Type() },
+		{ NDA, FlagSpawnComponent::Type() },
+	};
+
+	RegisterSystem(TYPE_NAME(SpectateCameraSystem), systemReg);
 
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &SpectateCameraSystem::OnMouseButtonClicked);
 	EventQueue::RegisterEventHandler<PlayerAliveUpdatedEvent>(this, &SpectateCameraSystem::OnPlayerAliveUpdated);
+	EventQueue::RegisterEventHandler<GameOverEvent>(this, &SpectateCameraSystem::OnGameOver);
 
 	m_LocalTeamIndex = PlayerManagerClient::GetPlayerLocal()->GetTeam();
+}
+
+void SpectateCameraSystem::Tick(LambdaEngine::Timestamp deltaTime)
+{
+
+	UNREFERENCED_VARIABLE(deltaTime);
+	//After tomorrow I will add a neat rotation to the camera upon death. dont have time to fix it now
+	/*if (m_IsGameOver)
+	{
+
+	}*/
 }
 
 bool SpectateCameraSystem::OnMouseButtonClicked(const MouseButtonClickedEvent& event)
@@ -80,126 +100,156 @@ bool SpectateCameraSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& e
 {
 	using namespace LambdaEngine;
 
-	ECSCore* pECS = ECSCore::GetInstance();
+	const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
 
-	Job job;
-	job.Components =
+	if (pLocalPlayer == event.pPlayer)
 	{
-		{ RW, CameraComponent::Type() },
-		{ RW, OffsetComponent::Type() },
-		{ RW, ParentComponent::Type() }
-	};
+		ECSCore* pECS = ECSCore::GetInstance();
+		ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+		ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
 
-	job.Function = [this, event]()
-	{
-		const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
-
-		if (pLocalPlayer == event.pPlayer)
+		for (Entity cameraEntity : m_CameraEntities)
 		{
-			ECSCore* pECS = ECSCore::GetInstance();
-			ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
-			ComponentArray<OffsetComponent>* pOffsetComponents = pECS->GetComponentArray<OffsetComponent>();
-
 			if (!pLocalPlayer->IsDead())
 			{
-				for (Entity cameraEntity : m_CameraEntities)
-				{
-					RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", false);
-					ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
-					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
-
-					cameraOffsetComponent.Offset *= 0.5f; // reset camera offset
-					parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity(); // reset camera parent
-				}
+				RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", false);
+				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+				OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
+				cameraOffsetComponent.Offset *= 0.5f; // reset camera offset
+				parentComponent.Parent = PlayerManagerClient::GetPlayerLocal()->GetEntity(); // reset camera parent
 
 				m_SpectatorIndex = 0;
 				m_InSpectateView = false;
-				m_pSpectatedPlayer = nullptr;
+				m_SpectatedPlayer = UINT32_MAX;
 
 				SpectatePlayerEvent spectatePlayerEvent("", false);
 				EventQueue::SendEventImmediate(spectatePlayerEvent);
 			}
 			else
 			{
-				for (Entity cameraEntity : m_CameraEntities)
-				{
-					RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", true);
-					OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
+				RenderSystem::GetInstance().SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON", true);
+				OffsetComponent& cameraOffsetComponent = pOffsetComponents->GetData(cameraEntity);
 
-					cameraOffsetComponent.Offset *= 2;
-					SpectatePlayer();
-				}
+				cameraOffsetComponent.Offset *= 2;
+				SpectatePlayer();
 				m_InSpectateView = true;
 			}
 		}
-		else if (m_pSpectatedPlayer == event.pPlayer)
-		{
-			SpectatePlayer();
-		}
-	};
+	}
+	else if (m_SpectatedPlayer == event.pPlayer->GetEntity())
+	{
+		SpectatePlayer();
+	}
 
-	pECS->ScheduleJobASAP(job);
+	return false;
+}
+
+bool SpectateCameraSystem::OnGameOver(const GameOverEvent& event)
+{
+
+	UNREFERENCED_VARIABLE(event);
+
+	m_IsGameOver = true;
+
+	SpectatePlayer();
 
 	return false;
 }
 
 void SpectateCameraSystem::SpectatePlayer()
 {
-	LambdaEngine::TArray<const Player*> teamPlayers;
-	PlayerManagerClient::GetPlayersOfTeam(teamPlayers, m_LocalTeamIndex);
+	LambdaEngine::TArray<Entity> teamPlayers;
 
-	if (!teamPlayers.IsEmpty())
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
+	const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+	const ComponentArray<SpectateComponent>* pSpectateComponents = pECS->GetComponentArray<SpectateComponent>();
+
+	Entity localPlayer = UINT32_MAX;
+	Entity flagSpawnEntity = UINT32_MAX;
+	Entity mapSpectatePointEntity = UINT32_MAX;
+
+	for (Entity cameraEntity : m_CameraEntities)
 	{
-		ECSCore* pECS = ECSCore::GetInstance();
-		ComponentArray<ParentComponent>* pParentComponents = pECS->GetComponentArray<ParentComponent>();
-
-		Entity localPlayer = PlayerManagerClient::GetPlayerLocal()->GetEntity();
-
-		for (int i = teamPlayers.GetSize() - 1; i >= 0; i--)
+		for (Entity entity : m_SpectatableEntities)
 		{
-			if (teamPlayers[i]->GetEntity() == localPlayer) //remove local player from list
+			const SpectateComponent& spectateComponent = pSpectateComponents->GetConstData(entity);
+
+			switch (spectateComponent.SpectateType)
 			{
-				teamPlayers.Erase(teamPlayers.begin() + i);
-			}
-			else if (teamPlayers[i]->IsDead()) //remove dead players from list
-			{
-				teamPlayers.Erase(teamPlayers.begin() + i);
+				case SpectateType::FLAG_SPAWN:
+				{
+					const TeamComponent& teamComponent = pTeamComponents->GetConstData(entity);
+					
+					if (teamComponent.TeamIndex == m_LocalTeamIndex)
+						flagSpawnEntity = entity;
+
+					break;
+				}
+				case SpectateType::PLAYER:
+				{
+					const Player* pPlayer = PlayerManagerClient::GetPlayer(entity);
+
+					if (pPlayer)
+					{
+						if (pPlayer->GetTeam() == m_LocalTeamIndex && !pPlayer->IsDead())
+							teamPlayers.PushBack(entity);
+					}
+
+					break;
+				}
+				case SpectateType::LOCAL_PLAYER:
+				{
+					localPlayer = entity;
+					break;
+				}
+				case SpectateType::SPECTATE_OBJECT:
+				{
+					mapSpectatePointEntity = entity;
+					break;
+				}
+				default: { LOG_ERROR("Spectate Type not found!"); }
 			}
 		}
 
-		if (teamPlayers.GetSize() > 0) //Spectate team-member
+
+		if (!m_IsGameOver)
 		{
-			for (Entity cameraEntity : m_CameraEntities)
+			if (!teamPlayers.IsEmpty()) //Spectate team-member
 			{
 				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+
+				if (m_SpectatorIndex < 0)
+					m_SpectatorIndex = (int8)teamPlayers.GetSize() - 1;
 
 				m_SpectatorIndex = m_SpectatorIndex % teamPlayers.GetSize();
 
-				m_pSpectatedPlayer = teamPlayers[m_SpectatorIndex];
+				m_SpectatedPlayer = teamPlayers[m_SpectatorIndex];
 
-				Entity nextPlayer = m_pSpectatedPlayer->GetEntity();
-				parentComponent.Parent = nextPlayer;
+				parentComponent.Parent = m_SpectatedPlayer;
 
-				SpectatePlayerEvent event(m_pSpectatedPlayer->GetName(), true);
+				SpectatePlayerEvent event(PlayerManagerClient::GetPlayer(m_SpectatedPlayer)->GetName(), true);
 				EventQueue::SendEventImmediate(event);
 			}
-		}
-		else // spectate Flag
-		{
-			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+			else // spectate Flag
+			{
+				if (flagSpawnEntity != UINT32_MAX)
+				{
+					ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
+					parentComponent.Parent = flagSpawnEntity;
 
-			for (Entity cameraEntity : m_CameraEntities)
+					SpectatePlayerEvent event("Team Flag", true);
+					EventQueue::SendEventImmediate(event);
+				}
+			}
+		}
+		else if (m_IsGameOver)
+		{
+			if (mapSpectatePointEntity != UINT32_MAX)
 			{
 				ParentComponent& parentComponent = pParentComponents->GetData(cameraEntity);
-
-				for (Entity flagSpawnEntity : m_FlagSpawnEntities)
-				{
-					const TeamComponent& teamComponent = pTeamComponents->GetConstData(flagSpawnEntity);
-					if (teamComponent.TeamIndex == m_LocalTeamIndex)
-					{
-						parentComponent.Parent = flagSpawnEntity;
-					}
-				}
+				parentComponent.Parent = mapSpectatePointEntity;
 			}
 		}
 	}

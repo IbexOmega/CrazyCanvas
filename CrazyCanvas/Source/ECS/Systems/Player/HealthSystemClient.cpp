@@ -116,9 +116,6 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 		event.pPlayer->IsDead() ? "true" : "false",
 		playerEntity);
 
-	for (uint32 i = 0; i < m_ParticleEmitters.GetSize(); i++)
-		m_ParticleEmitters.PopBack();
-
 	if (event.pPlayer->IsDead())
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
@@ -161,10 +158,8 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 			glm::vec3(0.0f, -1.0f, 0.0f),
 			EPaintMode::PAINT,
 			ERemoteMode::CLIENT,
-			ETeam(teamComponent.TeamIndex == 1),
+			(ETeam)teamComponent.TeamIndex,
 			0);
-
-		m_ParticleEmitters.PushBack(entity);
 
 		// Reset child components
 		if (pChildComponents->HasComponent(playerEntity))

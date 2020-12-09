@@ -40,11 +40,11 @@ layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 
-
 layout(location = 0) out vec3 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 2) out vec3 out_Compact_Normal;
-layout(location = 3) out vec2 out_Velocity;
+layout(location = 3) out vec4 out_Velocity_fWidth_Normal;
+layout(location = 4) out vec2 out_Geometric_Normal;
 
 void main()
 {
@@ -77,9 +77,10 @@ void main()
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//2
-	vec3 shadingNormal	= normalize((sampledNormal * 2.0f) - 1.0f);
-	shadingNormal		= normalize(TBN * normalize(shadingNormal));
-	out_Compact_Normal	= PackNormal(mix(shadingNormal, normalize(paintDescription.Normal+shadingNormal*0.2f), paintDescription.Interpolation));
+	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
+	shadingNormal				= normalize(TBN * normalize(shadingNormal));
+    shadingNormal               = mix(shadingNormal, normalize(paintDescription.Normal + shadingNormal * 0.2f), paintDescription.Interpolation);
+	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//3
 	const vec2 size		= u_PerFrameBuffer.Val.ViewPortSize;
@@ -97,5 +98,9 @@ void main()
 	screenVelocity = screenVelocity - jitter;
 	screenVelocity = screenVelocity / size;
 	
-	out_Velocity = screenVelocity;
+	float fwidthNorm			= length(fwidth(normal));
+	out_Velocity_fWidth_Normal	= vec4(screenVelocity, fwidthNorm, 0.0f);
+	
+	//4
+	out_Geometric_Normal		= vec2(DirToOct(normal));
 }

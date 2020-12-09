@@ -23,6 +23,7 @@
 #include "Multiplayer/Packet/PacketPlayerReady.h"
 #include "Multiplayer/Packet/PacketPlayerScore.h"
 #include "Multiplayer/Packet/PacketPlayerState.h"
+#include "Multiplayer/Packet/PacketPositionPing.h"
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 #include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 
@@ -50,6 +51,7 @@ void PacketType::Init()
 	PLAYER_ALIVE_CHANGED	= RegisterPacketType<PacketPlayerAliveChanged>();
 	PLAYER_HOST				= RegisterPacketType<PacketPlayerHost>();
 	PLAYER_PING				= RegisterPacketType<PacketPlayerPing>();
+	PLAYER_POSITION_PING	= RegisterPacketType<PacketPositionPing>();
 	PLAYER_READY			= RegisterPacketType<PacketPlayerReady>();
 	PLAYER_SCORE			= RegisterPacketType<PacketPlayerScore>();
 	PLAYER_STATE			= RegisterPacketType<PacketPlayerState>();

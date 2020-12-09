@@ -2,6 +2,8 @@
 
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 
+#include "Debug/Profiler.h"
+
 MultiplayerClient::MultiplayerClient() :
 	m_PlayerLocal(),
 	m_PlayerForeignSystem(),
@@ -38,13 +40,13 @@ void MultiplayerClient::TickMainThread(LambdaEngine::Timestamp deltaTime)
 
 void MultiplayerClient::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 {
-	m_PlayerForeignSystem.FixedTickMainThread(deltaTime);
+	PROFILE_FUNCTION("m_PlayerForeignSystem->FixedTickMainThread", m_PlayerForeignSystem.FixedTickMainThread(deltaTime));
 
-	m_ReplaySystem.FixedTickMainThread(deltaTime);
+	PROFILE_FUNCTION("m_ReplaySystem->FixedTickMainThread", m_ReplaySystem.FixedTickMainThread(deltaTime));
 
-	m_pFlagSystem->FixedTick(deltaTime);
+	PROFILE_FUNCTION("m_pFlagSystem->FixedTick", m_pFlagSystem->FixedTick(deltaTime));
 
-	m_pShowerSystem->FixedTick(deltaTime);
+	PROFILE_FUNCTION("m_pShowerSystem->FixedTick", m_pShowerSystem->FixedTick(deltaTime));
 }
 
 void MultiplayerClient::PostFixedTickMainThread(LambdaEngine::Timestamp deltaTime)

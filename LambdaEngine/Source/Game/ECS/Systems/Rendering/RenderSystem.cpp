@@ -15,6 +15,7 @@
 #include "Rendering/EntityMaskManager.h"
 #include "Rendering/LineRenderer.h"
 #include "Rendering/StagingBufferCache.h"
+#include "Rendering/RT/ReflectionsDenoisePass.h"
 
 #include "Application/API/Window.h"
 #include "Application/API/CommonApplication.h"
@@ -37,6 +38,7 @@
 #include "Rendering/LightProbeRenderer.h"
 #include "Rendering/AARenderer.h"
 #include "Rendering/RT/ASBuilder.h"
+#include "Rendering/BlitStage.h"
 
 #include "GUI/Core/GUIApplication.h"
 #include "GUI/Core/GUIRenderer.h"
@@ -45,6 +47,8 @@
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/PlayerIndexHelper.h"
+
+#include "Debug/Profiler.h"
 
 namespace LambdaEngine
 {
@@ -421,6 +425,22 @@ namespace LambdaEngine
 				renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 			}
 
+			//Blit Stage
+			{
+				m_pBlitStage = DBG_NEW BlitStage();
+				m_pBlitStage->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pBlitStage);
+			}
+
+			//Reflection Denoise Pass
+			{
+				m_pReflectionsDenoisePass = DBG_NEW ReflectionsDenoisePass();
+				m_pReflectionsDenoisePass->Init();
+
+				renderGraphDesc.CustomRenderers.PushBack(m_pReflectionsDenoisePass);
+			}
+
 			// Other Custom Renderers constructed in game
 			for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
 			{
@@ -469,6 +489,53 @@ namespace LambdaEngine
 			}
 		}
 
+		//Update RenderGraph with Blue Noise LUTs
+		{
+			Texture* pBlueNoiseTexture			= ResourceManager::GetTexture(GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP);
+			TextureView* pBlueNoiseTextureView	= ResourceManager::GetTextureView(GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP);
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName										= "BLUE_NOISE_LUTS";
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextures					= &pBlueNoiseTexture;
+			resourceUpdateDesc.ExternalTextureUpdate.ppTextureViews				= &pBlueNoiseTextureView;
+			resourceUpdateDesc.ExternalTextureUpdate.ppPerSubImageTextureViews	= nullptr;
+			resourceUpdateDesc.ExternalTextureUpdate.TextureCount				= 1;
+			resourceUpdateDesc.ExternalTextureUpdate.ppSamplers					= Sampler::GetNearestSamplerToBind();
+			resourceUpdateDesc.ExternalTextureUpdate.SamplerCount				= 1;
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
+		//Set Push Constants
+		{
+			struct
+			{
+				int32 GlossyEnabled;
+				int32 SPP;
+			} rayTracingPushConstant;
+
+			rayTracingPushConstant.GlossyEnabled = int32(EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS));
+			rayTracingPushConstant.SPP = EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP);
+
+			PushConstantsUpdate pushContantUpdate = {};
+			pushContantUpdate.pData = &rayTracingPushConstant;
+			pushContantUpdate.DataSize = sizeof(rayTracingPushConstant);
+
+			{
+				pushContantUpdate.RenderStageName = "RAY_TRACING";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
+
+			{
+				pushContantUpdate.RenderStageName = "SHADING_PASS";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
+
+			{
+				pushContantUpdate.RenderStageName = "REFLECTIONS_DENOISE_PASS";
+				m_pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+			}
+		}
+
 		UpdateBuffers();
 		UpdateRenderGraph();
 
@@ -500,6 +567,8 @@ namespace LambdaEngine
 			}
 		}
 
+		SAFEDELETE(m_pReflectionsDenoisePass);
+		SAFEDELETE(m_pBlitStage);
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pLightProbeRenderer);
@@ -703,6 +772,7 @@ namespace LambdaEngine
 		}
 
 		ComponentArray<ParticleEmitterComponent>* pEmitterComponents = pECSCore->GetComponentArray<ParticleEmitterComponent>();
+		BEGIN_PROFILING_SEGMENT("UpdateParticleEmitters");
 		for (Entity entity : m_ParticleEmitters)
 		{
 			const auto& positionComp = pPositionComponents->GetConstData(entity);
@@ -719,6 +789,7 @@ namespace LambdaEngine
 				emitterCompNonConst.Active = false;
 			}
 		}
+		END_PROFILING_SEGMENT("UpdateParticleEmitters");
 
 		// Tick Particle Manager
 		if (m_ParticleManager.IsInitilized())
@@ -741,17 +812,17 @@ namespace LambdaEngine
 		m_FrameIndex++;
 		m_ModFrameIndex = m_FrameIndex % uint64(BACK_BUFFER_COUNT);
 
-		StagingBufferCache::Tick();
-		CleanBuffers();
+		PROFILE_FUNCTION("StagingBufferCache::Tick", StagingBufferCache::Tick());
+		PROFILE_FUNCTION("RenderSystem::CleanBuffers", CleanBuffers());
 
-		UpdateBuffers();
-		UpdateRenderGraph();
+		PROFILE_FUNCTION("RenderSystem::UpdateBuffers", UpdateBuffers());
+		PROFILE_FUNCTION("RenderSystem::UpdateRenderGraph", UpdateRenderGraph());
 
-		m_pRenderGraph->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
+		PROFILE_FUNCTION("m_pRenderGraph->Update", m_pRenderGraph->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex));
 
-		m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex);
+		PROFILE_FUNCTION("m_pRenderGraph->Render", m_pRenderGraph->Render(m_ModFrameIndex, m_BackBufferIndex));
 
-		m_SwapChain->Present();
+		PROFILE_FUNCTION("m_SwapChain->Present", m_SwapChain->Present());
 
 		return true;
 	}
@@ -1771,17 +1842,23 @@ bool RenderSystem::InitIntegrationLUT()
 			VALIDATE(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 			DeleteDeviceResource(meshAndInstancesIt->second.pAnimatedVertexBuffer);
 
-			VALIDATE(meshAndInstancesIt->second.pAnimationDescriptorSet);
-			DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
+			if (meshAndInstancesIt->second.pAnimationDescriptorSet)
+			{
+				DeleteDeviceResource(meshAndInstancesIt->second.pAnimationDescriptorSet);
+			}
 
-			VALIDATE(meshAndInstancesIt->second.pBoneMatrixBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
+			if (meshAndInstancesIt->second.pBoneMatrixBuffer)
+			{
+				DeleteDeviceResource(meshAndInstancesIt->second.pBoneMatrixBuffer);
+			}
 
 			VALIDATE(meshAndInstancesIt->second.pVertexWeightsBuffer);
 			DeleteDeviceResource(meshAndInstancesIt->second.pVertexWeightsBuffer);
 
-			VALIDATE(meshAndInstancesIt->second.pStagingMatrixBuffer);
-			DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
+			if (meshAndInstancesIt->second.pStagingMatrixBuffer)
+			{
+				DeleteDeviceResource(meshAndInstancesIt->second.pStagingMatrixBuffer);
+			}
 		}
 
 		for (uint32 b = 0; b < BACK_BUFFER_COUNT; b++)
@@ -2432,9 +2509,6 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::UpdateBuffers()
 	{
-		static uint64 frameIndex = 0;
-		frameIndex++;
-
 		CommandList* pGraphicsCommandList	= m_pRenderGraph->AcquireGraphicsCopyCommandList();
 		CommandList* pComputeCommandList	= m_pRenderGraph->AcquireComputeCopyCommandList();
 
@@ -2445,7 +2519,7 @@ bool RenderSystem::InitIntegrationLUT()
 
 		//Update Per Frame Data
 		{
-			m_PerFrameData.FrameIndex = frameIndex;
+			m_PerFrameData.FrameIndex = m_FrameIndex % UINT32_MAX;
 			m_PerFrameData.RandomSeed = uint32(Random::Int32(INT32_MIN, INT32_MAX));
 
 			UpdatePerFrameBuffer(pGraphicsCommandList);

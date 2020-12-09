@@ -22,6 +22,4 @@ protected:
 
 private:
 	LambdaEngine::IDVector m_LocalPlayerEntities;
-
-	LambdaEngine::TArray<LambdaEngine::Entity> m_ParticleEmitters;
 };

@@ -40,7 +40,9 @@ public:
 	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 
 	// Controls
 	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -67,6 +69,8 @@ private:
 	// bool	m_RayTracingEnabled			= false;
 	bool	m_MeshShadersEnabled		= false;
 	bool	m_FullscreenEnabled			= false;
+
+	int32	m_NewReflectionsSPP			= 0;
 
 	Noesis::Grid*	m_pStartGrid		= nullptr;
 	Noesis::Grid*	m_pPlayGrid			= nullptr;

@@ -6,7 +6,6 @@
 #include "../Defines.glsl"
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer					{ SPerFrameBuffer val; }	u_PerFrameBuffer;
-layout(binding = 3, set = BUFFER_SET_INDEX) uniform HitPointsBuffer					{ SUnwrapData val; }		u_HitPointsBuffer;
 
 layout(binding = 0, set = DRAW_SET_INDEX) restrict readonly buffer Vertices			{ SVertex val[]; }			b_Vertices;
 layout(binding = 1, set = DRAW_SET_INDEX) restrict readonly buffer Instances		{ SInstance val[]; }		b_Instances;

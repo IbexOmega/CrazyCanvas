@@ -74,6 +74,7 @@ bool ResourceCatalog::Init()
 	{
 		SOUND_EFFECT_SPLASH0_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/HitSound0.mp3");
 		SOUND_EFFECT_SPLASH1_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Player/HitSound1.mp3");
+		SOUND_EFFECT_PING = ResourceManager::LoadSoundEffect3DFromFile("Player/Ping.mp3");
 	}
 
 	return true;

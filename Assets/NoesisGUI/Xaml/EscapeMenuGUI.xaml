@@ -14,7 +14,7 @@
 <Grid x:Name="ESC_MENU_OVERLAY" MinWidth="400" MinHeight="400" Visibility="Visible" RenderTransformOrigin="0.5 0.5">
 
     <Viewbox Grid.Column="3" Grid.ColumnSpan="4" Grid.Row="4" Grid.RowSpan="5" Stretch="UniformToFill">
-        <Grid x:Name="EscapeGrid" MinWidth="768" MinHeight="415.38" Background="#CC101010" Visibility="Hidden">
+        <Grid x:Name="EscapeGrid" Height="500" Width="720" Background="#CC101010" Visibility="Hidden">
             <Grid.RowDefinitions>
                 <RowDefinition Height="1*"/>
                 <RowDefinition Height="6*"/>
@@ -110,21 +110,27 @@
     </Viewbox>
 
     <!--SettingsGrid-->
-    <Viewbox Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="3" Grid.RowSpan="7" Stretch="UniformToFill">
-        <Grid x:Name="SettingsGrid" Background="#CC101010" Visibility="Hidden">
+    <Viewbox Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="3" Grid.RowSpan="5" Stretch="UniformToFill">
+        <Grid x:Name="SettingsGrid" Background="#CC101010" Visibility="Hidden" Height="720" Width="1200">
             <Grid.RowDefinitions>
                 <RowDefinition Height="1*"/>
-                <RowDefinition Height="6*"/>
+                <RowDefinition Height="4*"/>
             </Grid.RowDefinitions>
 
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="5*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
             <!--Title-->
-            <Grid Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="0">
+            <Grid Grid.Column="1" Grid.Row="0">
                 <Label Content="Settings" Foreground="White" FontSize="96" HorizontalAlignment="Center" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5" VerticalAlignment="Top"/>
             </Grid>
 
             <!--Settings-->
-            <Grid Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="1" >
-                <StackPanel Grid.Row="1" MinHeight="700" MinWidth="1200" Margin="200 100 200 0" VerticalAlignment="Center">
+            <Grid Grid.Column="1" Grid.Row="1" >
+                <StackPanel Grid.Row="1" VerticalAlignment="Top">
                     <!--Mesh Shader Toggle-->
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -133,19 +139,32 @@
                         </Grid.ColumnDefinitions>
 
                         <Label Content="Mesh Shader" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
-                        <CheckBox x:Name="MeshShaderCheckBox" Grid.Column="1" VerticalAlignment="Center" />
+                        <CheckBox x:Name="MeshShaderCheckBox" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" />
                     </Grid>
 
-                    <!--Ray Tracing Toggle-->
-                    <!-- <Grid>
+                    <!--Glossy Toggle-->
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*" />
                             <ColumnDefinition Width="1*" />
                         </Grid.ColumnDefinitions>
 
-                        <Label Content="Ray Tracing" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
-                        <CheckBox x:Name="RayTracingCheckBox" Grid.Column="1" VerticalAlignment="Center" />
-                    </Grid> -->
+                        <Label Content="Glossy Reflections" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                        <CheckBox x:Name="GlossyReflectionsCheckBox" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                    </Grid>
+
+                    <!--Reflections SPP-->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.5*" />
+                            <ColumnDefinition Width="1.2*" />
+                            <ColumnDefinition Width=".3*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label Content="Rays per Pixel" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
+                        <Slider x:Name="ReflectionsSPPSlider" ValueChanged="OnReflectionsSPPSliderChanged" Grid.Column="1" VerticalAlignment="Center" Minimum="1" Maximum="16" TickFrequency="1" IsSnapToTickEnabled="True" />
+                        <TextBox Text="{ Binding ElementName=ReflectionsSPPSlider, Path=Value, UpdateSourceTrigger=PropertyChanged }" Grid.Column="2" HorizontalAlignment="Right" TextAlignment="Center" Width="40" />
+                    </Grid>
 
                     <!--Fullscreen Toggle-->
                     <Grid>
@@ -155,7 +174,7 @@
                         </Grid.ColumnDefinitions>
 
                         <Label Content="Fullscreen" Foreground="White" FontSize="29.333" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="3.5"/>
-                        <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" IsEnabled="False" VerticalAlignment="Center" />
+                        <CheckBox x:Name="FullscreenCheckBox" Grid.Column="1" IsEnabled="False" VerticalAlignment="Center" HorizontalAlignment="Right" />
                     </Grid>
 
                     <!--AA Dropdown-->
@@ -225,7 +244,7 @@
 
     <!--Controls grid-->
     <Viewbox Grid.Column="1" Grid.ColumnSpan="8" Grid.Row="2" Grid.RowSpan="9" Stretch="UniformToFill">
-        <Grid x:Name="ControlsGrid" Background="#CC101010" Visibility="Hidden">
+        <Grid x:Name="ControlsGrid" Background="#CC101010" Visibility="Hidden" Height="720" Width="1200">
             <Grid.RowDefinitions>
                 <RowDefinition Height="1*"/>
                 <RowDefinition Height="6*"/>
@@ -238,7 +257,7 @@
 
             <!--Controls-->
             <Grid Grid.Column="1" Grid.ColumnSpan="7" Grid.Row="1">
-                <StackPanel Grid.Row="1" MinHeight="700" MinWidth="1200" Margin="200 0 200 0" VerticalAlignment="Center">
+                <StackPanel Grid.Row="1" Margin="200 0 200 0" VerticalAlignment="Center">
                     <!--Movement Title-->
                     <Grid>
                         <Grid.ColumnDefinitions>
