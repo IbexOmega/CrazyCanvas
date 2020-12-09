@@ -69,5 +69,11 @@ namespace LambdaEngine
 		ClearColorDesc	m_pClearColorDesc[3];
 
 		GUIRenderTargetDesc m_Desc = { };
+
+		uint32 m_GUIRenderTargetIndex = 0;
+
+	private:
+		inline static uint32 s_GUIRenderTargetIndex = 0;
+
 	};
 }

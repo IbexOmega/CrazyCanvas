@@ -971,16 +971,6 @@ namespace LambdaEngine
 				{
 					return false;
 				}
-
-				//CommandList* pCommandList = m_ppRenderCommandLists[b];
-
-				//Profiler::GetGPUProfiler()->AddTimestamp(pCommandList, "GUI Render Command List");
-
-				//pCommandList->Begin(nullptr);
-				//Profiler::GetGPUProfiler()->ResetTimestamp(pCommandList);
-				//pCommandList->End();
-				//RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-				//RenderAPI::GetGraphicsQueue()->Flush();
 			}
 		}
 
