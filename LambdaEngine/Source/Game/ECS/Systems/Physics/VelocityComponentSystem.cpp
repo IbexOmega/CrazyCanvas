@@ -28,6 +28,8 @@ namespace LambdaEngine
 
 	void VelocityComponentSystem::Tick(Timestamp deltaTime)
 	{
+		UNREFERENCED_VARIABLE(deltaTime);
+
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		ComponentArray<VelocityComponent>* pVelocityComponents = pECS->GetComponentArray<VelocityComponent>();
