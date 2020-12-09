@@ -108,6 +108,10 @@ bool MultiplayerState::OnClientDisconnected(const LambdaEngine::ClientDisconnect
 	{
 		m_MultiplayerGUI->DisplayErrorMessage("The server is currently full!");
 	}
+	else
+	{
+		m_MultiplayerGUI->DisplayErrorMessage("Failed to join server!");
+	}
 
 	return false;
 }
