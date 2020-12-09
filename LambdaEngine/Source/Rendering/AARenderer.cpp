@@ -728,8 +728,8 @@ namespace LambdaEngine
 		ScissorRect scissorRect;
 		scissorRect.Height	= height;
 		scissorRect.Width	= width;
-		scissorRect.x		= 0.0f;
-		scissorRect.y		= 0.0f;
+		scissorRect.x		= 0;
+		scissorRect.y		= 0;
 		commandList->SetScissorRects(&scissorRect, 0, 1);
 
 		BeginRenderPassDesc beginRenderPassDesc;

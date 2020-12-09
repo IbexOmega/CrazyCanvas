@@ -570,7 +570,7 @@ namespace LambdaEngine
 		fb.CameraRight		= glm::vec4(g_DefaultRight, 1.0f);
 		fb.CameraUp			= glm::vec4(g_DefaultUp, 1.0f);
 		fb.JitterDiff		= jitter - prevjitter;
-		fb.FrameIndex		= tick;
+		fb.FrameIndex		= uint32(tick);
 		fb.RandomSeed		= 0;
 
 		byte* pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffer->Map());
