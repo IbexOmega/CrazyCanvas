@@ -1251,6 +1251,14 @@ bool LevelObjectCreator::CreatePlayer(
 						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
 					});
 
+				ParentComponent parentComponent =
+				{
+					.Parent = playerEntity,
+					.Attached = false,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(firstPersonWeaponEnity, parentComponent);
+
 				AnimationComponent animationComponentWeapon = {};
 				animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID)->pSkeleton;
 

@@ -10,6 +10,14 @@
 layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
 #include "../MeshPaintHelper.glsl"
 
+// Pushconstants
+layout(push_constant) uniform PushConstants
+{
+	uint TeamIndex;
+    float WaveX;
+    float WaveZ;
+} u_PC;
+
 layout(location = 0) in vec3		in_WorldPosition;
 layout(location = 1) in vec3		in_Normal;
 layout(location = 2) in vec3		in_Tangent;
@@ -19,7 +27,7 @@ layout(location = 5) in vec4		in_ClipPosition;
 layout(location = 6) in vec4		in_PrevClipPosition;
 layout(location = 7) in flat uint	in_InstanceIndex;
 layout(location = 8) in vec3 		in_ViewDirection;
-layout(location = 9) in float       in_PositionY;
+layout(location = 9) in vec3        in_Position;
 	
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }        u_PerFrameBuffer;
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters 	{ SMaterialParameters val[]; }	b_MaterialParameters; // Not used
@@ -46,14 +54,26 @@ void main()
 
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo = b_PaintMaskColor.val[0].rgb;
+	vec3 sampledAlbedo = b_PaintMaskColor.val[u_PC.TeamIndex].rgb;
 
-    float isLiquid = 1.f - step(0.5f, in_PositionY); 
+    // Tells the user how much paint is in the container. A limit of 0.75 is 75% filled. 
+    float limit = 0.5f; //u_PC.WaveX + u_PC.WaveZ;
+
+    // Use the texture coordinate to find the height at this pixel from the bottom of the container to the top.
+    const float distTexCoord = 0.087f;
+    const float midTexCoord = 0.24f;
+    const float minTexCoord = midTexCoord-distTexCoord;
+    const float maxTexCoord = midTexCoord+distTexCoord;
+    float filling = 1.f-in_Position.y;//(clamp(texCoord.y, minTexCoord, maxTexCoord)-minTexCoord)/(maxTexCoord-minTexCoord);
+    float isLiquid = step(1.f-limit, filling);
     
-    float alpha = isLiquid;
+    // Remove the pixels which are not part of the liquid.
+    if(isLiquid < 0.5f)
+        discard;
 
-    vec3 color = gl_FrontFacing ? vec3(1.f, 0.f, 0.f) : vec3(0.f, 0.f, 1.f);
-	out_Color = vec4(color, alpha);
+    // Color the side with the paint color and the top with a lighter paint color.
+    vec3 color = gl_FrontFacing ? sampledAlbedo : clamp(sampledAlbedo + vec3(1.f)*.7f, vec3(0.f), vec3(1.f));
+	out_Color = vec4(color, 1.f);
 	return;
 
 	// Get weapon albedo

@@ -12,6 +12,13 @@ struct SWeaponData
 	vec3 PlayerPos;
 };
 
+layout(push_constant) uniform PushConstants
+{
+	uint TeamIndex;
+    float WaveX;
+    float WaveZ;
+} u_PC;
+
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;
 layout(binding = 4, set = BUFFER_SET_INDEX) uniform WeaponData					{ SWeaponData val; }		u_WeaponData;
 
@@ -31,7 +38,7 @@ layout(location = 5) out vec4 out_ClipPosition;
 layout(location = 6) out vec4 out_PrevClipPosition;
 layout(location = 7) out flat uint out_InstanceIndex;
 layout(location = 8) out vec3 out_ViewDirection;
-layout(location = 9) out float out_PositionY;
+layout(location = 9) out vec3 out_Position;
 
 void main()
 {
@@ -59,8 +66,13 @@ void main()
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
-    
-    out_PositionY            = position.y;
+
+    // vertex offset from origo X: 0.8258, Y: 0.25395, Z: -0.066376
+    vec3 offset = vec3(0.8258f, 0.25395f, -0.066376f);
+    vec3 size = vec3(0.14715f, 0.14715f, 0.317593f);
+    out_Position = (weaponData.Model * instance.Transform * vec4(position - offset, 0.f)).xyz + vec3(0.f, size.y, 0.f);
+    out_Position.y /= size.y*2.f;
+    out_Position.y += position.x*u_PC.WaveX + position.z*u_PC.WaveZ;
 
 	gl_Position = out_ClipPosition;
 }

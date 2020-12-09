@@ -23,6 +23,9 @@
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "Resources/ResourceCatalog.h"
 
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
+
 namespace LambdaEngine
 {
 	FirstPersonWeaponRenderer* FirstPersonWeaponRenderer::s_pInstance = nullptr;
@@ -228,9 +231,74 @@ namespace LambdaEngine
 
 	void FirstPersonWeaponRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
-		UNREFERENCED_VARIABLE(delta);
+		using namespace LambdaEngine;
+
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
+
+		/*{
+			// Hack to make the animation attatched component be used (Did not work..., dirty bool was reset before applying transform)
+			PositionComponent pcomp = {};
+			ECSCore::GetInstance()->GetComponentIf<PositionComponent>(m_LiquidEntity, pcomp);
+			RotationComponent rcomp = {};
+			ECSCore::GetInstance()->GetComponentIf<RotationComponent>(m_LiquidEntity, rcomp);
+			ScaleComponent scomp = {};
+			ECSCore::GetInstance()->GetComponentIf<ScaleComponent>(m_LiquidEntity, scomp);
+		}
+
+		{
+			PositionComponent pcomp = {};
+			ECSCore::GetInstance()->GetComponentIf<PositionComponent>(m_LiquidEntity, pcomp);
+			LOG_WARNING("Is pos dirty: %s", pcomp.Dirty ? "True" : "False");
+		}*/
+
+		// Fetch data from the player
+		{
+			ECSCore* pECSCore = ECSCore::GetInstance();
+			if (m_PlayerEntity != UINT32_MAX)
+			{
+				// Fetch the team index, which is used for coloring the liquid to the same color as the paint.
+				const TeamComponent& teamComponent = pECSCore->GetConstComponent<TeamComponent>(m_PlayerEntity);
+				m_LiquidPushConstantData.TeamIndex = teamComponent.TeamIndex;
+
+				float dt = (float)delta.AsSeconds();
+
+				// Waves, Code from: https://www.patreon.com/posts/quick-game-art-18245226
+				static float s_Time = 0.f;
+				s_Time += dt;
+
+				static float s_Recovery = 1.f;
+				static float s_WaveAddX = 0.f;
+				static float s_WaveAddZ = 0.f;
+				static float s_MaxWave = 0.03f;
+
+				// Soften the wave over time.
+				s_WaveAddX = glm::mix(s_WaveAddX, 0.f, dt * s_Recovery);
+				s_WaveAddZ = glm::mix(s_WaveAddZ, 0.f, dt * s_Recovery);
+
+				float pulse = dt * 2.f * glm::pi<float>();
+				m_LiquidPushConstantData.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
+				m_LiquidPushConstantData.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
+
+				// Fetch the player position and rotation to be able to calculate its velocity and angular velocity.
+				static glm::vec3 s_PreviousPosition = glm::vec3(0.f);
+				static glm::vec3 s_PreviousRotation = glm::vec3(0.f);
+				const PositionComponent& positionComponent = pECSCore->GetConstComponent<PositionComponent>(m_PlayerEntity);
+				const RotationComponent& rotationComponent = pECSCore->GetConstComponent<RotationComponent>(m_PlayerEntity);
+				
+				glm::vec3 velocity = (s_PreviousPosition - positionComponent.Position) / dt;
+
+				glm::vec3 eulerAngles = glm::eulerAngles(rotationComponent.Quaternion);
+				glm::vec3 angularVelocity = eulerAngles - s_PreviousRotation;
+
+				s_WaveAddX += glm::clamp((velocity.x + (angularVelocity.z * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+				s_WaveAddZ += glm::clamp((velocity.z + (angularVelocity.x * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+
+				s_PreviousPosition = positionComponent.Position;
+				s_PreviousRotation = eulerAngles;
+			}
+		}
+
 
 		// Update descriptor of weapon buffer set
 		if (!m_InitilizedWeaponBuffer) 
@@ -423,6 +491,7 @@ namespace LambdaEngine
 				const ComponentArray<WeaponLocalComponent>* pWeaponLocalComponents = pECSCore->GetComponentArray<WeaponLocalComponent>();
 				const ComponentArray<AnimationComponent>* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
 				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
+				const ComponentArray<ParentComponent>* pParentComponents = pECSCore->GetComponentArray<ParentComponent>();
 
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
@@ -432,21 +501,28 @@ namespace LambdaEngine
 					{
 						for (uint32 i = 0; i < m_pDrawArgs[d].EntityIDs.GetSize(); i++)
 						{
-							m_Entity = m_pDrawArgs[d].EntityIDs[i];
-							if (pWeaponLocalComponents->HasComponent(m_Entity)) {
+							Entity entity = m_pDrawArgs[d].EntityIDs[i];
+							if (pWeaponLocalComponents->HasComponent(entity)) {
 								
-								if (pWeaponLiquidComponents->HasComponent(m_Entity))
+								if (pWeaponLiquidComponents->HasComponent(entity))
 								{
+									m_LiquidEntity = entity;
 									m_LiquidIndex = d;
 									m_LiquidDrawArgsDescriptorSet = m_pDrawArgs[d].pDescriptorSet;
 								}
 								else
 								{
-									if (pAnimationComponents->HasComponent(m_Entity))
+									if (pAnimationComponents->HasComponent(entity))
 										LOG_INFO("ALL GOOD IN THE HOOD");
 
+									if (pParentComponents->HasComponent(entity))
+									{
+										m_PlayerEntity = pParentComponents->GetConstData(entity).Parent;
+									}
+
+									m_Entity = entity;
 									m_WeaponIndex = d;
-									m_WorldPos = pPositionComponents->GetConstData(m_Entity).Position;
+									m_WorldPos = pPositionComponents->GetConstData(entity).Position;
 
 									// Set Vertex and Instance buffer for rendering
 									//Buffer* ppBuffers[2] = { m_VertexBuffer.Get(), m_pDrawArgs[d].pInstanceBuffer };
@@ -585,6 +661,8 @@ namespace LambdaEngine
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateIDNoCull));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_LiquidPipelineLayout.Get(), 0); // BUFFER_SET_INDEX
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_LiquidPipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
+
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData), 0);
 
 		// Draw Weapon liquid
 		const DrawArg& drawArg = m_pDrawArgs[m_LiquidIndex];
@@ -910,10 +988,15 @@ namespace LambdaEngine
 			drawArgDescriptorSetLayoutDesc.DescriptorBindings = descriptorBindings;
 		}
 
+		ConstantRangeDesc constantRangeDesc = {};
+		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		constantRangeDesc.OffsetInBytes = 0;
+		constantRangeDesc.SizeInBytes = sizeof(SPushConstantData);
+
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout liquid";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, drawArgDescriptorSetLayoutDesc };
-		pipelineLayoutDesc.ConstantRanges = { };
+		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
 
 		m_LiquidPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 

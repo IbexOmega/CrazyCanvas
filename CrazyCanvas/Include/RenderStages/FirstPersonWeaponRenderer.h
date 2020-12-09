@@ -64,6 +64,14 @@ namespace LambdaEngine {
 		}
 
 	private:
+		struct SPushConstantData
+		{
+			uint32 TeamIndex = 0;
+			float WaveX = 0.0f;
+			float WaveZ = 0.0f;
+		};
+
+	private:
 		bool PrepareResources(CommandList* pCommandList);
 		bool CreatePipelineLayout();
 		bool CreatePipelineLayoutLiquid();
@@ -132,6 +140,11 @@ namespace LambdaEngine {
 		TSharedRef<PipelineLayout>				m_LiquidPipelineLayout = nullptr;
 		GUID_Lambda								m_LiquidVertexShaderGUID = 0;
 		GUID_Lambda								m_LiquidPixelShaderGUID = 0;
+		Entity									m_LiquidEntity = UINT32_MAX;
+		SPushConstantData						m_LiquidPushConstantData;
+
+		// Player variables
+		Entity									m_PlayerEntity = UINT32_MAX;
 
 		uint32									m_WeaponIndex = 0;
 		uint32									m_LiquidIndex = 0;
