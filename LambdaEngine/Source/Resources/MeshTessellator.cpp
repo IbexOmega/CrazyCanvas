@@ -554,6 +554,8 @@ namespace LambdaEngine
 
 	void MeshTessellator::CreateOutBuffer(CommandList* pCommandList, Buffer** ppOutBuffer, Buffer** ppOutSecondStagingBuffer, uint64 size, const String& name)
 	{
+		UNREFERENCED_VARIABLE(pCommandList);
+
 		uint64 stagingBufferSize = 0;
 		uint64 bufferSize0 = 0;
 
