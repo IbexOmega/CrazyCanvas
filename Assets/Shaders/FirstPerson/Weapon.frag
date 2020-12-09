@@ -54,7 +54,7 @@ void main()
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
 	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
-	out_Color = vec4(sampledAlbedo, 1.0f);
+	out_Color = vec4(sampledAlbedo, 0.6f);
 	return;
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;

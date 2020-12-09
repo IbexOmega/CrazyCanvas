@@ -43,7 +43,7 @@ void main()
 	mat4 normalTransform    = instance.Transform;
 
 	vec3 position 			= vertex.Position.xyz;
-	vec4 worldPosition		= normalTransform * vec4(position, 1.0f);
+	vec4 worldPosition		= weaponData.Model * vec4(position, 1.0f);
 	vec4 prevWorldPosition	= instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
 

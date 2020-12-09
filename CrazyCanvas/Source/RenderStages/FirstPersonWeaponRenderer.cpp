@@ -569,8 +569,8 @@ namespace LambdaEngine
 		if (m_Entity != MAXUINT32 && pPositionComponents->HasComponent(m_Entity)) {
 			SWeaponBuffer data = {};
 
-			data.Model = glm::translate(glm::vec3(-0.3f, -0.45f, -0.5f));
-			data.Model = glm::scale(data.Model, glm::vec3(1.2f, 1.2f, 1.2f));
+			data.Model = glm::translate(glm::vec3(0.0f, -0.375f, 0.1f));
+			data.Model = glm::scale(data.Model, glm::vec3(1.0f, 1.0f, 1.0f));
 			data.PlayerPos = pPositionComponents->GetConstData(m_Entity).Position;
 
 			Buffer* pStagingBuffer = m_WeaponStagingBuffers[modFrameIndex].Get();
@@ -610,8 +610,7 @@ namespace LambdaEngine
 		float32 windowHeight = float32(window->GetHeight());
 
 		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, windowWidth / windowHeight, 0.001f, 10.0f);
-		glm::mat4 translate = glm::translate(glm::vec3(0.f, -0.275f, 0.15f));
-		glm::mat4 view =  glm::lookAt(glm::vec3(0.0, 0.0, 0.1), glm::vec3(0.0f), g_DefaultUp) * translate;
+		glm::mat4 view =  glm::lookAt(glm::vec3(0.0, 0.0, 0.1), glm::vec3(0.0f), g_DefaultUp);
 
 		// Weapon Transformations
 		FrameBuffer fb = {
