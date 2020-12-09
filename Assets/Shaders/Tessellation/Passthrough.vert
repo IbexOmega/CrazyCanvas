@@ -3,8 +3,17 @@
 
 #include "../Defines.glsl"
 
-layout(binding = 0, set = 0) restrict buffer InVertices    { SVertex val[]; }  b_InVertices;
+layout(binding = 1, set = 0) restrict buffer CalculationData				
+{
+    mat4 ScaleMatrix;
+    uint PrimitiveCounter;
+    float MaxInnerLevelTess;
+    float MaxOuterLevelTess;
+    float Padding;
+}	b_CalculationData;
 
+
+layout(binding = 0, set = 0) restrict buffer InVertices    { SVertex val[]; }  b_InVertices;
 layout(binding = 0, set = 1) restrict writeonly buffer OutVertices				{ SVertex val[]; }	b_OutVertices;
 
 layout(location = 0) out float out_PosW;
@@ -20,4 +29,7 @@ void main()
     out_Tangent = vec4(vertex.Tangent.xyz, 0.0f);
     out_TexCoord = vec4(vertex.TexCoord.xy, 0.0f, 0.0f);
     gl_Position = vec4(vertex.Position.xyz, 1.f);
+
+    // Reset primitive counter
+    b_CalculationData.PrimitiveCounter = 0;
 }

@@ -37,12 +37,12 @@ namespace LambdaEngine
 		static MeshTessellator& GetInstance() { return s_Instance; }
 
 	private:
-		void SubMeshTessellation(uint32 indexCount, uint64 outputSize, uint64& signalValue);
+		void SubMeshTessellation(uint32 indexCount, uint32 indexOffset, uint64 outputSize, uint64& signalValue);
 
 		void CreateDummyRenderTarget();
 
 		void CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags);
-		void CreateAndClearOutBuffer(CommandList* pCommandList, Buffer** outBuffer, Buffer** outFirstStagingBuffer, Buffer** outSecondStagingBuffer, uint64 size, uint32 clearData, const String& name);
+		void CreateOutBuffer(CommandList* pCommandList, Buffer** outBuffer, Buffer** outSecondStagingBuffer, uint64 size, const String& name);
 
 	private:
 		CommandAllocator* m_pCommandAllocator;
