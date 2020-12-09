@@ -26,7 +26,7 @@
 
 #include "Engine/EngineLoop.h"
 
-//#define PRINT_FUNC
+#define PRINT_FUNC
 
 namespace LambdaEngine
 {
@@ -36,10 +36,7 @@ namespace LambdaEngine
 
 	GUIRenderer::~GUIRenderer()
 	{
-		if (m_View != nullptr)
-		{
-			m_View.Reset();
-		}
+		m_View.Reset();
 
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pVertexBuffer);
@@ -748,14 +745,10 @@ namespace LambdaEngine
 #ifdef PRINT_FUNC
 		LOG_INFO("SetView called from Thread: %llx, Address: %llx", PlatformThread::GetCurrentThreadHandle(), uint64(view.GetPtr()));
 #endif
-		if (m_View != nullptr)
-		{
-			m_View->Release();
-		}
-		
+		m_pCurrentRenderTarget = nullptr;
+
 		if (view != nullptr)
 		{
-			m_pCurrentRenderTarget = nullptr;
 			m_View = view;
 			m_View->GetRenderer()->Init(this);
 		}
