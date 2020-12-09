@@ -2,6 +2,7 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
+#include "GUI/EscapeMenuGUI.h"
 #include "Audio/AudioAPI.h"
 
 #include "Lobby/PlayerManagerClient.h"
@@ -584,6 +585,9 @@ void LobbyGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesi
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
 #endif
+
+	EscapeMenuGUI* pEscMenu = FindName<EscapeMenuGUI>("LOBBY_SETTINGS");
+	pEscMenu->ToggleEscapeMenu();
 
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
 }

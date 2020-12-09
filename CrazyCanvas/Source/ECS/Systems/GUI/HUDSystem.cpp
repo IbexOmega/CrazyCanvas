@@ -114,7 +114,7 @@ void HUDSystem::Init()
 	EventQueue::RegisterEventHandler<GameOverEvent>(this, &HUDSystem::OnGameOver);
 	EventQueue::RegisterEventHandler<WindowResizedEvent>(this, &HUDSystem::OnWindowResized);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketTeamScored>>(this, &HUDSystem::OnPacketTeamScored);
-	
+
 	m_HUDGUI = *new HUDGUI();
 	m_View = Noesis::GUI::CreateView(m_HUDGUI);
 
@@ -197,7 +197,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 				const PositionComponent& worldPosition = pPositionComponents->GetConstData(entity);
 
 				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
-			
+
 				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity);
 			}
 		}

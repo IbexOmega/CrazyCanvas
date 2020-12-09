@@ -303,8 +303,7 @@
         <!--EscapeGrid-->
         <Viewbox Grid.Column="2" Grid.ColumnSpan="6" Grid.Row="2" Grid.RowSpan="9">
             <uc:EscapeMenuGUI x:Name="ESC_MENU_GUI" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-        </Viewbox>
-       
+        </Viewbox> 
     </Grid>
 
     <!--ScoreBoardGrid-->

@@ -32,6 +32,7 @@
 #include "Lobby/PlayerManagerBase.h"
 
 #include "GUI/EscapeMenuGUI.h"
+#include "GUI/SettingsGUI.h"
 #include "GUI/KillFeedGUI.h"
 #include "GUI/ScoreBoardGUI.h"
 
