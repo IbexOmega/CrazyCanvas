@@ -37,6 +37,8 @@ bool ResourceCatalog::Init()
 #endif
 
 		PLAYER_STEP_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
+		PLAYER_JUMP_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/jump.wav");
+		PLAYER_LANDING_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/landing.wav");
 		PLAYER_DEATH_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/DeathSound.mp3");
 	}
 
