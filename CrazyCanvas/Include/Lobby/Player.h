@@ -41,6 +41,7 @@ public:
 	bool IsHost() const;
 	bool IsDead() const;
 	bool IsReady() const;
+	bool IsSpectator() const;
 	uint16 GetPing() const;
 	EGameState GetState() const;
 	uint8 GetTeam() const;

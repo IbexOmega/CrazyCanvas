@@ -62,6 +62,11 @@ bool Player::IsReady() const
 	return m_IsReady;
 }
 
+bool Player::IsSpectator() const
+{
+	return m_IsSpectator;
+}
+
 uint16 Player::GetPing() const
 {
 	return m_Ping;
