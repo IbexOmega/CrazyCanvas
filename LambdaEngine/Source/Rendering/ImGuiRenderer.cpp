@@ -301,10 +301,6 @@ namespace LambdaEngine
 				}
 			}
 		}
-		else
-		{
-			LOG_WARNING("Textures with subImageCount or imageCount != subImageCount and not BackBufferBound is not implemented. imageCount: %d, subImageCount: %d", imageCount, subImageCount);
-		}
 	}
 
 	void ImGuiRenderer::Render(

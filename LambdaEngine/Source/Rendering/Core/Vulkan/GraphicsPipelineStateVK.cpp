@@ -283,11 +283,11 @@ namespace LambdaEngine
 
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_DEBUG("Created Pipeline for %s", pDesc->DebugName.c_str());
+				LOG_VULKAN_INFO("Created Pipeline for %s", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_DEBUG("Created Pipeline");
+				LOG_VULKAN_INFO("Created Pipeline");
 			}
 
 			return true;

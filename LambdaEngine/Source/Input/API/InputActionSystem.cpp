@@ -8,6 +8,7 @@
 #pragma warning( pop )
 #include <fstream>
 
+//#define INPUT_ACTION_SYSTEM_LOGS_ENABLED
 
 namespace LambdaEngine
 {
@@ -89,7 +90,10 @@ namespace LambdaEngine
 				else
 				{
 					s_CurrentBindings.insert({ action, strBinding });
+
+#ifdef INPUT_ACTION_SYSTEM_LOGS_ENABLED
 					LOG_INFO("Action %s is bounded to %s\n", strAction.c_str(), strBinding.c_str());
+#endif
 				}
 			}
 		}
@@ -135,8 +139,10 @@ namespace LambdaEngine
 
 				WriteToFile();
 
+#ifdef INPUT_ACTION_SYSTEM_LOGS_ENABLED
 				LOG_INFO("Action %s has changed keybinding to %s\n",
 					actionStr.c_str(), keyStr.c_str());
+#endif
 				return true;
 			}
 		}
@@ -159,8 +165,10 @@ namespace LambdaEngine
 
 				WriteToFile();
 
+#ifdef INPUT_ACTION_SYSTEM_LOGS_ENABLED
 				LOG_INFO("Action %s has changed keybinding to %s\n",
 					actionStr.c_str(), buttonStr.c_str());
+#endif
 				return true;
 			}
 		}

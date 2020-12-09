@@ -26,7 +26,8 @@ using namespace LambdaEngine;
 
 MultiplayerState::MultiplayerState() : 
 	m_IsManualConnection(false),
-	m_ClientHostID(-1)
+	m_ClientHostID(-1),
+	m_IsConnecting(false)
 {
 
 }
@@ -100,17 +101,21 @@ bool MultiplayerState::OnClientDisconnected(const LambdaEngine::ClientDisconnect
 {
 	m_MultiplayerGUI->CloseNotification();
 
-	if (event.Reason == "Server Currently Not Accepting")
+	if (m_IsConnecting)
 	{
-		m_MultiplayerGUI->DisplayErrorMessage("The server is currently busy playing!");
-	}
-	else if (event.Reason == "Server Full")
-	{
-		m_MultiplayerGUI->DisplayErrorMessage("The server is currently full!");
-	}
-	else
-	{
-		m_MultiplayerGUI->DisplayErrorMessage("Failed to join server!");
+		if (event.Reason == "Server Currently Not Accepting")
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("The server is currently busy playing!");
+		}
+		else if (event.Reason == "Server Full")
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("The server is currently full!");
+		}
+		else
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("Failed to join server!");
+		}
+		m_IsConnecting = false;
 	}
 
 	return false;
@@ -174,6 +179,7 @@ bool MultiplayerState::OnServerUpdatedEvent(const ServerUpdatedEvent& event)
 bool MultiplayerState::ConnectToServer(const IPEndPoint& endPoint, bool isManual)
 {
 	m_IsManualConnection = isManual;
+	m_IsConnecting = true;
 	if (ClientSystem::GetInstance().Connect(endPoint))
 	{
 		m_MultiplayerGUI->DisplayNotification("Joining server!");

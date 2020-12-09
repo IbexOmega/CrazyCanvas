@@ -178,8 +178,6 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 		return;
 #endif
 
-	LambdaEngine::GUIApplication::SetView(nullptr);
-
 	PacketGameSettings settings;
 	settings.MapID		= 0;
 	settings.GameMode	= EGameMode::CTF_TEAM_FLAG;

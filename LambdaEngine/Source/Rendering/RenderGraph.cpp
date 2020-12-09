@@ -3653,8 +3653,6 @@ namespace LambdaEngine
 			}
 		}
 
-		LOG_MESSAGE("Updating Resource: %s", pResource->Name.c_str());
-
 		if (pResource->ResourceBindings.GetSize() > 0)
 		{
 			m_DirtyBoundTextureResources.insert(pResource);
