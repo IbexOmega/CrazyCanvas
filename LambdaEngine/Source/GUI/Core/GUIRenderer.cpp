@@ -26,7 +26,7 @@
 
 #include "Engine/EngineLoop.h"
 
-#define PRINT_FUNC
+//#define PRINT_FUNC
 
 namespace LambdaEngine
 {
