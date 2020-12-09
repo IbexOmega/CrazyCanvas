@@ -1703,9 +1703,9 @@ namespace LambdaEngine
 		return retMat;
 	}
 
+#if 0
 	static void PrintChildren(const TArray<JointIndexType>& children, const TArray<TArray<JointIndexType>>& childrenArr, Skeleton* pSkeleton, uint32 depth)
 	{
-#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		String postfix;
 		for (uint32 i = 0; i < depth; i++)
 		{
@@ -1719,13 +1719,8 @@ namespace LambdaEngine
 
 			PrintChildren(childrenArr[child], childrenArr, pSkeleton, depth + 1);
 		}
-#else
-		UNREFERENCED_VARIABLE(children);
-		UNREFERENCED_VARIABLE(childrenArr);
-		UNREFERENCED_VARIABLE(pSkeleton);
-		UNREFERENCED_VARIABLE(depth);
-#endif
 	}
+#endif
 
 	static const aiNode* FindNodeInScene(const String& nodeName, const aiNode* pParent)
 	{
