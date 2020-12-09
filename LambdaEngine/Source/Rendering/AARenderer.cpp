@@ -19,9 +19,10 @@ namespace LambdaEngine
 		, m_TAAHistoryViews()
 		, m_CommandLists()
 		, m_CommandAllocators()
-		, m_TAAState()
+		, m_TAAState(0)
 		, m_TAALayout()
-		, m_FXAAState()
+		, m_FXAAState(0)
+		, m_BlitState(0)
 		, m_FXAALayout()
 		, m_DescriptorHeap()
 		, m_TAATextureDescriptorSets()
@@ -661,6 +662,11 @@ namespace LambdaEngine
 		uint32 count, 
 		bool backBufferBound)
 	{
+		UNREFERENCED_VARIABLE(backBufferBound);
+		UNREFERENCED_VARIABLE(count);
+		UNREFERENCED_VARIABLE(pSizesInBytes);
+		UNREFERENCED_VARIABLE(pOffsets);
+
 		if (resourceName == "PER_FRAME_BUFFER")
 		{
 			m_PerFrameBuffer = MakeSharedRef(ppBuffers[0]);
