@@ -62,8 +62,6 @@ namespace LambdaEngine
 
 		m_pName = pDesc->pName;
 		m_MaxNumAudioListeners = pDesc->MaxNumAudioListeners;
-		SetMasterVolume(pDesc->MasterVolume);
-		SetMusicVolume(pDesc->MusicVolume);
 
 		if (pDesc->Debug)
 		{
@@ -107,6 +105,9 @@ namespace LambdaEngine
 		}
 
 		LOG_DEBUG("Successfully initialized %s!", m_pName);
+
+		SetMasterVolume(pDesc->MasterVolume);
+		SetMusicVolume(pDesc->MusicVolume);
 
 		return true;
 	}
