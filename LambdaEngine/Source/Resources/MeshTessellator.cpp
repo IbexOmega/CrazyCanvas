@@ -12,6 +12,8 @@
 #include "Rendering/Core/API/CommandQueue.h"
 #include "Rendering/PipelineStateManager.h"
 
+#include "Game/Multiplayer/MultiplayerUtils.h"
+
 #include "Resources/ResourceManager.h"
 
 namespace LambdaEngine
@@ -163,7 +165,7 @@ namespace LambdaEngine
 			pipelineStateDesc.GeometryShader.ShaderGUID = geomShader;
 			pipelineStateDesc.PixelShader.ShaderGUID = pixelShader;
 
-			m_pPipelineStateID = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
+			m_pPipelineStateID = (GUID_Lambda)PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
 		}
 
 		// Prepare render configuration
@@ -200,25 +202,25 @@ namespace LambdaEngine
 		{
 			m_MaxInnerTessLevel = 24.0f;
 			m_MaxOuterTessLevel = 24.0f;
-			m_MaxTrianglesPerSubTess = 100.0f;
+			m_MaxTrianglesPerSubTess = 100;
 
 			// Calculate max tessellation primitiveCount
-			uint64 innerTriCount = 0.0f;
-			if (m_MaxInnerTessLevel > 1.0 && uint32(m_MaxInnerTessLevel) % 2U == 0U) // Even
+			uint32_t innerTriCount = 0;
+			if (m_MaxInnerTessLevel > 1.0 && uint32_t(m_MaxInnerTessLevel) % 2U == 0U) // Even
 			{
-				innerTriCount = uint64(6.0f * powf((m_MaxInnerTessLevel * 0.5f) - 1.0f, 2.0f));
+				innerTriCount = uint32_t(6.0f * powf((m_MaxInnerTessLevel * 0.5f) - 1.0f, 2.0f));
 			}
 			else // Odd
 			{
-				innerTriCount = uint64(1.5f * (m_MaxInnerTessLevel - 1.0f) * (m_MaxInnerTessLevel - 3.0f) + 1);
+				innerTriCount = uint32_t(1.5f * (m_MaxInnerTessLevel - 1.0f) * (m_MaxInnerTessLevel - 3.0f) + 1);
 			}
 
 			// Calculate outer faces
-			uint64 sum = uint64(m_MaxOuterTessLevel * 3U);
-			uint64 outerTriCount = (sum == 3) ? 1 : sum;
+			uint32_t sum = uint32_t(m_MaxOuterTessLevel * 3U);
+			uint32_t outerTriCount = (sum == 3) ? 1 : sum;
 			if (m_MaxInnerTessLevel > 1.0) // Even
 			{
-				outerTriCount = 3U * m_MaxInnerTessLevel + sum - 6U;
+				outerTriCount = 3U * (uint32_t)m_MaxInnerTessLevel + sum - 6U;
 			}
 
 			m_MaxTessellationTriangleCount = innerTriCount + outerTriCount;
@@ -246,136 +248,141 @@ namespace LambdaEngine
 	{
 		LOG_INFO("Tesselate...");
 
+		// Only tessellate on client
+		if (!MultiplayerUtils::IsServer())
+		{
 #ifdef LAMBDA_DEVELOPMENT
-		const uint64 PRE_MESH_VERTEX_COUNT = pMesh->Vertices.GetSize();
+			const uint64 PRE_MESH_VERTEX_COUNT = pMesh->Vertices.GetSize();
 #endif
-		const uint64 PRE_MESH_TRIANGLE_COUNT = pMesh->Indices.GetSize() / 3U;
+			const uint64 PRE_MESH_TRIANGLE_COUNT = pMesh->Indices.GetSize() / 3U;
 	
-		uint64 tesselatedVertexCount = (m_MaxTessellationTriangleCount * m_MaxTrianglesPerSubTess) * 3U;
+			uint64 tesselatedVertexCount = (m_MaxTessellationTriangleCount * m_MaxTrianglesPerSubTess) * 3U;
 
-		LOG_INFO("Create buffers...");
-		static uint64 signalValue = 0;
-		{
-			m_pCommandAllocator->Reset();
-			m_pCommandList->Begin(nullptr);
+			LOG_INFO("Create buffers...");
+			static uint64 signalValue = 0;
+			{
+				m_pCommandAllocator->Reset();
+				m_pCommandList->Begin(nullptr);
 
-			// Create buffer for tessellation calculations
-			SCalculationData meshCalculationData = {};
-			meshCalculationData.ScaleMatrix = glm::scale(pMesh->DefaultScale);
-			meshCalculationData.PrimitiveCounter = 0;
-			meshCalculationData.MaxInnerLevelTess = m_MaxInnerTessLevel;
-			meshCalculationData.MaxOuterLevelTess = m_MaxOuterTessLevel;
-			uint64 size = sizeof(SCalculationData);
-			CreateAndCopyInBuffer(m_pCommandList, &m_pCalculationDataBuffer, &m_pCalculationDataStagingBuffer, (void*)&meshCalculationData, size, "Tessellator Calculation Data Buffer", FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER);
+				// Create buffer for tessellation calculations
+				CalculationData meshCalculationData = {};
+				meshCalculationData.ScaleMatrix = glm::scale(pMesh->DefaultScale);
+				meshCalculationData.PrimitiveCounter = 0;
+				meshCalculationData.MaxInnerLevelTess = m_MaxInnerTessLevel;
+				meshCalculationData.MaxOuterLevelTess = m_MaxOuterTessLevel;
+				uint64 size = sizeof(CalculationData);
+				CreateAndCopyInBuffer(m_pCommandList, &m_pCalculationDataBuffer, &m_pCalculationDataStagingBuffer, (void*)&meshCalculationData, size, "Tessellator Calculation Data Buffer", FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER);
 
-			// In Buffers
-			void* data = pMesh->Vertices.GetData();
-			size = pMesh->Vertices.GetSize() * sizeof(Vertex);
-			CreateAndCopyInBuffer(m_pCommandList, &m_pInVertexBuffer, &m_pInVertexStagingBuffer, pMesh->Vertices.GetData(), size, "Tessellator In Vertex Buffer", FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER);
+				// In Buffers
+				void* data = pMesh->Vertices.GetData();
+				size = pMesh->Vertices.GetSize() * sizeof(Vertex);
+				CreateAndCopyInBuffer(m_pCommandList, &m_pInVertexBuffer, &m_pInVertexStagingBuffer, pMesh->Vertices.GetData(), size, "Tessellator In Vertex Buffer", FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER);
 
-			data = pMesh->Indices.GetData();
-			size = pMesh->Indices.GetSize() * sizeof(MeshIndexType);
-			CreateAndCopyInBuffer(m_pCommandList, &m_pInIndicesBuffer, &m_pInIndicesStagingBuffer, pMesh->Indices.GetData(), size, "Tessellator In Index Buffer", FBufferFlag::BUFFER_FLAG_INDEX_BUFFER);
+				data = pMesh->Indices.GetData();
+				size = pMesh->Indices.GetSize() * sizeof(MeshIndexType);
+				CreateAndCopyInBuffer(m_pCommandList, &m_pInIndicesBuffer, &m_pInIndicesStagingBuffer, pMesh->Indices.GetData(), size, "Tessellator In Index Buffer", FBufferFlag::BUFFER_FLAG_INDEX_BUFFER);
 
-			// Out Buffers
-			CreateOutBuffer(m_pCommandList, &m_pOutVertexBuffer, &m_pOutVertexSecondStagingBuffer, tesselatedVertexCount * sizeof(Vertex), "Tessellator Out Vertex Buffer");
+				// Out Buffers
+				CreateOutBuffer(m_pCommandList, &m_pOutVertexBuffer, &m_pOutVertexSecondStagingBuffer, tesselatedVertexCount * sizeof(Vertex), "Tessellator Out Vertex Buffer");
 
-			m_pCommandList->End();
+				m_pCommandList->End();
 
-			signalValue++;
-			RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
-				&m_pCommandList, 1,
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN,
-				nullptr, 0,
-				m_pFence, signalValue);
+				signalValue++;
+				RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(
+					&m_pCommandList, 1,
+					FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN,
+					nullptr, 0,
+					m_pFence, signalValue);
 
-			m_pFence->Wait(signalValue, UINT64_MAX);
-		}
+				m_pFence->Wait(signalValue, UINT64_MAX);
+			}
 			
-		// Write descriptors
-		{
-			// ------- Graphics pipeline -------
-			// In descriptor set
+			// Write descriptors
 			{
-				Buffer* buffers[2] = { m_pInVertexBuffer, m_pCalculationDataBuffer };
-				uint64 offsets[2] = { 0, 0 };
-				uint64 sizes[2] = { m_pInVertexBuffer->GetDesc().SizeInBytes, m_pCalculationDataBuffer->GetDesc().SizeInBytes };
-				m_pInDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 2, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+				// ------- Graphics pipeline -------
+				// In descriptor set
+				{
+					Buffer* buffers[2] = { m_pInVertexBuffer, m_pCalculationDataBuffer };
+					uint64 offsets[2] = { 0, 0 };
+					uint64 sizes[2] = { m_pInVertexBuffer->GetDesc().SizeInBytes, m_pCalculationDataBuffer->GetDesc().SizeInBytes };
+					m_pInDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 2, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+				}
+				// Out descriptor set
+				{
+					Buffer* buffers[1] = { m_pOutVertexBuffer };
+					uint64 offsets[1] = { 0 };
+					uint64 sizes[1] = { m_pOutVertexBuffer->GetDesc().SizeInBytes };
+					m_pOutDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+				}
 			}
-			// Out descriptor set
+			LOG_INFO("Done");
+
+			LOG_INFO("Tessellating Mesh..");
+
+			// Calculate subTess data
+			float fractPart = 0.0f;
+			float intpart = 0.0f;
+			fractPart = modf(pMesh->Indices.GetSize() / (float)(m_MaxTrianglesPerSubTess * 3U), &intpart);
+			bool divisible = fractPart == 0.0f;
+
+			// Calculate subTess count
+			const uint32 subTessellations = divisible ? (uint32)intpart : (uint32)intpart + 1U;
+
+			// Calculate for each sub tessellation the indices that should be drawn 
+			const uint32 subIndexCount = intpart == 0.0f ? pMesh->Indices.GetSize() : (m_MaxTrianglesPerSubTess * 3U);
+			const uint32 lastSubIndexCount = (uint32_t)roundf((float)subIndexCount * fractPart);
+			uint32 totalTriangleCount = 0;
+
+			for (uint32 i = 0; i < subTessellations; i++)
 			{
-				Buffer* buffers[1] = { m_pOutVertexBuffer };
-				uint64 offsets[1] = { 0 };
-				uint64 sizes[1] = { m_pOutVertexBuffer->GetDesc().SizeInBytes };
-				m_pOutDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
+				uint32 indexOffset = i * subIndexCount;
+				if (i < subTessellations - 1U || divisible || intpart == 0.0f)
+					SubMeshTessellation(subIndexCount, indexOffset, tesselatedVertexCount * sizeof(Vertex), signalValue);
+				else
+					SubMeshTessellation(lastSubIndexCount, indexOffset, tesselatedVertexCount * sizeof(Vertex), signalValue);
+
+				// Copy data to CPU
+				CalculationData calculationData = {};
+				void* pMapped = m_pCalculationDataStagingBuffer->Map();
+				memcpy(&calculationData, pMapped, sizeof(CalculationData));
+				m_pCalculationDataStagingBuffer->Unmap();
+
+				uint32 offset = totalTriangleCount * 3U;
+				totalTriangleCount += calculationData.PrimitiveCounter;
+				uint32 vertexCount = calculationData.PrimitiveCounter * 3U;
+
+				pMapped = m_pOutVertexSecondStagingBuffer->Map();
+				pMesh->Vertices.Resize(totalTriangleCount * 3U);
+				memcpy(&pMesh->Vertices[offset], pMapped, vertexCount * sizeof(Vertex));
+				m_pOutVertexSecondStagingBuffer->Unmap();
 			}
+			LOG_INFO("Done");
+
+			// Merge Vertices
+			LOG_INFO("Merge Vertices");
+			const uint32 vertexCount = totalTriangleCount * 3U;
+			pMesh->Vertices.Resize(vertexCount);
+			TArray<Vertex> vertices = pMesh->Vertices;
+
+			// Merge duplicated vertices
+			pMesh->Indices.Clear();
+			pMesh->Indices.Reserve(vertexCount);
+
+			pMesh->Vertices.Clear();
+			pMesh->Vertices.Reserve(vertexCount);
+
+			uint32 uniqueVertices = MergeDuplicateVertices(vertices, pMesh);
+
+			// Compact vertices
+			pMesh->Vertices.Resize(uniqueVertices);
+
+			// Remove the unused elements.
+			LOG_WARNING("Mesh Merged Vertex Change: %d -> %d", (uint32)PRE_MESH_VERTEX_COUNT, pMesh->Vertices.GetSize());
+			LOG_WARNING("Done");
+
+			LOG_WARNING("Tessellation Complete");
+
 		}
-		LOG_INFO("Done");
-
-		LOG_INFO("Tessellating Mesh..");
-
-		// Calculate subTess data
-		float fractPart = 0.0f;
-		float intpart = 0.0f;
-		fractPart = modf(pMesh->Indices.GetSize() / (float)(m_MaxTrianglesPerSubTess * 3U), &intpart);
-		bool divisible = fractPart == 0.0f;
-
-		// Calculate subTess count
-		const uint32 subTessellations = divisible ? (uint32)intpart : (uint32)intpart + 1U;
-
-		// Calculate for each sub tessellation the indices that should be drawn 
-		const uint32 subIndexCount = intpart == 0.0f ? pMesh->Indices.GetSize() : (m_MaxTrianglesPerSubTess * 3U);
-		const uint32 lastSubIndexCount = roundf(subIndexCount * fractPart);
-		uint32 totalTriangleCount = 0;
-
-		for (int i = 0; i < subTessellations; i++)
-		{
-			uint32 indexOffset = i * subIndexCount;
-			if (i < subTessellations - 1 || divisible || intpart == 0.0f)
-				SubMeshTessellation(subIndexCount, indexOffset, tesselatedVertexCount * sizeof(Vertex), signalValue);
-			else
-				SubMeshTessellation(lastSubIndexCount, indexOffset, tesselatedVertexCount * sizeof(Vertex), signalValue);
-
-			// Copy data to CPU
-			SCalculationData calculationData = {};
-			void* pMapped = m_pCalculationDataStagingBuffer->Map();
-			memcpy(&calculationData, pMapped, sizeof(SCalculationData));
-			m_pCalculationDataStagingBuffer->Unmap();
-
-			uint32 offset = totalTriangleCount * 3U;
-			totalTriangleCount += calculationData.PrimitiveCounter;
-			uint32 vertexCount = calculationData.PrimitiveCounter * 3U;
-
-			pMapped = m_pOutVertexSecondStagingBuffer->Map();
-			pMesh->Vertices.Resize(totalTriangleCount * 3U);
-			memcpy(&pMesh->Vertices[offset], pMapped, vertexCount * sizeof(Vertex));
-			m_pOutVertexSecondStagingBuffer->Unmap();
-		}
-		LOG_INFO("Done");
-
-		// Merge Vertices
-		LOG_INFO("Merge Vertices");
-		const uint32 vertexCount = totalTriangleCount * 3U;
-		pMesh->Vertices.Resize(vertexCount);
-		TArray<Vertex> vertices = pMesh->Vertices;
-
-		// Merge duplicated vertices
-		pMesh->Indices.Clear();
-		pMesh->Indices.Reserve(vertexCount);
-
-		pMesh->Vertices.Clear();
-		pMesh->Vertices.Reserve(vertexCount);
-
-		uint32 uniqueVertices = MergeDuplicateVertices(vertices, pMesh);
-
-		// Compact vertices
-		pMesh->Vertices.Resize(uniqueVertices);
-
-		// Remove the unused elements.
-		LOG_WARNING("Mesh Merged Vertex Change: %d -> %d", (uint32)PRE_MESH_VERTEX_COUNT, pMesh->Vertices.GetSize());
-		LOG_WARNING("Done");
-
-		LOG_WARNING("Tessellation Complete");
 	}
 
 	uint32 MeshTessellator::MergeDuplicateVertices(const TArray<Vertex>& unmergedVertices, Mesh* pMesh)
@@ -456,7 +463,7 @@ namespace LambdaEngine
 				1);
 
 			m_pCommandList->CopyBuffer(m_pOutVertexBuffer, 0, m_pOutVertexSecondStagingBuffer, 0, outputSize);
-			m_pCommandList->CopyBuffer(m_pCalculationDataBuffer, 0, m_pCalculationDataStagingBuffer, 0, sizeof(SCalculationData));
+			m_pCommandList->CopyBuffer(m_pCalculationDataBuffer, 0, m_pCalculationDataStagingBuffer, 0, sizeof(CalculationData));
 
 			m_pCommandList->End();
 
@@ -508,12 +515,12 @@ namespace LambdaEngine
 		}
 	}
 
-	void MeshTessellator::CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags)
+	void MeshTessellator::CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** ppInBuffer, Buffer** ppInStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags)
 	{
-		if ((*inStagingBuffer) == nullptr || (*inStagingBuffer)->GetDesc().SizeInBytes < size)
+		if ((*ppInStagingBuffer) == nullptr || (*ppInStagingBuffer)->GetDesc().SizeInBytes < size)
 		{
-			if ((*inStagingBuffer) != nullptr)
-				SAFERELEASE((*inStagingBuffer));
+			if ((*ppInStagingBuffer) != nullptr)
+				SAFERELEASE((*ppInStagingBuffer));
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = name + " Staging Buffer";
@@ -521,17 +528,17 @@ namespace LambdaEngine
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes = size;
 
-			(*inStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			(*ppInStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 
-		void* pMapped = (*inStagingBuffer)->Map();
+		void* pMapped = (*ppInStagingBuffer)->Map();
 		memcpy(pMapped, data, size);
-		(*inStagingBuffer)->Unmap();
+		(*ppInStagingBuffer)->Unmap();
 
-		if ((*inBuffer) == nullptr || (*inBuffer)->GetDesc().SizeInBytes < size)
+		if ((*ppInBuffer) == nullptr || (*ppInBuffer)->GetDesc().SizeInBytes < size)
 		{
-			if ((*inBuffer) != nullptr)
-				SAFERELEASE((*inBuffer));
+			if ((*ppInBuffer) != nullptr)
+				SAFERELEASE((*ppInBuffer));
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = name;
@@ -539,21 +546,21 @@ namespace LambdaEngine
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | flags;
 			bufferDesc.SizeInBytes = size;
 
-			(*inBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			(*ppInBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 
-		pCommandList->CopyBuffer((*inStagingBuffer), 0, (*inBuffer), 0, size);
+		pCommandList->CopyBuffer((*ppInStagingBuffer), 0, (*ppInBuffer), 0, size);
 	}
 
-	void MeshTessellator::CreateOutBuffer(CommandList* pCommandList, Buffer** outBuffer, Buffer** outSecondStagingBuffer, uint64 size, const String& name)
+	void MeshTessellator::CreateOutBuffer(CommandList* pCommandList, Buffer** ppOutBuffer, Buffer** ppOutSecondStagingBuffer, uint64 size, const String& name)
 	{
 		uint64 stagingBufferSize = 0;
 		uint64 bufferSize0 = 0;
 
-		if ((*outBuffer) == nullptr || (*outBuffer)->GetDesc().SizeInBytes < size)
+		if ((*ppOutBuffer) == nullptr || (*ppOutBuffer)->GetDesc().SizeInBytes < size)
 		{
-			if ((*outBuffer) != nullptr)
-				SAFERELEASE((*outBuffer));
+			if ((*ppOutBuffer) != nullptr)
+				SAFERELEASE((*ppOutBuffer));
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = name;
@@ -561,13 +568,13 @@ namespace LambdaEngine
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC | FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER;
 			bufferDesc.SizeInBytes = size;
 			stagingBufferSize = size;
-			(*outBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			(*ppOutBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 
-		if ((*outSecondStagingBuffer) == nullptr || (*outSecondStagingBuffer)->GetDesc().SizeInBytes < size)
+		if ((*ppOutSecondStagingBuffer) == nullptr || (*ppOutSecondStagingBuffer)->GetDesc().SizeInBytes < size)
 		{
-			if ((*outSecondStagingBuffer) != nullptr)
-				SAFERELEASE((*outSecondStagingBuffer));
+			if ((*ppOutSecondStagingBuffer) != nullptr)
+				SAFERELEASE((*ppOutSecondStagingBuffer));
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = name + " Second Staging Buffer";
@@ -575,7 +582,7 @@ namespace LambdaEngine
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST;
 			bufferDesc.SizeInBytes = size;
 			bufferSize0 = size;
-			(*outSecondStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
+			(*ppOutSecondStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
 	}
 }

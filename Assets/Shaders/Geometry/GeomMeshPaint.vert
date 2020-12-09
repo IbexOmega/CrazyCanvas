@@ -24,7 +24,6 @@ layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
 layout(location = 8) out vec4 out_PaintInfo4;
 layout(location = 9) out float out_PaintDist;
-layout(location = 10) out vec3 out_VertDist;
 
 void main()
 {
@@ -51,7 +50,6 @@ void main()
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	out_PaintDist 			= vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
-	out_VertDist			= vec3(1.f); // Used for wireframe in gs.
 
 	gl_Position = out_ClipPosition;
 }
