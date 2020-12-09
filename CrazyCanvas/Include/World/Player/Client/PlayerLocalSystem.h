@@ -30,8 +30,6 @@ public:
 	void DoAction(
 		float32 dt,
 		LambdaEngine::VelocityComponent& velocityComponent,
-		LambdaEngine::AudibleComponent& audibleComponent,
-		LambdaEngine::CharacterColliderComponent& characterColliderComponent,
 		const LambdaEngine::RotationComponent& rotationComponent,
 		bool inAir,
 		PlayerGameState* pGameState);

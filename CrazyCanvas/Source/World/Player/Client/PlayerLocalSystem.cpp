@@ -117,7 +117,7 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 	characterColliderComponent.pController->getState(playerControllerState);
 	bool inAir = (playerControllerState.touchedShape == nullptr);
 
-	DoAction(dt, velocityComponent, audibleComponent, characterColliderComponent, rotationComponent, inAir, pGameState);
+	DoAction(dt, velocityComponent, rotationComponent, inAir, pGameState);
 
 	CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, networkPositionComponent, velocityComponent);
 	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, pGameState->Walking, inAir, characterColliderComponent.WasInAir);
@@ -131,8 +131,6 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 void PlayerLocalSystem::DoAction(
 	float32 dt,
 	LambdaEngine::VelocityComponent& velocityComponent,
-	LambdaEngine::AudibleComponent& audibleComponent,
-	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
 	const LambdaEngine::RotationComponent& rotationComponent,
 	bool inAir,
 	PlayerGameState* pGameState)
