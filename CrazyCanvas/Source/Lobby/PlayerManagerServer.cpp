@@ -327,6 +327,8 @@ void PlayerManagerServer::SetPlayerHost(const Player* pPlayer)
 {
 	if (!pPlayer->m_IsHost)
 	{
+		SetPlayerReady(pPlayer, false);
+
 		Player* pOldHost = nullptr;
 		for (auto& pair : s_Players)
 		{
