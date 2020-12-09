@@ -115,6 +115,7 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	pEncoder->WriteUInt8(m_GameSettings.Players);
 	pEncoder->WriteString(m_GameSettings.ServerName);
 	pEncoder->WriteString(m_MapName);
+	pEncoder->WriteUInt8(GetState());
 	pEncoder->WriteInt32(m_ClientHostID);
 
 	return true;

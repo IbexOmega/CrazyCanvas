@@ -206,7 +206,11 @@ void MultiplayerGUI::UpdateServerItem(Grid* pGrid, const ServerInfo& serverInfo)
 	pMapName->SetText(serverInfo.IsOnline ? serverInfo.MapName.c_str() : "-");
 	pPing->SetText((serverInfo.IsOnline ? std::to_string(serverInfo.Ping) + " ms" : "-").c_str());
 	pPlayerCount->SetText(serverInfo.IsOnline ? (std::to_string(serverInfo.Players) + "/" + std::to_string(serverInfo.MaxPlayers)).c_str() : "-");
-	pBrush->SetColor(serverInfo.IsOnline ? Color::Green() : Color::Red());
+
+	if (serverInfo.IsOnline)
+		pBrush->SetColor(serverInfo.State == EServerState::SERVER_STATE_LOBBY ? Color::Green() : Color::Yellow());
+	else
+		pBrush->SetColor(Color::Red());
 }
 
 void MultiplayerGUI::ServerInfoToUniqeString(const ServerInfo& serverInfo, LambdaEngine::String& str) const
@@ -271,7 +275,7 @@ void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const 
 	}
 	else
 	{
-		ErrorPopUp(CONNECT_ERROR_INVALID);
+		DisplayErrorMessage("The address format is not valid!");
 	}
 }
 
@@ -305,47 +309,38 @@ void MultiplayerGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noe
 		const THashTable<uint64, ServerInfo>& serversLAN = ServerManager::GetServersLAN();
 		const ServerInfo* pServerInfo = GetServerInfoFromGrid(serversLAN, pSelectedItem);
 
-		bool result = false;
-
-		if (pServerInfo)
-		{
-			result = m_pMulitplayerState->ConnectToServer(pServerInfo->EndPoint, false);
-		}
-		else
+		if (!pServerInfo)
 		{
 			const THashTable<uint64, ServerInfo>& serversWAN = ServerManager::GetServersWAN();
 			pServerInfo = GetServerInfoFromGrid(serversWAN, pSelectedItem);
-
-			if (pServerInfo)
-			{
-				result = m_pMulitplayerState->ConnectToServer(pServerInfo->EndPoint, false);
-			}
 		}
 
-		if (result)
-			NotiPopUP(JOIN_NOTIFICATION);
+		if (pServerInfo)
+		{
+			if (pServerInfo->IsOnline)
+			{
+				m_pMulitplayerState->ConnectToServer(*pServerInfo);
+			}
+			else
+			{
+				DisplayErrorMessage("The selected server is offline!");
+			}
+		}
 		else
-			ErrorPopUp(JOIN_ERROR_OFFLINE);
+		{
+			DisplayErrorMessage("The selected server is not valid anymore!");
+		}
 	}
 	else
 	{
-		ErrorPopUp(JOIN_ERROR);
+		DisplayErrorMessage("No server selected!");
 	}
 }
 
-void MultiplayerGUI::ErrorPopUp(PopUpCode errorCode)
+void MultiplayerGUI::DisplayErrorMessage(const char* error)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
-
-	switch (errorCode)
-	{
-	case CONNECT_ERROR:				pTextBox->SetText("Couldn't Connect To Server!");		break;
-	case CONNECT_ERROR_INVALID:		pTextBox->SetText("The address format is invalid!");	break;
-	case JOIN_ERROR:				pTextBox->SetText("No Server Selected!");				break;
-	case JOIN_ERROR_OFFLINE:		pTextBox->SetText("Server is offline!");				break;
-	case HOST_ERROR:				pTextBox->SetText("Couldn't Host Server!");				break;
-	case OTHER_ERROR:				pTextBox->SetText("Something Went Wrong!");				break;
-	}
+	pTextBox->SetText(error);
 
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }

@@ -96,6 +96,15 @@ bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEven
 
 bool MultiplayerState::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
 {
+	if (event.Reason == "Server Currently Not Accepting")
+	{
+		m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently busy playing!");
+	}
+	else if (event.Reason == "Server Full")
+	{
+		m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently full!");
+	}
+
 	return false;
 }
 
@@ -107,7 +116,7 @@ bool MultiplayerState::OnServerOnlineEvent(const ServerOnlineEvent& event)
 	{
 		if (m_ClientHostID == serverInfo.ClientHostID)
 		{
-			ConnectToServer(serverInfo.EndPoint, false);
+			ConnectToServer(serverInfo);
 		}
 		m_MultiplayerGUI->AddServerLAN(serverInfo);
 	}	
@@ -158,6 +167,23 @@ bool MultiplayerState::ConnectToServer(const IPEndPoint& endPoint, bool isManual
 {
 	m_IsManualConnection = isManual;
 	return ClientSystem::GetInstance().Connect(endPoint);
+}
+
+bool MultiplayerState::ConnectToServer(const ServerInfo& serverInfo)
+{
+	if (serverInfo.State == EServerState::SERVER_STATE_LOBBY)
+	{
+		if (serverInfo.Players < serverInfo.MaxPlayers)
+		{
+			return ConnectToServer(serverInfo.EndPoint, false);
+		}
+
+		m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently full!");
+		return false;
+	}
+
+	m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently busy playing!");
+	return false;
 }
 
 bool MultiplayerState::HasHostedServer() const

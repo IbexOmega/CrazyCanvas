@@ -31,6 +31,8 @@ class MultiplayerState;
 
 class MultiplayerGUI : public Noesis::Grid
 {
+	friend class MultiplayerState;
+
 public:
 	MultiplayerGUI(MultiplayerState* pMulitplayerState);
 	~MultiplayerGUI();
@@ -68,7 +70,7 @@ private:
 	MultiplayerState* m_pMulitplayerState;
 
 private:
-	void ErrorPopUp(PopUpCode errorCode);
+	void DisplayErrorMessage(const char* error);
 	void NotiPopUP(PopUpCode notificationCode);
 
 	void ErrorPopUpClose();
