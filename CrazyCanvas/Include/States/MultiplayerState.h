@@ -47,4 +47,5 @@ private:
 	Noesis::Ptr<Noesis::IView> m_View;
 	int32 m_ClientHostID;
 	bool m_IsManualConnection;
+	bool m_IsConnecting;
 };
