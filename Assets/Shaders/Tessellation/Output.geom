@@ -34,10 +34,10 @@ void main()
     for (int i = 0; i < TRI_VERTEX_COUNT; i++)
     {
         SVertex outputVertex;
-        outputVertex.Position               = vec4(gl_in[i].gl_Position);
+        outputVertex.Position               = vec4(gl_in[i].gl_Position.xyz, in_PosW[i]);
         outputVertex.Normal                 = vec4(in_Normal[i]);
-        outputVertex.Tangent                = vec4(in_Tangent[i]);
-        outputVertex.TexCoord               = vec4(in_TexCoord[i]);
+        outputVertex.Tangent                = vec4(in_Tangent[i].xyz, uintBitsToFloat(UINT32_MAX));
+        outputVertex.TexCoord               = vec4(in_TexCoord[i].xy, uintBitsToFloat(UINT32_MAX), uintBitsToFloat(UINT32_MAX));
         b_OutVertices.val[(primitiveIndex * TRI_VERTEX_COUNT) + i]      = outputVertex;
     }
 

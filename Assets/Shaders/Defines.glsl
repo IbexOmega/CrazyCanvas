@@ -23,6 +23,8 @@
 
 #define MAX_UNIQUE_MATERIALS 32
 
+#define UINT32_MAX              0xffffffff
+
 const float INV_PI			= 1.0f / 3.14159265359f;
 const float FOUR_PI			= 12.5663706144f;
 const float TWO_PI			= 6.28318530718f;
