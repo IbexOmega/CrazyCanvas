@@ -5,7 +5,6 @@
 struct ImageSources
 {
 	LambdaEngine::String PaintAmmo;
-	LambdaEngine::String PaintAmmoDrop;
 };
 
 constexpr const uint32 NUM_TEAM_COLORS_AVAILABLE = 6;
@@ -66,22 +65,19 @@ private:
 	inline static ImageSources s_AvailableImageSources[NUM_TEAM_COLORS_AVAILABLE] =
 	{
 		{
-			"PaintAmmo/RedPaint.png", "PaintAmmo/RedPaintDrop.png"
+			"PaintAmmo/PaintBoardRed.png"
 		},
 		{
-			"PaintAmmo/BluePaint.png", "PaintAmmo/BluePaintDrop.png"
+			"PaintAmmo/PaintBoardBlue.png"
 		},
 		{
-			"PaintAmmo/GreenPaint.png", "PaintAmmo/GreenPaintDrop.png"
+			"PaintAmmo/PaintBoardGreen.png"
 		},
 		{
-			"PaintAmmo/YellowPaint.png", "PaintAmmo/YellowPaintDrop.png"
+			"PaintAmmo/PaintBoardYellow.png"
 		},
 		{
-			"PaintAmmo/PurplePaint.png", "PaintAmmo/PurplePaintDrop.png"
-		},
-		{
-			"PaintAmmo/PinkPaint.png", "PaintAmmo/PinkPaintDrop.png"
+			"PaintAmmo/PaintBoardPurple.png"
 		}
 	};
 

@@ -76,14 +76,14 @@ void HUDGUI::FixedTick(LambdaEngine::Timestamp delta)
 
 void HUDGUI::AnimateReload(const float32 timePassed)
 {
-	Noesis::ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
+	/*Noesis::ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
 	Noesis::ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
 
 	pWaterScale->SetScaleX(glm::clamp<float>(pWaterScale->GetScaleX() + m_WaterAmmoFactor * timePassed, 0.0f, 1.0f));
 	pPaintScale->SetScaleX(glm::clamp<float>(pPaintScale->GetScaleX() + m_PaintAmmoFactor * timePassed, 0.0f, 1.0f));
 
 	m_pWaterAmmoRect->SetRenderTransform(pWaterScale);
-	m_pPaintAmmoRect->SetRenderTransform(pPaintScale);
+	m_pPaintAmmoRect->SetRenderTransform(pPaintScale);*/
 }
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -147,31 +147,31 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	//Returns false if Out Of Ammo
 
 	std::string ammoString;
-	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
-	float ammoScale = 0.0f;
 	auto ammo = WeaponTypeAmmo.find(ammoType);
-
+	/*Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
+	float ammoScale = 0.0f;
+	*/
 	if (ammo != WeaponTypeAmmo.end())
 	{
 		ammoString = std::to_string(ammo->second.first) + "/" + std::to_string(ammo->second.second);
-		ammoScale = (float)ammo->second.first / (float)ammo->second.second;
+		/*ammoScale = (float)ammo->second.first / (float)ammo->second.second;
 		scale->SetCenterX(0.0);
 		scale->SetCenterY(0.0);
-		scale->SetScaleX(ammoScale);
+		scale->SetScaleX(ammoScale);*/
 
 		if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 		{
 			m_GUIState.WaterAmmo = ammo->second.first;
 
 			m_pWaterAmmoText->SetText(ammoString.c_str());
-			m_pWaterAmmoRect->SetRenderTransform(scale);
+			//m_pWaterAmmoRect->SetRenderTransform(scale);
 		}
 		else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 		{
 			m_GUIState.PaintAmmo = ammo->second.first;
 
 			m_pPaintAmmoText->SetText(ammoString.c_str());
-			m_pPaintAmmoRect->SetRenderTransform(scale);
+			//m_pPaintAmmoRect->SetRenderTransform(scale);
 		}
 	}
 	else
@@ -201,17 +201,17 @@ void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>
 	}
 	else
 	{
-		Noesis::Ptr<Noesis::ScaleTransform> scaleTransform = *new ScaleTransform();
 		std::string ammoString = std::to_string(25) + "/" + std::to_string(25);
+		/*Noesis::Ptr<Noesis::ScaleTransform> scaleTransform = *new ScaleTransform();
 		scaleTransform->SetCenterX(0.0);
 		scaleTransform->SetCenterY(0.0);
-		scaleTransform->SetScaleX(1.0f);
+		scaleTransform->SetScaleX(1.0f);*/
 
 		m_pWaterAmmoText->SetText(ammoString.c_str());
-		m_pWaterAmmoRect->SetRenderTransform(scaleTransform);
+		//m_pWaterAmmoRect->SetRenderTransform(scaleTransform);
 
 		m_pPaintAmmoText->SetText(ammoString.c_str());
-		m_pPaintAmmoRect->SetRenderTransform(scaleTransform);
+		//m_pPaintAmmoRect->SetRenderTransform(scaleTransform);
 	}
 }
 
@@ -483,7 +483,6 @@ void HUDGUI::InitGUI()
 
 
 	Noesis::Ptr<BitmapImage> bitmap = *new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
-	Noesis::Ptr<BitmapImage> bitmapDrop = *new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
 
 	{ // init CarryFlagIndicator and LookAtGrid colors
 
@@ -515,7 +514,6 @@ void HUDGUI::InitGUI()
 	}
 
 	m_pPaintAmmoRect->SetSource(bitmap);
-	m_pPaintDropRect->SetSource(bitmapDrop);
 
 	InitScore();
 
