@@ -224,11 +224,13 @@
                     </Image>
 
                     <Image Source="WaterBar.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>-->
+
+
                     <Image Source="WaterBoard.png" Height="100" Width="300" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>
-                    <TextBlock x:Name="AMMUNITION_WATER_DISPLAY" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Text="50/50" FontSize="24" Foreground="Black" Height="31.923" Width="68.429" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="AMMUNITION_WATER_DISPLAY" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="5.5" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Text="50/50" FontSize="36" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
                     <Image x:Name="PAINT_RECT" Source="PaintAmmo\PaintBoardPurple.png" Height="100" Width="300"  Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0"/>
-                    <TextBlock x:Name="AMMUNITION_PAINT_DISPLAY" Grid.Column="2" Grid.Row="0" TextWrapping="Wrap" Text="50/50" FontSize="24" Foreground="Black" Height="31.923" Width="68.429" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="AMMUNITION_PAINT_DISPLAY" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="5.5" Grid.Column="2" Grid.Row="0" TextWrapping="Wrap" Text="50/50" FontSize="36" Foreground="White"  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     
                 </Grid>
 

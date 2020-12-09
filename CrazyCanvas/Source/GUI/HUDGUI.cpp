@@ -219,10 +219,12 @@ void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, in
 {
 	m_IsReloading = false;
 	m_ReloadAnimationTime = 2.0f;
+	CancelSmallPrompt();
+
+	/*
 	Noesis::Ptr<Noesis::ScaleTransform> waterScaleTransform = *new ScaleTransform();
 	Noesis::Ptr<Noesis::ScaleTransform> paintScaleTransform = *new ScaleTransform();
 
-	CancelSmallPrompt();
 
 	for (auto& ammo : WeaponTypeAmmo)
 	{
@@ -243,7 +245,7 @@ void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, in
 
 			m_pPaintAmmoRect->SetRenderTransform(paintScaleTransform);
 		}
-	}
+	}*/
 }
 
 
