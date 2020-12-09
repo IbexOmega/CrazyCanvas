@@ -269,7 +269,7 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	float maxMusicVolume = pVolumeSlider->GetMaximum();
 	musicVolume /= maxMusicVolume;
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC, musicVolume);
-	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->SetVolume(musicVolume);
+	AudioAPI::GetDevice()->SetMusicVolume(musicVolume);
 
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
@@ -352,7 +352,7 @@ void MainMenuGUI::OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, con
 	float volume = pVolumeSlider->GetValue();
 	float maxVolume = pVolumeSlider->GetMaximum();
 	volume /= maxVolume;
-	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->SetVolume(volume);
+	AudioAPI::GetDevice()->SetMusicVolume(volume);
 }
 
 void MainMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
@@ -476,7 +476,7 @@ void MainMenuGUI::SetDefaultSettings()
 	NS_ASSERT(pMusicVolumeSlider);
 	float musicVolume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC);
 	pMusicVolumeSlider->SetValue(musicVolume * pMusicVolumeSlider->GetMaximum());
-	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->SetVolume(musicVolume);
+	AudioAPI::GetDevice()->SetMusicVolume(musicVolume);
 
 	//Set initial FOV
 	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
