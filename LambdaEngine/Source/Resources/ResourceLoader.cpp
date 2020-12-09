@@ -1719,6 +1719,11 @@ namespace LambdaEngine
 
 			PrintChildren(childrenArr[child], childrenArr, pSkeleton, depth + 1);
 		}
+#else
+		UNREFERENCED_VARIABLE(children);
+		UNREFERENCED_VARIABLE(childrenArr);
+		UNREFERENCED_VARIABLE(pSkeleton);
+		UNREFERENCED_VARIABLE(depth);
 #endif
 	}
 
