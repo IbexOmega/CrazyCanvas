@@ -46,6 +46,8 @@ namespace LambdaEngine
 		FORCEINLINE uint32 GetWidth() const { return m_Desc.Width; }
 		FORCEINLINE uint32 GetHeight() const { return m_Desc.Height; }
 
+		FORCEINLINE uint32 GetIndex() const { return m_GUIRenderTargetIndex; }
+
 	private:
 		bool CreateColorTextures(const GUIRenderTargetDesc* pDesc);
 		bool CreateDepthStencilTexture(const GUIRenderTargetDesc* pDesc);

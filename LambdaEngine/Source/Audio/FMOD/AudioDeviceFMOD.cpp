@@ -11,22 +11,31 @@
 
 #include "Threading/API/Thread.h"
 
+//#define FMOD_LOGS_ENABLED
+
 namespace LambdaEngine
 {
 	FMOD_RESULT DebugCallback(FMOD_DEBUG_FLAGS severity, const char* pFile, int line, const char* pFunc, const char* pMessage)
 	{
+		if (severity & FMOD_DEBUG_LEVEL_ERROR)
+		{
+			LOG_ERROR("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			return FMOD_OK;
+		}
+
+#ifdef FMOD_LOGS_ENABLED
 		if (severity & FMOD_DEBUG_LEVEL_WARNING)
 		{
 			LOG_WARNING("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			return FMOD_OK;
 		}
-		else if (severity & FMOD_DEBUG_LEVEL_ERROR)
-		{
-			LOG_ERROR("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
-		}
-		else if (!(severity & FMOD_DEBUG_LEVEL_LOG))
+
+		if (!(severity & FMOD_DEBUG_LEVEL_LOG))
 		{
 			LOG_DEBUG("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			return FMOD_OK;
 		}
+#endif
 
 		return FMOD_OK;
 	}

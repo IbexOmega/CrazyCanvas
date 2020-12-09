@@ -12,6 +12,8 @@
 #include "Rendering/Core/API/DescriptorSet.h"
 #include "Rendering/Core/API/Sampler.h"
 
+#include "Threading/API/PlatformThread.h"
+
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/StagingBufferCache.h"
@@ -24,7 +26,7 @@
 
 #include "Engine/EngineLoop.h"
 
-#define PRINT_FUNC
+//#define PRINT_FUNC
 
 namespace LambdaEngine
 {
@@ -235,17 +237,17 @@ namespace LambdaEngine
 			CommandList* pCommandList = BeginOrGetRenderCommandList();
 			if (!offscreen)
 			{
-				BeginMainRenderPass(pCommandList);
 #ifdef PRINT_FUNC
 				LOG_INFO("BeginRender");
 #endif
+				BeginMainRenderPass(pCommandList);
 			}
 			else
 			{
-				BeginTileRenderPass(pCommandList);
 #ifdef PRINT_FUNC
 				LOG_INFO("BeginRender[Offscreen]");
 #endif
+				BeginTileRenderPass(pCommandList);
 			}
 		}
 	}
@@ -257,7 +259,12 @@ namespace LambdaEngine
 		m_pCurrentRenderTarget = reinterpret_cast<GUIRenderTarget*>(pSurface);
 
 #ifdef PRINT_FUNC
-		LOG_INFO("SetRenderTarget W: %u, H: %u", m_pCurrentRenderTarget->GetDesc()->Width, m_pCurrentRenderTarget->GetDesc()->Height);
+		LOG_INFO("SetRenderTarget Address: %x, Index: %u, W: %u, H: %u, DepthStencil Address: %x", 
+			uint64(m_pCurrentRenderTarget),
+			m_pCurrentRenderTarget->GetIndex(), 
+			m_pCurrentRenderTarget->GetDesc()->Width, 
+			m_pCurrentRenderTarget->GetDesc()->Height,
+			uint64(m_pCurrentRenderTarget->GetDepthStencil()));
 #endif
 
 		EndCurrentRenderPass();
@@ -661,7 +668,7 @@ namespace LambdaEngine
 		bool sleeping)
 	{
 #ifdef PRINT_FUNC
-		LOG_INFO("Render");
+		LOG_INFO("Render called from Thread: %llx", PlatformThread::GetCurrentThreadHandle());
 #endif
 		m_ModFrameIndex		= modFrameIndex;
 		m_BackBufferIndex	= backBufferIndex;
@@ -738,11 +745,23 @@ namespace LambdaEngine
 
 	void GUIRenderer::SetView(Noesis::Ptr<Noesis::IView> view)
 	{
-		m_View.Reset();
-		m_View = view;
+#ifdef PRINT_FUNC
+		LOG_INFO("SetView called from Thread: %llx, Address: %llx", PlatformThread::GetCurrentThreadHandle(), uint64(view.GetPtr()));
+#endif
 		if (m_View != nullptr)
 		{
+			m_View->Release();
+		}
+		
+		if (view != nullptr)
+		{
+			m_pCurrentRenderTarget = nullptr;
+			m_View = view;
 			m_View->GetRenderer()->Init(this);
+		}
+		else
+		{
+			LOG_ERROR("Setview called with view == nullptr");
 		}
 	}
 
@@ -829,8 +848,17 @@ namespace LambdaEngine
 					pCommandList->BeginRenderPass(&beginRenderPass);
 					m_IsInRenderPass = true;
 				}
+				else
+				{
+					LOG_ERROR("BeginTileRenderPass Failed Address: %x, Index: %u, W: %u, H: %u, DepthStencil Address: %x",
+						uint64(m_pCurrentRenderTarget),
+						m_pCurrentRenderTarget->GetIndex(),
+						m_pCurrentRenderTarget->GetDesc()->Width,
+						m_pCurrentRenderTarget->GetDesc()->Height,
+						uint64(m_pCurrentRenderTarget->GetDepthStencil()));
+				}
 			}
-			
+
 			m_TileBegun = true;
 		}
 	}
@@ -891,21 +919,20 @@ namespace LambdaEngine
 			CommandList* pCommandList = BeginOrGetRenderCommandList();
 			if (m_RenderPassBegun)
 			{
-				m_RenderPassBegun = false;
-				BeginMainRenderPass(pCommandList);
 #ifdef PRINT_FUNC
 				LOG_INFO("Resuming Main");
 #endif
+				m_RenderPassBegun = false;
+				BeginMainRenderPass(pCommandList);
 			}
 
 			if (m_TileBegun)
 			{
-				m_TileBegun = false;
-				BeginTileRenderPass(pCommandList);
-
 #ifdef PRINT_FUNC
 				LOG_INFO("Resuming Tile");
 #endif
+				m_TileBegun = false;
+				BeginTileRenderPass(pCommandList);
 			}
 		}
 	}

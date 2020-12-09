@@ -89,7 +89,7 @@ namespace LambdaEngine
 			m_Desc.pTexture->AddRef();
 			SetName(pDesc->DebugName);
 
-			LOG_DEBUG("Created ImageView");
+			LOG_VULKAN_INFO("Created ImageView");
 
 			return true;
 		}

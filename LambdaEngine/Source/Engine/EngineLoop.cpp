@@ -56,6 +56,8 @@
 
 #include "Debug/Profiler.h"
 
+#include "Threading/API/PlatformThread.h"
+
 #include <imgui/imgui.h>
 
 namespace LambdaEngine
@@ -71,6 +73,8 @@ namespace LambdaEngine
 	*/
 	void EngineLoop::Run()
 	{
+		LOG_INFO("EngineLoop Run called from Thread: %llx", PlatformThread::GetCurrentThreadHandle());
+
 		Clock fixedClock;
 		Timestamp accumulator = Timestamp(0);
 
