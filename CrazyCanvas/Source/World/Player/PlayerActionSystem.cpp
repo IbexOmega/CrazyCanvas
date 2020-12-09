@@ -122,25 +122,29 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 		glm::quat rotationNoPitch = rotation;
 		rotationNoPitch.x = 0.0f;
 		rotationNoPitch.z = 0.0f;
-		rotationNoPitch = glm::normalize(rotationNoPitch);
+		rotationNoPitch = rotationNoPitch;
 
-		glm::vec3 dir = rotationNoPitch * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
-		float projVel = glm::dot(velocity, dir);
-		float accelVel = acceleration * dt;
-
-		if (projVel + accelVel > maxVelocity)
+		glm::vec3 dir = glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
+		if (glm::length2(dir) > glm::epsilon<float>())
 		{
-			accelVel = maxVelocity - projVel;
-		}
+			dir = rotationNoPitch * glm::normalize(dir);
+			float projVel = glm::dot(velocity, dir);
+			float accelVel = acceleration * dt;
 
-		velocity += dir * accelVel;
+			if (projVel + accelVel > maxVelocity)
+			{
+				accelVel = maxVelocity - projVel;
+			}
+
+			velocity += dir * accelVel;
+		}
 
 
 		// glm::vec3 currentVelocity;
 		// currentVelocity		= rotationNoPitch * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
 		// currentVelocity.y	= 0.0f;
 		// currentVelocity		= glm::normalize(currentVelocity);
-		// currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking)) * m_Speed;
+		 //currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking)) * m_Speed;
 
 		// velocity.x = currentVelocity.x;
 		// velocity.z = currentVelocity.z;
@@ -160,25 +164,27 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 
 void PlayerActionSystem::ComputeAirVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
 {
-	constexpr const float AIR_ACC = 6.0f;
-	constexpr const float MAX_VELOCITY_AIR = 8.f;
+	constexpr const float AIR_ACC = 4.0f;
+	constexpr const float MAX_VELOCITY_AIR = 6.f;
 
 	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, AIR_ACC, MAX_VELOCITY_AIR);
 }
 
 void PlayerActionSystem::ComputeGroundVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
 {
-	constexpr const float FRICTION = 5.0f;
-	constexpr const float GROUND_ACC = 5.5f;
-	constexpr const float MAX_VELOCITY_GROUND = 6.f;
+	constexpr const float FRICTION = 15.f;
+	constexpr const float GROUND_ACC = 100.f;
+	constexpr const float MAX_VELOCITY_GROUND = 5.0f;
 
 	// Apply ground friction
 	float speed = glm::length(velocity);
 	if (speed > glm::epsilon<float>())
 	{
-		float drop = speed * FRICTION * dt;
+ 		float drop = speed * FRICTION * dt;
 		velocity *= std::max(speed - drop, 0.f) / speed;
-		LOG_WARNING("Velocity %f %f %f, Speed: %f, Drop: %f", velocity.x, velocity.y, velocity.z, speed, drop);
+
+		//LOG_WARNING("Velocity %f %f %f, Speed: %f, Drop: %f", velocity.x, velocity.y, velocity.z, speed, drop);
+
 		if (glm::length2(velocity) < glm::epsilon<float>())
 			velocity *= 0;
 	}
