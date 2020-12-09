@@ -5,6 +5,8 @@
 #include "Rendering/Core/API/Texture.h"
 #include "Rendering/Core/API/Shader.h"
 
+#include "Rendering/Core/API/CommandList.h"
+
 namespace LambdaEngine
 {
 	class MeshTessellator
@@ -29,11 +31,14 @@ namespace LambdaEngine
 		void Release();
 
 		void Tessellate(Mesh* pMesh);
+		uint32 MergeDuplicateVertices(const TArray<Vertex>& unmergedVertices, Mesh* pMesh);
 		void ReleaseTessellationBuffers();
 
 		static MeshTessellator& GetInstance() { return s_Instance; }
 
 	private:
+		void SubMeshTessellation(uint32 indexCount, uint64 outputSize, uint64& signalValue);
+
 		void CreateDummyRenderTarget();
 
 		void CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags);
@@ -70,6 +75,10 @@ namespace LambdaEngine
 		Buffer* m_pOutVertexFirstStagingBuffer = nullptr;
 		Buffer* m_pOutVertexSecondStagingBuffer = nullptr;
 		Buffer* m_pOutVertexBuffer = nullptr;
+
+		BeginRenderPassDesc m_BeginRenderPassDesc;
+		Viewport m_Viewport;
+		ScissorRect m_ScissorRect;
 
 	private:
 		static MeshTessellator s_Instance;

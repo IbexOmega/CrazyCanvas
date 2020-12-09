@@ -14,10 +14,10 @@
             ]
         },
         {
-            "name": "Test Level 0",
+            "name": "Second Map",
             "modules": [
                 {
-                    "filename": "module_0.glb",
+                    "filename": "NewMap.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,
