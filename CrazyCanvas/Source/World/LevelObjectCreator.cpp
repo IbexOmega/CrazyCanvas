@@ -1052,8 +1052,8 @@ bool LevelObjectCreator::CreatePlayer(
 
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
-				.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID,
-				.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+				.MeshGUID = ResourceCatalog::WEAPON_MESH_GUID,
+				.MaterialGUID = ResourceCatalog::WEAPON_MATERIAL_GUID,
 			});
 
 		pECS->AddComponent<AnimationAttachedComponent>(weaponEntity, AnimationAttachedComponent
@@ -1236,6 +1236,19 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
 
+			auto firstPersonWeaponEnity = pECS->CreateEntity();
+			pECS->AddComponent<PositionComponent>(firstPersonWeaponEnity, PositionComponent{ .Position = pPlayerDesc->Position });
+			pECS->AddComponent<RotationComponent>(firstPersonWeaponEnity, RotationComponent{ .Quaternion = lookDirQuat });
+			pECS->AddComponent<ScaleComponent>(firstPersonWeaponEnity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+			pECS->AddComponent<OffsetComponent>(firstPersonWeaponEnity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.17f, 1.35f, 0.6f) });
+
+
+			pECS->AddComponent<MeshComponent>(firstPersonWeaponEnity, MeshComponent
+				{
+					.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID,
+					.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+				});
+
 			AnimationComponent animationComponentWeapon = {};
 			animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID)->pSkeleton;
 
@@ -1244,7 +1257,7 @@ bool LevelObjectCreator::CreatePlayer(
 			pAnimationGraphWeapon->TransitionToState("Idle");
 			animationComponentWeapon.pGraph = pAnimationGraphWeapon;
 
-			pECS->AddComponent<AnimationComponent>(weaponEntity, animationComponentWeapon);
+			pECS->AddComponent<AnimationComponent>(firstPersonWeaponEnity, animationComponentWeapon);
 
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
