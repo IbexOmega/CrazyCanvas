@@ -80,6 +80,8 @@ void MultiplayerState::Tick(LambdaEngine::Timestamp delta)
 
 bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
+	m_MultiplayerGUI->CloseNotification();
+
 	if (m_IsManualConnection)
 	{
 		ServerInfo serverInfo;
@@ -96,13 +98,15 @@ bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEven
 
 bool MultiplayerState::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
 {
+	m_MultiplayerGUI->CloseNotification();
+
 	if (event.Reason == "Server Currently Not Accepting")
 	{
-		m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently busy playing!");
+		m_MultiplayerGUI->DisplayErrorMessage("The server is currently busy playing!");
 	}
 	else if (event.Reason == "Server Full")
 	{
-		m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently full!");
+		m_MultiplayerGUI->DisplayErrorMessage("The server is currently full!");
 	}
 
 	return false;
@@ -166,7 +170,14 @@ bool MultiplayerState::OnServerUpdatedEvent(const ServerUpdatedEvent& event)
 bool MultiplayerState::ConnectToServer(const IPEndPoint& endPoint, bool isManual)
 {
 	m_IsManualConnection = isManual;
-	return ClientSystem::GetInstance().Connect(endPoint);
+	if (ClientSystem::GetInstance().Connect(endPoint))
+	{
+		m_MultiplayerGUI->DisplayNotification("Joining server!");
+		return true;
+	}
+
+	m_MultiplayerGUI->DisplayErrorMessage("A connection does already exist!");
+	return false;
 }
 
 bool MultiplayerState::ConnectToServer(const ServerInfo& serverInfo)
@@ -197,6 +208,8 @@ void MultiplayerState::StartUpServer()
 		return;
 
 	static String commandLine = "--state=server";
+
+	m_MultiplayerGUI->DisplayNotification("Starting server!");
 
 	// Get application (.exe) path
 	HANDLE processHandle = NULL;

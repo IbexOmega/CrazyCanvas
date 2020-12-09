@@ -289,7 +289,7 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	else if (state == SERVER_STATE_SETUP)
 	{
 		ServerHelper::SetIgnoreNewClients(true);
-		ServerHelper::SetTimeout(Timestamp::Seconds(15));
+		ServerHelper::SetTimeout(Timestamp::Seconds(30));
 	}
 	else if (state == SERVER_STATE_PLAYING)
 	{

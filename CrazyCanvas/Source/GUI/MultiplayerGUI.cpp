@@ -55,9 +55,6 @@ MultiplayerGUI::MultiplayerGUI(MultiplayerState* pMultiplayerState) :
 	m_pTextBoxAddress		= FrameworkElement::FindName<TextBox>("IP_ADDRESS");
 	m_pTextBoxName			= FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
 
-	ErrorPopUpClose();
-	NotiPopUpClose();
-
 	// Use Host name as default In Game name
 	const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
 	LambdaEngine::String nameStr;
@@ -284,7 +281,7 @@ void MultiplayerGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const 
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	ErrorPopUpClose();
+	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Collapsed);
 }
 
 void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -345,35 +342,15 @@ void MultiplayerGUI::DisplayErrorMessage(const char* error)
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }
 
-void MultiplayerGUI::NotiPopUP(PopUpCode notificationCode)
+void MultiplayerGUI::DisplayNotification(const char* error)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("NOTIFICATION_BOX_TEXT");
-
-	switch (notificationCode)
-	{
-	case HOST_NOTIFICATION:	pTextBox->SetText("Server Starting...");	break;
-	case JOIN_NOTIFICATION:	pTextBox->SetText("Joining Server...");		break;
-	}
+	pTextBox->SetText(error);
 
 	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }
 
-void MultiplayerGUI::ErrorPopUpClose()
+void MultiplayerGUI::CloseNotification()
 {
-	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
-}
-
-void MultiplayerGUI::NotiPopUpClose()
-{
-	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
-}
-
-bool MultiplayerGUI::CheckServerSettings(const HostGameDescription& serverSettings)
-{
-	if (serverSettings.PlayersNumber == -1)
-		return false;
-	else if (serverSettings.MapNumber == -1)
-		return false;
-
-	return true;
+	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Collapsed);
 }

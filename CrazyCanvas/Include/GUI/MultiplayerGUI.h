@@ -9,26 +9,6 @@
 #include "NsGui/ListBox.h"
 #include "NsGui/TextBox.h"
 
-struct HostGameDescription
-{
-	int8 PlayersNumber = -1;
-	int8 MapNumber = -1;
-};
-
-enum PopUpCode
-{
-	CONNECT_ERROR,
-	CONNECT_ERROR_INVALID,
-	JOIN_ERROR,
-	JOIN_ERROR_OFFLINE,
-	HOST_ERROR,
-	OTHER_ERROR,
-	HOST_NOTIFICATION,
-	JOIN_NOTIFICATION
-};
-
-class MultiplayerState;
-
 class MultiplayerGUI : public Noesis::Grid
 {
 	friend class MultiplayerState;
@@ -60,6 +40,12 @@ private:
 	void ServerInfoToUniqeString(const ServerInfo& serverInfo, LambdaEngine::String& str) const;
 	const ServerInfo* GetServerInfoFromGrid(const LambdaEngine::THashTable<uint64, ServerInfo>& servers, Noesis::Grid* pGrid) const;
 
+	void DisplayErrorMessage(const char* error);
+	void DisplayNotification(const char* error);
+	void CloseNotification();
+
+	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
+
 private:
 	Noesis::Grid* m_pGridServers;
 	Noesis::ListBox* m_pListBoxServersLAN;
@@ -68,15 +54,4 @@ private:
 	Noesis::TextBox* m_pTextBoxName;
 
 	MultiplayerState* m_pMulitplayerState;
-
-private:
-	void DisplayErrorMessage(const char* error);
-	void NotiPopUP(PopUpCode notificationCode);
-
-	void ErrorPopUpClose();
-	void NotiPopUpClose();
-
-	bool CheckServerSettings(const HostGameDescription& serverSettings);
-
-	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 };
