@@ -156,7 +156,12 @@ void PlayerLocalSystem::DoAction(
 		}
 	}
 
-	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
+	if (inAir)
+		PlayerActionSystem::ComputeAirVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
+	else
+		PlayerActionSystem::ComputeGroundVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
+
+	// PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
 	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, deltaAction, walking, inAir);
 
 	pGameState->DeltaAction		= deltaAction;
@@ -198,10 +203,17 @@ void PlayerLocalSystem::ReplayGameState(float32 dt, PlayerGameState& clientState
 	NetworkPositionComponent& networkPositionComponent		= pECS->GetComponent<NetworkPositionComponent>(entityPlayer);
 	VelocityComponent& velocityComponent					= pECS->GetComponent<VelocityComponent>(entityPlayer);
 
+	physx::PxControllerState playerControllerState;
+	characterColliderComponent.pController->getState(playerControllerState);
+	bool inAir = playerControllerState.touchedShape == nullptr;
+
 	/*
 	* Returns the velocity based on key presses
 	*/
-	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaAction, clientState.Walking, dt, velocityComponent.Velocity, clientState.HoldingFlag);
+	if (inAir)
+		PlayerActionSystem::ComputeAirVelocity(clientState.Rotation, clientState.DeltaAction, clientState.Walking, dt, velocityComponent.Velocity, clientState.HoldingFlag);
+	else
+		PlayerActionSystem::ComputeGroundVelocity(clientState.Rotation, clientState.DeltaAction, clientState.Walking, dt, velocityComponent.Velocity, clientState.HoldingFlag);
 
 	/*
 	* Sets the position of the PxController taken from the PositionComponent.

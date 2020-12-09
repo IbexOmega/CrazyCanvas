@@ -90,7 +90,7 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 					rotationComponent.Dirty = true;
 				}
 
-				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity, gameState.HoldingFlag);
+				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity, gameState.HoldingFlag, 1.0, 1.0);
 				CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, netPosComponent, velocityComponent);
 
 				physx::PxControllerState playerControllerState;

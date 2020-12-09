@@ -100,9 +100,9 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 	return false;
 }
 
-void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
+void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag, float acceleration, float maxVelocity)
 {
-	bool horizontalMovement = deltaAction.x != 0 || deltaAction.z != 0;
+	// bool horizontalMovement = deltaAction.x != 0 || deltaAction.z != 0;
 	bool verticalMovement = deltaAction.y != 0;
 
 	if (isHoldingFlag)
@@ -117,33 +117,73 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 		return;
 	}
 
-	if (horizontalMovement)
-	{
+	// if (horizontalMovement)
+	// {
 		glm::quat rotationNoPitch = rotation;
 		rotationNoPitch.x = 0.0f;
 		rotationNoPitch.z = 0.0f;
 		rotationNoPitch = glm::normalize(rotationNoPitch);
 
-		glm::vec3 currentVelocity;
-		currentVelocity		= rotationNoPitch * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
-		currentVelocity.y	= 0.0f;
-		currentVelocity		= glm::normalize(currentVelocity);
-		currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking)) * m_Speed;
+		glm::vec3 dir = rotationNoPitch * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
+		float projVel = glm::dot(velocity, dir);
+		float accelVel = acceleration * dt;
 
-		velocity.x = currentVelocity.x;
-		velocity.z = currentVelocity.z;
-	}
-	else
-	{
-		float32 relativeVelocity = 1.0f / (1.0f + PLAYER_DRAG * dt);
-		velocity.x *= relativeVelocity;
-		velocity.z *= relativeVelocity;
-	}
+		if (projVel + accelVel > maxVelocity)
+		{
+			accelVel = maxVelocity - projVel;
+		}
+
+		velocity += dir * accelVel;
+
+
+		// glm::vec3 currentVelocity;
+		// currentVelocity		= rotationNoPitch * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
+		// currentVelocity.y	= 0.0f;
+		// currentVelocity		= glm::normalize(currentVelocity);
+		// currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking)) * m_Speed;
+
+		// velocity.x = currentVelocity.x;
+		// velocity.z = currentVelocity.z;
+	// }
+	// else
+	// {
+	// 	float32 relativeVelocity = 1.0f / (1.0f + PLAYER_DRAG * dt);
+	// 	velocity.x *= relativeVelocity;
+	// 	velocity.z *= relativeVelocity;
+	// }
 
 	if (verticalMovement)
 	{
 		velocity.y = velocity.y * float32(1 - deltaAction.y) + PLAYER_JUMP_SPEED * float32(deltaAction.y);
 	}
+}
+
+void PlayerActionSystem::ComputeAirVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
+{
+	constexpr const float AIR_ACC = 6.0f;
+	constexpr const float MAX_VELOCITY_AIR = 8.f;
+
+	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, AIR_ACC, MAX_VELOCITY_AIR);
+}
+
+void PlayerActionSystem::ComputeGroundVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
+{
+	constexpr const float FRICTION = 5.0f;
+	constexpr const float GROUND_ACC = 5.5f;
+	constexpr const float MAX_VELOCITY_GROUND = 6.f;
+
+	// Apply ground friction
+	float speed = glm::length(velocity);
+	if (speed > glm::epsilon<float>())
+	{
+		float drop = speed * FRICTION * dt;
+		velocity *= std::max(speed - drop, 0.f) / speed;
+		LOG_WARNING("Velocity %f %f %f, Speed: %f, Drop: %f", velocity.x, velocity.y, velocity.z, speed, drop);
+		if (glm::length2(velocity) < glm::epsilon<float>())
+			velocity *= 0;
+	}
+
+	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, GROUND_ACC, MAX_VELOCITY_GROUND);
 }
 
 void PlayerActionSystem::SetMouseEnabled(bool isEnabled)
