@@ -395,12 +395,12 @@ bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 			if (event.pPlayerKiller)
 			{
 				String promptText = "You Were Killed By " + event.pPlayerKiller->GetName();
-				//PromptMessage(promptText, false);
+				PromptMessage(promptText, false);
 			}
 			else
 			{
 				String promptText = "You Were Killed By The Server";
-				//PromptMessage(promptText, false);
+				PromptMessage(promptText, false);
 			}
 		}
 		else
