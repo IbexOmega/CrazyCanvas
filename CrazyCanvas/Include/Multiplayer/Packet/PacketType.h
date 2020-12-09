@@ -38,6 +38,7 @@ public:
 	inline static uint16 PLAYER_ALIVE_CHANGED		= 0;
 	inline static uint16 PLAYER_HOST				= 0;
 	inline static uint16 PLAYER_PING				= 0;
+	inline static uint16 PLAYER_POSITION_PING		= 0; // When a player performs the action of pinging a position to his teammates
 	inline static uint16 PLAYER_READY				= 0;
 	inline static uint16 PLAYER_SCORE				= 0;
 	inline static uint16 PLAYER_STATE				= 0;

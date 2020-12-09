@@ -12,6 +12,8 @@
 
 #include <queue>
 
+#include "Threading/API/SpinLock.h"
+
 /*
 * Helpers
 */
@@ -51,7 +53,13 @@ public:
 	*	direction	- vec3 of the direction the hit position had during collision
 	*	paintMode	- painting mode to be used for the target
 	*/
-	static void AddHitPoint(const glm::vec3& position, const glm::vec3& direction, EPaintMode paintMode, ERemoteMode remoteMode, ETeam mode, uint32 angle);
+	static void AddHitPoint(
+		const glm::vec3& position,
+		const glm::vec3& direction,
+		EPaintMode paintMode,
+		ERemoteMode remoteMode,
+		ETeam mode,
+		uint32 angle);
 
 	/* Reset client data from the texture and only use the verifed server data */
 	static void ResetClient();
@@ -60,7 +68,7 @@ public:
 	static void ResetServer(LambdaEngine::Entity entity);
 
 private:
-	struct UnwrapData
+	struct PaintData
 	{
 		glm::vec4		TargetPosition;
 		glm::vec4		TargetDirectionXYZAngleW;
@@ -83,6 +91,7 @@ private:
 	uint32	m_PreviousPointsSize	= 0;
 
 private:
-	static LambdaEngine::TArray<UnwrapData> s_Collisions;
+	static LambdaEngine::TArray<PaintData> s_Collisions;
+	static LambdaEngine::SpinLock s_SpinLock;
 	inline static bool	s_ShouldReset = false;
 };

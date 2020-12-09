@@ -112,12 +112,12 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
 			VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
 
-			const bool hasAmmo = (waterAmmo->second.first > 0) || (paintAmmo->second.first > 0);
+			const bool hasNoAmmo = (waterAmmo->second.first <= 0) || (paintAmmo->second.first <= 0);
 			const bool hasFullAmmo = (waterAmmo->second.first >= waterAmmo->second.second) && (paintAmmo->second.first >= paintAmmo->second.second);
 			const bool isReloading = weaponComponent.ReloadClock > 0.0f;
 			const bool onCooldown = weaponComponent.CurrentCooldown > 0.0f;
 
-			if (!hasAmmo && !isReloading)
+			if (hasNoAmmo && !isReloading)
 			{
 				StartReload(weaponComponent, playerActions);
 			}
@@ -274,7 +274,6 @@ bool WeaponSystemClient::TryFire(EAmmoType ammoType, LambdaEngine::Entity weapon
 		CalculateWeaponFireProperties(weaponEntity, firePosition, fireVelocity, playerTeam);
 
 		uint32 angle = Random::UInt32(0, 360);
-
 		// For creating entity
 		Fire(weaponEntity, weaponComponent, ammoType, firePosition, fireVelocity, playerTeam, angle);
 

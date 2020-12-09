@@ -34,6 +34,8 @@
 
 #include "Teams/TeamHelper.h"
 
+#include "MeshPaint/MeshPaintHandler.h"
+
 using namespace LambdaEngine;
 
 MatchClient::MatchClient()
@@ -183,6 +185,12 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 			{
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
 			}
+
+			for (Entity playerEntity : createdPlayerEntities)
+			{
+				MeshPaintHandler::ResetServer(playerEntity);
+			}
+			MeshPaintHandler::ResetClient();
 
 			break;
 		}

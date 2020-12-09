@@ -54,6 +54,8 @@ namespace LambdaEngine
 	class ParticleUpdater;
 	class ParticleCollider;
 	class LightRenderer;
+	class BlitStage;
+	class ReflectionsDenoisePass;
 
 	struct CameraComponent;
 	struct RenderGraphStructureDesc;
@@ -548,6 +550,8 @@ namespace LambdaEngine
 		ParticleManager				m_ParticleManager;
 
 		// Custom Renderers
+		ReflectionsDenoisePass*		m_pReflectionsDenoisePass	= nullptr;
+		BlitStage*					m_pBlitStage				= nullptr;
 		LineRenderer*				m_pLineRenderer			= nullptr;
 		LightRenderer*				m_pLightRenderer		= nullptr;
 		ParticleRenderer*			m_pParticleRenderer		= nullptr;

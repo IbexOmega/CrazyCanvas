@@ -8,6 +8,7 @@
 
 #include "Application/API/Events/NetworkEvents.h"
 
+#include "EventHandlers/PingHandler.h"
 #include "Events/PlayerEvents.h"
 #include "Events/PacketEvents.h"
 #include "Events/ServerEvents.h"
@@ -23,7 +24,7 @@ class ServerState :
 {
 public:
 	ServerState(const std::string& clientHostID);
-	
+
 	~ServerState();
 
 	void Init() override final;
@@ -55,6 +56,9 @@ private:
 	PacketGameSettings m_GameSettings;
 	std::string m_MapName;
 	MultiplayerServer m_MultiplayerServer;
+
+	/* Event handlers */
+	PingHandler m_PingHandler;
 
 private:
 	static EServerState s_State;
