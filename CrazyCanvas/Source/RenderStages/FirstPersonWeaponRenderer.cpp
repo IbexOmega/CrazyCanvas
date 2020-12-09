@@ -437,7 +437,7 @@ namespace LambdaEngine
 								//Buffer* ppBuffers[2] = { m_VertexBuffer.Get(), m_pDrawArgs[d].pInstanceBuffer };
 								Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
 								uint64 pOffsets[2] = { 0, 0 };
-								uint64 pSizes[2] = { m_VertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
+								uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
 
 								m_DescriptorSetList2[d]->WriteBufferDescriptors(
 									ppBuffers,
@@ -589,7 +589,7 @@ namespace LambdaEngine
 		//const TArray<Vertex>& vertices = pMesh->Vertices;
 		//const uint32 verticesSize = sizeof(Vertex) * vertices.GetSize();
 
-		byte* pMapping = reinterpret_cast<byte*>(m_VertexStagingBuffer->Map());
+		//byte* pMapping = reinterpret_cast<byte*>(m_VertexStagingBuffer->Map());
 		//memcpy(pMapping, vertices.GetData(), verticesSize);
 		//m_VertexStagingBuffer->Unmap();
 		//pCommandList->CopyBuffer(m_VertexStagingBuffer.Get(), 0, m_VertexBuffer.Get(), 0, verticesSize);
@@ -628,7 +628,7 @@ namespace LambdaEngine
 			.RandomSeed = 0,
 		};
 
-		pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffer->Map());
+		byte* pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffer->Map());
 		memcpy(pMapping, &fb, sizeof(fb));
 		m_FrameCopyBuffer->Unmap();
 		pCommandList->CopyBuffer(m_FrameCopyBuffer.Get(), 0, m_FrameBuffer.Get(), 0, sizeof(FrameBuffer));

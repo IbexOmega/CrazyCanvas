@@ -37,7 +37,7 @@ bool ResourceCatalog::Init()
 #endif
 		LOG_INFO("POOP");
 
-		WEAPON_FIRST_PERSON_IDLE_GUIDs		= ResourceManager::LoadAnimationsFromFile("Gun/wc-attemp2.glb");
+		WEAPON_FIRST_PERSON_IDLE_GUIDs		= ResourceManager::LoadAnimationsFromFile("Gun/wc-attemp4.glb");
 
 		PLAYER_STEP_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/step.wav");
 		PLAYER_DEATH_SOUND_GUID = ResourceManager::LoadSoundEffect3DFromFile("Player/DeathSound.mp3");
@@ -66,7 +66,7 @@ bool ResourceCatalog::Init()
 	{
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", WEAPON_MESH_GUID, WEAPON_MATERIAL_GUID);
 		LOG_INFO("Fart");
-		ResourceManager::LoadMeshAndMaterialFromFile("Gun/wc-attemp2.glb", WEAPON_FIRST_PERSON_MESH_GUID, WEAPON_FIRST_PERSON_MATERIAL_GUID);
+		ResourceManager::LoadMeshAndMaterialFromFile("Gun/wc-attemp4.glb", WEAPON_FIRST_PERSON_MESH_GUID, WEAPON_FIRST_PERSON_MATERIAL_GUID);
 
 		// Soundeffects
 		WEAPON_SOUND_GUNFIRE_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/Shootsound.mp3");

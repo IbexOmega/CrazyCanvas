@@ -1240,7 +1240,7 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<PositionComponent>(firstPersonWeaponEnity, PositionComponent{ .Position = pPlayerDesc->Position });
 			pECS->AddComponent<RotationComponent>(firstPersonWeaponEnity, RotationComponent{ .Quaternion = lookDirQuat });
 			pECS->AddComponent<ScaleComponent>(firstPersonWeaponEnity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
-			pECS->AddComponent<OffsetComponent>(firstPersonWeaponEnity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.17f, 1.35f, 0.6f) });
+			//pECS->AddComponent<OffsetComponent>(firstPersonWeaponEnity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.17f, 1.35f, 0.6f) });
 
 
 			pECS->AddComponent<MeshComponent>(firstPersonWeaponEnity, MeshComponent
