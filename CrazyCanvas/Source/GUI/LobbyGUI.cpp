@@ -602,9 +602,10 @@ void LobbyGUI::UpdateReadyButton()
 		const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 		for (auto& pair : players)
 		{
-			if (&pair.second != pPlayerLocal)
+			const Player& player = pair.second;
+			if (&player != pPlayerLocal)
 			{
-				if (!pair.second.IsReady())
+				if (!player.IsReady() || player.GetState() != EGameState::GAME_STATE_LOBBY)
 				{
 					pReadyButton->SetIsEnabled(false);
 					return;

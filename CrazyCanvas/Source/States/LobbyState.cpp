@@ -109,6 +109,8 @@ void LobbyState::Init()
 			}
 		}
 	}
+
+	PlayerManagerClient::SetLocalPlayerStateLobby();
 }
 
 bool LobbyState::OnPlayerJoinedEvent(const PlayerJoinedEvent& event)
