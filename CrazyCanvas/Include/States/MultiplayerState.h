@@ -37,6 +37,7 @@ private:
 	bool OnServerUpdatedEvent(const ServerUpdatedEvent& event);
 
 	bool ConnectToServer(const LambdaEngine::IPEndPoint& endPoint, bool isManual);
+	bool ConnectToServer(const ServerInfo& serverInfo);
 
 	bool HasHostedServer() const;
 	void StartUpServer();

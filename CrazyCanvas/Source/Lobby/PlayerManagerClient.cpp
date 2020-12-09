@@ -145,7 +145,7 @@ void PlayerManagerClient::SetLocalPlayerStateLoading()
 	{
 		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_SETUP, "Player not in SETUP state!");
 
-		ClientHelper::SetTimeout(Timestamp::Seconds(15));
+		ClientHelper::SetTimeout(Timestamp::Seconds(30));
 
 		pPlayer->m_State = GAME_STATE_LOADING;
 
