@@ -409,6 +409,9 @@
                     <Slider x:Name="LookSensitivitySlider" ValueChanged="OnLookSensitivityChanged" Grid.Column="1" VerticalAlignment="Center" Margin="0 5 0 10" />
                 </Grid>
 
+                <Button x:Name="LeaveLobbyButton" Click="OnButtonLeaveClick" Grid.Column="0" Content="Leave" FontSize="60" Background="#E52C2C" Foreground="White" Margin="30"/>
+                <ToggleButton x:Name="ReadyButton" Click="OnButtonReadyClick" IsEnabledChanged="OnReadyButtonEnabledChange" Grid.Column="1" Content="Ready" FontSize="60" Background="#4CE244" Foreground="White" Margin="30"/>
+               
                 <!--Forward-->
                 <Grid>
                     <Grid.ColumnDefinitions>
