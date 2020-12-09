@@ -30,21 +30,18 @@ bool PromptGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent,
 
 void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, uint8 teamIndex)
 {
-	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
-
-	UNREFERENCED_VARIABLE(teamIndex);
+	Noesis::SolidColorBrush* pBrush = (Noesis::SolidColorBrush*)m_pPromptTextblock->GetForeground();
 
 	if (teamIndex != UINT8_MAX)
 	{
-		Noesis::Style* pStyle = FrameworkElement::FindResource<Noesis::Style>("PromptTextStyle");
-		m_pPromptTextblock->SetStyle(pStyle);
+		glm::vec3 color = TeamHelper::GetTeamColor(teamIndex);
+		Noesis::Color teamColor = Noesis::Color(color.r, color.g, color.b);
+		pBrush->SetColor(teamColor);
 	}
 	else
 	{
 		pBrush->SetColor(Noesis::Color::Red());
-		m_pPromptTextblock->SetForeground(pBrush);
 	}
-
 
 	m_pPromptTextblock->SetText(promptMessage.c_str());
 	m_pPromptVisibilityStoryboard->Begin();
@@ -53,11 +50,10 @@ void PromptGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, uint8 t
 
 void PromptGUI::DisplaySmallPrompt(const LambdaEngine::String& promptMessage)
 {
-	Noesis::SolidColorBrush* pBrush = new Noesis::SolidColorBrush();
+	Noesis::SolidColorBrush* pBrush = (Noesis::SolidColorBrush*)m_pSmallPromptTextblock->GetForeground();
 
 	pBrush->SetColor(Noesis::Color::Red());
 
-	m_pSmallPromptTextblock->SetForeground(pBrush);
 	m_pSmallPromptTextblock->SetText(promptMessage.c_str());
 
 	m_pSmallPromptVisibilityStoryboard->Begin();

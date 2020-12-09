@@ -99,10 +99,8 @@ namespace LambdaEngine
 
 	bool GUIApplication::InitNoesis()
 	{
-#if defined(LAMBDA_DEBUG)
+#if defined(LAMBDA_DEVELOPMENT)
 		Noesis::GUI::SetLogHandler(GUIApplication::NoesisLogHandler);
-		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
-#elif defined(LAMBDA_RELEASE)
 		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
 #endif
 		// Init 26/11
