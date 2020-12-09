@@ -232,15 +232,18 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity weapon : m_WeaponEntities)
+		if (pPlayerLocalComponents)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(weapon);
-
-			if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			for (Entity weapon : m_WeaponEntities)
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(weapon);
+
+				if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+				{
+					m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+				}
 			}
-		}
+		}	
 	}
 	return false;
 }
@@ -253,13 +256,16 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity playerWeapon : m_WeaponEntities)
+		if (pPlayerLocalComponents)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
-
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			for (Entity playerWeapon : m_WeaponEntities)
 			{
-				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+				{
+					m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
+				}
 			}
 		}
 	}
@@ -274,14 +280,17 @@ bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity playerWeapon : m_WeaponEntities)
+		if (pPlayerLocalComponents)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
-
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			for (Entity playerWeapon : m_WeaponEntities)
 			{
-				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
-				PromptMessage("Reloading", true);
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+				{
+					m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
+					PromptMessage("Reloading", true);
+				}
 			}
 		}
 	}
@@ -296,13 +305,16 @@ bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& eve
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity playerWeapon : m_WeaponEntities)
+		if (pPlayerLocalComponents)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
-
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			for (Entity playerWeapon : m_WeaponEntities)
 			{
-				m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+				{
+					m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
+				}
 			}
 		}
 	}
@@ -470,24 +482,27 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 
 		const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
 
-		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
+		if (pPlayerLocalComponents)
 		{
-			if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
-			{
-				uint8 projectileTeamIndex = pTeamComponents->GetConstData(projectileComponents.Owner).TeamIndex;
-
-				m_DeferredDamageTakenHitEvents.EmplaceBack(std::make_pair(event, projectileTeamIndex));
-			}
-		}
-		else
-		{
-			if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
+			if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 			{
 				if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
 				{
-					if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex && pPlayerLocalComponents->HasComponent(projectileComponents.Owner))
+					uint8 projectileTeamIndex = pTeamComponents->GetConstData(projectileComponents.Owner).TeamIndex;
+
+					m_DeferredDamageTakenHitEvents.EmplaceBack(std::make_pair(event, projectileTeamIndex));
+				}
+			}
+			else
+			{
+				if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
+				{
+					if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
 					{
-						m_DeferredEnemyHitEvents.EmplaceBack(true);
+						if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex && pPlayerLocalComponents->HasComponent(projectileComponents.Owner))
+						{
+							m_DeferredEnemyHitEvents.EmplaceBack(true);
+						}
 					}
 				}
 			}

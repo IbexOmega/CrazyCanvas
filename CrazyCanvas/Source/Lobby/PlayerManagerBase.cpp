@@ -101,7 +101,7 @@ Player* PlayerManagerBase::HandlePlayerJoined(uint64 uid, const PacketJoin& pack
 		player.m_Name			= packet.Name;
 		player.m_IsSpectator	= packet.IsSpectator;
 
-		Player* pPlayer = &s_Players.insert(std::make_pair(player.GetUID(), player)).first->second;
+		Player* pPlayer = &s_Players.insert({ player.GetUID(), player }).first->second;
 		LOG_INFO("Player [%s] joined! [%llu]", player.GetName().c_str(), player.GetUID());
 
 		PlayerJoinedEvent newEvent(pPlayer);

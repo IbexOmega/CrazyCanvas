@@ -52,6 +52,8 @@ private:
 	void InternalInit();
 	void TryFinishMatchLoading();
 
+	void CreateSpectatorCamera();
+
 public:
 	static PlaySessionState* GetInstance();
 

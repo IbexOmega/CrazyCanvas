@@ -20,23 +20,6 @@ Player::Player()
 {
 }
 
-Player::Player(const Player& other)
-	: m_Name(other.m_Name)
-	, m_Entity(other.m_Entity)
-	, m_IsHost(other.m_IsHost)
-	, m_IsDead(other.m_IsDead)
-	, m_IsReady(other.m_IsReady)
-	, m_Ping(other.m_Ping)
-	, m_State(other.m_State)
-	, m_Team(other.m_Team)
-	, m_Kills(other.m_Kills)
-	, m_Deaths(other.m_Deaths)
-	, m_FlagsCaptured(other.m_FlagsCaptured)
-	, m_FlagsDefended(other.m_FlagsDefended)
-	, m_UID(other.m_UID)
-{
-}
-
 const String& Player::GetName() const
 {
 	return m_Name;
@@ -120,27 +103,4 @@ bool Player::operator!=(const Player& other) const
 bool Player::operator<(const Player& other) const
 {
 	return m_UID < other.m_UID;
-}
-
-Player& Player::operator=(const Player& other)
-{
-	if (this != &other)
-	{
-		m_Name			= other.m_Name;
-		m_Entity		= other.m_Entity;
-		m_IsHost		= other.m_IsHost;
-		m_IsDead		= other.m_IsDead;
-		m_IsReady		= other.m_IsReady;
-		m_IsSpectator	= other.m_IsSpectator;
-		m_Ping			= other.m_Ping;
-		m_State			= other.m_State;
-		m_Team			= other.m_Team;
-		m_Kills			= other.m_Kills;
-		m_Deaths		= other.m_Deaths;
-		m_FlagsCaptured	= other.m_FlagsCaptured;
-		m_FlagsDefended	= other.m_FlagsDefended;
-		m_UID			= other.m_UID;
-	}
-
-	return *this;
 }

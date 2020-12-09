@@ -7,19 +7,6 @@
 
 namespace LambdaEngine
 {
-	struct FreeCameraComponent
-	{
-		DECL_COMPONENT(FreeCameraComponent);
-		float SpeedFactor = 1.4f;
-		float MouseSpeedFactor = 0.35f;
-	};
-
-	struct FPSControllerComponent : FreeCameraComponent
-	{
-		DECL_COMPONENT(FPSControllerComponent);
-		float SprintSpeedFactor	= 1.6f;
-	};
-
 	struct CameraComponent
 	{
 		DECL_COMPONENT(CameraComponent);
@@ -30,6 +17,19 @@ namespace LambdaEngine
 		float FarPlane			= 50.0f;
 		float FOV				= 90.0f;
 		bool IsActive 			= true;
+	};
+
+	struct FreeCameraComponent
+	{
+		DECL_COMPONENT(FreeCameraComponent);
+		float SpeedFactor = 3.0f;
+		float MouseSpeedFactor = 0.25f;
+	};
+
+	struct FPSControllerComponent : FreeCameraComponent
+	{
+		DECL_COMPONENT(FPSControllerComponent);
+		float SprintSpeedFactor = 1.6f;
 	};
 
 	struct ViewProjectionMatricesComponent

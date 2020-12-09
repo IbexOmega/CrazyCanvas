@@ -34,7 +34,6 @@ namespace LambdaEngine
 						{RW, VelocityComponent::Type()},
 						{NDA, PositionComponent::Type()},
 						{RW, RotationComponent::Type()},
-						{R, StepParentComponent::Type()},
 					},
 				},
 				{
@@ -47,6 +46,7 @@ namespace LambdaEngine
 						{R, OffsetComponent::Type()},
 						{RW, PositionComponent::Type()},
 						{RW, RotationComponent::Type()},
+						{R, StepParentComponent::Type()},
 					},
 				}
 			};
@@ -68,7 +68,7 @@ namespace LambdaEngine
 
 		ComponentArray<CameraComponent>*					pCameraComponents			= pECSCore->GetComponentArray<CameraComponent>();
 		ComponentArray<ViewProjectionMatricesComponent>*	pViewProjectionComponent	= pECSCore->GetComponentArray<ViewProjectionMatricesComponent>();
-		const ComponentArray<FreeCameraComponent>*			pFreeCameraComponents		= pECSCore->GetComponentArray<FreeCameraComponent>();
+		ComponentArray<FreeCameraComponent>*				pFreeCameraComponents		= pECSCore->GetComponentArray<FreeCameraComponent>();
 		const ComponentArray<FPSControllerComponent>*		pFPSCameraComponents		= pECSCore->GetComponentArray<FPSControllerComponent>();
 		const ComponentArray<ParentComponent>*				pParentComponents			= pECSCore->GetComponentArray<ParentComponent>();
 		const ComponentArray<StepParentComponent>*			pStepParentComponents		= pECSCore->GetComponentArray<StepParentComponent>();
