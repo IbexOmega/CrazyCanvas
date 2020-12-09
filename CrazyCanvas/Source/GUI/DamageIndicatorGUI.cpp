@@ -23,13 +23,13 @@ bool DamageIndicatorGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char
 void DamageIndicatorGUI::DisplayIndicator(bool isFriendly)
 {
 	UNREFERENCED_VARIABLE(isFriendly);
-	Noesis::BitmapImage* pBitmap = new Noesis::BitmapImage();
+	Noesis::Ptr<Noesis::BitmapImage> bitmap = *new Noesis::BitmapImage();
 	if (isFriendly)
-		pBitmap->SetUriSource(Noesis::Uri("HitFriendlyIndicator.png"));
+		bitmap->SetUriSource(Noesis::Uri("HitFriendlyIndicator.png"));
 	else
-		pBitmap->SetUriSource(Noesis::Uri("HitIndicator.png"));
+		bitmap->SetUriSource(Noesis::Uri("HitIndicator.png"));
 
-	m_pDamageIndicator->SetSource(pBitmap);
+	m_pDamageIndicator->SetSource(bitmap);
 
 	m_pDamageIndicatorStoryboard->Begin();
 }
