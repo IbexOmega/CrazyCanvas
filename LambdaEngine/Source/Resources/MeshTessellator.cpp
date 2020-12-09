@@ -510,8 +510,6 @@ namespace LambdaEngine
 
 	void MeshTessellator::CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags)
 	{
-		uint64 stagingBufferSize = 0;
-		uint64 bufferSize = 0;
 		if ((*inStagingBuffer) == nullptr || (*inStagingBuffer)->GetDesc().SizeInBytes < size)
 		{
 			if ((*inStagingBuffer) != nullptr)
@@ -522,8 +520,6 @@ namespace LambdaEngine
 			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
 			bufferDesc.SizeInBytes = size;
-
-			stagingBufferSize = size;
 
 			(*inStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
 		}
@@ -543,14 +539,7 @@ namespace LambdaEngine
 			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_DST | flags;
 			bufferDesc.SizeInBytes = size;
 
-			bufferSize = size;
-
 			(*inBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		}
-
-		if (stagingBufferSize || bufferSize)
-		{
-			LOG_ERROR("Allocated %s: %d bytes & %d bytes", name.c_str(), stagingBufferSize, bufferSize);
 		}
 
 		pCommandList->CopyBuffer((*inStagingBuffer), 0, (*inBuffer), 0, size);
