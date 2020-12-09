@@ -60,6 +60,7 @@ public:
 	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
 	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnReadyButtonEnabledChange(Noesis::BaseComponent* pSender, const Noesis::DependencyPropertyChangedEventArgs& args);
 
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -87,6 +88,7 @@ private:
 	void TrySendChatMessage();
 	void SendGameSettings() const;
 	void UpdatePlayersLabel();
+	void UpdateReadyButton();
 
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();

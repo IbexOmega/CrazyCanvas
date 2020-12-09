@@ -83,15 +83,6 @@ namespace LambdaEngine
 		}
 	}
 
-	void PacketManagerBase::QueryEnd(TArray<NetworkSegment*>& segmentsReceived)
-	{
-#ifdef LAMBDA_CONFIG_DEBUG
-		m_SegmentPool.FreeSegments(segmentsReceived, "PacketManagerBase::QueryEnd");
-#else
-		m_SegmentPool.FreeSegments(segmentsReceived);
-#endif	
-	}
-
 	void PacketManagerBase::DeleteOldBundles()
 	{
 		static const Timestamp& maxAllowedTime = Timestamp::Seconds(2);
@@ -179,6 +170,15 @@ namespace LambdaEngine
 
 		HandleAcks(acks);
 		return FindSegmentsToReturn(segments, segmentsReturned, hasDiscardedResends);
+	}
+
+	void PacketManagerBase::QueryEnd(TArray<NetworkSegment*>& segmentsReceived)
+	{
+#ifdef LAMBDA_CONFIG_DEBUG
+		m_SegmentPool.FreeSegments(segmentsReceived, "PacketManagerBase::QueryEnd");
+#else
+		m_SegmentPool.FreeSegments(segmentsReceived);
+#endif	
 	}
 
 	/*
