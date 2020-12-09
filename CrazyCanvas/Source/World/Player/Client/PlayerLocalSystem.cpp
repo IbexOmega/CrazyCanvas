@@ -113,9 +113,16 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 	mutableNetPosComponent.PositionLast = positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
 	mutableNetPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 
-	DoAction(dt, velocityComponent, audibleComponent, characterColliderComponent, rotationComponent, pGameState);
+	physx::PxControllerState playerControllerState;
+	characterColliderComponent.pController->getState(playerControllerState);
+	bool inAir = (playerControllerState.touchedShape == nullptr);
+
+	DoAction(dt, velocityComponent, rotationComponent, inAir, pGameState);
 
 	CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, networkPositionComponent, velocityComponent);
+	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, pGameState->Walking, inAir, characterColliderComponent.WasInAir);
+
+	characterColliderComponent.WasInAir = inAir;
 
 	pGameState->Position = networkPositionComponent.Position;
 	pGameState->Velocity = velocityComponent.Velocity;
@@ -124,15 +131,10 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 void PlayerLocalSystem::DoAction(
 	float32 dt,
 	LambdaEngine::VelocityComponent& velocityComponent,
-	LambdaEngine::AudibleComponent& audibleComponent,
-	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
 	const LambdaEngine::RotationComponent& rotationComponent,
+	bool inAir,
 	PlayerGameState* pGameState)
 {
-	physx::PxControllerState playerControllerState;
-	characterColliderComponent.pController->getState(playerControllerState);
-	bool inAir = playerControllerState.touchedShape == nullptr;
-
 	glm::i8vec3 deltaAction =
 	{
 		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),			// X: Right
@@ -156,9 +158,9 @@ void PlayerLocalSystem::DoAction(
 		}
 	}
 
+	
 	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
-	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, deltaAction, walking, inAir);
-
+	
 	pGameState->DeltaAction		= deltaAction;
 	pGameState->Walking			= walking;
 	pGameState->HoldingFlag		= holdingFlag;
