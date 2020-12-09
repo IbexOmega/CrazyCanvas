@@ -89,8 +89,6 @@ void main()
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SLightsBuffer lightBuffer		= b_LightsBuffer.val;
 
-	out_Color = vec4(sampledCombinedMaterial.rgb, 1.0f); return;
-
 	vec3 storedMaterial	= vec3(
 								materialParameters.AO * sampledCombinedMaterial.b, 
 								mix(materialParameters.Roughness * sampledCombinedMaterial.r, paintDescription.Roughness, paintDescription.Interpolation), 
@@ -103,7 +101,7 @@ void main()
 	float depth 	= texture(u_DepthStencil, in_TexCoord).r;
 
 	vec3 N 					= normalize(shadingNormal);
-	vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - in_WorldPosition;
+	vec3 viewVector			= in_WorldPosition - perFrameBuffer.CameraPosition.xyz;
 	float viewDistance		= length(viewVector);
 	vec3 V 					= normalize(viewVector);
 
@@ -111,11 +109,13 @@ void main()
 	vec3 F0 = vec3(0.06f);
 
 	F0 = mix(F0, storedAlbedo, metallic);
-			
+
+
 	// Directional Light
 	{
 		vec3 L = normalize(lightBuffer.DirL_Direction);
 		vec3 H = normalize(V + L);
+		out_Color = vec4(normalize(in_WorldPosition), 1.0f); return;
 		
 		vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(in_WorldPosition, 1.0);
 
@@ -139,6 +139,8 @@ void main()
 
 		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
 	}
+
+	out_Color = vec4(storedAlbedo+Lo, 1.0f); return;
 
 	//Point Light Loop
 	// for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
