@@ -2279,7 +2279,7 @@
                     "removable": true,
                     "draw_args_include_mask": 16,
                     "draw_args_exclude_mask": 0,
-                    "binding_type": "UNORDERED_ACCESS_R",
+                    "binding_type": "UNORDERED_ACCESS_RW",
                     "src_stage": "PLAYER_PASS"
                 },
                 {

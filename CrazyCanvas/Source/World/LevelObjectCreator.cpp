@@ -1241,6 +1241,9 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<RotationComponent>(firstPersonWeaponEnity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
 			pECS->AddComponent<ScaleComponent>(firstPersonWeaponEnity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 
+			pECS->AddComponent<MeshPaintComponent>(firstPersonWeaponEnity, MeshPaint::CreateComponent(firstPersonWeaponEnity));
+
+
 			pECS->AddComponent<WeaponLocalComponent>(firstPersonWeaponEnity, WeaponLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(firstPersonWeaponEnity, WeaponLocalComponent::Type(), nullptr);
 

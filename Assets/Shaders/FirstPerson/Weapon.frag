@@ -54,8 +54,6 @@ void main()
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
 	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
-	out_Color = vec4(sampledAlbedo, 0.6f);
-	return;
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 
@@ -67,11 +65,10 @@ void main()
 	float dist = 1.f;
 	GetVec4ToPackedPaintInfoAndDistance(in_LocalPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
 	SPaintDescription paintDescription = InterpolatePaint(TBN, in_LocalPosition, tangent, bitangent, packedPaintInfo, dist);
-
+	
 	vec3 paintNormal =  normalize(paintDescription.Normal + shadingNormal * 0.2f);
 
 	shadingNormal = mix(shadingNormal, paintNormal, paintDescription.Interpolation);
-
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
@@ -92,6 +89,8 @@ void main()
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SLightsBuffer lightBuffer		= b_LightsBuffer.val;
 
+	out_Color = vec4(sampledCombinedMaterial.rgb, 1.0f); return;
+
 	vec3 storedMaterial	= vec3(
 								materialParameters.AO * sampledCombinedMaterial.b, 
 								mix(materialParameters.Roughness * sampledCombinedMaterial.r, paintDescription.Roughness, paintDescription.Interpolation), 
@@ -99,7 +98,7 @@ void main()
 	vec4 aoRoughMetalValid	= vec4(storedMaterial, 1.0f);
 	
 	float ao		= aoRoughMetalValid.r;
-	float roughness	= 1.0f-aoRoughMetalValid.g; // TODO fix need to invert
+	float roughness	= 1.0f - aoRoughMetalValid.g; // TODO fix need to invert
 	float metallic	= aoRoughMetalValid.b;
 	float depth 	= texture(u_DepthStencil, in_TexCoord).r;
 
@@ -112,13 +111,14 @@ void main()
 	vec3 F0 = vec3(0.06f);
 
 	F0 = mix(F0, storedAlbedo, metallic);
-
+			
 	// Directional Light
 	{
 		vec3 L = normalize(lightBuffer.DirL_Direction);
 		vec3 H = normalize(V + L);
-
+		
 		vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(in_WorldPosition, 1.0);
+
 		vec3 outgoingRadiance    = lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
 		vec3 incomingRadiance    = outgoingRadiance;
 
@@ -138,42 +138,43 @@ void main()
 		float NdotL = max(dot(N, L), 0.05f);
 
 		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
-
 	}
 
 	//Point Light Loop
-	for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
-	{
-		SPointLight light = b_LightsBuffer.pointLights[i];
+	// for (uint i = 0; i < uint(lightBuffer.PointLightCount); i++)
+	// {
+	// 	SPointLight light = b_LightsBuffer.pointLights[i];
 
-		vec3 L = (light.Position - in_WorldPosition);
-		float distance = length(L);
-		L = normalize(L);
-		vec3 H = normalize(V + L);
+	// 	vec3 L = (light.Position - in_WorldPosition);
+	// 	float distance = length(L);
+	// 	L = normalize(L);
+	// 	vec3 H = normalize(V + L);
 		
-		float attenuation   	= 1.0f / (distance * distance);
-		vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
-		vec3 incomingRadiance    = outgoingRadiance * attenuation;
+	// 	float attenuation   	= 1.0f / (distance * distance);
+	// 	vec3 outgoingRadiance    = light.ColorIntensity.rgb * light.ColorIntensity.a;
+	// 	vec3 incomingRadiance    = outgoingRadiance * attenuation;
 	
-		float NDF   = Distribution(N, H, roughness);
-		float G     = Geometry(N, V, L, roughness);
-		vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
+	// 	float NDF   = Distribution(N, H, roughness);
+	// 	float G     = Geometry(N, V, L, roughness);
+	// 	vec3 F      = Fresnel(F0, max(dot(V, H), 0.0f));
 
-		vec3 nominator      = NDF * G * F;
-		float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
-		vec3 specular       = nominator / max(denominator, 0.001f);
+	// 	vec3 nominator      = NDF * G * F;
+	// 	float denominator   = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0f);
+	// 	vec3 specular       = nominator / max(denominator, 0.001f);
 
-		vec3 kS = F;
-		vec3 kD = vec3(1.0f) - kS;
+	// 	vec3 kS = F;
+	// 	vec3 kD = vec3(1.0f) - kS;
 
-		kD *= 1.0 - metallic;
+	// 	kD *= 1.0 - metallic;
 
-		float NdotL = max(dot(N, L), 0.0f);
+	// 	float NdotL = max(dot(N, L), 0.0f);
 
-		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
-	}
+	// 	Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
+	// }
 
 	vec3 colorHDR = 0.03f * ao * storedAlbedo + Lo;
+
+	//out_Color = vec4(vec3(ao), 1.0f); return;
 
 	// Reinhard Tone-Mapping
 	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
