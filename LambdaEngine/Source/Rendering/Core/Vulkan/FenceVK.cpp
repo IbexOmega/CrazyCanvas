@@ -84,7 +84,7 @@ namespace LambdaEngine
 			}
 		}
 
-		LOG_DEBUG("Created Fence");
+		LOG_VULKAN_INFO("Created Fence");
 
 		m_Desc = *pDesc;
 		SetName(m_Desc.DebugName);
@@ -292,7 +292,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_DEBUG("New fence created");
+				LOG_VULKAN_INFO("New fence created");
 				return fence;
 			}
 		}
@@ -322,7 +322,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_DEBUG("New semaphore created");
+				LOG_VULKAN_INFO("New semaphore created");
 				return semaphore;
 			}
 		}
