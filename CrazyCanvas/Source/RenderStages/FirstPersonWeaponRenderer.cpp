@@ -609,8 +609,9 @@ namespace LambdaEngine
 		float32 windowWidth = float32(window->GetWidth());
 		float32 windowHeight = float32(window->GetHeight());
 
-		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, windowWidth / windowHeight, 0.1f, 100.0f);
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0f), g_DefaultUp);
+		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, windowWidth / windowHeight, 0.001f, 10.0f);
+		glm::mat4 translate = glm::translate(glm::vec3(0.f, -0.275f, 0.15f));
+		glm::mat4 view =  glm::lookAt(glm::vec3(0.0, 0.0, 0.1), glm::vec3(0.0f), g_DefaultUp) * translate;
 
 		// Weapon Transformations
 		FrameBuffer fb = {

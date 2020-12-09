@@ -1233,14 +1233,18 @@ bool LevelObjectCreator::CreatePlayer(
 				return false;
 			}
 
-			pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
-			EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
+			//pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
+			//EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
 
 			auto firstPersonWeaponEnity = pECS->CreateEntity();
-			pECS->AddComponent<PositionComponent>(firstPersonWeaponEnity, PositionComponent{ .Position = pPlayerDesc->Position });
-			pECS->AddComponent<RotationComponent>(firstPersonWeaponEnity, RotationComponent{ .Quaternion = lookDirQuat });
+			pECS->AddComponent<PositionComponent>(firstPersonWeaponEnity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+			pECS->AddComponent<RotationComponent>(firstPersonWeaponEnity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
 			pECS->AddComponent<ScaleComponent>(firstPersonWeaponEnity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 			//pECS->AddComponent<OffsetComponent>(firstPersonWeaponEnity, OffsetComponent{ .Offset = pPlayerDesc->Scale * glm::vec3(0.17f, 1.35f, 0.6f) });
+
+
+			pECS->AddComponent<WeaponLocalComponent>(firstPersonWeaponEnity, WeaponLocalComponent());
+			EntityMaskManager::AddExtensionToEntity(firstPersonWeaponEnity, WeaponLocalComponent::Type(), nullptr);
 
 
 			pECS->AddComponent<MeshComponent>(firstPersonWeaponEnity, MeshComponent

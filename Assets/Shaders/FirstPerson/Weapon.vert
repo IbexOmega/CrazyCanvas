@@ -39,6 +39,7 @@ void main()
 	SInstance instance				= b_Instances.val[gl_InstanceIndex];
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SWeaponData weaponData			= u_WeaponData.val;
+
 	mat4 normalTransform    = instance.Transform;
 
 	vec3 position 			= vertex.Position.xyz;
@@ -61,7 +62,7 @@ void main()
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	out_PaintDist 			= vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
-	out_LocalPosition		= worldPosition.xyz;//vec3(vertex.Tangent.x, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
+	out_LocalPosition		= vec3(vertex.Tangent.w, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 
