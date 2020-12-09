@@ -94,7 +94,10 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 	for (auto& pair : s_Players)
 	{
 		if (pair.second.IsHost())
+		{
 			hostPlayer = &pair.second;
+			break;
+		}
 	}
 
 	for (auto& pair : s_Players)

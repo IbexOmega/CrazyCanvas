@@ -250,7 +250,7 @@ void MatchServer::BeginLoading()
 		const Player& player = pair.second;
 		if (!player.IsSpectator())
 		{
-			SpawnPlayer(pair.second);
+			SpawnPlayer(player);
 		}
 	}
 
