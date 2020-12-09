@@ -1049,6 +1049,22 @@ namespace LambdaEngine
 					{
 						pResource->MemoryType = MemoryTypeIndexToMemoryType(memoryTypeIndex);
 					}
+
+					ImGui::Text("Additional ShaderResource Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional ShaderResource Access", &pResource->TextureParams.ExtraShaderResourceAccess);
+
+					ImGui::Text("Additional RenderTarget Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional RenderTarget Access", &pResource->TextureParams.ExtraRenderTargetAccess);
+
+					ImGui::Text("Additional DepthStencil Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional DepthStencil Access", &pResource->TextureParams.ExtraDepthStencilAccess);
+
+					ImGui::Text("Additional Unordered Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional Unordered Access", &pResource->TextureParams.ExtraUnorderedAccess);
 				}
 				break;
 			}

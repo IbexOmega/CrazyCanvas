@@ -35,7 +35,6 @@ namespace LambdaEngine
 	AARenderer::~AARenderer()
 	{
 		s_pInstance = nullptr;
-		EventQueue::UnregisterEventHandler(this, &AARenderer::OnWindowResized);
 	}
 
 	bool AARenderer::Init()
@@ -132,8 +131,6 @@ namespace LambdaEngine
 			}
 		}
 
-		EventQueue::RegisterEventHandler(this, &AARenderer::OnKeyPressed);
-		EventQueue::RegisterEventHandler(this, &AARenderer::OnWindowResized);
 		return true;
 	}
 
@@ -342,12 +339,12 @@ namespace LambdaEngine
 			}
 		}
 
-		GUID_Lambda FullscreenShader = ResourceManager::LoadShaderFromFile(
+		GUID_Lambda fullscreenShader = ResourceManager::LoadShaderFromFile(
 			"Helpers/FullscreenQuad.vert",
 			FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER,
 			EShaderLang::SHADER_LANG_GLSL,
 			"main");
-		if (FullscreenShader == GUID_NONE)
+		if (fullscreenShader == GUID_NONE)
 		{
 			DEBUGBREAK();
 			return false;
@@ -374,7 +371,7 @@ namespace LambdaEngine
 			taaStateDesc.RenderPass		= m_TAARenderPass;
 			taaStateDesc.PipelineLayout = m_TAALayout;
 
-			taaStateDesc.VertexShader.ShaderGUID	= FullscreenShader;
+			taaStateDesc.VertexShader.ShaderGUID	= fullscreenShader;
 			taaStateDesc.PixelShader.ShaderGUID		= taaShader;
 
 			taaStateDesc.BlendState.BlendAttachmentStates = 
@@ -418,7 +415,7 @@ namespace LambdaEngine
 			fxaaStateDesc.RenderPass		= m_RenderPass;
 			fxaaStateDesc.PipelineLayout	= m_FXAALayout;
 			
-			fxaaStateDesc.VertexShader.ShaderGUID	= FullscreenShader;
+			fxaaStateDesc.VertexShader.ShaderGUID	= fullscreenShader;
 			fxaaStateDesc.PixelShader.ShaderGUID	= fxaaShader;
 
 			fxaaStateDesc.BlendState.BlendAttachmentStates = { blendAttachmentState };
@@ -441,7 +438,47 @@ namespace LambdaEngine
 			}
 		}
 
-		return InitHistoryTextures();
+		{
+			GUID_Lambda blitShader = ResourceManager::LoadShaderFromFile(
+				"Helpers/Blit.frag",
+				FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER,
+				EShaderLang::SHADER_LANG_GLSL,
+				"main");
+			if (blitShader == GUID_NONE)
+			{
+				DEBUGBREAK();
+				return false;
+			}
+
+			ManagedGraphicsPipelineStateDesc blitStateDesc = {};
+			blitStateDesc.DebugName			= "Blit State";
+			blitStateDesc.RenderPass		= m_RenderPass;
+			blitStateDesc.PipelineLayout	= m_FXAALayout;
+
+			blitStateDesc.VertexShader.ShaderGUID	= fullscreenShader;
+			blitStateDesc.PixelShader.ShaderGUID	= blitShader;
+
+			blitStateDesc.BlendState.BlendAttachmentStates = { blendAttachmentState };
+
+			blitStateDesc.RasterizerState.RasterizerDiscardEnable	= false;
+			blitStateDesc.RasterizerState.CullMode					= ECullMode::CULL_MODE_NONE;
+			blitStateDesc.DepthStencilState.DepthWriteEnable		= false;
+			blitStateDesc.DepthStencilState.DepthTestEnable			= false;
+			blitStateDesc.DepthStencilState.DepthBoundsTestEnable	= false;
+
+			blitStateDesc.SampleMask	= 0xfffffff;
+			blitStateDesc.Subpass		= 0;
+			blitStateDesc.SampleCount	= 1;
+
+			m_BlitState = PipelineStateManager::CreateGraphicsPipelineState(&blitStateDesc);
+			if (m_BlitState == 0)
+			{
+				DEBUGBREAK();
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	void AARenderer::UpdateTextureResource(
@@ -463,21 +500,145 @@ namespace LambdaEngine
 			m_IntermediateOutputView	= MakeSharedRef(ppPerImageTextureViews[0]);
 			m_IntermediateOutput		= MakeSharedRef(m_IntermediateOutputView->GetTexture());
 
-			WriteDescriptorSets();
+			if (m_IntermediateOutputView)
+			{
+				// TAA Texture Descriptors
+				for (TSharedRef<DescriptorSet>& taaTextureSet : m_TAATextureDescriptorSets)
+				{
+					taaTextureSet->WriteTextureDescriptors(
+						&m_IntermediateOutputView,
+						Sampler::GetLinearSamplerToBind(),
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+						0, 1,
+						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+						false);
+				}
+
+				// FXAA Descriptors
+				for (TSharedRef<DescriptorSet>& set : m_FXAADescriptorSets)
+				{
+					set->WriteTextureDescriptors(
+						&m_IntermediateOutputView,
+						Sampler::GetLinearSamplerToBind(),
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+						0, 1,
+						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+						false);
+				}
+			}
 		}
 		else if (resourceName == "G_BUFFER_DEPTH_STENCIL")
 		{
 			m_DepthView	= MakeSharedRef(ppPerImageTextureViews[0]);
 			m_Depth		= MakeSharedRef(m_DepthView->GetTexture());
 
-			WriteDescriptorSets();
+			if (m_DepthView)
+			{
+				// TAA Texture Descriptors
+				for (TSharedRef<DescriptorSet>& taaTextureSet : m_TAATextureDescriptorSets)
+				{
+					taaTextureSet->WriteTextureDescriptors(
+						&m_DepthView,
+						Sampler::GetLinearSamplerToBind(),
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+						2, 1,
+						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+						false);
+				}
+			}
 		}
 		else if (resourceName == "G_BUFFER_VELOCITY")
 		{
 			m_VelocityView	= MakeSharedRef(ppPerImageTextureViews[0]);
 			m_Velocity		= MakeSharedRef(m_VelocityView->GetTexture());
 
-			WriteDescriptorSets();
+			if (m_VelocityView)
+			{
+				// TAA Texture Descriptors
+				for (TSharedRef<DescriptorSet>& taaTextureSet : m_TAATextureDescriptorSets)
+				{
+					taaTextureSet->WriteTextureDescriptors(
+						&m_VelocityView,
+						Sampler::GetLinearSamplerToBind(),
+						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+						1, 1,
+						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+						false);
+				}
+			}
+		}
+		else if (resourceName == "TAA_HISTORY_0")
+		{
+			TSharedRef<const TextureView>	taaHistoryView	= MakeSharedRef(ppPerImageTextureViews[0]);
+			TSharedRef<const Texture>		taaHistory		= MakeSharedRef(taaHistoryView->GetTexture());
+
+			if (taaHistoryView)
+			{
+				// TAA Texture Descriptors
+				const uint32 numDescriptors = m_TAATextureDescriptorSets.GetSize();
+				for (uint32 i = 0; i < numDescriptors; i++)
+				{
+					const uint32 index = i;
+					const uint32 historyIndex = (index & 0x1);
+					if (historyIndex == 0)
+					{
+						TSharedRef<DescriptorSet>& taaTextureSet = m_TAATextureDescriptorSets[i];
+						taaTextureSet->WriteTextureDescriptors(
+							&taaHistoryView,
+							Sampler::GetLinearSamplerToBind(),
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+							3, 1,
+							EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+							false);
+					}
+				}
+
+				// Set view
+				if (m_TAAHistoryViews.IsEmpty())
+				{
+					m_TAAHistoryViews.Resize(2);
+					m_TAAHistory.Resize(2);
+				}
+
+				m_TAAHistory[0]			= taaHistory;
+				m_TAAHistoryViews[0]	= taaHistoryView;
+			}
+		}
+		else if (resourceName == "TAA_HISTORY_1")
+		{
+			TSharedRef<const TextureView>	taaHistoryView	= MakeSharedRef(ppPerImageTextureViews[0]);
+			TSharedRef<const Texture>		taaHistory		= MakeSharedRef(taaHistoryView->GetTexture());
+			if (taaHistoryView)
+			{
+				// TAA Texture Descriptors
+				const uint32 numDescriptors = m_TAATextureDescriptorSets.GetSize();
+				for (uint32 i = 0; i < numDescriptors; i++)
+				{
+					const uint32 index = i;
+					const uint32 historyIndex = (index & 0x1);
+					if (historyIndex == 1)
+					{
+						TSharedRef<DescriptorSet>& taaTextureSet = m_TAATextureDescriptorSets[i];
+						taaTextureSet->WriteTextureDescriptors(
+							&taaHistoryView,
+							Sampler::GetLinearSamplerToBind(),
+							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
+							3, 1,
+							EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
+							false);
+					}
+				}
+
+				// Set view
+				if (m_TAAHistoryViews.IsEmpty())
+				{
+					m_TAAHistoryViews.Resize(2);
+					m_TAAHistory.Resize(2);
+				}
+
+				m_TAAHistory[1]			= taaHistory;
+				m_TAAHistoryViews[1]	= taaHistoryView;
+			}
 		}
 		else if (resourceName == "BACK_BUFFER_TEXTURE")
 		{
@@ -503,7 +664,23 @@ namespace LambdaEngine
 		if (resourceName == "PER_FRAME_BUFFER")
 		{
 			m_PerFrameBuffer = MakeSharedRef(ppBuffers[0]);
-			WriteDescriptorSets();
+			if (m_PerFrameBuffer)
+			{
+				// TAA Buffer Descriptor
+				uint32 numTAADescriptorSets = m_TAABufferDescriptorSets.GetSize();
+				for (uint32 i = 0; i < numTAADescriptorSets; i++)
+				{
+					TSharedRef<DescriptorSet>& taaBufferSet = m_TAABufferDescriptorSets[i];
+					uint64 offset	= 0;
+					uint64 size		= m_PerFrameBuffer->GetDesc().SizeInBytes;
+					taaBufferSet->WriteBufferDescriptors(
+						&m_PerFrameBuffer,
+						&offset,
+						&size,
+						0, 1,
+						EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
+				}
+			}
 		}
 	}
 
@@ -533,299 +710,85 @@ namespace LambdaEngine
 		commandAllocator->Reset();
 		commandList->Begin(nullptr);
 
-		if (m_AAMode == EAAMode::AAMODE_NONE)
-		{
-			Texture* pBackBuffer = const_cast<Texture*>(backBuffer.Get());
-			commandList->BlitTexture(
-				m_IntermediateOutput.Get(), 
-				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, 
-				pBackBuffer, 
-				ETextureState::TEXTURE_STATE_RENDER_TARGET, 
-				EFilterType::FILTER_TYPE_NEAREST);
-		}
-		else
-		{
-			ClearColorDesc clearColorDesc;
-			clearColorDesc.Color[0] = 0.0f;
-			clearColorDesc.Color[1] = 0.0f;
-			clearColorDesc.Color[2] = 0.0f;
-			clearColorDesc.Color[3] = 1.0f;
+		ClearColorDesc clearColorDesc;
+		clearColorDesc.Color[0] = 0.0f;
+		clearColorDesc.Color[1] = 0.0f;
+		clearColorDesc.Color[2] = 0.0f;
+		clearColorDesc.Color[3] = 1.0f;
 			
-			Viewport viewport = { };
-			viewport.MinDepth	= 0.0f;
-			viewport.MaxDepth	= 1.0f;
-			viewport.Width		= float32(width);
-			viewport.Height		= -float32(height);
-			viewport.x			= 0.0f;
-			viewport.y			= float32(height);
-			commandList->SetViewports(&viewport, 0, 1);
+		Viewport viewport = { };
+		viewport.MinDepth	= 0.0f;
+		viewport.MaxDepth	= 1.0f;
+		viewport.Width		= float32(width);
+		viewport.Height		= -float32(height);
+		viewport.x			= 0.0f;
+		viewport.y			= float32(height);
+		commandList->SetViewports(&viewport, 0, 1);
 
-			ScissorRect scissorRect;
-			scissorRect.Height	= height;
-			scissorRect.Width	= width;
-			scissorRect.x		= 0.0f;
-			scissorRect.y		= 0.0f;
-			commandList->SetScissorRects(&scissorRect, 0, 1);
+		ScissorRect scissorRect;
+		scissorRect.Height	= height;
+		scissorRect.Width	= width;
+		scissorRect.x		= 0.0f;
+		scissorRect.y		= 0.0f;
+		commandList->SetScissorRects(&scissorRect, 0, 1);
 
-			BeginRenderPassDesc beginRenderPassDesc;
-			const TextureView* ppRenderTargets[2];
-			if (m_AAMode == EAAMode::AAMODE_TAA)
-			{
-				const uint32 renderTargetIndex = ((m_Tick + 1) & 1);
-				ppRenderTargets[0] = m_TAAHistoryViews[renderTargetIndex].Get();
-				ppRenderTargets[1] = backBufferView.Get();
-				beginRenderPassDesc.RenderTargetCount	= 2;
-				beginRenderPassDesc.pRenderPass			= m_TAARenderPass.Get();
+		BeginRenderPassDesc beginRenderPassDesc;
+		const TextureView* ppRenderTargets[2];
+		if (m_AAMode == EAAMode::AAMODE_TAA)
+		{
+			const uint32 renderTargetIndex = ((m_Tick + 1) & 1);
+			ppRenderTargets[0] = m_TAAHistoryViews[renderTargetIndex].Get();
+			ppRenderTargets[1] = backBufferView.Get();
+			beginRenderPassDesc.RenderTargetCount	= 2;
+			beginRenderPassDesc.pRenderPass			= m_TAARenderPass.Get();
 
-				PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_TAAState);
-				commandList->BindGraphicsPipeline(pPipelineState);
+			PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_TAAState);
+			commandList->BindGraphicsPipeline(pPipelineState);
 
-				const uint32 historyIndex		= (m_Tick & 1);
-				const uint32 descriptorSetIndex = (modFrameIndex * 2) + historyIndex;
-				commandList->BindDescriptorSetGraphics(m_TAATextureDescriptorSets[descriptorSetIndex].Get(), m_TAALayout.Get(), 1);
-				commandList->BindDescriptorSetGraphics(m_TAABufferDescriptorSets[modFrameIndex].Get(), m_TAALayout.Get(), 0);
-			}
-			else if (m_AAMode == EAAMode::AAMODE_FXAA)
-			{
-				ppRenderTargets[0] = backBufferView.Get();
-				beginRenderPassDesc.RenderTargetCount	= 1;
-				beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
-
-				PipelineState* pPipelineState = PipelineStateManager::GetPipelineState(m_FXAAState);
-				commandList->BindGraphicsPipeline(pPipelineState);
-				commandList->BindDescriptorSetGraphics(m_FXAADescriptorSets[modFrameIndex].Get(), m_FXAALayout.Get(), 0);
-			}
-
-			beginRenderPassDesc.ppRenderTargets = ppRenderTargets;
-			beginRenderPassDesc.pDepthStencil	= nullptr;
-			beginRenderPassDesc.Width			= width;
-			beginRenderPassDesc.Height			= height;
-			beginRenderPassDesc.Flags			= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
-
-			ClearColorDesc clearColors[] = { clearColorDesc, clearColorDesc };
-			beginRenderPassDesc.pClearColors	= clearColors;
-			beginRenderPassDesc.ClearColorCount	= 2;
-			beginRenderPassDesc.Offset.x		= 0;
-			beginRenderPassDesc.Offset.y		= 0;
-
-			commandList->BeginRenderPass(&beginRenderPassDesc);
-			commandList->DrawInstanced(3, 1, 0, 0);
-			commandList->EndRenderPass();
+			const uint32 historyIndex		= (m_Tick & 1);
+			const uint32 descriptorSetIndex = (modFrameIndex * 2) + historyIndex;
+			commandList->BindDescriptorSetGraphics(m_TAATextureDescriptorSets[descriptorSetIndex].Get(), m_TAALayout.Get(), 1);
+			commandList->BindDescriptorSetGraphics(m_TAABufferDescriptorSets[modFrameIndex].Get(), m_TAALayout.Get(), 0);
 		}
+		else 
+		{
+			ppRenderTargets[0] = backBufferView.Get();
+			beginRenderPassDesc.RenderTargetCount	= 1;
+			beginRenderPassDesc.pRenderPass			= m_RenderPass.Get();
+
+			PipelineState* pPipelineState = nullptr;
+			if (m_AAMode == EAAMode::AAMODE_FXAA)
+			{
+				pPipelineState = PipelineStateManager::GetPipelineState(m_FXAAState);
+			}
+			else if (m_AAMode == EAAMode::AAMODE_NONE)
+			{
+				pPipelineState = PipelineStateManager::GetPipelineState(m_BlitState);
+			}
+
+			VALIDATE(pPipelineState != nullptr);
+
+			commandList->BindGraphicsPipeline(pPipelineState);
+			commandList->BindDescriptorSetGraphics(m_FXAADescriptorSets[modFrameIndex].Get(), m_FXAALayout.Get(), 0);
+		}
+
+		beginRenderPassDesc.ppRenderTargets = ppRenderTargets;
+		beginRenderPassDesc.pDepthStencil	= nullptr;
+		beginRenderPassDesc.Width			= width;
+		beginRenderPassDesc.Height			= height;
+		beginRenderPassDesc.Flags			= FRenderPassBeginFlag::RENDER_PASS_BEGIN_FLAG_INLINE;
+
+		ClearColorDesc clearColors[] = { clearColorDesc, clearColorDesc };
+		beginRenderPassDesc.pClearColors	= clearColors;
+		beginRenderPassDesc.ClearColorCount	= 2;
+		beginRenderPassDesc.Offset.x		= 0;
+		beginRenderPassDesc.Offset.y		= 0;
+
+		commandList->BeginRenderPass(&beginRenderPassDesc);
+		commandList->DrawInstanced(3, 1, 0, 0);
+		commandList->EndRenderPass();
 
 		commandList->End();
 		(*ppFirstExecutionStage) = commandList.Get();
-	}
-
-	void AARenderer::WriteDescriptorSets()
-	{
-		// TAA Buffer Descriptor
-		uint32 numTAADescriptorSets = m_TAABufferDescriptorSets.GetSize();
-		for (uint32 i = 0; i < numTAADescriptorSets; i++)
-		{
-			TSharedRef<DescriptorSet>& taaBufferSet = m_TAABufferDescriptorSets[i];
-			if (m_PerFrameBuffer)
-			{
-				uint64 offset = 0;
-				uint64 size = m_PerFrameBuffer->GetDesc().SizeInBytes;
-				taaBufferSet->WriteBufferDescriptors(
-					&m_PerFrameBuffer,
-					&offset,
-					&size,
-					0, 1,
-					EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER);
-			}
-		}
-
-		// TAA Texture Descriptors
-		numTAADescriptorSets = m_TAATextureDescriptorSets.GetSize();
-		for (uint32 i = 0; i < numTAADescriptorSets; i++)
-		{
-			TSharedRef<DescriptorSet>& taaTextureSet = m_TAATextureDescriptorSets[i];
-			if (m_IntermediateOutputView)
-			{
-				taaTextureSet->WriteTextureDescriptors(
-					&m_IntermediateOutputView,
-					Sampler::GetLinearSamplerToBind(),
-					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-					0, 1,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-					false);
-			}
-
-			if (m_VelocityView)
-			{
-				taaTextureSet->WriteTextureDescriptors(
-					&m_VelocityView,
-					Sampler::GetLinearSamplerToBind(),
-					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-					1, 1,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-					false);
-			}
-
-			if (m_DepthView)
-			{
-				taaTextureSet->WriteTextureDescriptors(
-					&m_DepthView,
-					Sampler::GetLinearSamplerToBind(),
-					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-					2, 1,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-					false);
-			}
-
-			if (!m_TAAHistoryViews.IsEmpty())
-			{
-				const uint32 index = i;
-				const uint32 historyIndex = (index & 0x1);
-
-				TSharedRef<TextureView>& taaHistoryView = m_TAAHistoryViews[historyIndex];
-				if (taaHistoryView)
-				{
-					taaTextureSet->WriteTextureDescriptors(
-						&taaHistoryView,
-						Sampler::GetLinearSamplerToBind(),
-						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-						3, 1,
-						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-						false);
-				}
-			}
-		}
-
-		// FXAA Descriptors
-		const uint32 numFXAADescriptorSets = m_FXAADescriptorSets.GetSize();
-		for (uint32 i = 0; i < numFXAADescriptorSets; i++)
-		{
-			TSharedRef<DescriptorSet>& set = m_FXAADescriptorSets[i];
-			if (m_IntermediateOutputView)
-			{
-				set->WriteTextureDescriptors(
-					&m_IntermediateOutputView,
-					Sampler::GetLinearSamplerToBind(),
-					ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
-					0, 1,
-					EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
-					false);
-			}
-		}
-	}
-	
-	bool AARenderer::InitHistoryTextures()
-	{
-		if (m_CommandAllocators.IsEmpty() || m_CommandLists.IsEmpty())
-		{
-			return false;
-		}
-
-		if (m_Width == 0 || m_Height == 0)
-		{
-			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
-			m_Width		= mainWindow->GetWidth();
-			m_Height	= mainWindow->GetHeight();
-		}
-
-		TextureDesc historyBuffDesc;
-		historyBuffDesc.Type		= ETextureType::TEXTURE_TYPE_2D;
-		historyBuffDesc.Format		= EFormat::FORMAT_R8G8B8A8_UNORM;
-		historyBuffDesc.Flags		= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE | FTextureFlag::TEXTURE_FLAG_RENDER_TARGET;
-		historyBuffDesc.Width		= m_Width;
-		historyBuffDesc.Height		= m_Height;
-		historyBuffDesc.ArrayCount	= 1;
-		historyBuffDesc.Depth		= 1;
-		historyBuffDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-		historyBuffDesc.Miplevels	= 1;
-		historyBuffDesc.SampleCount = 1;
-
-		TextureViewDesc historyBuffViewDesc;
-		historyBuffViewDesc.ArrayCount		= 1;
-		historyBuffViewDesc.ArrayIndex		= 0;
-		historyBuffViewDesc.Type			= ETextureViewType::TEXTURE_VIEW_TYPE_2D;
-		historyBuffViewDesc.Flags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET | FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
-		historyBuffViewDesc.Format			= historyBuffDesc.Format;
-		historyBuffViewDesc.Miplevel		= 0;
-		historyBuffViewDesc.MiplevelCount	= 1;
-
-		TSharedRef<CommandAllocator>&	commandAllocator	= m_CommandAllocators[0];
-		TSharedRef<CommandList>&		commandList			= m_CommandLists[0];
-		commandAllocator->Reset();
-		commandList->Begin(nullptr);
-
-		for (uint32 i = 0; i < 2; i++)
-		{
-			// Create texture
-			historyBuffDesc.DebugName = "TAA History Buffer" + std::to_string(i);
-
-			TSharedRef<Texture> taaHistory = RenderAPI::GetDevice()->CreateTexture(&historyBuffDesc);
-			if (!taaHistory)
-			{
-				DEBUGBREAK();
-				return false;
-			}
-
-			commandList->TransitionBarrier(
-				taaHistory.Get(), 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_ALL_STAGES, 
-				FPipelineStageFlag::PIPELINE_STAGE_FLAG_ALL_STAGES,
-				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_SHADER_READ, 
-				FMemoryAccessFlag::MEMORY_ACCESS_FLAG_SHADER_READ,
-				ETextureState::TEXTURE_STATE_UNKNOWN,
-				ETextureState::TEXTURE_STATE_SHADER_READ_ONLY);
-
-			m_TAAHistory.EmplaceBack(taaHistory);
-
-			// Create textureview
-			historyBuffViewDesc.DebugName	= "TAA History Buffer View" + std::to_string(i);;
-			historyBuffViewDesc.pTexture	= taaHistory.Get();
-
-			TSharedRef<TextureView> taaHistoryView = RenderAPI::GetDevice()->CreateTextureView(&historyBuffViewDesc);
-			if (!taaHistoryView)
-			{
-				DEBUGBREAK();
-				return false;
-			}
-
-			m_TAAHistoryViews.EmplaceBack(taaHistoryView);
-		}
-
-		commandList->End();
-
-		RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&commandList, 1, 0, nullptr, 0, nullptr, 0);
-		RenderAPI::GetGraphicsQueue()->Flush();
-
-		return true;
-	}
-	
-	bool AARenderer::OnWindowResized(const WindowResizedEvent& windowResizedEvent)
-	{
-		RenderAPI::GetGraphicsQueue()->Flush();
-
-		// Size
-		m_Width		= windowResizedEvent.Width;
-		m_Height	= windowResizedEvent.Height;
-
-		// Init history textures at the same time
-		InitHistoryTextures();
-		WriteDescriptorSets();
-		return false;
-	}
-
-	bool AARenderer::OnKeyPressed(const KeyPressedEvent& keyPressedEvent)
-	{
-		if (keyPressedEvent.Key == EKey::KEY_KEYPAD_1)
-		{
-			m_AAMode = EAAMode::AAMODE_NONE;
-		}
-		else if (keyPressedEvent.Key == EKey::KEY_KEYPAD_2)
-		{
-			m_AAMode = EAAMode::AAMODE_FXAA;
-		}
-		else if (keyPressedEvent.Key == EKey::KEY_KEYPAD_3)
-		{
-			m_AAMode = EAAMode::AAMODE_TAA;
-		}
-
-		return false;
 	}
 }

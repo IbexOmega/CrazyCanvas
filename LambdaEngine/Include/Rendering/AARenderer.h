@@ -83,13 +83,6 @@ namespace LambdaEngine
 			return m_AAMode;
 		}
 
-	private:
-		void WriteDescriptorSets();
-		bool InitHistoryTextures();
-
-		bool OnWindowResized(const WindowResizedEvent& windowResizedEvent);
-		bool OnKeyPressed(const KeyPressedEvent& keyPressedEvent);
-
 	public:
 		static FORCEINLINE AARenderer* GetInstance()
 		{
@@ -110,8 +103,8 @@ namespace LambdaEngine
 		TArray<TSharedRef<Texture>>		m_BackBuffers;
 		TArray<TSharedRef<TextureView>>	m_BackBufferViews;
 
-		TArray<TSharedRef<Texture>>		m_TAAHistory;
-		TArray<TSharedRef<TextureView>>	m_TAAHistoryViews;
+		TArray<TSharedRef<const Texture>>		m_TAAHistory;
+		TArray<TSharedRef<const TextureView>>	m_TAAHistoryViews;
 		uint32 m_Width;
 		uint32 m_Height;
 		uint64 m_Tick = 0;
@@ -122,6 +115,7 @@ namespace LambdaEngine
 		TArray<TSharedRef<CommandList>>			m_CommandLists;
 		TArray<TSharedRef<CommandAllocator>>	m_CommandAllocators;
 
+		uint64 m_BlitState;
 		TSharedRef<RenderPass> m_RenderPass;
 		TSharedRef<RenderPass> m_TAARenderPass;
 		uint64 m_TAAState;
