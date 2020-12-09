@@ -54,7 +54,7 @@ namespace LambdaEngine
 			m_Desc = *pDesc;
 			SetName(pDesc->DebugName);
 
-			LOG_DEBUG("Created sampler");
+			LOG_VULKAN_INFO("Created sampler");
 
 			return true;
 		}

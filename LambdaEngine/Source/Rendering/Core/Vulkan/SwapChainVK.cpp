@@ -161,11 +161,11 @@ namespace LambdaEngine
 
 			String name = pDesc->DebugName + " ImageSemaphore[" + std::to_string(i) + "]";
 			m_pDevice->SetVulkanObjectName(name, reinterpret_cast<uint64>(m_ImageSemaphores[i]), VK_OBJECT_TYPE_SEMAPHORE);
-			LOG_DEBUG("Created Semaphore %p", m_ImageSemaphores[i]);
+			LOG_VULKAN_INFO("Created Semaphore %p", m_ImageSemaphores[i]);
 
 			name = pDesc->DebugName + " RenderSemaphore[" + std::to_string(i) + "]";
 			m_pDevice->SetVulkanObjectName(name, reinterpret_cast<uint64>(m_RenderSemaphores[i]), VK_OBJECT_TYPE_SEMAPHORE);
-			LOG_DEBUG("Created Semaphore %p", m_RenderSemaphores[i]);
+			LOG_VULKAN_INFO("Created Semaphore %p", m_RenderSemaphores[i]);
 		}
 
 		m_Desc = *pDesc;
@@ -197,7 +197,7 @@ namespace LambdaEngine
 		m_Desc.Width	= newSize.width;
 		m_Desc.Height	= newSize.height;
 
-		LOG_DEBUG("Chosen SwapChain size w: %u h: %u", newSize.width, newSize.height);
+		LOG_VULKAN_INFO("Chosen SwapChain size w: %u h: %u", newSize.width, newSize.height);
 
 		VkSurfaceCapabilitiesKHR capabilities = { };
 		VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_pDevice->PhysicalDevice, m_Surface, &capabilities);
@@ -213,7 +213,7 @@ namespace LambdaEngine
 			return VK_ERROR_UNKNOWN;
 		}
 
-		LOG_DEBUG("Number of buffers in SwapChain '%u'", m_Desc.BufferCount);
+		LOG_VULKAN_INFO("Number of buffers in SwapChain '%u'", m_Desc.BufferCount);
 
 		// Create swapchain
 		VkSwapchainCreateInfoKHR info = { };
@@ -245,7 +245,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_DEBUG("Created SwapChain");
+			LOG_VULKAN_INFO("Created SwapChain");
 			m_SemaphoreIndex = 0;
 		}
 
@@ -354,7 +354,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_DEBUG("Created Surface");
+			LOG_VULKAN_INFO("Created Surface");
 		}
 
 		// Check for presentationsupport
@@ -393,7 +393,7 @@ namespace LambdaEngine
 
 		if (m_VkFormat.format != VK_FORMAT_UNDEFINED)
 		{
-			LOG_DEBUG("Chosen SwapChain format '%s'", VkFormatToString(m_VkFormat.format));
+			LOG_VULKAN_INFO("Chosen SwapChain format '%s'", VkFormatToString(m_VkFormat.format));
 		}
 		else
 		{
@@ -445,7 +445,7 @@ namespace LambdaEngine
 			}
 		}
 
-		LOG_DEBUG("Chosen SwapChain PresentationMode '%s'", VkPresentatModeToString(m_PresentationMode));
+		LOG_VULKAN_INFO("Chosen SwapChain PresentationMode '%s'", VkPresentatModeToString(m_PresentationMode));
 
 		return result;
 	}

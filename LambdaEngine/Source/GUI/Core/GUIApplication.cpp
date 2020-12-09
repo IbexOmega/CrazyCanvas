@@ -131,25 +131,36 @@ namespace LambdaEngine
 
 	void GUIApplication::NoesisLogHandler(const char* file, uint32_t line, uint32_t level, const char* channel, const char* message)
 	{
+#ifdef LAMBDA_DEBUG
 		if (level == 0) // [TRACE]
 		{
 			LOG_MESSAGE("[TRACE] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
-		else if (level == 1) // [DEBUG]
+
+		if (level == 1) // [DEBUG]
 		{
 			LOG_MESSAGE("[DEBUG] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
-		else if (level == 2) // [INFO]
+
+		if (level == 2) // [INFO]
 		{
 			LOG_INFO("[INFO] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
-		else if (level == 3) // [WARNING]
+#endif
+
+		if (level == 3) // [WARNING]
 		{
 			LOG_WARNING("[WARNING] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
-		else if (level == 4) // [ERROR]
+
+		if (level == 4) // [ERROR]
 		{
 			LOG_ERROR("[ERROR] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
 	}
 

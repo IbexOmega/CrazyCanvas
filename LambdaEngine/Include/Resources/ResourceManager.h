@@ -18,8 +18,6 @@ namespace LambdaEngine
 	constexpr const uint32 NUM_BLUE_NOISE_LUTS = 16;
 
 	//Meshes
-
-	//Meshes
 	constexpr GUID_Lambda GUID_MESH_QUAD					= 0;
 
 	//Material
