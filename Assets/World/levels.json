@@ -14,10 +14,10 @@
             ]
         },
         {
-            "name": "The Arena",
+            "name": "The Mines",
             "modules": [
                 {
-                    "filename": "NewMap.glb",
+                    "filename": "TheMines.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,
