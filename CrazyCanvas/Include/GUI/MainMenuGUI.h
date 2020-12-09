@@ -8,6 +8,7 @@
 #include "NsGui/GroupBox.h"
 #include "NsGui/Slider.h"
 #include "NsGui/Button.h"
+#include "NsGui/ComboBox.h"
 
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/MouseEvents.h"
@@ -55,6 +56,7 @@ private:
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
+	void SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption);
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 

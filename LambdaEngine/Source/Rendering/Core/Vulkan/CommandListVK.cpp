@@ -470,31 +470,28 @@ namespace LambdaEngine
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
 
-		UNREFERENCED_VARIABLE(srcState);
-		UNREFERENCED_VARIABLE(dstState);
-		UNREFERENCED_VARIABLE(filter);
-
 		const TextureDesc& srcTextureDesc = pSrc->GetDesc();
 		const TextureDesc& dstTextureDesc = pDst->GetDesc();
 
 		VALIDATE(srcTextureDesc.ArrayCount == dstTextureDesc.ArrayCount);
 
-		const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
-		const TextureVK*	pVkDst	= reinterpret_cast<const TextureVK*>(pDst);
+		const TextureVK* pVkSrc = reinterpret_cast<const TextureVK*>(pSrc);
+		const TextureVK* pVkDst = reinterpret_cast<const TextureVK*>(pDst);
 
 		VALIDATE(pVkSrc->GetAspectFlags() == pVkDst->GetAspectFlags());
 
-		VkImageLayout		vkSrcLayout = ConvertTextureState(srcState);
-		VkImageLayout		vkDstLayout = ConvertTextureState(dstState);
-		VkFilter			vkFilter	= ConvertFilter(filter);
+		VkImageLayout	vkSrcLayout	= ConvertTextureState(srcState);
+		VkImageLayout	vkDstLayout	= ConvertTextureState(dstState);
+		VkFilter		vkFilter	= ConvertFilter(filter);
 
 		VkImageSubresourceLayers srcSubresource = {};
-		
-		static VkImageBlit region = {};
+
+		VkImageBlit region = { };
 		region.srcSubresource.aspectMask		= pVkSrc->GetAspectFlags();
 		region.srcSubresource.mipLevel			= 0;
 		region.srcSubresource.baseArrayLayer	= 0;
 		region.srcSubresource.layerCount		= srcTextureDesc.ArrayCount;
+		region.srcOffsets[0]					= { 0, 0, 0 };
 		region.srcOffsets[1].x					= srcTextureDesc.Width;
 		region.srcOffsets[1].y					= srcTextureDesc.Height;
 		region.srcOffsets[1].z					= 1;
@@ -502,6 +499,7 @@ namespace LambdaEngine
 		region.dstSubresource.mipLevel			= 0;
 		region.dstSubresource.baseArrayLayer	= 0;
 		region.dstSubresource.layerCount		= dstTextureDesc.ArrayCount;
+		region.dstOffsets[0]					= { 0, 0, 0 };
 		region.dstOffsets[1].x					= dstTextureDesc.Width;
 		region.dstOffsets[1].y					= dstTextureDesc.Height;
 		region.dstOffsets[1].z					= 1;
@@ -527,10 +525,17 @@ namespace LambdaEngine
 			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
 			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
 
-			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+			vkCmdPipelineBarrier(
+				m_CmdBuffer, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 
+				0, 0, 
+				nullptr, 0, 
+				nullptr, 1, 
+				&imageBarrier);
 		}
 
-		if (dstState != ETextureState::TEXTURE_STATE_COPY_SRC)
+		if (dstState != ETextureState::TEXTURE_STATE_COPY_DST)
 		{
 			VkImageMemoryBarrier imageBarrier = { };
 			imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -548,10 +553,25 @@ namespace LambdaEngine
 			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
 			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
 
-			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+			vkCmdPipelineBarrier(
+				m_CmdBuffer, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 
+				0, 0, 
+				nullptr, 0, 
+				nullptr, 1, 
+				&imageBarrier);
 		}
 
-		vkCmdBlitImage(m_CmdBuffer, pVkSrc->GetImage(), VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, pVkDst->GetImage(), VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, vkFilter);
+		vkCmdBlitImage(
+			m_CmdBuffer, 
+			pVkSrc->GetImage(), 
+			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+			pVkDst->GetImage(), 
+			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+			1, 
+			&region, 
+			vkFilter);
 
 		if (srcState != ETextureState::TEXTURE_STATE_COPY_SRC)
 		{
@@ -571,10 +591,17 @@ namespace LambdaEngine
 			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
 			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
 
-			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+			vkCmdPipelineBarrier(
+				m_CmdBuffer, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 
+				0, 0, 
+				nullptr, 0, 
+				nullptr, 1, 
+				&imageBarrier);
 		}
 
-		if (dstState != ETextureState::TEXTURE_STATE_COPY_SRC)
+		if (dstState != ETextureState::TEXTURE_STATE_COPY_DST)
 		{
 			VkImageMemoryBarrier imageBarrier = { };
 			imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -592,7 +619,14 @@ namespace LambdaEngine
 			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
 			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
 
-			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+			vkCmdPipelineBarrier(
+				m_CmdBuffer, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 
+				0, 0, 
+				nullptr, 0, 
+				nullptr, 1, 
+				&imageBarrier);
 		}
 	}
 

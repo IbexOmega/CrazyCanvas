@@ -108,6 +108,18 @@ namespace LambdaEngine
 
 										writer.String("memory_type");
 										writer.String(MemoryTypeToString(resource.MemoryType));
+
+										writer.String("extra_shader_resource_access");
+										writer.Bool(resource.TextureParams.ExtraShaderResourceAccess);
+
+										writer.String("extra_render_target_access");
+										writer.Bool(resource.TextureParams.ExtraRenderTargetAccess);
+
+										writer.String("extra_depth_stencil_access");
+										writer.Bool(resource.TextureParams.ExtraDepthStencilAccess);
+
+										writer.String("extra_unordered_access");
+										writer.Bool(resource.TextureParams.ExtraUnorderedAccess);
 									}
 
 									break;
@@ -597,6 +609,42 @@ namespace LambdaEngine
 									resource.TextureParams.SamplerAddressMode	= resourceTypeParamsObject.HasMember("sampler_address_mode") ? RenderGraphSamplerAddressModeFromString(resourceTypeParamsObject["sampler_address_mode"].GetString()) : ERenderGraphSamplerAddressMode::REPEAT;
 									resource.TextureParams.SamplerBorderColor	= resourceTypeParamsObject.HasMember("sampler_border_color") ? RenderGraphSamplerBorderColorFromString(resourceTypeParamsObject["sampler_border_color"].GetString()) : ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 									resource.MemoryType							= MemoryTypeFromString(resourceTypeParamsObject["memory_type"].GetString());
+
+									if (resourceTypeParamsObject.HasMember("extra_shader_resource_access"))
+									{
+										resource.TextureParams.ExtraShaderResourceAccess = resourceTypeParamsObject["extra_shader_resource_access"].GetBool();
+									}
+									else
+									{
+										resource.TextureParams.ExtraShaderResourceAccess = false;
+									}
+
+									if (resourceTypeParamsObject.HasMember("extra_render_target_access"))
+									{
+										resource.TextureParams.ExtraRenderTargetAccess = resourceTypeParamsObject["extra_render_target_access"].GetBool();
+									}
+									else
+									{
+										resource.TextureParams.ExtraRenderTargetAccess = false;
+									}
+
+									if (resourceTypeParamsObject.HasMember("extra_depth_stencil_access"))
+									{
+										resource.TextureParams.ExtraDepthStencilAccess = resourceTypeParamsObject["extra_depth_stencil_access"].GetBool();
+									}
+									else
+									{
+										resource.TextureParams.ExtraDepthStencilAccess = false;
+									}
+
+									if (resourceTypeParamsObject.HasMember("extra_unordered_access"))
+									{
+										resource.TextureParams.ExtraUnorderedAccess = resourceTypeParamsObject["extra_unordered_access"].GetBool();
+									}
+									else
+									{
+										resource.TextureParams.ExtraUnorderedAccess = false;
+									}
 								}
 								break;
 							}
