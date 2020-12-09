@@ -68,6 +68,8 @@ bool ResourceCatalog::Init()
 		LOG_INFO("Fart");
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/wc-attemp4.glb", WEAPON_FIRST_PERSON_MESH_GUID, WEAPON_FIRST_PERSON_MATERIAL_GUID);
 
+		ResourceManager::LoadMeshFromFile("Gun/WeaponLiquid.glb", WEAPON_FIRST_PERSON_LIQUID_MESH_GUID);
+
 		// Soundeffects
 		WEAPON_SOUND_GUNFIRE_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/Shootsound.mp3");
 		WEAPON_SOUND_GUNFIRE_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Weapon/Shootsound.mp3");

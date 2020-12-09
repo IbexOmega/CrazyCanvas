@@ -66,6 +66,7 @@ namespace LambdaEngine {
 	private:
 		bool PrepareResources(CommandList* pCommandList);
 		bool CreatePipelineLayout();
+		bool CreatePipelineLayoutLiquid();
 		bool CreateDescriptorSets();
 		bool CreateShaders();
 		bool CreateCommandLists();
@@ -73,6 +74,7 @@ namespace LambdaEngine {
 		bool CreatePipelineState();
 		bool CreateBuffers();
 		void RenderCull(CommandList* pCommandList, uint64& pipelineId);
+		void RenderLiquid(CommandList* pCommandList);
 
 		void UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex);
 
@@ -123,6 +125,16 @@ namespace LambdaEngine {
 		TArray<TSharedRef<DescriptorSet>>		m_DescriptorSetList2; // Needs to switch buffer
 		TArray<TSharedRef<DescriptorSet>>		m_DescriptorSetList3; // Needs to switch buffer
 		// end
+
+		// Weapon liquid variables
+		DescriptorSet*							m_LiquidDrawArgsDescriptorSet;
+		uint64									m_PipelineStateIDNoCull = 0;
+		TSharedRef<PipelineLayout>				m_LiquidPipelineLayout = nullptr;
+		GUID_Lambda								m_LiquidVertexShaderGUID = 0;
+		GUID_Lambda								m_LiquidPixelShaderGUID = 0;
+
+		uint32									m_WeaponIndex = 0;
+		uint32									m_LiquidIndex = 0;
 
 		DescriptorCache							m_DescriptorCache;
 		uint32									m_BackBufferCount = 0;

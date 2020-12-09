@@ -37,3 +37,11 @@ struct WeaponLocalComponent
 {
 	DECL_COMPONENT(WeaponLocalComponent);
 };
+
+/*
+* WeaponLiquidComponent
+*/
+struct WeaponLiquidComponent
+{
+	DECL_COMPONENT(WeaponLiquidComponent);
+};
