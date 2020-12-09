@@ -70,7 +70,7 @@ void main()
 	
 	//3
 	const vec2 size		= u_PerFrameBuffer.Val.ViewPortSize;
-	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter * 0.5f;
+	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter;
 	
 	vec2 currentScreenSpace = in_ClipPosition.xy / in_ClipPosition.w;
 	currentScreenSpace = (currentScreenSpace * vec2(0.5f, -0.5f)) + 0.5f;

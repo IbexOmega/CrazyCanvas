@@ -1,12 +1,15 @@
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
-
-#include "Application/API/CommonApplication.h"
-#include "Application/API/Window.h"
-#include "ECS/ECSCore.h"
 #include "Game/ECS/Components/Physics/Collision.h"
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Physics/Collision.h"
+
+#include "Application/API/CommonApplication.h"
+#include "Application/API/Window.h"
+
+#include "ECS/ECSCore.h"
+
+#include "Rendering/AARenderer.h"
 
 namespace LambdaEngine
 {
@@ -76,10 +79,18 @@ namespace LambdaEngine
 			const uint16 height	= window->GetHeight();
 
 			// Generate jitter
-			constexpr uint32 SAMPLES = 8;
-			const uint64 sampleIndex = m_Tick % SAMPLES;
-			glm::vec2 jitter = Math::Hammersley2D(sampleIndex, SAMPLES);
-			jitter = (jitter * 2.0f) - 1.0f;
+			glm::vec2 jitter;
+			if (AARenderer::GetInstance()->GetAAMode() == EAAMode::AAMODE_TAA)
+			{
+				constexpr uint32 SAMPLES = 8;
+				const uint64 sampleIndex = m_Tick % SAMPLES;
+				jitter = Math::Hammersley2D(sampleIndex, SAMPLES);
+				jitter = (jitter * 2.0f) - 1.0f;
+			}
+			else
+			{
+				jitter = glm::vec2(0.0f);
+			}
 
 			cameraComp.PrevJitter = cameraComp.Jitter;
 			cameraComp.Jitter.x = jitter.x;

@@ -2375,7 +2375,7 @@ bool RenderSystem::InitIntegrationLUT()
 
 		if (AARenderer::GetInstance()->GetAAMode() == EAAMode::AAMODE_TAA)
 		{
-			const glm::vec2 jitterDiff = (camComp.Jitter - camComp.PrevJitter);
+			const glm::vec2 jitterDiff = (camComp.Jitter - camComp.PrevJitter) * 0.5f;
 			m_PerFrameData.CamData.JitterDiff = jitterDiff;
 			
 			glm::vec2 clipSpaceJitter = camComp.Jitter / m_PerFrameData.CamData.ViewPortSize;

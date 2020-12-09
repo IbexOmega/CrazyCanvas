@@ -114,11 +114,10 @@ void main()
 		out_Bitangent[vert]		= cross(tangent, normal);
 		out_TexCoord[vert]		= texcoord;
 		
-		vec4 clipPosition = projection * view * worldPosition;
+		vec4 clipPosition 		= projection * view * worldPosition;
 		out_ClipPosition[vert]	= clipPosition;
 
-		vec4 prevWorldPosition	= prevTransform * vec4(vertex.Position.xyz, 1.0f);
-		vec4 prevClipPosition	= prevProjection * prevView * prevWorldPosition;
+		vec4 prevClipPosition		= prevProjection * prevView * prevWorldPosition;
 		out_PrevClipPosition[vert]	= prevClipPosition;
 
 		out_ExtensionIndex[vert]	= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;

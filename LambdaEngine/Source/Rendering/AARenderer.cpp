@@ -547,7 +547,7 @@ namespace LambdaEngine
 				}
 			}
 		}
-		else if (resourceName == "G_BUFFER_VELOCITY")
+		else if (resourceName == "G_BUFFER_VELOCITY_FWIDTH_NORMAL")
 		{
 			m_VelocityView	= MakeSharedRef(ppPerImageTextureViews[0]);
 			m_Velocity		= MakeSharedRef(m_VelocityView->GetTexture());
