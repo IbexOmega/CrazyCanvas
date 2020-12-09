@@ -59,15 +59,24 @@ MultiplayerGUI::MultiplayerGUI(MultiplayerState* pMultiplayerState) :
 	NotiPopUpClose();
 
 	// Use Host name as default In Game name
-	DWORD length = UNLEN + 1;
-	char name[UNLEN + 1];
-	GetUserNameA(name, &length);
+	const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
+	LambdaEngine::String nameStr;
+	if (pLocalPlayer)
+	{
+		nameStr = pLocalPlayer->GetName();
+	}
+	else
+	{
+		char name[UNLEN + 1];
+		DWORD length = UNLEN + 1;
+		GetUserNameA(name, &length);
+		nameStr = name;
+	}
 
-	LambdaEngine::String nameStr = name;
 	TextBox* pNameTextBox = FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
 	pNameTextBox->SetMaxLength(MAX_NAME_LENGTH - 1);
 	pNameTextBox->SetMaxLines(1);
-	pNameTextBox->SetText(name);
+	pNameTextBox->SetText(nameStr.c_str());
 	pNameTextBox->SetText(nameStr.substr(0, glm::min<int32>((int32)nameStr.length(), pNameTextBox->GetMaxLength())).c_str());
 }
 

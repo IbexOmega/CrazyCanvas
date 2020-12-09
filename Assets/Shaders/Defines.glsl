@@ -32,13 +32,8 @@ const float PI_OVER_FOUR	= 0.78539816330f;
 const float EPSILON			= 0.001f;
 const float GAMMA			= 2.2f;
 
-const float MAX_TEMPORAL_FRAMES = 256.0f;
-
 #define MAX_NUM_AREA_LIGHTS 4
 #define AREA_LIGHT_TYPE_QUAD 1
-
-#define HIT_MASK_GAME_OBJECT    0x01
-#define HIT_MASK_LIGHT          0x02
 
 // Used in PointShadowDepthTest for PCF soft shadows
 const vec3 sampleOffsetDirections[20] = vec3[]
@@ -70,15 +65,6 @@ struct SMeshlet
 	uint VertOffset;
 	uint PrimCount;
 	uint PrimOffset;
-};
-
-struct SPrimaryInstance
-{
-	mat3x4	Transform;
-	uint	Mask_IndirectArgIndex;
-	uint	SBTRecordOffset_Flags;
-	uint	AccelerationStructureHandleTop32;
-	uint	AccelerationStructureHandleBottom32;
 };
 
 struct SInstance
@@ -212,7 +198,7 @@ struct SAtlasData
 	uint	AtlasIndex;
 };
 
-struct SUnwrapData
+struct SPaintData
 {
 	vec4 TargetPosition;
 	vec4 TargetDirectionXYZAngleW;

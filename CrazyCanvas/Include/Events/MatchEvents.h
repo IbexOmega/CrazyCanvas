@@ -99,6 +99,55 @@ public:
 	uint8 FlagTeamIndex = 0;
 };
 
+/*
+* FlagPickedUpEvent
+*/
+struct FlagPickedUpEvent : public LambdaEngine::Event
+{
+public:
+	inline FlagPickedUpEvent(LambdaEngine::Entity playerEntity, LambdaEngine::Entity flagEntity)
+		: Event()
+		, PlayerEntity(playerEntity)
+		, FlagEntity(flagEntity)
+	{
+	}
+
+	DECLARE_EVENT_TYPE(FlagPickedUpEvent);
+
+	virtual LambdaEngine::String ToString() const override
+	{
+		return LambdaEngine::String("FlagPickedUpEvent");
+	}
+
+	LambdaEngine::Entity PlayerEntity;
+	LambdaEngine::Entity FlagEntity;
+};
+
+/*
+* FlagDroppedEvent
+*/
+
+struct FlagDroppedEvent : public LambdaEngine::Event
+{
+public:
+	inline FlagDroppedEvent(LambdaEngine::Entity playerEntity, LambdaEngine::Entity flagEntity)
+		: Event()
+		, PlayerEntity(playerEntity)
+		, FlagEntity(flagEntity)
+	{
+	}
+
+	DECLARE_EVENT_TYPE(FlagDroppedEvent);
+
+	virtual LambdaEngine::String ToString() const override
+	{
+		return LambdaEngine::String("FlagDroppedEvent");
+	}
+
+	LambdaEngine::Entity PlayerEntity;
+	LambdaEngine::Entity FlagEntity;
+};
+
 
 struct GameOverEvent : public LambdaEngine::Event
 {

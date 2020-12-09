@@ -21,7 +21,6 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in vec4		in_PaintInfo4;
 layout(location = 9) in float 		in_PaintDist;
-layout(location = 10) in vec3 		in_VertDist;
 
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
 
@@ -29,11 +28,11 @@ layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 
-
 layout(location = 0) out vec3 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 2) out vec3 out_Compact_Normal;
-layout(location = 3) out vec2 out_Velocity;
+layout(location = 3) out vec4 out_Velocity_fWidth_Normal;
+layout(location = 4) out vec2 out_Geometric_Normal;
 
 void main()
 {
@@ -68,16 +67,16 @@ void main()
 	//2
 	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal				= normalize(TBN * normalize(shadingNormal));
-	out_Compact_Normal			= PackNormal(mix(shadingNormal, normalize(paintDescription.Normal+shadingNormal*0.2f), paintDescription.Interpolation));
+    shadingNormal               = mix(shadingNormal, normalize(paintDescription.Normal + shadingNormal * 0.2f), paintDescription.Interpolation);
+	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//3
-	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
-	vec2 screenVelocity			= (prevNDC - currentNDC);
-	out_Velocity				= vec2(screenVelocity);
-
-	// Wireframe
-	float border = 1.f-min(in_VertDist.x, min(in_VertDist.y, in_VertDist.z));
-	border = step(0.995f, border);
-	out_Albedo = mix(out_Albedo, vec3(1.f, 1.f, 0.f), border);
+	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * vec2(0.5f, -0.5f);
+	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f);
+	vec2 screenVelocity			= (currentNDC - prevNDC);
+	float fwidthNorm			= length(fwidth(normal));
+	out_Velocity_fWidth_Normal	= vec4(screenVelocity, fwidthNorm, 0.0f);
+	
+	//4
+	out_Geometric_Normal		= vec2(DirToOct(normal));
 }

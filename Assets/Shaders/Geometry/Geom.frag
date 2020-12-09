@@ -26,7 +26,8 @@ layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMateria
 layout(location = 0) out vec4 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 2) out vec3 out_Compact_Normal;
-layout(location = 3) out vec2 out_Velocity;
+layout(location = 3) out vec4 out_Velocity_fWidth_Normal;
+layout(location = 4) out vec2 out_Geometric_Normal;
 
 void main()
 {
@@ -40,27 +41,32 @@ void main()
 	vec4 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord);
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
-	
-	vec3 shadingNormal		= normalize((sampledNormal * 2.0f) - 1.0f);
-	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-
-	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
 	//0
 	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
 	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
 
 	//1
-	vec3 storedMaterial			= vec3(materialParameters.AO * sampledCombinedMaterial.r, materialParameters.Roughness * sampledCombinedMaterial.g, materialParameters.Metallic * sampledCombinedMaterial.b);
+	vec3 storedMaterial			= vec3(
+									materialParameters.AO * sampledCombinedMaterial.r, 
+									materialParameters.Roughness * sampledCombinedMaterial.g, 
+									materialParameters.Metallic * sampledCombinedMaterial.b);
 	out_AO_Rough_Metal_Valid	= vec4(storedMaterial, 1.0f);
 
 	//2
+	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
+	shadingNormal				= normalize(TBN * normalize(shadingNormal));
 	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//3
-	vec2 screenVelocity			= (prevNDC - currentNDC);// + in_CameraJitter;
-	out_Velocity				= vec2(screenVelocity);
+	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * vec2(0.5f, -0.5f);
+	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f);
+	vec2 screenVelocity			= (currentNDC - prevNDC);
+	float fwidthNorm			= length(fwidth(normal));
+	out_Velocity_fWidth_Normal	= vec4(screenVelocity, fwidthNorm, 0.0f);
+	
+	//4
+	out_Geometric_Normal		= vec2(DirToOct(normal));
 }

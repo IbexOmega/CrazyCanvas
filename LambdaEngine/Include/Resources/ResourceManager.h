@@ -15,6 +15,8 @@ namespace LambdaEngine
 	class GraphicsDevice;
 	class IAudioDevice;
 
+	constexpr const uint32 NUM_BLUE_NOISE_LUTS = 16;
+
 	//Meshes
 
 	//Meshes
@@ -27,8 +29,9 @@ namespace LambdaEngine
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_COLOR_MAP	= GUID_MATERIAL_DEFAULT + 1;
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_NORMAL_MAP	= GUID_TEXTURE_DEFAULT_COLOR_MAP + 1;
 	constexpr GUID_Lambda GUID_TEXTURE_DEFAULT_MASK_MAP		= GUID_TEXTURE_DEFAULT_NORMAL_MAP + 1;
+	constexpr GUID_Lambda GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP	= GUID_TEXTURE_DEFAULT_MASK_MAP + 1;
 
-	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_DEFAULT_MASK_MAP + 1;
+	constexpr GUID_Lambda SMALLEST_UNRESERVED_GUID			= GUID_TEXTURE_BLUE_NOISE_ARRAY_MAP + 1;
 
 	struct SceneLoadDesc
 	{
@@ -55,6 +58,57 @@ namespace LambdaEngine
 			GUID_Lambda MetallicMapGUID = GUID_NONE;
 			GUID_Lambda RoughnessMapGUID = GUID_NONE;
 			GUID_Lambda AOMetallicRoughnessMapGUID = GUID_NONE;
+		};
+
+		struct CombinedMaterialTextureDesc
+		{
+			inline CombinedMaterialTextureDesc(
+				GUID_Lambda aoMapGUID,
+				GUID_Lambda metallicMapGUID,
+				GUID_Lambda roughnessMapGUID,
+				GUID_Lambda metallicRoughnessMapGUID) :
+				AOMapGUID(aoMapGUID),
+				MetallicMapGUID(metallicMapGUID),
+				RoughnessMapGUID(roughnessMapGUID),
+				MetallicRoughnessMapGUID(metallicRoughnessMapGUID)
+			{
+				GetHash();
+			}
+
+			inline size_t GetHash() const
+			{
+				if (Hash == 0)
+				{
+					Hash = std::hash<GUID_Lambda>()(AOMapGUID);
+					HashCombine<GUID_Lambda>(Hash, MetallicMapGUID);
+					HashCombine<GUID_Lambda>(Hash, RoughnessMapGUID);
+					HashCombine<GUID_Lambda>(Hash, MetallicRoughnessMapGUID);
+				}
+
+				return Hash;
+			}
+
+			inline bool operator==(const CombinedMaterialTextureDesc& textureDesc) const
+			{
+				return (AOMapGUID == textureDesc.AOMapGUID && 
+					MetallicMapGUID == textureDesc.MetallicMapGUID && 
+					RoughnessMapGUID == textureDesc.RoughnessMapGUID && 
+					MetallicRoughnessMapGUID == textureDesc.MetallicRoughnessMapGUID);
+			}
+
+			GUID_Lambda AOMapGUID = GUID_NONE;
+			GUID_Lambda MetallicMapGUID = GUID_NONE;
+			GUID_Lambda RoughnessMapGUID = GUID_NONE;
+			GUID_Lambda MetallicRoughnessMapGUID = GUID_NONE;
+			mutable size_t Hash = 0;
+		};
+
+		struct CombinedMaterialTextureDescHasher
+		{
+			size_t operator()(const CombinedMaterialTextureDesc& key) const
+			{
+				return key.GetHash();
+			}
 		};
 
 		DECL_STATIC_CLASS(ResourceManager);
@@ -310,7 +364,7 @@ namespace LambdaEngine
 		static bool UnloadSoundEffect2D(GUID_Lambda guid);
 		static bool UnloadMusic(GUID_Lambda guid);
 
-		static bool DecrementTextureMaterialRef(GUID_Lambda guid);
+		static bool DecrementTextureRef(GUID_Lambda guid);
 
 		static GUID_Lambda GetMeshGUID(const String& name);
 		static GUID_Lambda GetMaterialGUID(const String& name);
@@ -414,9 +468,10 @@ namespace LambdaEngine
 		static std::unordered_map<GUID_Lambda, ISoundEffect2D*>	s_SoundEffects2D;
 		static std::unordered_map<GUID_Lambda, IMusic*>			s_Music;
 
-		static std::unordered_map<GUID_Lambda, uint32>				s_TextureMaterialRefs;
+		static std::unordered_map<GUID_Lambda, uint32>				s_TextureRefs;
 		static std::unordered_map<GUID_Lambda, MaterialLoadDesc>	s_MaterialLoadConfigurations;
 		static std::unordered_map<GUID_Lambda, ShaderLoadDesc>		s_ShaderLoadConfigurations;
+		static std::unordered_map<CombinedMaterialTextureDesc, GUID_Lambda, CombinedMaterialTextureDescHasher> s_CombinedMaterialTextureDescriptions;
 
 		//Material Combine
 		static CommandAllocator* s_pMaterialComputeCommandAllocator;

@@ -16,10 +16,11 @@ public:
 
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
-	void DisplayIndicator();
+	void DisplayIndicator(bool isFriendly);
 
 private:
 	Noesis::Storyboard* m_pDamageIndicatorStoryboard = nullptr;
+	Noesis::Image* m_pDamageIndicator				= nullptr;
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(DamageIndicatorGUI, Noesis::UserControl, "CrazyCanvas.DamageIndicatorGUI")
 

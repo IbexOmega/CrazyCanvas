@@ -20,12 +20,15 @@
 #include "NsGui/TabItem.h"
 #include "NsGui/TextBlock.h"
 #include "NsGui/ListBox.h"
+#include <NoesisGUI/Include/NsGui/Storyboard.h>
 #include "NsGui/Collection.h"
 #include "NsGui/StackPanel.h"
 #include "NsGui/Rectangle.h"
+#include "NsGui/TransformGroup.h"
 #include "NsGui/Ellipse.h"
 #include "NsGui/ObservableCollection.h"
 #include "NsGui/Button.h"
+#include "NsGui/Border.h"
 
 #include "Lobby/PlayerManagerBase.h"
 
@@ -82,22 +85,25 @@ public:
 
 	void UpdateCountdown(uint8 countDownTime);
 
-	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal, bool isFriendly);
 	void DisplayHitIndicator();
+	void DisplayCarryFlagIndicator(LambdaEngine::Entity flagEntity, bool isCarrying);
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
-	void DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex);
+	void DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, uint8 teamIndex);
 	void DisplaySpectateText(const LambdaEngine::String& name, bool isSpectating);
 	void CancelSmallPrompt();
 
 	void UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngine::String& killer, uint8 killedPlayerTeamIndex);
 	void UpdateKillFeedTimer(LambdaEngine::Timestamp delta);
 
-	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity);
-	void CreateProjectedGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
+	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity, IndicatorTypeGUI indicatorType);
+	void CreateProjectedFlagGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
+	void CreateProjectedPingGUIElement(LambdaEngine::Entity entity);
 	void RemoveProjectedGUIElement(LambdaEngine::Entity entity);
 
 	void SetWindowSize(uint32 width, uint32 height);
 	void ShowHUD(const bool isVisible);
+	void ShowNamePlate(const LambdaEngine::String& name, bool isLooking);
 
 	ScoreBoardGUI* GetScoreBoard() const;
 
@@ -106,7 +112,7 @@ private:
 
 	void InitScore();
 
-	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
+	void TranslateIndicator(Noesis::TransformGroup* pTranslation, LambdaEngine::Entity entity);
 	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
 	void SetRenderStagesInactive();
 
@@ -137,9 +143,16 @@ private:
 	Noesis::TextBlock* m_pSpectatePlayerText	= nullptr;
 
 	Noesis::Grid* m_pHUDGrid					= nullptr;
+	Noesis::Grid* m_pLookAtGrid					= nullptr;
 
 	Noesis::Grid* m_pHitIndicatorGrid			= nullptr;
 	Noesis::Grid* m_pScoreboardGrid				= nullptr;
+	Noesis::Grid* m_pCarryFlagIndicator			= nullptr;
+
+	Noesis::Border* m_pCarryFlagBorder = nullptr;
+
+	Noesis::Storyboard* m_pCarryFlagIndicatorStoryBoard	= nullptr;
+	Noesis::Storyboard* m_pCarryingFlagResetStoryBoard	= nullptr;
 
 	Noesis::TextBlock* m_pTeam1Score = nullptr;
 	Noesis::TextBlock* m_pTeam2Score = nullptr;

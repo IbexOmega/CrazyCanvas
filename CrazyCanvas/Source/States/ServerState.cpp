@@ -96,6 +96,8 @@ void ServerState::Init()
 	m_MultiplayerServer.InitInternal();
 
 	ServerSystem::GetInstance().Start();
+
+	m_PingHandler.Init();
 }
 
 bool ServerState::OnKeyPressed(const KeyPressedEvent& event)
@@ -140,7 +142,7 @@ EServerState ServerState::GetState()
 }
 
 bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& event)
-{	
+{
 	const PacketGameSettings& packet = event.Packet;
 
 	const Player* pPlayer = PlayerManagerServer::GetPlayer(event.pClient);
@@ -277,7 +279,7 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 		{
 			const Player* pPlayer = &pair.second;
 			PlayerManagerServer::SetPlayerReady(pPlayer, false);
-			PlayerManagerServer::SetPlayerState(pPlayer, EGameState::GAME_STATE_LOBBY);
+			PlayerManagerServer::SetPlayerState(pPlayer, EGameState::GAME_STATE_GAME_OVER);
 			PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 		}
 

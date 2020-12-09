@@ -1,8 +1,10 @@
 #pragma once
-#include "ECS/Systems/Player/WeaponSystem.h"
-#include "ECS/Systems/Player/HealthSystem.h"
+
+#include "ECS/Systems/GUI/NameplateSystem.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Misc/DestructionSystem.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Systems/Player/HealthSystem.h"
 
 #include "Game/State.h"
 
@@ -12,6 +14,7 @@
 #include "Application/API/Events/NetworkEvents.h"
 
 #include "EventHandlers/AudioEffectHandler.h"
+#include "EventHandlers/PingHandler.h"
 
 #include "Multiplayer/MultiplayerClient.h"
 
@@ -63,12 +66,14 @@ private:
 
 	/* Systems */
 	HUDSystem m_HUDSystem;
+	NameplateSystem m_NameplateSystem;
 	SpectateCameraSystem m_CamSystem;
 	MultiplayerClient m_MultiplayerClient;
 	DestructionSystem m_DestructionSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
+	PingHandler m_PingHandler;
 
 	/* Commands */
 	bool m_UpdateShaders = false;

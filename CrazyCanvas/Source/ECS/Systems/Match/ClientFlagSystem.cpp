@@ -11,6 +11,9 @@
 
 #include "Physics/CollisionGroups.h"
 
+#include "Events/MatchEvents.h"
+#include "Application/API/Events/EventQueue.h"
+
 #include "Resources/ResourceManager.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
@@ -53,6 +56,9 @@ void ClientFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 		//Set Flag Offset
 		const physx::PxBounds3& playerBoundingBox = playerCollisionComponent.pController->getActor()->getWorldBounds();
 		flagOffsetComponent.Offset = glm::vec3(0.0f, playerBoundingBox.getDimensions().y / 2.0f, 0.0f);
+
+		FlagPickedUpEvent event(playerEntity, flagEntity);
+		EventQueue::SendEvent(event);
 	};
 
 	pECS->ScheduleJobASAP(job);
@@ -82,12 +88,16 @@ void ClientFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 		// Reset Flag orientation
 		flagAnimAttachedComponent.Transform = glm::mat4(1.0f);
 
+		FlagDroppedEvent event(flagParentComponent.Parent, flagEntity);
+		EventQueue::SendEvent(event);
+
 		//Set Flag Carrier (None)
 		flagParentComponent.Attached	= false;
 		flagParentComponent.Parent		= UINT32_MAX;
 
 		//Set Position
 		flagPositionComponent.Position	= dropPosition;
+
 	};
 
 	pECS->ScheduleJobASAP(job);
