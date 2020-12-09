@@ -196,6 +196,33 @@ namespace LambdaEngine
 			scissorRect.Height = 1;
 			m_ScissorRect = scissorRect;
 		}
+
+		{
+			m_MaxInnerTessLevel = 24.0f;
+			m_MaxOuterTessLevel = 24.0f;
+			m_MaxTrianglesPerSubTess = 100.0f;
+
+			// Calculate max tessellation primitiveCount
+			uint64 innerTriCount = 0.0f;
+			if (m_MaxInnerTessLevel > 1.0 && uint32(m_MaxInnerTessLevel) % 2U == 0U) // Even
+			{
+				innerTriCount = uint64(6.0f * powf((m_MaxInnerTessLevel * 0.5f) - 1.0f, 2.0f));
+			}
+			else // Odd
+			{
+				innerTriCount = uint64(1.5f * (m_MaxInnerTessLevel - 1.0f) * (m_MaxInnerTessLevel - 3.0f) + 1);
+			}
+
+			// Calculate outer faces
+			uint64 sum = uint64(m_MaxOuterTessLevel * 3U);
+			uint64 outerTriCount = (sum == 3) ? 1 : sum;
+			if (m_MaxInnerTessLevel > 1.0) // Even
+			{
+				outerTriCount = 3U * m_MaxInnerTessLevel + sum - 6U;
+			}
+
+			m_MaxTessellationTriangleCount = innerTriCount + outerTriCount;
+		}
 	}
 
 	void MeshTessellator::Release()
@@ -217,52 +244,27 @@ namespace LambdaEngine
 
 	void MeshTessellator::Tessellate(Mesh* pMesh)
 	{
-		LOG_WARNING("Tesselate...");
+		LOG_INFO("Tesselate...");
 
+#ifdef LAMBDA_DEVELOPMENT
 		const uint64 PRE_MESH_VERTEX_COUNT = pMesh->Vertices.GetSize();
-		const uint64 MAX_ALLOWED_TRIANGLE_COUNT = 50;
+#endif
 		const uint64 PRE_MESH_TRIANGLE_COUNT = pMesh->Indices.GetSize() / 3U;
+	
+		uint64 tesselatedVertexCount = (m_MaxTessellationTriangleCount * m_MaxTrianglesPerSubTess) * 3U;
 
-		// Calculate max tessellation primitiveCount
-		const float MaxInnerTessLevel = 18.0f;
-		const float MaxOuterTessLevel = 18.0f;
-
-		// Calculate inner faces
-		uint64 innerTriCount = 0.0f;
-		if (MaxInnerTessLevel > 1.0 && uint32(MaxInnerTessLevel) % 2U == 0U) // Even
-		{
-			innerTriCount = uint64(6.0f*powf((MaxInnerTessLevel * 0.5f) - 1.0f, 2.0f));
-		}
-		else // Odd
-		{
-			innerTriCount = uint64(1.5f * (MaxInnerTessLevel - 1.0f) * (MaxInnerTessLevel - 3.0f) + 1);
-		}
-
-		// Calculate outer faces
-		uint64 sum = uint64(MaxOuterTessLevel * 3U);
-		uint64 outerTriCount = (sum == 3) ? 1 : sum;
-		if (MaxInnerTessLevel > 1.0) // Even
-		{
-			outerTriCount = 3U * MaxInnerTessLevel + sum-6U;
-		}
-
-		uint64 tesselatedTriCount = innerTriCount + outerTriCount;
-		uint64 tesselatedVertexCount = (tesselatedTriCount * MAX_ALLOWED_TRIANGLE_COUNT) * 3U;
-
-		LOG_WARNING("Create buffers...");
+		LOG_INFO("Create buffers...");
 		static uint64 signalValue = 0;
 		{
 			m_pCommandAllocator->Reset();
 			m_pCommandList->Begin(nullptr);
 
-			// ------- Create buffers if needed and copy data to them ------
-
 			// Create buffer for tessellation calculations
 			SCalculationData meshCalculationData = {};
 			meshCalculationData.ScaleMatrix = glm::scale(pMesh->DefaultScale);
 			meshCalculationData.PrimitiveCounter = 0;
-			meshCalculationData.MaxInnerLevelTess = MaxInnerTessLevel;
-			meshCalculationData.MaxOuterLevelTess = MaxOuterTessLevel;
+			meshCalculationData.MaxInnerLevelTess = m_MaxInnerTessLevel;
+			meshCalculationData.MaxOuterLevelTess = m_MaxOuterTessLevel;
 			uint64 size = sizeof(SCalculationData);
 			CreateAndCopyInBuffer(m_pCommandList, &m_pCalculationDataBuffer, &m_pCalculationDataStagingBuffer, (void*)&meshCalculationData, size, "Tessellator Calculation Data Buffer", FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER);
 
@@ -308,18 +310,24 @@ namespace LambdaEngine
 				m_pOutDescriptorSet->WriteBufferDescriptors(buffers, offsets, sizes, 0, 1, EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER);
 			}
 		}
-		LOG_WARNING("Done");
+		LOG_INFO("Done");
 
-		LOG_WARNING("Tessellate...");
-		uint32 totalTriangleCount = 0;
+		LOG_INFO("Tessellating Mesh..");
 
+		// Calculate subTess data
 		float fractPart = 0.0f;
 		float intpart = 0.0f;
-		fractPart = modf(pMesh->Indices.GetSize() / (float)(MAX_ALLOWED_TRIANGLE_COUNT * 3U), &intpart);
+		fractPart = modf(pMesh->Indices.GetSize() / (float)(m_MaxTrianglesPerSubTess * 3U), &intpart);
 		bool divisible = fractPart == 0.0f;
+
+		// Calculate subTess count
 		const uint32 subTessellations = divisible ? (uint32)intpart : (uint32)intpart + 1U;
-		const uint32 subIndexCount = intpart == 0.0f ? pMesh->Indices.GetSize() : (MAX_ALLOWED_TRIANGLE_COUNT * 3U);
+
+		// Calculate for each sub tessellation the indices that should be drawn 
+		const uint32 subIndexCount = intpart == 0.0f ? pMesh->Indices.GetSize() : (m_MaxTrianglesPerSubTess * 3U);
 		const uint32 lastSubIndexCount = roundf(subIndexCount * fractPart);
+		uint32 totalTriangleCount = 0;
+
 		for (int i = 0; i < subTessellations; i++)
 		{
 			uint32 indexOffset = i * subIndexCount;
@@ -343,9 +351,10 @@ namespace LambdaEngine
 			memcpy(&pMesh->Vertices[offset], pMapped, vertexCount * sizeof(Vertex));
 			m_pOutVertexSecondStagingBuffer->Unmap();
 		}
+		LOG_INFO("Done");
 
 		// Merge Vertices
-		LOG_WARNING("Merge Vertices");
+		LOG_INFO("Merge Vertices");
 		const uint32 vertexCount = totalTriangleCount * 3U;
 		pMesh->Vertices.Resize(vertexCount);
 		TArray<Vertex> vertices = pMesh->Vertices;
@@ -358,15 +367,13 @@ namespace LambdaEngine
 		pMesh->Vertices.Reserve(vertexCount);
 
 		uint32 uniqueVertices = MergeDuplicateVertices(vertices, pMesh);
+
+		// Compact vertices
 		pMesh->Vertices.Resize(uniqueVertices);
 
 		// Remove the unused elements.
-		LOG_WARNING("Mesh Vertex Change: %d -> %d", pMesh->Vertices.GetSize(), (uint32)PRE_MESH_VERTEX_COUNT);
+		LOG_WARNING("Mesh Merged Vertex Change: %d -> %d", (uint32)PRE_MESH_VERTEX_COUNT, pMesh->Vertices.GetSize());
 		LOG_WARNING("Done");
-		
-		SAFERELEASE(m_pOutVertexBuffer);
-		SAFERELEASE(m_pOutVertexFirstStagingBuffer);
-		SAFERELEASE(m_pOutVertexSecondStagingBuffer);
 
 		LOG_WARNING("Tessellation Complete");
 	}
@@ -409,7 +416,6 @@ namespace LambdaEngine
 		SAFERELEASE(m_pInVertexStagingBuffer);
 
 		SAFERELEASE(m_pOutVertexBuffer);
-		SAFERELEASE(m_pOutVertexFirstStagingBuffer);
 		SAFERELEASE(m_pOutVertexSecondStagingBuffer);
 
 		SAFERELEASE(m_pCalculationDataBuffer);
@@ -581,11 +587,6 @@ namespace LambdaEngine
 			bufferDesc.SizeInBytes = size;
 			bufferSize0 = size;
 			(*outSecondStagingBuffer) = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		}
-
-		if (stagingBufferSize || bufferSize0)
-		{
-			LOG_ERROR("Allocated %s: %d bytes & %d", name.c_str(), stagingBufferSize, bufferSize0);
 		}
 	}
 }

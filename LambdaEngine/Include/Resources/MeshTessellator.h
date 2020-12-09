@@ -45,6 +45,26 @@ namespace LambdaEngine
 		void CreateOutBuffer(CommandList* pCommandList, Buffer** outBuffer, Buffer** outSecondStagingBuffer, uint64 size, const String& name);
 
 	private:
+		/*
+		*  Max Inner Tessellation Level for Primitives
+		*/
+		float m_MaxInnerTessLevel = 0;
+
+		/*
+		*  Max Outer Tessellation Levels for Primitives
+		*/
+		float m_MaxOuterTessLevel = 0;
+
+		/*
+		*  Worst case tessellation of primitive triangle count
+		*/
+		uint32 m_MaxTessellationTriangleCount = 0;
+
+		/*
+		*  Max triangle count per tessellation execution
+		*/
+		uint32 m_MaxTrianglesPerSubTess = 0;
+
 		CommandAllocator* m_pCommandAllocator;
 		CommandList* m_pCommandList;
 
@@ -72,7 +92,6 @@ namespace LambdaEngine
 		Buffer* m_pInIndicesStagingBuffer = nullptr;
 		Buffer* m_pInIndicesBuffer = nullptr;
 
-		Buffer* m_pOutVertexFirstStagingBuffer = nullptr;
 		Buffer* m_pOutVertexSecondStagingBuffer = nullptr;
 		Buffer* m_pOutVertexBuffer = nullptr;
 
