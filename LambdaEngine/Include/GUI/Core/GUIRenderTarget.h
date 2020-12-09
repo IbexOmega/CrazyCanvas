@@ -25,6 +25,9 @@ namespace LambdaEngine
 	class GUIRenderTarget : public Noesis::RenderTarget
 	{
 	public:
+		DECL_REMOVE_COPY(GUIRenderTarget);
+		DECL_REMOVE_MOVE(GUIRenderTarget);
+
 		GUIRenderTarget();
 		~GUIRenderTarget();
 
@@ -42,6 +45,8 @@ namespace LambdaEngine
 
 		FORCEINLINE uint32 GetWidth() const { return m_Desc.Width; }
 		FORCEINLINE uint32 GetHeight() const { return m_Desc.Height; }
+
+		FORCEINLINE uint32 GetIndex() const { return m_GUIRenderTargetIndex; }
 
 	private:
 		bool CreateColorTextures(const GUIRenderTargetDesc* pDesc);
@@ -66,5 +71,11 @@ namespace LambdaEngine
 		ClearColorDesc	m_pClearColorDesc[3];
 
 		GUIRenderTargetDesc m_Desc = { };
+
+		uint32 m_GUIRenderTargetIndex = 0;
+
+	private:
+		inline static uint32 s_GUIRenderTargetIndex = 0;
+
 	};
 }

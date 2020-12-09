@@ -1,4 +1,4 @@
-#include "Rendering/RenderGraph.h"
+ #include "Rendering/RenderGraph.h"
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/LineRenderer.h"
@@ -1542,6 +1542,30 @@ namespace LambdaEngine
 						textureViewDesc.ArrayCount		= arrayCount;
 						textureViewDesc.Miplevel		= 0U;
 						textureViewDesc.ArrayIndex		= 0U;
+
+						if (pResourceDesc->TextureParams.ExtraShaderResourceAccess)
+						{
+							textureDesc.Flags		|= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+							textureViewDesc.Flags	|= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+						}
+						
+						if (pResourceDesc->TextureParams.ExtraRenderTargetAccess)
+						{
+							textureDesc.Flags		|= FTextureFlag::TEXTURE_FLAG_RENDER_TARGET;
+							textureViewDesc.Flags	|= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+						}
+						
+						if (pResourceDesc->TextureParams.ExtraDepthStencilAccess)
+						{
+							textureDesc.Flags		|= FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL;
+							textureViewDesc.Flags	|= FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL;
+						}
+						
+						if (pResourceDesc->TextureParams.ExtraUnorderedAccess)
+						{
+							textureDesc.Flags		|= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+							textureViewDesc.Flags	|= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+						}
 
 						if (!isDepthStencil)
 						{
@@ -3628,8 +3652,6 @@ namespace LambdaEngine
 				}
 			}
 		}
-
-		LOG_MESSAGE("Updating Resource: %s", pResource->Name.c_str());
 
 		if (pResource->ResourceBindings.GetSize() > 0)
 		{

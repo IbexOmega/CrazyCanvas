@@ -7,10 +7,6 @@
         {
             "Name": "Herman's server",
             "Address": "81.170.143.133:4444"
-        },
-        {
-            "Name": "",
-            "Address": "127.0.0.1:4444"
         }
     ]
 }

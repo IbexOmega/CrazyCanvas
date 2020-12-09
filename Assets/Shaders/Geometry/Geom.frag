@@ -17,7 +17,15 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
 
-layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters  	{ SMaterialParameters val[]; }  b_MaterialParameters;
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
+{
+	SPerFrameBuffer Val;
+} u_PerFrameBuffer;
+
+layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters 
+{
+	SMaterialParameters val[]; 
+} b_MaterialParameters;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
@@ -45,8 +53,8 @@ void main()
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
 	//0
-	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
-	out_Albedo					= vec4(storedAlbedo, sampledAlbedo.a);
+	vec3 storedAlbedo	= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
+	out_Albedo			= vec4(storedAlbedo, sampledAlbedo.a);
 
 	//1
 	vec3 storedMaterial			= vec3(
@@ -59,14 +67,26 @@ void main()
 	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal				= normalize(TBN * normalize(shadingNormal));
 	out_Compact_Normal			= PackNormal(shadingNormal);
-
+	
 	//3
-	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * vec2(0.5f, -0.5f);
-	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * vec2(0.5f, -0.5f);
-	vec2 screenVelocity			= (currentNDC - prevNDC);
+	const vec2 size		= u_PerFrameBuffer.Val.ViewPortSize;
+	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter;
+	
+	vec2 currentScreenSpace = in_ClipPosition.xy / in_ClipPosition.w;
+	currentScreenSpace = (currentScreenSpace * vec2(0.5f, -0.5f)) + 0.5f;
+	currentScreenSpace = currentScreenSpace * size;
+
+	vec2 prevScreenSpace = in_PrevClipPosition.xy / in_PrevClipPosition.w;
+	prevScreenSpace = (prevScreenSpace * vec2(0.5f, -0.5f)) + 0.5f;
+	prevScreenSpace = prevScreenSpace * size;
+
+	vec2 screenVelocity	= currentScreenSpace - prevScreenSpace;
+	screenVelocity = screenVelocity - jitter;
+	screenVelocity = screenVelocity / size;
+	
 	float fwidthNorm			= length(fwidth(normal));
 	out_Velocity_fWidth_Normal	= vec4(screenVelocity, fwidthNorm, 0.0f);
-	
+
 	//4
 	out_Geometric_Normal		= vec2(DirToOct(normal));
 }

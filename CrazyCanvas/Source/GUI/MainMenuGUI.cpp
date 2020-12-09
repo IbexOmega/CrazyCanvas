@@ -22,6 +22,7 @@
 
 #include "Game/ECS/Systems/CameraSystem.h"
 
+#include "Rendering/AARenderer.h"
 #include "Rendering/RenderGraph.h"
 
 using namespace Noesis;
@@ -177,8 +178,6 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 		return;
 #endif
 
-	LambdaEngine::GUIApplication::SetView(nullptr);
-
 	PacketGameSettings settings;
 	settings.MapID		= 0;
 	settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
@@ -256,13 +255,19 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
+	// AA
+	Noesis::ComboBox* pAAComboBox = FrameworkElement::FindName<Noesis::ComboBox>("AAComboBox");
+	LambdaEngine::String AAOption =  static_cast<TextBlock*>(pAAComboBox->GetSelectedItem())->GetText();
+	EngineConfig::SetStringProperty(EConfigOption::CONFIG_OPTION_AA, AAOption);
+	SetAA(pAAComboBox, AAOption);
+	
 	// Music Volume
 	Noesis::Slider* pMusicVolumeSlider = FrameworkElement::FindName<Slider>("MusicVolumeSlider");
 	float musicVolume = pMusicVolumeSlider->GetValue();
 	float maxMusicVolume = pVolumeSlider->GetMaximum();
 	musicVolume /= maxMusicVolume;
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC, musicVolume);
-	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->SetVolume(musicVolume);
+	AudioAPI::GetDevice()->SetMusicVolume(musicVolume);
 
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
@@ -345,7 +350,7 @@ void MainMenuGUI::OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, con
 	float volume = pVolumeSlider->GetValue();
 	float maxVolume = pVolumeSlider->GetMaximum();
 	volume /= maxVolume;
-	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->SetVolume(volume);
+	AudioAPI::GetDevice()->SetMusicVolume(volume);
 }
 
 void MainMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
@@ -469,7 +474,7 @@ void MainMenuGUI::SetDefaultSettings()
 	NS_ASSERT(pMusicVolumeSlider);
 	float musicVolume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC);
 	pMusicVolumeSlider->SetValue(musicVolume * pMusicVolumeSlider->GetMaximum());
-	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->SetVolume(musicVolume);
+	AudioAPI::GetDevice()->SetMusicVolume(musicVolume);
 
 	//Set initial FOV
 	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
@@ -497,15 +502,21 @@ void MainMenuGUI::SetDefaultSettings()
 
 	// Mesh Shader Toggle
 	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
-	CheckBox* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	Noesis::CheckBox* pToggleMeshShader = FrameworkElement::FindName<Noesis::CheckBox>("MeshShaderCheckBox");
 	NS_ASSERT(pToggleMeshShader);
 	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
 
 	// Fullscreen Toggle
 	m_FullscreenEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN);
-	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	Noesis::CheckBox* pToggleFullscreen = FrameworkElement::FindName<Noesis::CheckBox>("FullscreenCheckBox");
 	NS_ASSERT(pToggleFullscreen);
 	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
+
+	// AA option
+	LambdaEngine::String AAOption = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_AA);
+	Noesis::ComboBox* pAAComboBox = FrameworkElement::FindName<Noesis::ComboBox>("AAComboBox");
+	NS_ASSERT(pAAComboBox);
+	SetAA(pAAComboBox, AAOption);
 }
 
 void MainMenuGUI::SetDefaultKeyBindings()
@@ -538,6 +549,25 @@ void MainMenuGUI::SetDefaultKeyBindings()
 		{
 			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(ButtonToString(mouseButton));
 		}
+	}
+}
+
+void MainMenuGUI::SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption)
+{
+	if (AAOption == "NONE")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_NONE);
+		pComboBox->SetSelectedIndex(0);
+	}
+	else if (AAOption == "FXAA")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_FXAA);
+		pComboBox->SetSelectedIndex(1);
+	}
+	else if (AAOption == "TAA")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_TAA);
+		pComboBox->SetSelectedIndex(2);
 	}
 }
 

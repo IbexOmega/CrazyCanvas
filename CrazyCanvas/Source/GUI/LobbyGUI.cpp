@@ -221,6 +221,8 @@ void LobbyGUI::UpdatePlayerReady(const Player& player)
 	{
 		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Collapsed);
 	}
+
+	UpdateReadyButton();
 }
 
 void LobbyGUI::UpdatePlayerScore(const Player& player)
@@ -269,18 +271,21 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 
 void LobbyGUI::SetHostMode(bool isHost)
 {
-	Button* pReadyButton = FrameworkElement::FindName<Button>("ReadyButton");
+	ToggleButton* pReadyButton = FrameworkElement::FindName<ToggleButton>("ReadyButton");
 
 	if (isHost)
 	{
 		pReadyButton->SetContent("Start");
+		pReadyButton->SetIsChecked(false);
 		m_pSettingsClientStackPanel->SetVisibility(Visibility_Hidden);
 		m_pSettingsHostStackPanel->SetVisibility(Visibility_Visible);
+		UpdateReadyButton();
 		SendGameSettings();
 	}
 	else
 	{
 		pReadyButton->SetContent("Ready");
+		pReadyButton->SetIsEnabled(true);
 		m_pSettingsClientStackPanel->SetVisibility(Visibility_Visible);
 		m_pSettingsHostStackPanel->SetVisibility(Visibility_Hidden);
 	}
@@ -555,6 +560,8 @@ bool LobbyGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const ch
 	NS_CONNECT_EVENT(Button, Click, OnButtonCancelControlsClick);
 	NS_CONNECT_EVENT(Slider, ValueChanged, OnLookSensitivityChanged);
 
+	NS_CONNECT_EVENT(ToggleButton, IsEnabledChanged, OnReadyButtonEnabledChange);
+
 	return false;
 }
 
@@ -645,6 +652,31 @@ void LobbyGUI::UpdatePlayersLabel()
 {
 	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 	m_pPlayersLabel->SetContent((std::to_string(players.size()) + "/" + std::to_string(m_pGameSettings->Players) + " Players").c_str());
+}
+
+void LobbyGUI::UpdateReadyButton()
+{
+	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayerLocal->IsHost())
+	{
+		Button* pReadyButton = FrameworkElement::FindName<Button>("ReadyButton");
+
+		const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
+		for (auto& pair : players)
+		{
+			const Player& player = pair.second;
+			if (&player != pPlayerLocal)
+			{
+				if (!player.IsReady() || player.GetState() != EGameState::GAME_STATE_LOBBY)
+				{
+					pReadyButton->SetIsEnabled(false);
+					return;
+				}
+			}
+		}
+
+		pReadyButton->SetIsEnabled(true);
+	}
 }
 
 void LobbyGUI::SetDefaultSettings()
@@ -761,20 +793,29 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 
 		if (setting == SETTING_CHANGE_TEAM_1_COLOR)
 		{
-			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
-			m_pGameSettings->TeamColor1 = (uint8)indexSelected;
+			if (m_pGameSettings->TeamColor2 != (uint8)indexSelected)
+			{
+				m_pGameSettings->TeamColor1 = (uint8)indexSelected;
+				pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
+			}
 		}
 		else
 		{
-			pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
-			m_pGameSettings->TeamColor2 = (uint8)indexSelected;
+			if (m_pGameSettings->TeamColor1 != (uint8)indexSelected)
+			{
+				m_pGameSettings->TeamColor2 = (uint8)indexSelected;
+				pLabelColorBrush = static_cast<SolidColorBrush*>(m_pTeam2Label->GetForeground());
+			}
 		}
 
-		pComboBox->SetBackground(pBoxColorBrush);
-		pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
+		if (pLabelColorBrush)
+		{
+			pComboBox->SetBackground(pBoxColorBrush);
+			pLabelColorBrush->SetColor(pBoxColorBrush->GetColor());
 
-		m_pChatPanel->GetChildren()->Clear();
-		ChatManager::RenotifyAllChatMessages();
+			m_pChatPanel->GetChildren()->Clear();
+			ChatManager::RenotifyAllChatMessages();
+		}
 	}
 
 	SendGameSettings();
@@ -789,6 +830,24 @@ void LobbyGUI::OnTextBoxChanged(BaseComponent* pSender, const RoutedEventArgs& a
 		strcpy(m_pGameSettings->ServerName, pTextBox->GetText());
 
 		SendGameSettings();
+	}
+}
+
+void LobbyGUI::OnReadyButtonEnabledChange(BaseComponent* pSender, const DependencyPropertyChangedEventArgs& args)
+{
+	ToggleButton* pToggleButton = static_cast<ToggleButton*>(pSender);
+
+	if (pToggleButton->GetIsEnabled())
+	{
+		SolidColorBrush* pBrush = (SolidColorBrush*)pToggleButton->GetBackground();
+		Color color;
+		Color::TryParse("#4CE244", color);
+		pBrush->SetColor(color);
+	}
+	else
+	{
+		SolidColorBrush* pBrush = (SolidColorBrush*)pToggleButton->GetBackground();
+		pBrush->SetColor(Color::Gray());
 	}
 }
 

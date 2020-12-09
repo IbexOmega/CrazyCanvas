@@ -110,7 +110,6 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 
 				packet.DeltaAction = gameState.DeltaAction;
 				packet.Walking = gameState.Walking;
-				packet.InAir = inAir;
 
 				packet.Angle = currentGameState.Angle;
 				playerActionResponseComponent.SendPacket(packet);

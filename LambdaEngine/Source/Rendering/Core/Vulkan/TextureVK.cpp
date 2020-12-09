@@ -91,7 +91,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_DEBUG("Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
+			LOG_VULKAN_INFO("Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 
 			m_AspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
 			if (pDesc->Flags & FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL)
@@ -145,7 +145,7 @@ namespace LambdaEngine
 
 		SetName(m_Desc.DebugName);
 
-		LOG_DEBUG("Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
+		LOG_VULKAN_INFO("Created texture w=%d, h=%d, d=%d", pDesc->Width, pDesc->Height, pDesc->Depth);
 	}
 
 	void TextureVK::InternalRelease()

@@ -329,7 +329,6 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 		LOG_ERROR("[MatchClient]: Failed to create projectile!");
 	}
 
-	LOG_INFO("CLIENT: Weapon fired");
 	return true;
 }
 

@@ -89,7 +89,7 @@ namespace LambdaEngine
 			m_Desc.pTexture->AddRef();
 			SetName(pDesc->DebugName);
 
-			LOG_DEBUG("Created ImageView");
+			LOG_VULKAN_INFO("Created ImageView");
 
 			return true;
 		}
@@ -110,7 +110,7 @@ namespace LambdaEngine
 		m_Desc.DebugName = debugName;
 	}
 
-	Texture* TextureViewVK::GetTexture()
+	Texture* TextureViewVK::GetTexture() const
 	{
 		return m_Desc.pTexture;
 	}

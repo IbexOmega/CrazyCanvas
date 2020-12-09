@@ -54,20 +54,30 @@ namespace LambdaEngine
 		return GetBufferSize() + HeaderSize;
 	}
 
-	NetworkSegment* NetworkSegment::Write(const void* pBuffer, uint16 bytes)
+	bool NetworkSegment::Write(const void* pBuffer, uint16 bytes)
 	{
-		ASSERT(m_SizeOfBuffer + bytes <= MAXIMUM_SEGMENT_SIZE);
+		if (m_SizeOfBuffer + bytes > MAXIMUM_SEGMENT_SIZE)
+		{
+			LOG_ERROR("NetworkSegment::Write() Tried to write out of bounds, WriteHead: %u, ToWrite: %u, Buffer: %u", m_SizeOfBuffer, bytes, MAXIMUM_SEGMENT_SIZE);
+			return false;
+		}
+
 		memcpy(m_pBuffer + m_SizeOfBuffer, pBuffer, bytes);
 		m_SizeOfBuffer += bytes;
-		return this;
+		return true;
 	}
 
-	NetworkSegment* NetworkSegment::Read(void* pBuffer, uint16 bytes)
+	bool NetworkSegment::Read(void* pBuffer, uint16 bytes)
 	{
-		ASSERT(m_ReadHead + bytes <= m_SizeOfBuffer);
+		if (m_ReadHead + bytes > m_SizeOfBuffer)
+		{
+			LOG_ERROR("NetworkSegment::Read() Tried to read out of bounds, ReadHead: %u, ToRead: %u, Buffer: %u", m_ReadHead, bytes, m_SizeOfBuffer);
+			return false;
+		}
+			
 		memcpy(pBuffer, m_pBuffer + m_ReadHead, bytes);
 		m_ReadHead += bytes;
-		return this;
+		return true;
 	}
 
 	uint64 NetworkSegment::GetRemoteSalt() const

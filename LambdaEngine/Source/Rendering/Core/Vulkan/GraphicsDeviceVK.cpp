@@ -344,7 +344,7 @@ namespace LambdaEngine
 		if (result == VK_SUCCESS)
 		{
 			m_UsedAllocations++;
-			LOG_DEBUG("Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+			LOG_VULKAN_INFO("Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 		}
 		else
 		{
@@ -361,7 +361,7 @@ namespace LambdaEngine
 		vkFreeMemory(Device, deviceMemory, nullptr);
 
 		m_UsedAllocations--;
-		LOG_DEBUG("Freed memoryblock. Allocations %u/%u", m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+		LOG_VULKAN_INFO("Freed memoryblock. Allocations %u/%u", m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 	}
 
 	void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
@@ -1755,7 +1755,6 @@ namespace LambdaEngine
 		void* pUserData)
 	{
 		UNREFERENCED_VARIABLE(messageType);
-		UNREFERENCED_VARIABLE(pCallbackData);
 		UNREFERENCED_VARIABLE(pUserData);
 
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)

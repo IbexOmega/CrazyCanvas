@@ -46,6 +46,7 @@
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
+#include "Game/ECS/Systems/Physics/VelocityComponentSystem.h"
 #include "Game/ECS/Systems/Networking/NetworkSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
@@ -55,6 +56,8 @@
 #include "GUI/Core/GUIApplication.h"
 
 #include "Debug/Profiler.h"
+
+#include "Threading/API/PlatformThread.h"
 
 #include <imgui/imgui.h>
 
@@ -71,6 +74,8 @@ namespace LambdaEngine
 	*/
 	void EngineLoop::Run()
 	{
+		LOG_INFO("EngineLoop Run called from Thread: %llx", PlatformThread::GetCurrentThreadHandle());
+
 		Clock fixedClock;
 		Timestamp accumulator = Timestamp(0);
 
@@ -143,6 +148,7 @@ namespace LambdaEngine
 		}
 
 		TransformApplierSystem::GetInstance()->Init();
+		VelocityComponentSystem::GetInstance()->Init();
 		return true;
 	}
 
@@ -331,7 +337,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!ResourceLoader::Init())
+ 		if (!ResourceLoader::Init())
 		{
 			return false;
 		}

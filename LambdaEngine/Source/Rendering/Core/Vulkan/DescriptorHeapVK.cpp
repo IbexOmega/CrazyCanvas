@@ -110,11 +110,11 @@ namespace LambdaEngine
 
 			if (pDesc->DebugName.empty())
 			{
-				LOG_DEBUG("Created DescriptorHeap \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_INFO("Created DescriptorHeap \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_DEBUG("Created DescriptorHeap");
+				LOG_VULKAN_INFO("Created DescriptorHeap");
 			}
 
 			return true;
