@@ -30,6 +30,7 @@ namespace LambdaEngine
 	{
 		const char*		pName					= "Audio Device";
 		float			MasterVolume			= 1.0f;
+		float			MusicVolume				= MasterVolume;
 		bool			Debug					= true;
 		uint32			MaxNumAudioListeners	= 1;
 		float			MaxWorldSize			= 100.0f;
@@ -72,8 +73,10 @@ namespace LambdaEngine
 		virtual IReverbSphere*		CreateReverbSphere(const ReverbSphereDesc* pDesc)		= 0;
 
 		virtual void SetMasterVolume(float volume) = 0;
+		virtual void SetMusicVolume(float volume) = 0;
 
 		virtual float GetMasterVolume() const = 0;
+		virtual float GetMusicVolume() const = 0;
 	};
 
 	LAMBDA_API IAudioDevice* CreateAudioDevice(EAudioAPI api, const AudioDeviceDesc& desc);

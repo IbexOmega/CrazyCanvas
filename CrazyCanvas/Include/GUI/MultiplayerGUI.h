@@ -34,7 +34,7 @@ private:
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	Noesis::Grid* CreateServerItem(const ServerInfo& serverInfo);
+	Noesis::Ptr<Noesis::Grid> CreateServerItem(const ServerInfo& serverInfo);
 	Noesis::Grid* DeleteServerItem(const ServerInfo& serverInfo);
 	void UpdateServerItem(Noesis::Grid* pGrid, const ServerInfo& serverInfo);
 	void ServerInfoToUniqeString(const ServerInfo& serverInfo, LambdaEngine::String& str) const;

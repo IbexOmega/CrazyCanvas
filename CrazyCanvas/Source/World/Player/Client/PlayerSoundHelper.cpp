@@ -5,29 +5,59 @@
 void PlayerSoundHelper::HandleMovementSound(
 	const LambdaEngine::VelocityComponent& velocityComponent,
 	LambdaEngine::AudibleComponent& audibleComponent,
-	const glm::i8vec3& deltaAction,
 	bool walking,
-	bool inAir)
+	bool inAir,
+	bool wasInAir)
 {
 	using namespace LambdaEngine;
 
-	ISoundInstance3D* pStepSound = nullptr;
+	bool horizontalMovement = 
+		glm::epsilonNotEqual<float32>(velocityComponent.Velocity.x, 0.0f, 0.5f) || 
+		glm::epsilonNotEqual<float32>(velocityComponent.Velocity.z, 0.0f, 0.5f);
+	bool verticalMovement = glm::epsilonNotEqual<float32>(velocityComponent.Velocity.y, 0.0f, 0.1f);
 
-	if (auto stepSoundInstanceIt = audibleComponent.SoundInstances3D.find("Step"); stepSoundInstanceIt != audibleComponent.SoundInstances3D.end())
+	if (!inAir)
 	{
-		pStepSound = stepSoundInstanceIt->second;
-	}
-	else
-	{
-		LOG_ERROR("[PlayerSoundHelper]: Sound effect for Step could not be found in player audible component");
-		return;
-	}
+		if (!walking && horizontalMovement && !verticalMovement)
+		{
+			if (auto stepSoundInstanceIt = audibleComponent.SoundInstances3D.find("Step"); 
+				stepSoundInstanceIt != audibleComponent.SoundInstances3D.end())
+			{
+				stepSoundInstanceIt->second->Play();
+			}
+			else
+			{
+				LOG_ERROR("[PlayerSoundHelper]: Sound effect for Step could not be found in player audible component");
+				return;
+			}
+		}
 
-	bool horizontalMovement = deltaAction.x != 0 || deltaAction.z != 0;
-	bool verticalMovement = glm::epsilonNotEqual<float32>(velocityComponent.Velocity.y, 0.0f, glm::epsilon<float32>());
+		if (velocityComponent.Velocity.y > 4.0f)
+		{
+			if (auto stepSoundInstanceIt = audibleComponent.SoundInstances3D.find("Jump");
+				stepSoundInstanceIt != audibleComponent.SoundInstances3D.end())
+			{
+				stepSoundInstanceIt->second->Play();
+			}
+			else
+			{
+				LOG_ERROR("[PlayerSoundHelper]: Sound effect for Jump could not be found in player audible component");
+				return;
+			}
+		}
 
-	if (!walking && horizontalMovement && !verticalMovement && !inAir)
-	{
-		pStepSound->Play();
+		if (wasInAir && velocityComponent.LastNonZeroVelocityComponents.y < -5.0f)
+		{
+			if (auto stepSoundInstanceIt = audibleComponent.SoundInstances3D.find("Landing");
+				stepSoundInstanceIt != audibleComponent.SoundInstances3D.end())
+			{
+				stepSoundInstanceIt->second->Play();
+			}
+			else
+			{
+				LOG_ERROR("[PlayerSoundHelper]: Sound effect for Jump could not be found in player audible component");
+				return;
+			}
+		}
 	}
 }

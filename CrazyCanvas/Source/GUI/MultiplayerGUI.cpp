@@ -84,24 +84,24 @@ MultiplayerGUI::~MultiplayerGUI()
 
 void MultiplayerGUI::AddServerLAN(const ServerInfo& serverInfo)
 {
-	Grid* pGrid = CreateServerItem(serverInfo);
+	Ptr<Grid> grid = CreateServerItem(serverInfo);
 
-	m_pGridServers->SetColumn(pGrid, 1);
-	m_pGridServers->SetColumnSpan(pGrid, 2);
-	m_pGridServers->SetRow(pGrid, 4);
+	m_pGridServers->SetColumn(grid, 1);
+	m_pGridServers->SetColumnSpan(grid, 2);
+	m_pGridServers->SetRow(grid, 4);
 
-	m_pListBoxServersLAN->GetItems()->Add(pGrid);
+	m_pListBoxServersLAN->GetItems()->Add(grid);
 }
 
 void MultiplayerGUI::AddServerSaved(const ServerInfo& serverInfo)
 {
-	Grid* pGrid = CreateServerItem(serverInfo);
+	Ptr<Grid> grid = CreateServerItem(serverInfo);
 
-	m_pGridServers->SetColumn(pGrid, 1);
-	m_pGridServers->SetColumnSpan(pGrid, 2);
-	m_pGridServers->SetRow(pGrid, 4);
+	m_pGridServers->SetColumn(grid, 1);
+	m_pGridServers->SetColumnSpan(grid, 2);
+	m_pGridServers->SetRow(grid, 4);
 
-	m_pListBoxServersSaved->GetItems()->Add(pGrid);
+	m_pListBoxServersSaved->GetItems()->Add(grid);
 }
 
 void MultiplayerGUI::RemoveServerLAN(const ServerInfo& serverInfo)
@@ -138,9 +138,9 @@ void MultiplayerGUI::UpdateServerSaved(const ServerInfo& serverInfo)
 	}
 }
 
-Grid* MultiplayerGUI::CreateServerItem(const ServerInfo& serverInfo)
+Ptr<Grid> MultiplayerGUI::CreateServerItem(const ServerInfo& serverInfo)
 {
-	Grid* pGrid = new Grid();
+	Ptr<Grid> pGrid = *new Grid();
 
 	for (int i = 0; i < SERVER_ITEM_COLUMNS; i++)
 	{
@@ -157,7 +157,7 @@ Grid* MultiplayerGUI::CreateServerItem(const ServerInfo& serverInfo)
 	Ptr<Noesis::Rectangle> isOnline = *new Noesis::Rectangle();
 	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
 
-	isOnline->SetFill(new SolidColorBrush());
+	isOnline->SetFill(brush);
 
 	pGrid->GetChildren()->Add(serverName);
 	pGrid->GetChildren()->Add(mapName);

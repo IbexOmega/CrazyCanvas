@@ -56,7 +56,6 @@ HUDGUI::HUDGUI() :
 
 	m_pScoreBoardGUI = FindName<ScoreBoardGUI>("SCORE_BOARD_GUI");
 	m_pScoreBoardGUI->InitGUI();
-
 }
 
 HUDGUI::~HUDGUI()
@@ -483,23 +482,23 @@ void HUDGUI::InitGUI()
 	m_pCarryingFlagResetStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagResetStoryBoard");
 
 
-	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
-	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
+	Noesis::Ptr<BitmapImage> bitmap = *new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
+	Noesis::Ptr<BitmapImage> bitmapDrop = *new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
 
 	{ // init CarryFlagIndicator and LookAtGrid colors
 
 		Ptr<Noesis::RadialGradientBrush> gradientBrush = *new Noesis::RadialGradientBrush();
 		const glm::vec3& teamGradientColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam() == 1 ? 2 : 1);
 		Noesis::Color gradientColor(teamGradientColor.r, teamGradientColor.g, teamGradientColor.b);
-		Noesis::GradientStopCollection* pGStops = new GradientStopCollection();
-		Noesis::GradientStop* pTeamGradientStopColor = new GradientStop();
-		Noesis::GradientStop* pTeamGradientStop = new GradientStop();
+		Ptr<Noesis::GradientStopCollection> gStops = *new GradientStopCollection();
+		Ptr<Noesis::GradientStop> teamGradientStopColor = *new GradientStop();
+		Ptr<Noesis::GradientStop> teamGradientStop = *new GradientStop();
 
-		pTeamGradientStopColor->SetColor(gradientColor);
-		pTeamGradientStopColor->SetOffset(1.0f);
-		pGStops->Add(pTeamGradientStopColor);
-		pGStops->Add(pTeamGradientStop);
-		gradientBrush->SetGradientStops(pGStops);
+		teamGradientStopColor->SetColor(gradientColor);
+		teamGradientStopColor->SetOffset(1.0f);
+		gStops->Add(teamGradientStopColor);
+		gStops->Add(teamGradientStop);
+		gradientBrush->SetGradientStops(gStops);
 
 		m_pCarryFlagBorder->SetBackground(gradientBrush);
 
@@ -515,8 +514,8 @@ void HUDGUI::InitGUI()
 
 	}
 
-	m_pPaintAmmoRect->SetSource(pBitmap);
-	m_pPaintDropRect->SetSource(pBitmapDrop);
+	m_pPaintAmmoRect->SetSource(bitmap);
+	m_pPaintDropRect->SetSource(bitmapDrop);
 
 	InitScore();
 
@@ -575,9 +574,9 @@ void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, 
 
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
-	BitmapImage* pBitmapFlag = new BitmapImage(Uri("Roller.png"));
+	Noesis::Ptr<BitmapImage> bitmapFlag = *new BitmapImage(Uri("Roller.png"));
 
-	flagImage->SetSource(pBitmapFlag);
+	flagImage->SetSource(bitmapFlag);
 
 	translation->SetY(100.0f);
 	translation->SetX(100.0f);

@@ -11,8 +11,6 @@
 
 #include "Time/API/Timestamp.h"
 
-#include <unordered_map>
-
 typedef std::pair<Noesis::Ptr<Noesis::Grid>, float32> TextFeedTimer;
 
 class KillFeedGUI : public Noesis::UserControl
