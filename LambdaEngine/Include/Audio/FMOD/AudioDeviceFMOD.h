@@ -9,6 +9,7 @@ namespace LambdaEngine
 	class SoundInstance3DFMOD;
 	class AudioGeometryFMOD;
 	class ReverbSphereFMOD;
+	class MusicFMOD;
 
 	class AudioDeviceFMOD : public IAudioDevice
 	{
@@ -32,8 +33,10 @@ namespace LambdaEngine
 		virtual IReverbSphere*		CreateReverbSphere(const ReverbSphereDesc* pDesc)		override final;
 
 		virtual void SetMasterVolume(float volume) override final;
+		virtual void SetMusicVolume(float volume) override final;
 
 		virtual float GetMasterVolume() const override final;
+		virtual float GetMusicVolume() const override final;
 
 	public:
 		FMOD_SYSTEM* pSystem					= nullptr;
@@ -43,5 +46,8 @@ namespace LambdaEngine
 
 		uint32			m_MaxNumAudioListeners	= 0;
 		uint32			m_NumAudioListeners		= 0;
+
+		float			m_GlobalMusicVolume		= 0.f;
+		TArray<MusicFMOD*> m_Music;
 	};
 }

@@ -50,6 +50,9 @@ namespace LambdaEngine
 			}
 
 			pSystem = nullptr;
+
+			m_GlobalMusicVolume = 0.f;
+			m_Music.Clear();
 		}
 	}
 
@@ -59,6 +62,8 @@ namespace LambdaEngine
 
 		m_pName = pDesc->pName;
 		m_MaxNumAudioListeners = pDesc->MaxNumAudioListeners;
+		SetMasterVolume(pDesc->MasterVolume);
+		SetMusicVolume(pDesc->MusicVolume);
 
 		if (pDesc->Debug)
 		{
@@ -151,6 +156,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_Music.PushBack(pMusic);
 			return pMusic;
 		}
 	}
@@ -259,6 +265,25 @@ namespace LambdaEngine
 		FMOD_ChannelGroup_SetVolume(pChannelGroup, volume);
 	}
 
+	void AudioDeviceFMOD::SetMusicVolume(float volume)
+	{
+		m_GlobalMusicVolume = volume;
+		auto it = m_Music.Begin();
+		while (it != m_Music.End())
+		{
+			if (*it)
+			{
+				(*it)->SetVolume(m_GlobalMusicVolume);
+				it++;
+			}
+			else
+			{
+				// Delete invalid music from the array
+				it = m_Music.Erase(it);
+			}
+		}
+	}
+
 	float AudioDeviceFMOD::GetMasterVolume() const
 	{
 		FMOD_CHANNELGROUP* pChannelGroup;
@@ -267,5 +292,10 @@ namespace LambdaEngine
 		FMOD_ChannelGroup_GetVolume(pChannelGroup, &volume);
 
 		return volume;
+	}
+
+	float AudioDeviceFMOD::GetMusicVolume() const
+	{
+		return m_GlobalMusicVolume;
 	}
 };
