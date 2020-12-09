@@ -15,6 +15,8 @@
 
 #include "Events/PlayerEvents.h"
 
+#include "Game/GameConsole.h"
+
 using namespace LambdaEngine;
 
 void PlayerManagerClient::Init()
@@ -30,6 +32,15 @@ void PlayerManagerClient::Init()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerAliveChanged>>(&PlayerManagerClient::OnPacketPlayerAliveChangedReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerPing>>(&PlayerManagerClient::OnPacketPlayerPingReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerHost>>(&PlayerManagerClient::OnPacketPlayerHostReceived);
+
+	ConsoleCommand spectateCmd;
+	spectateCmd.Init("spectate_mode", false);
+	spectateCmd.AddArg(Arg::EType::BOOL);
+	spectateCmd.AddDescription("Activate/Deactivate the client as a spectator.\n\t'spectate_mode true'");
+	GameConsole::Get().BindCommand(spectateCmd, [&](GameConsole::CallbackInput& input)->void
+	{
+		s_IsSpectator = input.Arguments.GetFront().Value.Boolean;
+	});
 }
 
 void PlayerManagerClient::Release()
@@ -73,7 +84,8 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 
 	PacketJoin packet;
 	strcpy(packet.Name, name.c_str());
-	packet.UID = pClient->GetUID();
+	packet.UID			= pClient->GetUID();
+	packet.IsSpectator	= s_IsSpectator;
 
 	Player* pPlayer = HandlePlayerJoined(packet.UID, packet);
 	pPlayer->m_IsHost = isHost;

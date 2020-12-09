@@ -81,6 +81,7 @@ private:
 	bool m_IsHost;
 	bool m_IsDead;
 	bool m_IsReady;
+	bool m_IsSpectator;
 	uint16 m_Ping;
 	EGameState m_State;
 	uint8 m_Team;

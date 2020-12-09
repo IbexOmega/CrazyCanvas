@@ -41,4 +41,7 @@ private:
 	static bool OnPacketPlayerAliveChangedReceived(const PacketReceivedEvent<PacketPlayerAliveChanged>& event);
 	static bool OnPacketPlayerHostReceived(const PacketReceivedEvent<PacketPlayerHost>& event);
 	static bool OnPacketPlayerPingReceived(const PacketReceivedEvent<PacketPlayerPing>& event);
+
+private:
+	static inline bool s_IsSpectator;
 };

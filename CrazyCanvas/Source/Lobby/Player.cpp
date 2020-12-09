@@ -8,6 +8,7 @@ Player::Player()
 	, m_IsHost(false)
 	, m_IsDead(false)
 	, m_IsReady(false)
+	, m_IsSpectator(false)
 	, m_Ping()
 	, m_State(GAME_STATE_LOBBY)
 	, m_Team(0)
@@ -125,6 +126,7 @@ Player& Player::operator=(const Player& other)
 		m_IsHost		= other.m_IsHost;
 		m_IsDead		= other.m_IsDead;
 		m_IsReady		= other.m_IsReady;
+		m_IsSpectator	= other.m_IsSpectator;
 		m_Ping			= other.m_Ping;
 		m_State			= other.m_State;
 		m_Team			= other.m_Team;

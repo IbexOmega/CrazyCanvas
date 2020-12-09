@@ -9,7 +9,8 @@ struct PacketJoin
 {
 	DECL_PACKET(PacketJoin);
 
-	uint64 UID = 0;
+	uint64 UID			= 0;
+	bool IsSpectator	= false;
 	char Name[MAX_NAME_LENGTH];
 };
 #pragma pack(pop)
