@@ -16,46 +16,25 @@ namespace LambdaEngine
 		BinaryDecoder(NetworkSegment* pPacket);
 		~BinaryDecoder();
 
-		void ReadInt8(int8& value);
-		void ReadUInt8(uint8& value);
-		void ReadInt16(int16& value);
-		void ReadUInt16(uint16& value);
-		void ReadInt32(int32& value);
-		void ReadUInt32(uint32& value);
-		void ReadInt64(int64& value);
-		void ReadUInt64(uint64& value);
-		void ReadFloat32(float32& value);
-		void ReadFloat64(float64& value);
-		void ReadBool(bool& value);
-		void ReadString(std::string& value);
-		void ReadBuffer(uint8* pBuffer, uint16 bytesToRead);
+		bool ReadInt8(int8& value);
+		bool ReadUInt8(uint8& value);
+		bool ReadInt16(int16& value);
+		bool ReadUInt16(uint16& value);
+		bool ReadInt32(int32& value);
+		bool ReadUInt32(uint32& value);
+		bool ReadInt64(int64& value);
+		bool ReadUInt64(uint64& value);
+		bool ReadFloat32(float32& value);
+		bool ReadFloat64(float64& value);
+		bool ReadBool(bool& value);
+		bool ReadString(std::string& value);
+		bool ReadBuffer(uint8* pBuffer, uint16 bytesToRead);
 
-		void ReadVec2(glm::vec2& value);
-		void ReadVec3(glm::vec3& value);
-		void ReadVec4(glm::vec4& value);
+		bool ReadVec2(glm::vec2& value);
+		bool ReadVec3(glm::vec3& value);
+		bool ReadVec4(glm::vec4& value);
 
-		void ReadQuat(glm::quat& value);
-
-
-		int8		ReadInt8();
-		uint8		ReadUInt8();
-		int16		ReadInt16();
-		uint16		ReadUInt16();
-		int32		ReadInt32();
-		uint32		ReadUInt32();
-		int64		ReadInt64();
-		uint64		ReadUInt64();
-		float32		ReadFloat32();
-		float64		ReadFloat64();
-		bool		ReadBool();
-		std::string ReadString();
-
-		glm::vec2 ReadVec2();
-		glm::vec3 ReadVec3();
-		glm::vec4 ReadVec4();
-
-		glm::quat ReadQuat();
-
+		bool ReadQuat(glm::quat& value);
 
 		NetworkSegment* GetPacket();
 
