@@ -45,3 +45,11 @@ struct WeaponLiquidComponent
 {
 	DECL_COMPONENT(WeaponLiquidComponent);
 };
+
+/*
+* WeaponLiquidComponent
+*/
+struct WeaponArmsComponent
+{
+	DECL_COMPONENT(WeaponArmsComponent);
+};

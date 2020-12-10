@@ -1270,6 +1270,47 @@ bool LevelObjectCreator::CreatePlayer(
 				pECS->AddComponent<AnimationComponent>(firstPersonWeaponEnity, animationComponentWeapon);
 			}
 
+			auto firstPersonHandsEnity = pECS->CreateEntity();
+			{
+				pECS->AddComponent<PositionComponent>(firstPersonHandsEnity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(firstPersonHandsEnity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(firstPersonHandsEnity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				pECS->AddComponent<WeaponArmsComponent>(firstPersonHandsEnity, WeaponArmsComponent());
+				pECS->AddComponent<WeaponLocalComponent>(firstPersonHandsEnity, WeaponLocalComponent());
+				EntityMaskManager::AddExtensionToEntity(firstPersonHandsEnity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(firstPersonHandsEnity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::ARMS_FIRST_PERSON_MATERIAL_GUID,
+					});
+
+				AnimationComponent animationComponentWeapon = {};
+				animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID)->pSkeleton;
+
+				AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[0]));
+				pAnimationGraphWeapon->TransitionToState("Idle");
+				animationComponentWeapon.pGraph = pAnimationGraphWeapon;
+
+				pECS->AddComponent<AnimationComponent>(firstPersonHandsEnity, animationComponentWeapon);
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonWeaponEnity,
+					.Attached = true,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(weaponLiquidEntity, parentComponent);
+
+				pECS->AddComponent<AnimationAttachedComponent>(weaponLiquidEntity, AnimationAttachedComponent
+					{
+						.JointName = "Gun",
+						.Transform = glm::mat4(1.0f),
+					});
+			}
+
 			{
 				auto weaponLiquidEntity = pECS->CreateEntity();
 				pECS->AddComponent<PositionComponent>(weaponLiquidEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });

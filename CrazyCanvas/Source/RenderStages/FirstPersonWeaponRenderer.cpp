@@ -675,12 +675,12 @@ namespace LambdaEngine
 	{
 		const ComponentArray<PositionComponent>* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
 		
-		if (m_Entity != MAXUINT32 && pPositionComponents->HasComponent(m_Entity)) {
+		if (m_PlayerEntity != MAXUINT32 && pPositionComponents->HasComponent(m_PlayerEntity)) {
 			SWeaponBuffer data = {};
 
 			data.Model = glm::translate(glm::vec3(0.0f, -0.375f, 0.1f));
 			data.Model = glm::scale(data.Model, glm::vec3(1.0f, 1.0f, 1.0f));
-			data.PlayerPos = pPositionComponents->GetConstData(m_Entity).Position;
+			data.PlayerPos = pPositionComponents->GetConstData(m_PlayerEntity).Position;
 
 			Buffer* pStagingBuffer = m_WeaponStagingBuffers[modFrameIndex].Get();
 			byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());
