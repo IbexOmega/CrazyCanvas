@@ -7,7 +7,7 @@
 #include <NoesisGUI/Include/NsGui/TextBlock.h>
 #include <NoesisGUI/Include/NsGui/UserControl.h>
 #include <NoesisGUI/Include/NsGui/Button.h>
-
+#include <NoesisGUI/Include/NsGui/ComboBox.h>
 #include "Application/API/Events/KeyEvents.h"
 #include "Application/API/Events/MouseEvents.h"
 
@@ -31,7 +31,10 @@ private:
 	void OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption);
 
 	// Controls
 	void OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -53,6 +56,7 @@ private:
 	Noesis::Button* m_pSetKeyButton		= nullptr;
 	LambdaEngine::THashTable<LambdaEngine::String, LambdaEngine::String> m_KeysToSet;
 	float32 m_LookSensitivityPercentageToSet = 0.0f;
+	int32	m_NewReflectionsSPP = 0;
 
 	bool			m_MeshShadersEnabled	= false;
 	bool			m_FullscreenEnabled		= false;

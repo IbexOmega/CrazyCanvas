@@ -15,6 +15,9 @@
 
 #include "NoesisPCH.h"
 
+#include "Rendering/AARenderer.h"
+#include "Rendering/RenderGraph.h"
+
 using namespace LambdaEngine;
 
 SettingsGUI::SettingsGUI()
@@ -61,7 +64,9 @@ bool SettingsGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEven
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonCancelSettingsClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonChangeControlsClick);
 	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnVolumeSliderChanged);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnMusicVolumeSliderChanged);
 	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnFOVSliderChanged);
+	NS_CONNECT_EVENT(Noesis::Slider, ValueChanged, OnReflectionsSPPSliderChanged);
 
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSetKey);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonApplyControlsClick);
@@ -130,6 +135,25 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
+	// AA
+	Noesis::ComboBox* pAAComboBox = FrameworkElement::FindName<Noesis::ComboBox>("AAComboBox");
+	LambdaEngine::String AAOption = static_cast<Noesis::TextBlock*>(pAAComboBox->GetSelectedItem())->GetText();
+	EngineConfig::SetStringProperty(EConfigOption::CONFIG_OPTION_AA, AAOption);
+	SetAA(pAAComboBox, AAOption);
+
+	// Glossy
+	{
+		//Enabled
+		Noesis::CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<Noesis::CheckBox>("GlossyReflectionsCheckBox");
+		bool glossyEnabled = pGlossyReflectionsCheckbox->GetIsChecked().GetValue();
+		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, glossyEnabled);
+
+		//SPP
+		EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
+
+		ChangeGlossySettings(glossyEnabled, m_NewReflectionsSPP);
+	}
+
 	EngineConfig::WriteToFile();
 
 	OnButtonBackClick(pSender, args);
@@ -176,6 +200,15 @@ void SettingsGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const No
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 }
 
+void SettingsGUI::OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pVolumeSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMusicVolume(volume);
+}
+
 void SettingsGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
 #ifdef LAMBDA_DEVELOPMENT
@@ -185,6 +218,36 @@ void SettingsGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesi
 
 	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
+}
+
+void SettingsGUI::OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pReflectionsSPPSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+
+	m_NewReflectionsSPP = int32(pReflectionsSPPSlider->GetValue());
+
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		m_NewReflectionsSPP);
+}
+
+void SettingsGUI::SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption)
+{
+	if (AAOption == "NONE")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_NONE);
+		pComboBox->SetSelectedIndex(0);
+	}
+	else if (AAOption == "FXAA")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_FXAA);
+		pComboBox->SetSelectedIndex(1);
+	}
+	else if (AAOption == "TAA")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_TAA);
+		pComboBox->SetSelectedIndex(2);
+	}
 }
 
 void SettingsGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -252,9 +315,24 @@ void SettingsGUI::SetDefaultSettings()
 	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
+	// Set inital Music volume
+	Noesis::Slider* pMusicVolumeSlider = FrameworkElement::FindName<Noesis::Slider>("MusicVolumeSlider");
+	NS_ASSERT(pMusicVolumeSlider);
+	float musicVolume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC);
+	pMusicVolumeSlider->SetValue(musicVolume * pMusicVolumeSlider->GetMaximum());
+	AudioAPI::GetDevice()->SetMusicVolume(musicVolume);
+
 	//Set initial FOV
 	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Noesis::Slider>("FOVSlider");
 	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	//Set initial Glossy Toggle
+	Noesis::CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<Noesis::CheckBox>("GlossyReflectionsCheckBox");
+	pGlossyReflectionsCheckbox->SetIsChecked(EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS));
+
+	//Set initial SPP
+	Noesis::Slider* pReflectionsSPPSlider = FrameworkElement::FindName<Noesis::Slider>("ReflectionsSPPSlider");
+	pReflectionsSPPSlider->SetValue(float32(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP)));
 
 	SetDefaultKeyBindings();
 
@@ -272,6 +350,12 @@ void SettingsGUI::SetDefaultSettings()
 	Noesis::CheckBox* pToggleFullscreen = FrameworkElement::FindName<Noesis::CheckBox>("FullscreenCheckBox");
 	NS_ASSERT(pToggleFullscreen);
 	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
+
+	// AA option
+	LambdaEngine::String AAOption = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_AA);
+	Noesis::ComboBox* pAAComboBox = FrameworkElement::FindName<Noesis::ComboBox>("AAComboBox");
+	NS_ASSERT(pAAComboBox);
+	SetAA(pAAComboBox, AAOption);
 }
 
 void SettingsGUI::SetDefaultKeyBindings()
