@@ -86,7 +86,6 @@ namespace LambdaEngine
 		* Load a mesh from file
 		* @param filename	The name of the file
 		* @param meshGUID	The loaded Mesh GUID
-		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID);
 
@@ -95,7 +94,6 @@ namespace LambdaEngine
 		* @param filename	The name of the file
 		* @param meshGUID	The loaded Mesh GUID
 		* @param animations	TArray with valid GUIDs for all the animations
-		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, TArray<GUID_Lambda>& animations);
 
@@ -104,7 +102,6 @@ namespace LambdaEngine
 		* @param filename		The name of the file
 		* @param meshGUID		The loaded Mesh GUID
 		* @param materialGUID	The loaded Material GUID
-		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static void LoadMeshAndMaterialFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID);
 
@@ -114,7 +111,6 @@ namespace LambdaEngine
 		* @param meshGUID		The loaded Mesh GUID
 		* @param materialGUID	The loaded Material GUID
 		* @param animations		TArray with valid GUIDs for all the animations
-		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static void LoadMeshAndMaterialFromFile(
 			const String& filename,

@@ -320,14 +320,51 @@ namespace LambdaEngine
 		halfHeight = halfHeight - radius;
 	}
 
-	bool PhysicsSystem::Raycast(const glm::vec3& origin, const glm::vec3& direction, float32 maxDistance, PxRaycastHit& raycastHit, const RaycastFilterData* pFilterData)
+	bool PhysicsSystem::Raycast(const RaycastInfo& raycastInfo, PxRaycastHit& raycastHit)
 	{
-		const PxVec3 originPX = { origin.x, origin.y, origin.z };
-		const PxVec3 directionPX = { direction.x, direction.y, direction.z };
+		PxRaycastBuffer raycastBuffer;
+		const bool hit = RaycastInternal(raycastInfo, raycastBuffer, &m_RaycastQueryFilterCallback);
+		if (hit)
+		{
+			raycastHit = raycastBuffer.block;
+		}
 
-		const PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
+		return hit;
+	}
 
-		RaycastFilterData filterData = {};
+	bool PhysicsSystem::Raycast(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer)
+	{
+		return RaycastInternal(raycastInfo, raycastBuffer, &m_RaycastTouchingQueryFilterCallback);
+	}
+
+	bool PhysicsSystem::QueryOverlap(const OverlapQueryInfo& overlapInfo, PxOverlapBuffer& overlaps, const QueryFilterData* pFilterData)
+	{
+		const glm::vec3& position = overlapInfo.Position;
+		const glm::quat& rotation = overlapInfo.Rotation;
+		const GeometryParameters& geometryParams = overlapInfo.GeometryParams;
+
+		// There's no default constructor for PxGeometry, so a sphere is used as a default
+		PxGeometry queryGeometry = PxSphereGeometry(geometryParams.Radius);
+		PxTransform transform = PxTransform(position.x, position.y, position.z, PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
+
+		switch (overlapInfo.GeometryType)
+		{
+			case EGeometryType::BOX:
+				queryGeometry = PxBoxGeometry(PxVec3(geometryParams.HalfExtents.x, geometryParams.HalfExtents.y, geometryParams.HalfExtents.z));
+				break;
+			case EGeometryType::CAPSULE:
+				queryGeometry = PxCapsuleGeometry(geometryParams.Radius, geometryParams.HalfHeight);
+				break;
+			case EGeometryType::PLANE:
+				transform = CreatePlaneTransform(position, rotation);
+				queryGeometry = PxPlaneGeometry();
+				break;
+			case EGeometryType::MESH:
+				queryGeometry = CreateTriangleMeshGeometry(geometryParams.pMesh, glm::vec3(1.0f));
+				break;
+		}
+
+		QueryFilterData filterData = {};
 		if (pFilterData)
 		{
 			filterData = *pFilterData;
@@ -339,14 +376,7 @@ namespace LambdaEngine
 		filterDataPX.data.word1 = filterData.ExcludedGroup;
 		filterDataPX.data.word2 = filterData.ExcludedEntity;
 
-		PxRaycastBuffer raycastBuffer;
-		const bool hit = m_pScene->raycast(originPX, directionPX, maxDistance, raycastBuffer, hitFlags, filterDataPX, &m_RaycastQueryFilterCallback);
-		if (hit)
-		{
-			raycastHit = raycastBuffer.block;
-		}
-
-		return hit;
+		return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastTouchingQueryFilterCallback);
 	}
 
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
@@ -419,19 +449,13 @@ namespace LambdaEngine
 			}
 			case EGeometryType::PLANE:
 			{
-				/*	PhysX treats the planes' x-axis as their normals, whilst the PhysicsSystem API says the Y-axis is
-					the normal. Set a local pose for the shape to make the Y-axis the plane normal. */
-				const glm::vec3 planeNormal = GetUp(rotation);
-				const PxPlane plane({ position.x, position.y, position.z }, { planeNormal.x, planeNormal.y, planeNormal.z });
-				const PxTransform transformPX = PxTransformFromPlaneEquation(plane);
-
 				pShape = m_pPhysics->createShape(PxPlaneGeometry(), *m_pMaterial);
-				pShape->setLocalPose(transformPX);
+				pShape->setLocalPose(CreatePlaneTransform(position, rotation));
 				break;
 			}
 			case EGeometryType::MESH:
 			{
-				pShape = CreateCollisionTriangleMesh(shapeCreateInfo.GeometryParams.pMesh, scale);
+				pShape = m_pPhysics->createShape(CreateTriangleMeshGeometry(shapeCreateInfo.GeometryParams.pMesh, scale), *m_pMaterial);
 				break;
 			}
 		}
@@ -475,24 +499,7 @@ namespace LambdaEngine
 		return pShape;
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionCapsule(float32 radius, float32 halfHeight) const
-	{
-		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
-			it is rotated around the z-axis. */
-		PxShape* pShape = nullptr;
-		if (halfHeight > 0.0f)
-		{
-			pShape = m_pPhysics->createShape(PxCapsuleGeometry(radius, halfHeight), *m_pMaterial);
-		}
-		else
-		{
-			pShape = m_pPhysics->createShape(PxSphereGeometry(radius), *m_pMaterial);
-		}
-
-		return pShape;
-	}
-
-	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const Mesh* pMesh, const glm::vec3& scale) const
+	PxTriangleMeshGeometry PhysicsSystem::CreateTriangleMeshGeometry(const Mesh* pMesh, const glm::vec3& scale) const
 	{
 		/* Perform mesh 'cooking'; generate an optimized collision mesh from triangle data */
 		const TArray<Vertex>& vertices = pMesh->Vertices;
@@ -522,8 +529,24 @@ namespace LambdaEngine
 		PxTriangleMesh* pTriangleMesh = m_pPhysics->createTriangleMesh(readBuffer);
 
 		// Create a geometry instance of the mesh and scale it
-		PxTriangleMeshGeometry triangleMeshGeometry(pTriangleMesh, PxMeshScale({ scale.x, scale.y, scale.z }));
-		return m_pPhysics->createShape(triangleMeshGeometry, *m_pMaterial);
+		return PxTriangleMeshGeometry(pTriangleMesh, PxMeshScale({ scale.x, scale.y, scale.z }));
+	}
+
+	PxShape* PhysicsSystem::CreateCollisionCapsule(float32 radius, float32 halfHeight) const
+	{
+		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
+			it is rotated around the z-axis. */
+		PxShape* pShape = nullptr;
+		if (halfHeight > 0.0f)
+		{
+			pShape = m_pPhysics->createShape(PxCapsuleGeometry(radius, halfHeight), *m_pMaterial);
+		}
+		else
+		{
+			pShape = m_pPhysics->createShape(PxSphereGeometry(radius), *m_pMaterial);
+		}
+
+		return pShape;
 	}
 
 	PxTransform PhysicsSystem::CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const
@@ -531,6 +554,40 @@ namespace LambdaEngine
 		const PxVec3 positionPX = { position.x, position.y, position.z };
 		const PxQuat rotationPX = PxQuat(rotation.x, rotation.y, rotation.z, rotation.w);
 		return PxTransform(positionPX, rotationPX);
+	}
+
+	PxTransform PhysicsSystem::CreatePlaneTransform(const glm::vec3& position, const glm::quat& rotation)
+	{
+		/*	PhysX treats the planes' x-axis as their normals, whilst the PhysicsSystem API says the Y-axis is
+			the normal. Set a local pose for the shape to make the Y-axis the plane normal. */
+		const glm::vec3 planeNormal = GetUp(rotation);
+		const PxPlane plane({ position.x, position.y, position.z }, { planeNormal.x, planeNormal.y, planeNormal.z });
+		return PxTransformFromPlaneEquation(plane);
+	}
+
+	bool PhysicsSystem::RaycastInternal(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer, PxQueryFilterCallback* pFilterCallback)
+	{
+		const glm::vec3& origin = raycastInfo.Origin;
+		const glm::vec3& direction = raycastInfo.Direction;
+
+		const PxVec3 originPX = { origin.x, origin.y, origin.z };
+		const PxVec3 directionPX = { direction.x, direction.y, direction.z };
+
+		const PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
+
+		QueryFilterData filterData = {};
+		if (raycastInfo.pFilterData)
+		{
+			filterData = *raycastInfo.pFilterData;
+		}
+
+		PxQueryFilterData filterDataPX;
+		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+		filterDataPX.data.word0 = filterData.IncludedGroup;
+		filterDataPX.data.word1 = filterData.ExcludedGroup;
+		filterDataPX.data.word2 = filterData.ExcludedEntity;
+
+		return m_pScene->raycast(originPX, directionPX, raycastInfo.MaxDistance, raycastBuffer, hitFlags, filterDataPX, pFilterCallback);
 	}
 
 	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity)

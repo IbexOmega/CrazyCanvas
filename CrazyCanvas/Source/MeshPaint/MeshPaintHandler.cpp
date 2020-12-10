@@ -19,7 +19,7 @@ LambdaEngine::TArray<MeshPaintHandler::UnwrapData> MeshPaintHandler::s_Collision
 MeshPaintHandler::~MeshPaintHandler()
 {
 	using namespace LambdaEngine;
-	
+
 	EventQueue::UnregisterEventHandler<ProjectileHitEvent, MeshPaintHandler>(this, &MeshPaintHandler::OnProjectileHit);
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketProjectileHit>>(this, &MeshPaintHandler::OnPacketProjectileHitReceived);
 }
@@ -222,7 +222,7 @@ bool MeshPaintHandler::OnPacketProjectileHitReceived(const PacketReceivedEvent<P
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		// Allways clear client side when receiving hit from the server.
+		// Always clear client side when receiving hit from the server.
 		ResetClient();
 
 		// Allways paint the server's paint point to the server side mask (permanent mask)

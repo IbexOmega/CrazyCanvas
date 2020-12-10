@@ -79,30 +79,30 @@ namespace LambdaEngine
 		void* pUserData = nullptr;
 	};
 
+	union GeometryParameters
+	{
+		//Sphere
+		float32 Radius;
+
+		//Box
+		glm::vec3 HalfExtents;
+
+		//Capsule
+		struct
+		{
+			float32 Radius;
+			float32 HalfHeight;
+		};
+
+		//Mesh
+		Mesh* pMesh;
+	};
+
 	struct ShapeCreateInfo
 	{
 		EShapeType ShapeType;
 		EGeometryType GeometryType;
-
-		union
-		{
-			//Sphere
-			float32 Radius;
-
-			//Box
-			glm::vec3 HalfExtents;
-
-			//Capsule
-			struct
-			{
-				float32 Radius;
-				float32 HalfHeight;
-			};
-
-			//Mesh
-			Mesh* pMesh;
-		} GeometryParams;
-
+		GeometryParameters GeometryParams;
 		CollisionGroup CollisionGroup;				// The category of the object
 		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
 		uint32 EntityID;							// EntityID so that entities cannot collide with objects that has the same EntityID
@@ -140,11 +140,27 @@ namespace LambdaEngine
 		uint32 EntityID;					// Entity ID, this makes sure that entities cannot collide with colliders that has the same ID as them
 	};
 
-	struct RaycastFilterData
+	struct QueryFilterData
 	{
 		CollisionGroup IncludedGroup;
 		CollisionGroup ExcludedGroup;
 		Entity ExcludedEntity = UINT32_MAX;
+	};
+
+	struct OverlapQueryInfo
+	{
+		EGeometryType GeometryType;
+		GeometryParameters GeometryParams;
+		glm::vec3 Position;
+		glm::quat Rotation;
+	};
+
+	struct RaycastInfo
+	{
+		glm::vec3 Origin;
+		glm::vec3 Direction;
+		float32 MaxDistance;
+		const QueryFilterData* pFilterData;
 	};
 
 	class PhysicsSystem : public System, public ComponentOwner, public PxSimulationEventCallback
@@ -178,10 +194,22 @@ namespace LambdaEngine
 
 		/**
 		 * @param raycastHit Will contain hit data if there was a hit
-		 * @param excludedGroup CollisionGroup mask that excludes any entities
 		 * @return True if there was a hit, otherwise false.
 		*/
-		bool Raycast(const glm::vec3& origin, const glm::vec3& direction, float32 maxDistance, PxRaycastHit& raycastHit, const RaycastFilterData* pFilterData = nullptr);
+		bool Raycast(const RaycastInfo& raycastInfo, PxRaycastHit& raycastHit);
+
+		/**
+		 * Same as above, but multiple hits are allowed.
+		 * @param raycastHits Will contain hit data if there was at least one hit
+		 * @return True if there was a hit, otherwise false.
+		*/
+		bool Raycast(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer);
+
+		/**
+		 * Like a raycast, this queries the PhysX scene to check for intersections/overlaps.
+		 * @return True if there was an overlap, otherwise false.
+		*/
+		bool QueryOverlap(const OverlapQueryInfo& overlapInfo, PxOverlapBuffer& overlaps, const QueryFilterData* pFilterData = nullptr);
 
 		/* Implement PxSimulationEventCallback */
 		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs) override final;
@@ -201,11 +229,16 @@ namespace LambdaEngine
 			const glm::vec3& scale,
 			const glm::quat& rotation) const;
 
+		PxTriangleMeshGeometry CreateTriangleMeshGeometry(const Mesh* pMesh, const glm::vec3& scale) const;
+
 		// CreateCollisionCapsule creates a sphere if no capsule can be made
 		PxShape* CreateCollisionCapsule(float32 radius, float32 halfHeight) const;
-		PxShape* CreateCollisionTriangleMesh(const Mesh* pMesh, const glm::vec3& scale) const;
 
 		PxTransform CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const;
+
+		static PxTransform CreatePlaneTransform(const glm::vec3& position, const glm::quat& rotation);
+
+		bool RaycastInternal(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer, PxQueryFilterCallback* pFilterCallback);
 
 		static void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity);
 		static void DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent, Entity entity);
@@ -265,5 +298,6 @@ namespace LambdaEngine
 
 		QueryFilterCallback m_QueryFilterCallback;
 		RaycastQueryFilterCallback m_RaycastQueryFilterCallback;
+		RaycastTouchingQueryFilterCallback m_RaycastTouchingQueryFilterCallback;
 	};
 }

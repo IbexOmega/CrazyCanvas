@@ -29,8 +29,9 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Match/ShowerSystemBase.h"
-#include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Components/Player/GrenadeComponent.h"
 #include "ECS/Systems/Player/HealthSystemServer.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Components/Match/FlagComponent.h"
 #include "ECS/Components/Match/ShowerComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
@@ -1013,6 +1014,7 @@ bool LevelObjectCreator::CreatePlayer(
 		PLAYER_CAPSULE_RADIUS);
 
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
+	pECS->AddComponent(playerEntity, GrenadeWielderComponent({ .ThrowCooldown = 0.0f }));
 
 	Entity weaponEntity = pECS->CreateEntity();
 	childEntities.PushBack(std::make_tuple("weapon", true, weaponEntity));

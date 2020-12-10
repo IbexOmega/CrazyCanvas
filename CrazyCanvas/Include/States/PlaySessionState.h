@@ -8,8 +8,9 @@
 
 #include "Game/State.h"
 
-#include "ECS/Systems/GUI/HUDSystem.h"
 #include "ECS/Systems/Camera/SpectateCameraSystem.h"
+#include "ECS/Systems/GUI/HUDSystem.h"
+#include "ECS/Systems/Player/GrenadeSystem.h"
 
 #include "Application/API/Events/NetworkEvents.h"
 
@@ -70,6 +71,7 @@ private:
 	SpectateCameraSystem m_CamSystem;
 	MultiplayerClient m_MultiplayerClient;
 	DestructionSystem m_DestructionSystem;
+	GrenadeSystem m_GrenadeSystem;
 
 	/* Event handlers */
 	AudioEffectHandler m_AudioEffectHandler;
