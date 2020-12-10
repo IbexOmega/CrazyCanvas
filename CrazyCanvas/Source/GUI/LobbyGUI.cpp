@@ -50,8 +50,6 @@ LobbyGUI::LobbyGUI(PacketGameSettings* pGameSettings) :
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
 	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 	m_pPlayersLabel				= FrameworkElement::FindName<Label>("PlayersLabel");
-	m_pSettingsGrid				= FrameworkElement::FindName<Grid>("SettingsGrid");
-	m_pControlsGrid				= FrameworkElement::FindName<Grid>("ControlsGrid");
 
 	m_pChatInputTextBox->SetMaxLines(1);
 	m_pChatInputTextBox->SetMaxLength(128);
@@ -568,12 +566,10 @@ void LobbyGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesi
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
 
-	m_pSettingsGUI->ToggleSettings(true);
+	m_pSettingsGUI->ToggleSettings();
 }
 
 bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)

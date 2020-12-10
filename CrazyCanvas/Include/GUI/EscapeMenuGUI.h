@@ -26,20 +26,23 @@ public:
 	~EscapeMenuGUI();
 
 	void InitGUI();
+
+private:
+	// Escape GUI
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
-	void ToggleEscapeMenu();
-
-	// Escape GUI
 	void OnButtonResumeClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-private:
 	void SetRenderStagesInactive();
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
+
+	void OnSettingsClosed(Noesis::BaseComponent* pSender, const Noesis::DependencyPropertyChangedEventArgs& args);
+
+	void ToggleEscapeMenu();
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(EscapeMenuGUI, Noesis::UserControl, "CrazyCanvas.EscapeMenuGUI")
 private:
@@ -53,10 +56,8 @@ private:
 	// bool			m_RayTracingEnabled		= false;
 	bool			m_MeshShadersEnabled	= false;
 	bool			m_FullscreenEnabled		= false;
-	bool			m_EscapeMenuEnabled		= false;
 
-	bool			m_EscapeActive			= false;
-	bool			m_SettingsActive		= false;
+	bool			m_EscapeMenuActive		= false;
 	bool			m_MouseEnabled			= false;
 
 	Noesis::Grid* m_pEscapeGrid				= nullptr;

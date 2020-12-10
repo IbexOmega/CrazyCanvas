@@ -60,6 +60,7 @@ bool EscapeMenuGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEv
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonSettingsClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonLeaveClick);
 	NS_CONNECT_EVENT(Noesis::Button, Click, OnButtonExitClick);
+	NS_CONNECT_EVENT(Button, IsVisibleChanged, OnSettingsClosed);
 
 	return false;
 }
@@ -68,28 +69,14 @@ void EscapeMenuGUI::ToggleEscapeMenu()
 {
 	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
 
-	if ((currentInputLayer == EInputLayer::GAME) || (currentInputLayer == EInputLayer::DEAD) && !m_EscapeActive)
+	if ((currentInputLayer == EInputLayer::GAME) || (currentInputLayer == EInputLayer::DEAD) && !m_EscapeMenuActive)
 	{
 		Input::PushInputMode(EInputLayer::GUI);
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 
-		m_EscapeActive = !m_EscapeActive;
+		m_EscapeMenuActive = true;
 		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Visible);
-	}
-	else if (currentInputLayer == EInputLayer::GUI && m_EscapeActive)
-	{
-		m_EscapeActive = !m_EscapeActive;
-		m_MouseEnabled = !m_MouseEnabled;
-		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
-
-		if (m_SettingsActive) {
-			m_SettingsActive = !m_SettingsActive;
-			m_pSettingsGUI->ToggleSettings(m_SettingsActive);
-		}
-
-		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Collapsed);
-		Input::PopInputMode();
 	}
 }
 
@@ -98,12 +85,11 @@ void EscapeMenuGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
 
 	m_MouseEnabled = !m_MouseEnabled;
+	m_EscapeMenuActive = false;
 	CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 	m_pEscapeGrid->SetVisibility(Noesis::Visibility_Collapsed);
 	Input::PopInputMode();
@@ -114,15 +100,12 @@ void EscapeMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const 
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
 
-	m_SettingsActive = !m_SettingsActive;
 	m_pEscapeGrid->SetVisibility(Noesis::Visibility_Collapsed);
 
-	m_pSettingsGUI->ToggleSettings(m_SettingsActive);
+	m_pSettingsGUI->ToggleSettings();
 }
 
 void EscapeMenuGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -130,10 +113,8 @@ void EscapeMenuGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noe
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
 
 	ClientHelper::Disconnect("Left by choice");
 	SetRenderStagesInactive();
@@ -206,4 +187,12 @@ bool EscapeMenuGUI::MouseButtonCallback(const LambdaEngine::MouseButtonClickedEv
 	}
 
 	return false;
+}
+
+void EscapeMenuGUI::OnSettingsClosed(Noesis::BaseComponent* pSender, const Noesis::DependencyPropertyChangedEventArgs& args)
+{
+	if (!m_pSettingsGUI->GetSettingsStatus() && m_EscapeMenuActive)
+	{
+		m_pEscapeGrid->SetVisibility(Noesis::Visibility_Visible);
+	}
 }

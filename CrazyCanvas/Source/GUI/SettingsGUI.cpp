@@ -30,7 +30,7 @@ SettingsGUI::~SettingsGUI()
 
 void SettingsGUI::InitGUI()
 {
-	m_pSettingsOverlay = FrameworkElement::FindName<Noesis::Grid>("SETTINGS_OVERLAY");
+	//m_pSettingsOverlay = FrameworkElement::FindName<Noesis::Grid>("SETTINGS_OVERLAY");
 	m_pSettingsGrid = FrameworkElement::FindName<Noesis::Grid>("SettingsGrid");
 	m_pControlsGrid = FrameworkElement::FindName<Noesis::Grid>("ControlsGrid");
 
@@ -40,18 +40,15 @@ void SettingsGUI::InitGUI()
 	SetDefaultSettings();
 }
 
-void SettingsGUI::ToggleSettings(bool isEscActive)
+void SettingsGUI::ToggleSettings()
 {
-	if (isEscActive)
-	{
-		m_pSettingsOverlay->SetVisibility(Noesis::Visibility_Visible);
-		m_pSettingsGrid->SetVisibility(Noesis::Visibility_Visible);
-	}
-	else
-	{
-		m_pSettingsGrid->SetVisibility(Noesis::Visibility_Collapsed);
-		m_pSettingsOverlay->SetVisibility(Noesis::Visibility_Collapsed);
-	}
+	m_SettingsActive = true;
+	FrameworkElement::FindName<Noesis::UserControl>("SETTINGS_UC")->SetVisibility(Noesis::Visibility_Visible);
+}
+
+bool SettingsGUI::GetSettingsStatus() const
+{
+	return m_SettingsActive;
 }
 
 bool SettingsGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -86,7 +83,9 @@ void SettingsGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 
 	if (m_pSettingsGrid->GetVisibility() == Noesis::Visibility_Visible)
 	{
-		m_pSettingsGrid->SetVisibility(Noesis::Visibility_Collapsed);
+		m_SettingsActive = false;
+		FrameworkElement::FindName<Noesis::UserControl>("SETTINGS_UC")->SetVisibility(Noesis::Visibility_Collapsed);
+
 	}
 	else if (m_pControlsGrid->GetVisibility() == Noesis::Visibility_Visible)
 	{

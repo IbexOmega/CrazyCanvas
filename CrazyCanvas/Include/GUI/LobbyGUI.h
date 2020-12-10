@@ -90,8 +90,6 @@ private:
 	Noesis::Label*			m_pPlayersLabel				= nullptr;
 	Noesis::Label*			m_pTeam1Label				= nullptr;
 	Noesis::Label*			m_pTeam2Label				= nullptr;
-	Noesis::Grid*			m_pSettingsGrid				= nullptr;
-	Noesis::Grid*			m_pControlsGrid				= nullptr;
 
 	PacketGameSettings* m_pGameSettings;
 	bool m_IsInitiated;

@@ -18,8 +18,10 @@ public:
 	~SettingsGUI();
 
 	void InitGUI();
-	void ToggleSettings(bool isEscActive);
+	void ToggleSettings();
 
+	bool GetSettingsStatus() const;
+private:
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	void OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
@@ -36,7 +38,6 @@ public:
 	void OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
-private:
 
 	void SetDefaultSettings();
 	void SetDefaultKeyBindings();
@@ -45,6 +46,8 @@ private:
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
 
 	NS_IMPLEMENT_INLINE_REFLECTION_(SettingsGUI, Noesis::UserControl, "CrazyCanvas.SettingsGUI");
+
+
 private:
 	bool 			m_ListenToCallbacks = false;
 	Noesis::Button* m_pSetKeyButton		= nullptr;
@@ -58,7 +61,8 @@ private:
 	bool			m_EscapeActive			= false;
 	bool			m_MouseEnabled			= false;
 
-	Noesis::Grid* m_pSettingsOverlay		= nullptr;
-	Noesis::Grid* m_pSettingsGrid			= nullptr;
-	Noesis::Grid* m_pControlsGrid			= nullptr;
+	bool			m_SettingsActive		= false;
+
+	Noesis::Grid* m_pSettingsGrid				= nullptr;
+	Noesis::Grid* m_pControlsGrid				= nullptr;
 };
