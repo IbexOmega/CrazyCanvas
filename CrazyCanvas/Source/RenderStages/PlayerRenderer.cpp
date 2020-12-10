@@ -26,7 +26,8 @@ namespace LambdaEngine
 
 	PlayerRenderer* PlayerRenderer::s_pInstance = nullptr;
 
-	PlayerRenderer::PlayerRenderer()
+	PlayerRenderer::PlayerRenderer() : 
+		m_Viewer()
 	{
 		VALIDATE(s_pInstance == nullptr);
 		s_pInstance = this;

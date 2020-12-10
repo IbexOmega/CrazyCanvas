@@ -102,7 +102,7 @@ Player* PlayerManagerBase::HandlePlayerJoined(uint64 uid, const PacketJoin& pack
 		player.m_IsSpectator	= packet.IsSpectator;
 
 		Player* pPlayer = &s_Players.insert({ player.GetUID(), player }).first->second;
-		LOG_INFO("Player [%s] joined! [%llu]", player.GetName().c_str(), player.GetUID());
+		LOG_INFO("Player [%s] joined! [%llu], [Spectator=%s]", player.GetName().c_str(), player.GetUID(), pPlayer->m_IsSpectator ? "True" : "False");
 
 		PlayerJoinedEvent newEvent(pPlayer);
 		EventQueue::SendEventImmediate(newEvent);
