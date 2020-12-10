@@ -59,6 +59,7 @@ private:
 	void SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption);
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
+	bool MouseScrollCallback(const LambdaEngine::MouseScrolledEvent& event);
 
 private:
 	bool 	m_ListenToCallbacks			= false;
