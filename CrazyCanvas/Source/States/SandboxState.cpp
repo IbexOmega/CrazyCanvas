@@ -49,6 +49,8 @@
 #include "Rendering/Animation/AnimationGraph.h"
 #include "Rendering/EntityMaskManager.h"
 
+#include "Rendering/PipelineStateManager.h"
+
 #include "Math/Random.h"
 
 #include "GUI/Core/GUIApplication.h"

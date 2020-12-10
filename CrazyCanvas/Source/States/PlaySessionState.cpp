@@ -108,6 +108,28 @@ void PlaySessionState::Init()
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 		m_CamSystem.Init();
 	}
+	else
+	{
+		ConsoleCommand cmdWireframe;
+		cmdWireframe.Init("wireframe", false);
+		cmdWireframe.AddArg(Arg::EType::BOOL);
+		cmdWireframe.AddDescription("Activate/Deactivate wireframe mode\n");
+		GameConsole::Get().BindCommand(cmdWireframe, [&, this](GameConsole::CallbackInput& input)->void {
+			THashTable<uint64, ManagedGraphicsPipelineStateDesc>& graphicsPipelinesDescs = PipelineStateManager::GetGraphicsPipelineStateDescriptions();
+
+			for (auto& it : graphicsPipelinesDescs)
+			{
+				ManagedGraphicsPipelineStateDesc& pipelineStateDesc = it.second;
+				if (pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS" || pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS_MESH_PAINT")
+				{
+					pipelineStateDesc.RasterizerState.PolygonMode = input.Arguments.GetFront().Value.Boolean ? EPolygonMode::POLYGON_MODE_LINE : EPolygonMode::POLYGON_MODE_FILL;
+				}
+			}
+
+			PipelineStateRecompileEvent recompileEvent = {};
+			EventQueue::SendEventImmediate(recompileEvent);
+			});
+	}
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
