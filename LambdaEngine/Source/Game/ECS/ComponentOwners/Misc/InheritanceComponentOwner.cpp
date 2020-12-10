@@ -21,7 +21,14 @@ namespace LambdaEngine
 
 	void InheritanceComponentOwner::Tick()
 	{
-		m_DeletedEntities.clear();
+		ECSCore* pECS = ECSCore::GetInstance();
+
+		for (Entity entity : m_EntitiesToDelete)
+		{
+			pECS->RemoveEntity(entity);
+		}
+
+		m_EntitiesToDelete.clear();
 	}
 
 	void InheritanceComponentOwner::ParentComponentDestructor(ParentComponent& parentComponent, Entity entity)
@@ -30,12 +37,7 @@ namespace LambdaEngine
 
 		if (parentComponent.DeleteParentOnRemoval)
 		{
-			ECSCore* pECS = ECSCore::GetInstance();
-
-			if (m_DeletedEntities.insert(parentComponent.Parent).second)
-			{
-				pECS->RemoveEntity(parentComponent.Parent);
-			}
+			m_EntitiesToDelete.insert(parentComponent.Parent);
 		}
 	}
 
@@ -43,7 +45,6 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(entity);
 	
-		ECSCore* pECS = ECSCore::GetInstance();
 		TArray<Entity> childEntities = childComponent.GetEntities();
 		TArray<bool> chilrenDeletionProperties = childComponent.GetDeletionProperties();
 
@@ -52,11 +53,7 @@ namespace LambdaEngine
 			if (chilrenDeletionProperties[i])
 			{
 				Entity childEntity = childEntities[i];
-
-				if (m_DeletedEntities.insert(childEntity).second)
-				{
-					pECS->RemoveEntity(childEntity);
-				}
+				m_EntitiesToDelete.insert(childEntity);
 			}
 		}
 	}

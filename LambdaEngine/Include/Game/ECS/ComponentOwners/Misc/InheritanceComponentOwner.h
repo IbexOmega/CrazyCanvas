@@ -29,6 +29,6 @@ namespace LambdaEngine
 
 	private:
 		static InheritanceComponentOwner s_Instance;
-		TSet<Entity> m_DeletedEntities;
+		TSet<Entity> m_EntitiesToDelete;
 	};
 }
