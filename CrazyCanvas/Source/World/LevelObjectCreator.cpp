@@ -151,7 +151,7 @@ bool LevelObjectCreator::Init()
 			s_LevelObjectOnLoadDescriptions.PushBack(levelObjectDesc);
 			s_LevelObjectByPrefixCreateFunctions[levelObjectDesc.Prefix] = &LevelObjectCreator::CreateShowerPoint;
 		}
-		
+
 		//Team Indicator
 		{
 			LevelObjectOnLoadDesc levelObjectDesc =
@@ -195,11 +195,12 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 	using namespace LambdaEngine;
 
 	Entity entity = UINT32_MAX;
+	s_HasDirectionalLight = true;
 	/*
 	if (!MultiplayerUtils::IsServer())
 	{
 		// Can be good to keep if we want statiuc directional lights later
-		
+
 		ECSCore* pECS = ECSCore::GetInstance();
 
 		DirectionalLightComponent directionalLightComponent =
@@ -381,6 +382,11 @@ ELevelObjectType LevelObjectCreator::CreateNoColliderObject(const LambdaEngine::
 		pECS->AddComponent<ScaleComponent>(entity, { true, pMesh->DefaultScale }),
 		pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
 		pECS->AddComponent<MeshComponent>(entity, meshComp);
+		pECS->AddComponent<RayTracedComponent>(entity,
+			RayTracedComponent
+			{
+				.HitMask = 0xFF
+			});
 
 		createdEntities.PushBack(entity);
 	}
@@ -399,8 +405,9 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 		LOG_ERROR("[LevelObjectCreator]: Team Index not found for Team Indicator, defaulting to 0...");
 		teamComponent.TeamIndex = 0;
 	}
-	 
+
 	// Modify material of mesh component to represent team color
+	uint8 teamColorIndex = TeamHelper::GetTeamColorIndex(teamComponent.TeamIndex);
 	glm::vec3 teamColor = TeamHelper::GetTeamColor(teamComponent.TeamIndex);
 
 	TArray<MeshComponent> meshComponents = levelObject.MeshComponents;
@@ -431,7 +438,7 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 		}
 
 		GUID_Lambda teamMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"TeamIndicator Color Material " + materialName,
+			"Team Indicator Color Material " + materialName + " Color Index" + std::to_string(teamColorIndex),
 			loadDesc.AlbedoMapGUID		!= GUID_NONE ? loadDesc.AlbedoMapGUID  : GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			loadDesc.NormalMapGUID		!= GUID_NONE ? loadDesc.NormalMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 			loadDesc.AOMapGUID			!= GUID_NONE ? loadDesc.AOMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
@@ -563,6 +570,11 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+		pECS->AddComponent<RayTracedComponent>(entity,
+			RayTracedComponent
+			{
+				.HitMask = 0xFF
+			});
 	}
 
 	createdEntities.PushBack(entity);
@@ -572,8 +584,8 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 }
 
 ELevelObjectType LevelObjectCreator::CreateSpectateMapPoint(
-	const LambdaEngine::LevelObjectOnLoad& levelObject, 
-	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, 
+	const LambdaEngine::LevelObjectOnLoad& levelObject,
+	LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 	const glm::vec3& translation)
 {
 
@@ -585,7 +597,7 @@ ELevelObjectType LevelObjectCreator::CreateSpectateMapPoint(
 
 	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
 	pECS->AddComponent<RotationComponent>(entity, { true, levelObject.DefaultRotation });
-	pECS->AddComponent<SpectateComponent>(entity, SpectateComponent());
+	pECS->AddComponent<SpectateComponent>(entity, { SpectateType::SPECTATE_OBJECT });
 
 	createdEntities.PushBack(entity);
 
@@ -607,12 +619,12 @@ ELevelObjectType LevelObjectCreator::CreateFlagSpawn(
 
 	pECS->AddComponent<FlagSpawnComponent>(entity, FlagSpawnComponent());
 	pECS->AddComponent<PositionComponent>(entity, { true, levelObject.DefaultPosition + translation });
-	pECS->AddComponent<SpectateComponent>(entity, SpectateComponent());
 
 	uint8 teamIndex = 0;
 	if (FindTeamIndex(levelObject.Name, teamIndex))
 	{
 		pECS->AddComponent<TeamComponent>(entity, { .TeamIndex = teamIndex });
+		pECS->AddComponent<SpectateComponent>(entity, { SpectateType::FLAG_SPAWN });
 	}
 
 	createdEntities.PushBack(entity);
@@ -887,15 +899,15 @@ bool LevelObjectCreator::CreateFlag(
 				.JointName = "mixamorig:Spine2",
 				.Transform = glm::mat4(1.0f),
 			});
+
+		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 	}
 	else
 	{
 		EFlagColliderType flagPlayerColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER;
 		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
-
-		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
-				.HitMask = 0xFF
-			});
 
 		//Only the server checks collision with the flag
 		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
@@ -974,7 +986,6 @@ bool LevelObjectCreator::CreatePlayer(
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
 	PlayerIndexHelper::AddPlayerEntity(playerEntity);
 
-
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
 		NetworkPositionComponent
@@ -989,7 +1000,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<ScaleComponent>(playerEntity,			ScaleComponent{ .Scale = pPlayerDesc->Scale });
 	pECS->AddComponent<VelocityComponent>(playerEntity,			VelocityComponent());
 	pECS->AddComponent<TeamComponent>(playerEntity,				TeamComponent{ .TeamIndex = pPlayer->GetTeam() });
-	pECS->AddComponent<SpectateComponent>(playerEntity, SpectateComponent());
 	pECS->AddComponent<PacketComponent<PacketPlayerAction>>(playerEntity, { });
 	pECS->AddComponent<PacketComponent<PacketPlayerActionResponse>>(playerEntity, { });
 
@@ -1191,15 +1201,40 @@ bool LevelObjectCreator::CreatePlayer(
 
 		//Add Audio Instances
 		{
-			SoundInstance3DDesc soundInstanceDesc = {};
-			soundInstanceDesc.pName			= "Step";
-			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
-			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
-			soundInstanceDesc.Position		= pPlayerDesc->Position;
-			soundInstanceDesc.Volume		= 2.0f;
-
 			AudibleComponent audibleComponent = {};
-			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Step";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 2.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Jump";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_JUMP_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 1.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Landing";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_LANDING_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 2.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
 
 			pECS->AddComponent<AudibleComponent>(playerEntity, audibleComponent);
 		}
@@ -1215,6 +1250,8 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
 				.HitMask = 0xFF
 			});
+
+			pECS->AddComponent<SpectateComponent>(playerEntity, { SpectateType::PLAYER });
 		}
 		else
 		{
@@ -1236,13 +1273,13 @@ bool LevelObjectCreator::CreatePlayer(
 			//pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
 			//EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
 
+			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
+			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
+
+			pECS->AddComponent<SpectateComponent>(playerEntity, { SpectateType::LOCAL_PLAYER });
+
 			auto firstPersonHandsEntity = pECS->CreateEntity();
 			{
-				StepParentComponent stepParentComponent =
-				{
-					.Owner = firstPersonHandsEntity,
-				};
-
 				pECS->AddComponent<StepParentComponent>(weaponEntity, { .Owner = firstPersonHandsEntity });
 
 				pECS->AddComponent<PositionComponent>(firstPersonHandsEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
@@ -1258,14 +1295,13 @@ bool LevelObjectCreator::CreatePlayer(
 						.MeshGUID = ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID,
 						.MaterialGUID = ResourceCatalog::ARMS_FIRST_PERSON_MATERIAL_GUID,
 					});
-
+				
 				AnimationComponent animationComponentWeapon = {};
 				animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID)->pSkeleton;
 
 				AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
 				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[1]));
 				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Shooting", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[2]));
-
 
 				{
 					AnimationState* pAnimationState = DBG_NEW AnimationState("Idle & Shooting");
@@ -1303,10 +1339,15 @@ bool LevelObjectCreator::CreatePlayer(
 					.DeleteParentOnRemoval = false
 				};
 				pECS->AddComponent<ParentComponent>(firstPersonHandsEntity, parentComp);
+
+				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
+				pECS->AddComponent<RayTracedComponent>(firstPersonHandsEntity, RayTracedComponent{
+					.HitMask = 0x00
+				});
 			}
 
-			auto firstPersonWeaponEntity = pECS->CreateEntity();
 			{
+				auto firstPersonWeaponEntity = pECS->CreateEntity();
 				pECS->AddComponent<PositionComponent>(firstPersonWeaponEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
 				pECS->AddComponent<RotationComponent>(firstPersonWeaponEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
 				pECS->AddComponent<ScaleComponent>(firstPersonWeaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
@@ -1331,11 +1372,16 @@ bool LevelObjectCreator::CreatePlayer(
 					.DeleteParentOnRemoval = false
 				};
 				pECS->AddComponent<ParentComponent>(firstPersonWeaponEntity, parentComponent);
-
+				
 				pECS->AddComponent<AnimationAttachedComponent>(firstPersonWeaponEntity, AnimationAttachedComponent
 					{
 						.JointName = "Gun",
 						.Transform = glm::mat4(1.0f),
+					});
+
+				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
+				pECS->AddComponent<RayTracedComponent>(firstPersonWeaponEntity, RayTracedComponent{
+					.HitMask = 0x00
 					});
 			}
 
@@ -1370,11 +1416,16 @@ bool LevelObjectCreator::CreatePlayer(
 					.DeleteParentOnRemoval = false
 				};
 				pECS->AddComponent<ParentComponent>(weaponLiquidEntity, parentComponent);
-
+				
 				pECS->AddComponent<AnimationAttachedComponent>(weaponLiquidEntity, AnimationAttachedComponent
 					{
 						.JointName = "Gun",
 						.Transform = glm::mat4(1.0f),
+					});
+
+				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
+				pECS->AddComponent<RayTracedComponent>(weaponLiquidEntity, RayTracedComponent{
+					.HitMask = 0x00
 					});
 			}
 
@@ -1414,10 +1465,12 @@ bool LevelObjectCreator::CreatePlayer(
 						.JointName = "Gun",
 						.Transform = glm::mat4(1.0f),
 					});
-			}
 
-			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
-			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
+				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
+				pECS->AddComponent<RayTracedComponent>(weaponLiquidEntity, RayTracedComponent{
+					.HitMask = 0x00
+					});
+			}
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();
@@ -1432,7 +1485,6 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 			pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
 			pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->GetAudioListener(false) });
-			pECS->AddComponent<SpectateComponent>(cameraEntity, SpectateComponent());
 
 			const ViewProjectionMatricesComponent viewProjComp =
 			{
@@ -1459,17 +1511,20 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
 
 			// Create Directional Light Component
-			DirectionalLightComponent directionalLightComponent =
+			if (s_HasDirectionalLight)
 			{
-				.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
-				.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
-				.FrustumWidth	= 25.0f,
-				.FrustumHeight	= 15.0f,
-				.FrustumZNear	= -60.0f,
-				.FrustumZFar	= 10.0f
-			};
+				DirectionalLightComponent directionalLightComponent =
+				{
+					.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
+					.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
+					.FrustumWidth	= 25.0f,
+					.FrustumHeight	= 15.0f,
+					.FrustumZNear	= -60.0f,
+					.FrustumZFar	= 10.0f
+				};
 
-			pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
+				pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
+			}
 		}
 	}
 	else
@@ -1556,7 +1611,8 @@ bool LevelObjectCreator::CreateProjectile(
 				/* Shape Type */		EShapeType::SIMULATION,
 				/* Geometry Type */		EGeometryType::SPHERE,
 				/* Geometry Params */	{ .Radius = 0.3f },
-				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_DYNAMIC,
+				/* CollisionGroup */	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
+										(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
 				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
 										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
 				/* EntityID*/			desc.WeaponOwner,

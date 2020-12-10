@@ -147,6 +147,12 @@ namespace LambdaEngine
 			UNREFERENCED_VARIABLE(count);
 		}
 
+		virtual void UpdatePushConstants(const void* pData, uint32 dataSize)
+		{
+			UNREFERENCED_VARIABLE(pData);
+			UNREFERENCED_VARIABLE(dataSize);
+		}
+
 		/*
 		* Called at rendertime to allow recording device commands
 		*	modFrameIndex - The current Frame Index % #BackBufferImages

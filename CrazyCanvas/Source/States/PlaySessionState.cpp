@@ -60,6 +60,7 @@ PlaySessionState::PlaySessionState(const PacketGameSettings& gameSettings, bool 
 	m_Singleplayer(singlePlayer),
 	m_MultiplayerClient(),
 	m_GameSettings(gameSettings),
+	m_NameplateSystem(&m_HUDSystem),
 	m_DefferedTicks(3),
 	m_Initiated(false),
 	m_MatchReadyReceived(false),
@@ -107,20 +108,44 @@ void PlaySessionState::Init()
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 		m_CamSystem.Init();
 	}
+	else
+	{
+		ConsoleCommand cmdWireframe;
+		cmdWireframe.Init("wireframe", false);
+		cmdWireframe.AddArg(Arg::EType::BOOL);
+		cmdWireframe.AddDescription("Activate/Deactivate wireframe mode\n");
+		GameConsole::Get().BindCommand(cmdWireframe, [&, this](GameConsole::CallbackInput& input)->void {
+			THashTable<uint64, ManagedGraphicsPipelineStateDesc>& graphicsPipelinesDescs = PipelineStateManager::GetGraphicsPipelineStateDescriptions();
+
+			for (auto& it : graphicsPipelinesDescs)
+			{
+				ManagedGraphicsPipelineStateDesc& pipelineStateDesc = it.second;
+				if (pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS" || pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS_MESH_PAINT")
+				{
+					pipelineStateDesc.RasterizerState.PolygonMode = input.Arguments.GetFront().Value.Boolean ? EPolygonMode::POLYGON_MODE_LINE : EPolygonMode::POLYGON_MODE_FILL;
+				}
+			}
+
+			PipelineStateRecompileEvent recompileEvent = {};
+			EventQueue::SendEvent(recompileEvent);
+			});
+	}
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
-	Input::PushInputMode(EInputLayer::GAME);
+	Input::PushInputLayer(EInputLayer::GAME);
 
 	EnablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
 
 	// Initialize event listeners
 	m_AudioEffectHandler.Init();
+	m_PingHandler.Init();
 	m_MultiplayerClient.InitInternal();
 
 	// Init Systems
 	m_HUDSystem.Init();
+	m_NameplateSystem.Init();
 	m_DestructionSystem.Init();
 
 	// Commands
@@ -164,7 +189,7 @@ void PlaySessionState::Tick(Timestamp delta)
 {
 	if (m_UpdateShaders)
 	{
-		m_UpdateShaders = false; 
+		m_UpdateShaders = false;
 		EventQueue::SendEvent(ShaderRecompileEvent());
 		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}
@@ -174,6 +199,7 @@ void PlaySessionState::Tick(Timestamp delta)
 
 void PlaySessionState::FixedTick(Timestamp delta)
 {
+	PROFILE_FUNCTION("m_NameplateSystem.FixedTick", m_NameplateSystem.FixedTick(delta));
 	PROFILE_FUNCTION("m_HUDSystem.FixedTick", m_HUDSystem.FixedTick(delta));
 	PROFILE_FUNCTION("MultiplayerBase::FixedTickMainThreadInternal", m_MultiplayerClient.FixedTickMainThreadInternal(delta));
 
@@ -197,6 +223,8 @@ bool PlaySessionState::OnClientDisconnected(const ClientDisconnectedEvent& event
 	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
 
 	PlayerManagerClient::Reset();
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);

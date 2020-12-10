@@ -138,7 +138,9 @@ namespace LambdaEngine
 		if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_DISCOVERY)
 		{
 			BinaryDecoder decoder(pPacket);
-			if (decoder.ReadString() == m_NameOfGame)
+			String str;
+			bool isLAN;
+			if (decoder.ReadString(str) && str == m_NameOfGame && decoder.ReadBool(isLAN))
 			{
 				std::set<NetworkSegment*, NetworkSegmentUIDOrder> packets;
 				TSet<uint32> reliableUIDs;
@@ -154,7 +156,7 @@ namespace LambdaEngine
 
 				BinaryEncoder encoder(pResponse);
 				encoder.WriteString(m_NameOfGame);
-				encoder.WriteBool(decoder.ReadBool());
+				encoder.WriteBool(isLAN);
 				encoder.WriteUInt16(m_PortOfGameServer);
 				encoder.WriteUInt64(m_ServerUID);
 				m_pHandler->OnNetworkDiscoveryPreTransmit(encoder);

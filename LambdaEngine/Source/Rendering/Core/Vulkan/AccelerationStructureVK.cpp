@@ -37,10 +37,21 @@ namespace LambdaEngine
 		accelerationStructureCreateInfo.compactedSize		= 0;
 		accelerationStructureCreateInfo.maxGeometryCount	= 1;
 		accelerationStructureCreateInfo.deviceAddress		= VK_NULL_HANDLE;
-		accelerationStructureCreateInfo.flags				= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+		accelerationStructureCreateInfo.flags				= 0;
+
 		if (pDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 		{
 			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+		}
+
+		if (pDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_TRACE)
+		{
+			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+		}
+		else if (pDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD)
+		{
+
+			accelerationStructureCreateInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 		}
 
 		VkAccelerationStructureCreateGeometryTypeInfoKHR geometryTypeInfo = {};
@@ -138,11 +149,11 @@ namespace LambdaEngine
 
 		if (!m_Desc.DebugName.empty())
 		{
-			LOG_DEBUG("Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.DebugName.c_str(), memoryRequirements.size);
+			LOG_VULKAN_INFO("Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.DebugName.c_str(), memoryRequirements.size);
 		}
 		else
 		{
-			LOG_DEBUG("Acceleration Structure created with size of %u bytes", memoryRequirements.size);
+			LOG_VULKAN_INFO("Acceleration Structure created with size of %u bytes", memoryRequirements.size);
 		}
 
 		VkMemoryRequirements scratchMemoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);

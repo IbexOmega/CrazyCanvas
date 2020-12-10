@@ -24,6 +24,7 @@ namespace LambdaEngine
 	/*
 	* Input
 	*/
+
 	class LAMBDA_API Input
 	{
 	public:
@@ -39,47 +40,53 @@ namespace LambdaEngine
 			s_InputEnabled = true;
 		}
 
-		FORCEINLINE static void PushInputMode(EInputLayer inputMode)
+		FORCEINLINE static void PushInputLayer(EInputLayer inputMode)
 		{
-			if (!s_InputModeStack.empty())
+			std::scoped_lock<SpinLock> inputStackLock(s_InputStackLock);
+
+			if (!s_InputLayerStack.empty())
 			{
-				bool* pKeyStates		= s_KeyboardStates[ConvertInputModeUINT8(s_InputModeStack.top())][STATE_WRITE_INDEX].KeyStates;
-				bool* pMouseStates = s_MouseStates[ConvertInputModeUINT8(s_InputModeStack.top())][STATE_WRITE_INDEX].ButtonStates;
-
-				for (int k = 0; k < EKey::KEY_COUNT; k++)
+				const uint8 currentInputMode = ConvertInputLayerUINT8(s_InputLayerStack.top());
+				for (uint32 i = 0; i < EKey::KEY_COUNT; i++)
 				{
-					pKeyStates[k] = false;
+					s_KeyboardStates[currentInputMode][STATE_WRITE_INDEX].KeyStates[i].Reset();
 				}
 
-				for (int m = 0; m < EMouseButton::MOUSE_BUTTON_COUNT; m++)
-				{
-					pMouseStates[m] = false;
-				}
+				std::fill_n(s_MouseStates[currentInputMode][STATE_WRITE_INDEX].ButtonStates, EMouseButton::MOUSE_BUTTON_COUNT, false);
+
+				UpdateReadIndex(currentInputMode);
 			}
 
-			s_InputModeStack.push(inputMode);
+			s_InputLayerStack.push(inputMode);
 		}
 
-		FORCEINLINE static void PopInputMode()
+		FORCEINLINE static void PopInputLayer()
 		{
-			s_InputModeStack.pop();
+			std::scoped_lock<SpinLock> inputStackLock(s_InputStackLock);
+			s_InputLayerStack.pop();
 		}
 
-		FORCEINLINE static EInputLayer GetCurrentInputmode()
+		FORCEINLINE static EInputLayer GetCurrentInputLayer()
 		{
-			return s_InputModeStack.top();
+			std::scoped_lock<SpinLock> inputStackLock(s_InputStackLock);
+			return s_InputLayerStack.top();
 		}
 
 		static void Disable();
 
 		FORCEINLINE static bool IsKeyDown(EInputLayer inputMode, EKey key)
 		{
-			return s_KeyboardStates[ConvertInputModeUINT8(inputMode)][STATE_READ_INDEX].IsKeyDown(key);
+			return s_KeyboardStates[ConvertInputLayerUINT8(inputMode)][STATE_READ_INDEX].IsKeyDown(key);
 		}
 
 		FORCEINLINE static bool IsKeyUp(EInputLayer inputMode, EKey key)
 		{
-			return s_KeyboardStates[ConvertInputModeUINT8(inputMode)][STATE_READ_INDEX].IsKeyUp(key);
+			return s_KeyboardStates[ConvertInputLayerUINT8(inputMode)][STATE_READ_INDEX].IsKeyUp(key);
+		}
+
+		FORCEINLINE static bool IsKeyJustPressed(EInputLayer inputMode, EKey key)
+		{
+			return s_KeyboardStates[ConvertInputLayerUINT8(inputMode)][STATE_READ_INDEX].IsKeyJustPressed(key);
 		}
 
 		FORCEINLINE static bool IsInputEnabled()
@@ -87,30 +94,48 @@ namespace LambdaEngine
 			return s_InputEnabled;
 		}
 
+		FORCEINLINE static void UpdateReadIndex(uint8 inputMode)
+		{
+			std::scoped_lock<SpinLock> keyboardLock(s_WriteBufferLockKeyboard);
+			std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
+
+			for (uint32 i = 0; i < EKey::KEY_COUNT; i++)
+			{
+				if (s_KeyboardStates[inputMode][STATE_READ_INDEX].KeyStates[i].JustPressed)
+				{
+					s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[i].JustPressed = false;
+				}
+			}
+
+			s_KeyboardStates[inputMode][STATE_READ_INDEX]	= s_KeyboardStates[inputMode][STATE_WRITE_INDEX];
+			s_MouseStates[inputMode][STATE_READ_INDEX]		= s_MouseStates[inputMode][STATE_WRITE_INDEX];
+		}
+
 		FORCEINLINE static const KeyboardState& GetKeyboardState(EInputLayer inputMode)
 		{
-			return s_KeyboardStates[ConvertInputModeUINT8(inputMode)][STATE_READ_INDEX];
+			return s_KeyboardStates[ConvertInputLayerUINT8(inputMode)][STATE_READ_INDEX];
 		}
 
 		FORCEINLINE static const MouseState& GetMouseState(EInputLayer inputMode)
 		{
-			return s_MouseStates[ConvertInputModeUINT8(inputMode)][STATE_READ_INDEX];
+			return s_MouseStates[ConvertInputLayerUINT8(inputMode)][STATE_READ_INDEX];
 		}
 
 	private:
 		static bool HandleEvent(const Event& event);
-		static uint8 ConvertInputModeUINT8(EInputLayer inputMode);
+		static uint8 ConvertInputLayerUINT8(EInputLayer inputMode);
 
 	private:
 		// Input states are double buffered. The first one is read from, the second is written to.
-		static KeyboardState s_KeyboardStates[4][4];
-		static MouseState s_MouseStates[4][4];
+		static KeyboardState	s_KeyboardStates[4][2];
+		static MouseState		s_MouseStates[4][2];
 
 		// Make sure nothing is being written to the write buffer when copying write buffer to read buffer in Input::Tick
 		static SpinLock s_WriteBufferLockMouse;
 		static SpinLock s_WriteBufferLockKeyboard;
-		static std::atomic_bool s_InputEnabled;
+		static SpinLock s_InputStackLock;
 
-		static std::stack<EInputLayer> s_InputModeStack;
+		static std::atomic_bool			s_InputEnabled;
+		static std::stack<EInputLayer>	s_InputLayerStack;
 	};
 }

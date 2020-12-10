@@ -11,6 +11,9 @@
 
 #include "Physics/CollisionGroups.h"
 
+#include "Events/MatchEvents.h"
+#include "Application/API/Events/EventQueue.h"
+
 #include "Resources/ResourceManager.h"
 
 #include "Game/Multiplayer/MultiplayerUtils.h"
@@ -47,12 +50,15 @@ void ClientFlagSystem::OnFlagPickedUp(LambdaEngine::Entity playerEntity, LambdaE
 		ParentComponent& flagParentComponent = pECS->GetComponent<ParentComponent>(flagEntity);
 
 		// Attach Flag to player
-		flagParentComponent.Attached	= true;
-		flagParentComponent.Parent		= playerEntity;
+		flagParentComponent.Attached = true;
+		flagParentComponent.Parent = playerEntity;
 
 		//Set Flag Offset
 		const physx::PxBounds3& playerBoundingBox = playerCollisionComponent.pController->getActor()->getWorldBounds();
 		flagOffsetComponent.Offset = glm::vec3(0.0f, playerBoundingBox.getDimensions().y / 2.0f, 0.0f);
+
+		FlagPickedUpEvent event(playerEntity, flagEntity);
+		EventQueue::SendEvent(event);
 	};
 
 	pECS->ScheduleJobASAP(job);
@@ -75,12 +81,15 @@ void ClientFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		ParentComponent& flagParentComponent		= pECS->GetComponent<ParentComponent>(flagEntity);
-		PositionComponent& flagPositionComponent	= pECS->GetComponent<PositionComponent>(flagEntity);
-		AnimationAttachedComponent& flagAnimAttachedComponent = pECS->GetComponent<AnimationAttachedComponent>(flagEntity);
+		ParentComponent& flagParentComponent					= pECS->GetComponent<ParentComponent>(flagEntity);
+		PositionComponent& flagPositionComponent				= pECS->GetComponent<PositionComponent>(flagEntity);
+		AnimationAttachedComponent& flagAnimAttachedComponent	= pECS->GetComponent<AnimationAttachedComponent>(flagEntity);
 
 		// Reset Flag orientation
 		flagAnimAttachedComponent.Transform = glm::mat4(1.0f);
+
+		FlagDroppedEvent event(flagParentComponent.Parent, flagEntity);
+		EventQueue::SendEvent(event);
 
 		//Set Flag Carrier (None)
 		flagParentComponent.Attached	= false;
@@ -88,6 +97,7 @@ void ClientFlagSystem::OnFlagDropped(LambdaEngine::Entity flagEntity, const glm:
 
 		//Set Position
 		flagPositionComponent.Position	= dropPosition;
+
 	};
 
 	pECS->ScheduleJobASAP(job);
@@ -138,19 +148,22 @@ void ClientFlagSystem::TickInternal(LambdaEngine::Timestamp deltaTime)
 
 		if (parentComponent.Attached)
 		{
-			const PositionComponent& parentPositionComponent = pPositionComponents->GetConstData(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent = pRotationComponents->GetConstData(parentComponent.Parent);
+			PositionComponent parentPositionComponent;
+			RotationComponent parentRotationComponent;
+			if (pPositionComponents->GetConstIf(parentComponent.Parent, parentPositionComponent) &&
+				pRotationComponents->GetConstIf(parentComponent.Parent, parentRotationComponent))
+			{
+				const OffsetComponent& flagOffsetComponent = pOffsetComponents->GetConstData(flagEntity);
+				PositionComponent& flagPositionComponent = pPositionComponents->GetData(flagEntity);
+				RotationComponent& flagRotationComponent = pRotationComponents->GetData(flagEntity);
 
-			const OffsetComponent& flagOffsetComponent	= pOffsetComponents->GetConstData(flagEntity);
-			PositionComponent& flagPositionComponent	= pPositionComponents->GetData(flagEntity);
-			RotationComponent& flagRotationComponent	= pRotationComponents->GetData(flagEntity);
-
-			CalculateAttachedFlagPosition(
-				flagPositionComponent.Position,
-				flagRotationComponent.Quaternion,
-				flagOffsetComponent.Offset,
-				parentPositionComponent.Position,
-				parentRotationComponent.Quaternion);
+				CalculateAttachedFlagPosition(
+					flagPositionComponent.Position,
+					flagRotationComponent.Quaternion,
+					flagOffsetComponent.Offset,
+					parentPositionComponent.Position,
+					parentRotationComponent.Quaternion);
+			}
 		}
 	}
 }

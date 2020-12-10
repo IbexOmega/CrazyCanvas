@@ -23,7 +23,7 @@ namespace LambdaEngine
 
 	struct ChildComponent
 	{
-		DECL_COMPONENT(ParentComponent);
+		DECL_COMPONENT(ChildComponent);
 
 	public:
 		inline void AddChild(const String& tag, Entity entity, bool deleteOnRemoval)

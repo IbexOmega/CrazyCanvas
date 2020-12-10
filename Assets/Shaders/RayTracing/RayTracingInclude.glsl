@@ -55,19 +55,17 @@ layout(binding = 7,		set = TEXTURE_SET_INDEX) uniform sampler2D		u_GBufferDepthS
 layout(binding = 8,		set = TEXTURE_SET_INDEX) uniform sampler2D 		u_DirLShadowMap;
 layout(binding = 9,		set = TEXTURE_SET_INDEX) uniform samplerCube 	u_PointLShadowMap[];
 layout(binding = 10,	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_TextureAtlases[];
-layout(binding = 11,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_IntermediateOutputImage;
-layout(binding = 12,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
-layout(binding = 13,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
-layout(binding = 14,	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
+layout(binding = 11,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
+layout(binding = 12,	set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
+layout(binding = 13,	set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
+layout(binding = 14,	set = TEXTURE_SET_INDEX) uniform sampler2DArray u_BlueNoiseLUTs;
+layout(binding = 15,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_Reflections;
+layout(binding = 16,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	u_BRDF_PDF;
+
+layout(push_constant) uniform ReflectionSettings
+{
+	int GlossyEnabled;
+	int SPP;
+} pc_ReflectionSettings;
 
 #include "../MeshPaintHelper.glsl"
-
-SRayDirections CalculateRayDirections(vec3 hitPosition, vec3 normal, vec3 cameraPosition)
-{
-	vec3 origDirection = normalize(hitPosition - cameraPosition);
-
-	SRayDirections rayDirections;
-	rayDirections.ReflDir = reflect(origDirection, normal);
-	rayDirections.ViewDir = -origDirection;
-	return rayDirections;
-}

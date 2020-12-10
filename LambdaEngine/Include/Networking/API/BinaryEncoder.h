@@ -15,25 +15,25 @@ namespace LambdaEngine
 		BinaryEncoder(NetworkSegment* pPacket);
 		~BinaryEncoder();
 
-		void WriteInt8(int8 value);
-		void WriteUInt8(uint8 value);
-		void WriteInt16(int16 value);
-		void WriteUInt16(uint16 value);
-		void WriteInt32(int32 value);
-		void WriteUInt32(uint32 value);
-		void WriteInt64(int64 value);
-		void WriteUInt64(uint64 value);
-		void WriteFloat32(float32 value);
-		void WriteFloat64(float64 value);
-		void WriteBool(bool value);
-		void WriteString(const std::string& value);
-		void WriteBuffer(const uint8* pBuffer, uint16 size);
+		bool WriteInt8(int8 value);
+		bool WriteUInt8(uint8 value);
+		bool WriteInt16(int16 value);
+		bool WriteUInt16(uint16 value);
+		bool WriteInt32(int32 value);
+		bool WriteUInt32(uint32 value);
+		bool WriteInt64(int64 value);
+		bool WriteUInt64(uint64 value);
+		bool WriteFloat32(float32 value);
+		bool WriteFloat64(float64 value);
+		bool WriteBool(bool value);
+		bool WriteString(const std::string& value);
+		bool WriteBuffer(const uint8* pBuffer, uint16 size);
 
-		void WriteVec2(const glm::vec2& value);
-		void WriteVec3(const glm::vec3& value);
-		void WriteVec4(const glm::vec4& value);
+		bool WriteVec2(const glm::vec2& value);
+		bool WriteVec3(const glm::vec3& value);
+		bool WriteVec4(const glm::vec4& value);
 
-		void WriteQuat(const glm::quat& value);
+		bool WriteQuat(const glm::quat& value);
 
 	private:
 		NetworkSegment* m_pNetworkPacket;

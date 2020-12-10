@@ -5,11 +5,12 @@
 #include "Rendering/Core/API/CommandList.h"
 #include "Rendering/Core/API/DescriptorSet.h"
 
-namespace LambdaEngine {
+namespace LambdaEngine 
+{
 
 	using DescriptorSetIndex = uint32;
 
-	struct FrameBuffer
+	struct FrameBuffer 
 	{
 		glm::mat4 Projection;
 		glm::mat4 View;
@@ -20,16 +21,16 @@ namespace LambdaEngine {
 		glm::vec4 CameraPosition;
 		glm::vec4 CameraRight;
 		glm::vec4 CameraUp;
-		glm::vec2 Jitter;
+		glm::vec2 JitterDiff = glm::vec2(0.0f);
 
 		uint32 FrameIndex;
 		uint32 RandomSeed;
 	};
 
-	struct SWeaponBuffer
+	struct SWeaponBuffer 
 	{
 		glm::mat4 Model;
-		glm::mat4 PlayerRotaion;
+		glm::mat4 PlayerRotation;
 		glm::vec3 PlayerPos;
 	};
 
@@ -41,6 +42,7 @@ namespace LambdaEngine {
 
 		FirstPersonWeaponRenderer();
 		~FirstPersonWeaponRenderer();
+
 		virtual bool Init() override final;
 
 		virtual bool RenderGraphInit(const CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;

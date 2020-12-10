@@ -9,7 +9,7 @@
 struct SWeaponData
 {
 	mat4 Model;
-	mat4 PlayerRotaion;
+	mat4 PlayerRotation;
 	vec3 PlayerPos;
 };
 
@@ -67,7 +67,7 @@ void main()
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SWeaponData weaponData			= u_WeaponData.val;
 
-	mat4 normalTransform    = instance.Transform * weaponData.PlayerRotaion;
+	mat4 normalTransform    = instance.Transform * weaponData.PlayerRotation;
 
 	vec3 position 			= vertex.Position.xyz;
 	vec4 worldPosition		= weaponData.Model * instance.Transform * u_PC.DefaultTransform * vec4(position, 1.0f);
@@ -78,7 +78,7 @@ void main()
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
 	out_MaterialSlot 		= instance.MaterialSlot;
-	out_WorldPosition		= weaponData.PlayerPos + Rotate(position, weaponData.PlayerRotaion).xyz;
+	out_WorldPosition		= weaponData.PlayerPos + Rotate(position, weaponData.PlayerRotation).xyz;
 	out_Normal				= normal;
 	out_Tangent				= tangent;
 	out_Bitangent			= bitangent;
@@ -88,7 +88,7 @@ void main()
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 
-	vec3 worldPos = (weaponData.PlayerRotaion * vec4(position - vec3(0.f, 0.f, -0.139f), 1.0f)).xyz;   
+	vec3 worldPos = (weaponData.PlayerRotation * vec4(position - vec3(0.f, 0.f, -0.139f), 1.0f)).xyz;   
 	// rotate it around XY
 	vec3 worldPosX = RotateAroundYInDegrees(vec4(worldPos,0),360).xyz;
 	// rotate around XZ

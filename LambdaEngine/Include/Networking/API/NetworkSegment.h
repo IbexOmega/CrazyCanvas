@@ -52,18 +52,18 @@ namespace LambdaEngine
 
 		uint16 GetTotalSize() const;
 
-		NetworkSegment* Write(const void* pBuffer, uint16 bytes);
+		bool Write(const void* pBuffer, uint16 bytes);
 
 		template<typename T>
-		NetworkSegment* Write(const T* pStruct)
+		bool Write(const T* pStruct)
 		{
 			return Write(pStruct, sizeof(T));
 		}
 
-		NetworkSegment* Read(void* pBuffer, uint16 bytes);
+		bool Read(void* pBuffer, uint16 bytes);
 
 		template<typename T>
-		NetworkSegment* Read(T* pStruct)
+		bool Read(T* pStruct)
 		{
 			return Read(pStruct, sizeof(T));
 		}

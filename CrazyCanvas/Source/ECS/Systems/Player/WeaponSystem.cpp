@@ -182,8 +182,6 @@ void WeaponSystem::OnProjectileHit(const LambdaEngine::EntityCollisionInfo& coll
 {
 	using namespace LambdaEngine;
 
-	LOG_INFO("Projectile hit: collisionInfo0: %d, collisionInfo1: %d", collisionInfo0.Entity, collisionInfo1.Entity);
-
 	// Is this safe? Concurrency issues?
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<TeamComponent>*		pTeamComponents			= pECS->GetComponentArray<TeamComponent>();
@@ -240,9 +238,16 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	WeaponComponent& weaponComponent = pECS->GetComponent<WeaponComponent>(weaponEntity);
 
 	const Entity weaponOwner = weaponComponent.WeaponOwner;
+	PositionComponent playerPositionComponent;
+	RotationComponent playerRotationComponent;
+
+	if (!pECS->GetConstComponentIf<PositionComponent>(weaponOwner, playerPositionComponent) ||
+		!pECS->GetConstComponentIf<RotationComponent>(weaponOwner, playerRotationComponent))
+	{
+		return;
+	}
+
 	const OffsetComponent&		weaponOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(weaponEntity);
-	const PositionComponent&	playerPositionComponent = pECS->GetConstComponent<PositionComponent>(weaponOwner);
-	const RotationComponent&	playerRotationComponent = pECS->GetConstComponent<RotationComponent>(weaponOwner);
 
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 

@@ -14,6 +14,8 @@
 #include "Lobby/Player.h"
 #include "Events/ChatEvents.h"
 
+#include "GUI/SettingsGUI.h"
+
 #include "Multiplayer/Packet/PacketGameSettings.h"
 
 #include "Application/API/Events/KeyEvents.h"
@@ -45,7 +47,8 @@ public:
 	void AddSettingColorBox(
 		const LambdaEngine::String& settingKey,
 		const LambdaEngine::String& settingText,
-		const LambdaEngine::TArray<glm::vec3>& settingColors,
+		const glm::vec3* pSettingColors,
+		uint32 numSettingColors,
 		uint8 defaultIndex);
 
 	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::String& settingValue);
@@ -55,8 +58,10 @@ public:
 	void OnButtonReadyClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonSendMessageClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
 	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnReadyButtonEnabledChange(Noesis::BaseComponent* pSender, const Noesis::DependencyPropertyChangedEventArgs& args);
 
 private:
 	// Helpers
@@ -72,24 +77,27 @@ private:
 	void TrySendChatMessage();
 	void SendGameSettings() const;
 	void UpdatePlayersLabel();
+	void UpdateReadyButton();
 
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
 
-	Noesis::StackPanel* m_pTeam1StackPanel			= nullptr;
-	Noesis::StackPanel* m_pTeam2StackPanel			= nullptr;
-	Noesis::ScrollViewer* m_pChatScrollViewer		= nullptr;
-	Noesis::StackPanel* m_pChatPanel				= nullptr;
-	Noesis::StackPanel* m_pSettingsNamesStackPanel	= nullptr;
-	Noesis::StackPanel* m_pSettingsHostStackPanel	= nullptr;
-	Noesis::StackPanel* m_pSettingsClientStackPanel	= nullptr;
-	Noesis::TextBox*	m_pChatInputTextBox			= nullptr;
-	Noesis::Label*		m_pPlayersLabel				= nullptr;
-	Noesis::Label*		m_pTeam1Label				= nullptr;
-	Noesis::Label*		m_pTeam2Label				= nullptr;
+	Noesis::StackPanel*		m_pTeam1StackPanel			= nullptr;
+	Noesis::StackPanel*		m_pTeam2StackPanel			= nullptr;
+	Noesis::ScrollViewer*	m_pChatScrollViewer			= nullptr;
+	Noesis::StackPanel*		m_pChatPanel				= nullptr;
+	Noesis::StackPanel*		m_pSettingsNamesStackPanel	= nullptr;
+	Noesis::StackPanel*		m_pSettingsHostStackPanel	= nullptr;
+	Noesis::StackPanel*		m_pSettingsClientStackPanel	= nullptr;
+	Noesis::TextBox*		m_pChatInputTextBox			= nullptr;
+	Noesis::Label*			m_pPlayersLabel				= nullptr;
+	Noesis::Label*			m_pTeam1Label				= nullptr;
+	Noesis::Label*			m_pTeam2Label				= nullptr;
 
 	PacketGameSettings* m_pGameSettings;
 	bool m_IsInitiated;
+
+	SettingsGUI* m_pSettingsGUI = nullptr;
 
 private:
 	static constexpr const char* SETTING_SERVER_NAME			= "SERVER_NAME";

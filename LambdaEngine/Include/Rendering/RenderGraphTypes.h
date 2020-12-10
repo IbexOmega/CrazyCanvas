@@ -20,6 +20,8 @@ namespace LambdaEngine
 	constexpr const char* RENDER_GRAPH_LINE_RENDERER_STAGE_NAME			= "RENDER_STAGE_LINE_RENDERER";
 	constexpr const char* RENDER_GRAPH_MESH_PAINT_UPDATER_NAME			= "RENDER_STAGE_MESH_PAINT_UPDATER";
 	constexpr const char* RENDER_GRAPH_FIRST_PERSON_WEAPON_STAGE_NAME	= "RENDER_STAGE_FIRST_PERSON_WEAPON";
+	constexpr const char* BLIT_STAGE									= "BLIT_STAGE";
+	constexpr const char* REFLECTIONS_DENOISE_PASS						= "REFLECTIONS_DENOISE_PASS";
 
 	constexpr const char* RENDER_GRAPH_BACK_BUFFER_ATTACHMENT			= "BACK_BUFFER_TEXTURE";
 
@@ -169,21 +171,27 @@ namespace LambdaEngine
 		//Texture Specific
 		struct
 		{
-			ERenderGraphTextureType			TextureType					= ERenderGraphTextureType::TEXTURE_2D;
-			EFormat							TextureFormat				= EFormat::FORMAT_NONE;
-			bool							UnboundedArray				= false;
-			bool							IsOfArrayType				= false;
-			ERenderGraphDimensionType		XDimType					= ERenderGraphDimensionType::RELATIVE;
-			ERenderGraphDimensionType		YDimType					= ERenderGraphDimensionType::RELATIVE;
-			float32							XDimVariable				= 1.0f;
-			float32							YDimVariable				= 1.0f;
-			int32							SampleCount					= 1;
-			int32							MiplevelCount				= 1;
-			ERenderGraphSamplerType			SamplerType					= ERenderGraphSamplerType::LINEAR;
-			ERenderGraphSamplerAddressMode	SamplerAddressMode			= ERenderGraphSamplerAddressMode::REPEAT;
-			ERenderGraphSamplerBorderColor	SamplerBorderColor			= ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
-			FTextureFlags					TextureFlags				= FTextureFlag::TEXTURE_FLAG_NONE;
-			FTextureViewFlags				TextureViewFlags			= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
+			ERenderGraphTextureType			TextureType			= ERenderGraphTextureType::TEXTURE_2D;
+			EFormat							TextureFormat		= EFormat::FORMAT_NONE;
+			bool							UnboundedArray		= false;
+			bool							IsOfArrayType		= false;
+			ERenderGraphDimensionType		XDimType			= ERenderGraphDimensionType::RELATIVE;
+			ERenderGraphDimensionType		YDimType			= ERenderGraphDimensionType::RELATIVE;
+			float32							XDimVariable		= 1.0f;
+			float32							YDimVariable		= 1.0f;
+			int32							SampleCount			= 1;
+			int32							MiplevelCount		= 1;
+			ERenderGraphSamplerType			SamplerType			= ERenderGraphSamplerType::LINEAR;
+			ERenderGraphSamplerAddressMode	SamplerAddressMode	= ERenderGraphSamplerAddressMode::REPEAT;
+			ERenderGraphSamplerBorderColor	SamplerBorderColor	= ERenderGraphSamplerBorderColor::BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+			FTextureFlags					TextureFlags		= FTextureFlag::TEXTURE_FLAG_NONE;
+			FTextureViewFlags				TextureViewFlags	= FTextureViewFlag::TEXTURE_VIEW_FLAG_NONE;
+
+			// Extra access
+			bool ExtraShaderResourceAccess	= false;
+			bool ExtraRenderTargetAccess	= false;
+			bool ExtraDepthStencilAccess	= false;
+			bool ExtraUnorderedAccess		= false;
 		} TextureParams;
 
 		//Buffer Specific

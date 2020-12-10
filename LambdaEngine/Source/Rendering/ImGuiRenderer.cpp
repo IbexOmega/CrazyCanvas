@@ -301,10 +301,6 @@ namespace LambdaEngine
 				}
 			}
 		}
-		else
-		{
-			LOG_WARNING("Textures with subImageCount or imageCount != subImageCount and not BackBufferBound is not implemented. imageCount: %d, subImageCount: %d", imageCount, subImageCount);
-		}
 	}
 
 	void ImGuiRenderer::Render(
@@ -325,8 +321,8 @@ namespace LambdaEngine
 		uint32 windowHeight = window->GetHeight();
 
 		ImGuiIO& io = ImGui::GetIO();
-		io.DeltaTime = static_cast<float32>(EngineLoop::GetDeltaTime().AsSeconds());
-		io.DisplaySize = ImVec2(static_cast<float32>(windowWidth), static_cast<float32>(windowHeight));
+		io.DeltaTime	= static_cast<float32>(EngineLoop::GetDeltaTime().AsSeconds());
+		io.DisplaySize	= ImVec2(static_cast<float32>(windowWidth), static_cast<float32>(windowHeight));
 		io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
 		// Render all ImGui calls
@@ -399,10 +395,10 @@ namespace LambdaEngine
 			TSharedRef<Buffer> vertexCopyBuffer	= m_VertexCopyBuffers[modFrameIndex];
 			TSharedRef<Buffer> indexCopyBuffer	= m_IndexCopyBuffers[modFrameIndex];
 
-			uint32 vertexBufferSize		= 0;
-			uint32 indexBufferSize		= 0;
-			byte* pVertexMapping		= reinterpret_cast<byte*>(vertexCopyBuffer->Map());
-			byte* pIndexMapping			= reinterpret_cast<byte*>(indexCopyBuffer->Map());
+			uint32 vertexBufferSize	= 0;
+			uint32 indexBufferSize	= 0;
+			byte* pVertexMapping	= reinterpret_cast<byte*>(vertexCopyBuffer->Map());
+			byte* pIndexMapping		= reinterpret_cast<byte*>(indexCopyBuffer->Map());
 
 			for (int n = 0; n < pDrawData->CmdListsCount; n++)
 			{

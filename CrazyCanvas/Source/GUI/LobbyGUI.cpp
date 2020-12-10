@@ -2,9 +2,17 @@
 #include "GUI/Core/GUIApplication.h"
 #include "NoesisPCH.h"
 
+#include "GUI/EscapeMenuGUI.h"
+#include "Audio/AudioAPI.h"
+
 #include "Lobby/PlayerManagerClient.h"
 
 #include "Containers/String.h"
+
+#include "Engine/EngineConfig.h"
+
+#include "Input/API/Input.h"
+#include "Input/API/InputActionSystem.h"
 
 #include "Game/StateManager.h"
 
@@ -12,11 +20,14 @@
 
 #include "Multiplayer/ClientHelper.h"
 
+#include "Application/API/CommonApplication.h"
 #include "Application/API/Events/EventQueue.h"
 
 #include "World/LevelManager.h"
 
 #include "Teams/TeamHelper.h"
+
+#include "Game/ECS/Systems/CameraSystem.h"
 
 using namespace Noesis;
 using namespace LambdaEngine;
@@ -62,7 +73,7 @@ void LobbyGUI::InitGUI()
 	for (EGameMode gameMode : gameModes)
 		gameModeNames.PushBack(GameModeToString(gameMode));
 
-	TArray<glm::vec3> colors = TeamHelper::GetAllAvailableColors();
+	const glm::vec3* pColors = TeamHelper::GetAllAvailableColors();
 
 	AddSettingTextBox(SETTING_SERVER_NAME,      "Server Name",			m_pGameSettings->ServerName);
 	AddSettingComboBox(SETTING_MAP,				"Map",					LevelManager::GetLevelNames(), 0);
@@ -72,12 +83,15 @@ void LobbyGUI::InitGUI()
 	/*AddSettingComboBox(SETTING_MAX_TIME,		"Max Time",				{ "3 min", "5 min", "10 min", "15 min" }, 1);
 	AddSettingComboBox(SETTING_VISIBILITY,		"Visibility",			{ "True", "False" }, 1);
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
-	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 1 Color", colors, 0);
-	AddSettingColorBox(SETTING_CHANGE_TEAM_2_COLOR, "Team 2 Color", colors, 1);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 1 Color", pColors, NUM_TEAM_COLORS_AVAILABLE, 0);
+	AddSettingColorBox(SETTING_CHANGE_TEAM_2_COLOR, "Team 2 Color", pColors, NUM_TEAM_COLORS_AVAILABLE, 1);
 
 	UpdateSettings(*m_pGameSettings);
 
 	m_IsInitiated = true;
+
+	m_pSettingsGUI = FindName<SettingsGUI>("SETTINGS_GUI");
+	m_pSettingsGUI->InitGUI();
 }
 
 void LobbyGUI::AddPlayer(const Player& player)
@@ -205,6 +219,8 @@ void LobbyGUI::UpdatePlayerReady(const Player& player)
 	{
 		pImage->SetVisibility(player.IsReady() ? Visibility::Visibility_Visible : Visibility::Visibility_Collapsed);
 	}
+
+	UpdateReadyButton();
 }
 
 void LobbyGUI::UpdatePlayerScore(const Player& player)
@@ -253,18 +269,21 @@ void LobbyGUI::WriteChatMessage(const ChatEvent& event)
 
 void LobbyGUI::SetHostMode(bool isHost)
 {
-	Button* pReadyButton = FrameworkElement::FindName<Button>("ReadyButton");
+	ToggleButton* pReadyButton = FrameworkElement::FindName<ToggleButton>("ReadyButton");
 
 	if (isHost)
 	{
 		pReadyButton->SetContent("Start");
+		pReadyButton->SetIsChecked(false);
 		m_pSettingsClientStackPanel->SetVisibility(Visibility_Hidden);
 		m_pSettingsHostStackPanel->SetVisibility(Visibility_Visible);
+		UpdateReadyButton();
 		SendGameSettings();
 	}
 	else
 	{
 		pReadyButton->SetContent("Ready");
+		pReadyButton->SetIsEnabled(true);
 		m_pSettingsClientStackPanel->SetVisibility(Visibility_Visible);
 		m_pSettingsHostStackPanel->SetVisibility(Visibility_Hidden);
 	}
@@ -315,7 +334,7 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		// Update Settings Color
 		SolidColorBrush* pSolidColorBrush = static_cast<SolidColorBrush*>(pSettingChangeTeamColor1->GetBackground());
 		pSolidColorBrush->SetColor(teamColor);
-		
+
 		// Update Team Label color
 		pSolidColorBrush = static_cast<SolidColorBrush*>(m_pTeam1Label->GetForeground());
 		pSolidColorBrush->SetColor(teamColor);
@@ -370,7 +389,7 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 		else if (minutes == 15)
 			pSettingMaxTimeHost->SetSelectedIndex(3);
 	}
-		
+
 
 	ComboBox* pSettingFlagsToWinHost = FrameworkElement::FindName<ComboBox>((LambdaEngine::String(SETTING_FLAGS_TO_WIN) + "_host").c_str());
 	if (pSettingFlagsToWinHost)
@@ -458,7 +477,7 @@ void LobbyGUI::AddSettingComboBox(
 	settingComboBox->SetSelectedIndex(defaultIndex);
 }
 
-void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::TArray<glm::vec3>& settingColors, uint8 defaultIndex)
+void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const glm::vec3* pSettingColors, uint32 numSettingColors, uint8 defaultIndex)
 {
 	// Add setting text
 	AddLabelWithStyle("", m_pSettingsNamesStackPanel, "SettingsNameStyle", settingText);
@@ -477,8 +496,10 @@ void LobbyGUI::AddSettingColorBox(const LambdaEngine::String& settingKey, const 
 	RegisterName(settingComboBox->GetName(), settingComboBox);
 	m_pSettingsHostStackPanel->GetChildren()->Add(settingComboBox);
 
-	for (auto& color : settingColors)
+	for (uint32 i = 0; i < numSettingColors; i++)
 	{
+		const glm::vec3& color = pSettingColors[i];
+
 		Ptr<SolidColorBrush> pBrush = *new SolidColorBrush();
 		pBrush->SetColor(Color(color.r, color.g, color.b));
 
@@ -523,6 +544,7 @@ bool LobbyGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const ch
 	NS_CONNECT_EVENT(Button, Click, OnButtonReadyClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonLeaveClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonSendMessageClick);
+	NS_CONNECT_EVENT(Button, Click, OnButtonSettingsClick);
 
 	return false;
 }
@@ -537,6 +559,8 @@ void LobbyGUI::OnButtonLeaveClick(BaseComponent* pSender, const RoutedEventArgs&
 {
 	ClientHelper::Disconnect("Leaving lobby");
 
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	State* pMainMenuState = DBG_NEW MultiplayerState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -544,6 +568,17 @@ void LobbyGUI::OnButtonLeaveClick(BaseComponent* pSender, const RoutedEventArgs&
 void LobbyGUI::OnButtonSendMessageClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
 	TrySendChatMessage();
+}
+
+void LobbyGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(pSender);
+	UNREFERENCED_VARIABLE(args);
+
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
+		return;
+
+	m_pSettingsGUI->ToggleSettings();
 }
 
 bool LobbyGUI::OnKeyPressedEvent(const KeyPressedEvent& event)
@@ -583,6 +618,31 @@ void LobbyGUI::UpdatePlayersLabel()
 {
 	const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
 	m_pPlayersLabel->SetContent((std::to_string(players.size()) + "/" + std::to_string(m_pGameSettings->Players) + " Players").c_str());
+}
+
+void LobbyGUI::UpdateReadyButton()
+{
+	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayerLocal->IsHost())
+	{
+		Button* pReadyButton = FrameworkElement::FindName<Button>("ReadyButton");
+
+		const THashTable<uint64, Player>& players = PlayerManagerClient::GetPlayers();
+		for (auto& pair : players)
+		{
+			const Player& player = pair.second;
+			if (&player != pPlayerLocal)
+			{
+				if (!player.IsReady() || player.GetState() != EGameState::GAME_STATE_LOBBY)
+				{
+					pReadyButton->SetIsEnabled(false);
+					return;
+				}
+			}
+		}
+
+		pReadyButton->SetIsEnabled(true);
+	}
 }
 
 void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const SelectionChangedEventArgs& args)
@@ -667,11 +727,29 @@ void LobbyGUI::OnTextBoxChanged(BaseComponent* pSender, const RoutedEventArgs& a
 {
 	TextBox* pTextBox = static_cast<TextBox*>(pSender);
 
-	if (strcmp(m_pGameSettings->ServerName, pTextBox->GetText()) != 0) 
+	if (strcmp(m_pGameSettings->ServerName, pTextBox->GetText()) != 0)
 	{
 		strcpy(m_pGameSettings->ServerName, pTextBox->GetText());
 
 		SendGameSettings();
+	}
+}
+
+void LobbyGUI::OnReadyButtonEnabledChange(BaseComponent* pSender, const DependencyPropertyChangedEventArgs& args)
+{
+	ToggleButton* pToggleButton = static_cast<ToggleButton*>(pSender);
+
+	if (pToggleButton->GetIsEnabled())
+	{
+		SolidColorBrush* pBrush = (SolidColorBrush*)pToggleButton->GetBackground();
+		Color color;
+		Color::TryParse("#4CE244", color);
+		pBrush->SetColor(color);
+	}
+	else
+	{
+		SolidColorBrush* pBrush = (SolidColorBrush*)pToggleButton->GetBackground();
+		pBrush->SetColor(Color::Gray());
 	}
 }
 

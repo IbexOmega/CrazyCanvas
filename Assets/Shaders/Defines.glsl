@@ -23,6 +23,8 @@
 
 #define MAX_UNIQUE_MATERIALS 32
 
+#define UINT32_MAX              0xffffffff
+
 const float INV_PI			= 1.0f / 3.14159265359f;
 const float FOUR_PI			= 12.5663706144f;
 const float TWO_PI			= 6.28318530718f;
@@ -32,13 +34,8 @@ const float PI_OVER_FOUR	= 0.78539816330f;
 const float EPSILON			= 0.001f;
 const float GAMMA			= 2.2f;
 
-const float MAX_TEMPORAL_FRAMES = 256.0f;
-
 #define MAX_NUM_AREA_LIGHTS 4
 #define AREA_LIGHT_TYPE_QUAD 1
-
-#define HIT_MASK_GAME_OBJECT    0x01
-#define HIT_MASK_LIGHT          0x02
 
 // Used in PointShadowDepthTest for PCF soft shadows
 const vec3 sampleOffsetDirections[20] = vec3[]
@@ -70,15 +67,6 @@ struct SMeshlet
 	uint VertOffset;
 	uint PrimCount;
 	uint PrimOffset;
-};
-
-struct SPrimaryInstance
-{
-	mat3x4	Transform;
-	uint	Mask_IndirectArgIndex;
-	uint	SBTRecordOffset_Flags;
-	uint	AccelerationStructureHandleTop32;
-	uint	AccelerationStructureHandleBottom32;
 };
 
 struct SInstance
@@ -115,21 +103,21 @@ struct SAreaLight
 
 struct SPointLight
 {
-    vec4    ColorIntensity;
-    vec3    Position;
+	vec4	ColorIntensity;
+	vec3	Position;
 	float	NearPlane;
 	float	FarPlane;
 	uint	TextureIndex;
 	vec2	padding0;
-    mat4    ProjView[6];
+	mat4	ProjView[6];
 };
 
 struct SLightsBuffer
 {
-    vec4        DirL_ColorIntensity;
-	vec3        DirL_Direction;
-    float		PointLightCount;
-    mat4        DirL_ProjView;
+	vec4	DirL_ColorIntensity;
+	vec3	DirL_Direction;
+	float	PointLightCount;
+	mat4	DirL_ProjView;
 };
 
 struct SPerFrameBuffer
@@ -144,6 +132,7 @@ struct SPerFrameBuffer
 	vec4 CameraRight;
 	vec4 CameraUp;
 	vec2 Jitter;
+	vec2 ViewPortSize;
 
 	uint FrameIndex;
 	uint RandomSeed;
@@ -212,7 +201,7 @@ struct SAtlasData
 	uint	AtlasIndex;
 };
 
-struct SUnwrapData
+struct SPaintData
 {
 	vec4 TargetPosition;
 	vec4 TargetDirectionXYZAngleW;
@@ -224,19 +213,19 @@ struct SUnwrapData
 
 struct SAccelerationStructureInstance
 {
-    mat3x4  Transform;
-    uint    HitMask_CustomProperties;
-    uint    SBTRecordOffset_Flags;
-    uint    AccelerationStructureHandleTop32;
-    uint    AccelerationStructureHandleBottom32;
+	mat3x4	Transform;
+	uint	HitMask_CustomProperties;
+	uint	SBTRecordOffset_Flags;
+	uint	AccelerationStructureHandleTop32;
+	uint	AccelerationStructureHandleBottom32;
 };
 
 struct SParticleIndexData
 {
-    uint    EmitterIndex;
-    uint    ASInstanceIndirectIndex;
-	uint    Padding0;
-	uint    Padding1;
+	uint EmitterIndex;
+	uint ASInstanceIndirectIndex;
+	uint Padding0;
+	uint Padding1;
 };
 
 #endif

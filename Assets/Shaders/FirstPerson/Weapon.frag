@@ -59,7 +59,7 @@ void main()
 	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
 	float isContainer = (1.f-step(0.5f, texCoord.x)) * (1.f-step(0.5f, texCoord.y));
 
-	float alpha = 0.1f*isContainer + (1.f-isContainer);
+	float alpha = 0.0f*isContainer + (1.f-isContainer);
 	
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;

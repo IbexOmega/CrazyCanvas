@@ -69,8 +69,8 @@ void main()
 	if(isWater == false)
 	{
 		materialParameters.Albedo.rgb = vec3(1.f);
-		materialParameters.AO = 1.f;
-		materialParameters.Roughness = 0.8f;
+		materialParameters.AO = 0.f;
+		materialParameters.Roughness = 1.f;
 		materialParameters.Metallic = 0.f;
 		sampledCombinedMaterial = vec3(1.f);
 	}

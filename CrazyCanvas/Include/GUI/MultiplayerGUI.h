@@ -9,28 +9,10 @@
 #include "NsGui/ListBox.h"
 #include "NsGui/TextBox.h"
 
-struct HostGameDescription
-{
-	int8 PlayersNumber = -1;
-	int8 MapNumber = -1;
-};
-
-enum PopUpCode
-{
-	CONNECT_ERROR,
-	CONNECT_ERROR_INVALID,
-	JOIN_ERROR,
-	JOIN_ERROR_OFFLINE,
-	HOST_ERROR,
-	OTHER_ERROR,
-	HOST_NOTIFICATION,
-	JOIN_NOTIFICATION
-};
-
-class MultiplayerState;
-
 class MultiplayerGUI : public Noesis::Grid
 {
+	friend class MultiplayerState;
+
 public:
 	MultiplayerGUI(MultiplayerState* pMulitplayerState);
 	~MultiplayerGUI();
@@ -43,7 +25,6 @@ public:
 	void UpdateServerSaved(const ServerInfo& serverInfo);
 
 	const char* GetPlayerName() const;
-	bool HasHostedServer() const;
 
 private:
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
@@ -53,11 +34,17 @@ private:
 	void OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 
-	Noesis::Grid* CreateServerItem(const ServerInfo& serverInfo);
+	Noesis::Ptr<Noesis::Grid> CreateServerItem(const ServerInfo& serverInfo);
 	Noesis::Grid* DeleteServerItem(const ServerInfo& serverInfo);
 	void UpdateServerItem(Noesis::Grid* pGrid, const ServerInfo& serverInfo);
 	void ServerInfoToUniqeString(const ServerInfo& serverInfo, LambdaEngine::String& str) const;
 	const ServerInfo* GetServerInfoFromGrid(const LambdaEngine::THashTable<uint64, ServerInfo>& servers, Noesis::Grid* pGrid) const;
+
+	void DisplayErrorMessage(const char* error);
+	void DisplayNotification(const char* error);
+	void CloseNotification();
+
+	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 
 private:
 	Noesis::Grid* m_pGridServers;
@@ -65,20 +52,6 @@ private:
 	Noesis::ListBox* m_pListBoxServersSaved;
 	Noesis::TextBox* m_pTextBoxAddress;
 	Noesis::TextBox* m_pTextBoxName;
-	
-	int32 m_ClientHostID;
+
 	MultiplayerState* m_pMulitplayerState;
-
-private:
-	void ErrorPopUp(PopUpCode errorCode);
-	void NotiPopUP(PopUpCode notificationCode);
-
-	void ErrorPopUpClose();
-	void NotiPopUpClose();
-
-	bool CheckServerSettings(const HostGameDescription& serverSettings);
-
-	bool StartUpServer(const std::string& commandLine);
-
-	NS_IMPLEMENT_INLINE_REFLECTION_(MultiplayerGUI, Noesis::Grid)
 };

@@ -16,8 +16,6 @@ public:
 	~LevelModule();
 
 	bool Init(const LambdaEngine::String& filename, const glm::vec3& translation);
-	
-	void SetTranslation(const glm::vec3& translation);
 
 	FORCEINLINE const LambdaEngine::String& GetName() const { return m_Name; }
 	FORCEINLINE const glm::vec3& GetTranslation() const { return m_Translation; }

@@ -233,9 +233,13 @@ void ServerFlagSystem::OnDeliveryPointFlagCollision(LambdaEngine::Entity entity0
 		if (flagParentComponent.Attached)
 		{
 			Entity entityPlayer = flagParentComponent.Parent;
-
 			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			const TeamComponent& playerTeamComponent = pTeamComponents->GetConstData(entityPlayer);
+
+			TeamComponent playerTeamComponent;
+			if (!pTeamComponents->GetConstIf(entityPlayer, playerTeamComponent))
+			{
+				return;
+			}
 
 			TeamComponent flagTeamComponent = {};
 
@@ -345,33 +349,36 @@ void ServerFlagSystem::FixedTickMainThreadInternal(LambdaEngine::Timestamp delta
 
 		if (parentComponent.Attached)
 		{
-			const NetworkPositionComponent& parentPositionComponent = pNetworkPositionComponents->GetConstData(parentComponent.Parent);
-			const RotationComponent& parentRotationComponent		= pRotationComponents->GetConstData(parentComponent.Parent);
+			NetworkPositionComponent parentPositionComponent;
+			RotationComponent parentRotationComponent;
+			if (pNetworkPositionComponents->GetConstIf(parentComponent.Parent, parentPositionComponent) &&
+				pRotationComponents->GetConstIf(parentComponent.Parent, parentRotationComponent))
+			{
+				DynamicCollisionComponent& flagCollisionComponent	= pDynamicCollisionComponents->GetData(flagEntity);
+				const OffsetComponent& flagOffsetComponent			= pOffsetComponents->GetConstData(flagEntity);
 
-			DynamicCollisionComponent& flagCollisionComponent	= pDynamicCollisionComponents->GetData(flagEntity);
-			const OffsetComponent& flagOffsetComponent			= pOffsetComponents->GetConstData(flagEntity);
+				glm::vec3 flagPosition;
+				glm::quat flagRotation;
 
-			glm::vec3 flagPosition;
-			glm::quat flagRotation;
+				CalculateAttachedFlagPosition(
+					flagPosition,
+					flagRotation,
+					flagOffsetComponent.Offset,
+					parentPositionComponent.Position,
+					parentRotationComponent.Quaternion);
 
-			CalculateAttachedFlagPosition(
-				flagPosition,
-				flagRotation,
-				flagOffsetComponent.Offset,
-				parentPositionComponent.Position,
-				parentRotationComponent.Quaternion);
+				PxTransform transform;
+				transform.p.x = flagPosition.x;
+				transform.p.y = flagPosition.y;
+				transform.p.z = flagPosition.z;
 
-			PxTransform transform;
-			transform.p.x = flagPosition.x;
-			transform.p.y = flagPosition.y;
-			transform.p.z = flagPosition.z;
+				transform.q.x = flagRotation.x;
+				transform.q.y = flagRotation.y;
+				transform.q.z = flagRotation.z;
+				transform.q.w = flagRotation.w;
 
-			transform.q.x = flagRotation.x;
-			transform.q.y = flagRotation.y;
-			transform.q.z = flagRotation.z;
-			transform.q.w = flagRotation.w;
-
-			flagCollisionComponent.pActor->setKinematicTarget(transform);
+				flagCollisionComponent.pActor->setKinematicTarget(transform);
+			}
 		}
 	}
 }

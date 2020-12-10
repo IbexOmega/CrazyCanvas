@@ -3,6 +3,16 @@
 
 #include "Vulkan.h"
 
+//#define LAMBDA_ENABLE_VULKAN_INFO_LOGS
+
+#ifdef LAMBDA_ENABLE_VULKAN_INFO_LOGS
+	#define LOG_VULKAN_MESSAGE(...) LOG_MESSAGE(__VA_ARGS__)
+	#define LOG_VULKAN_INFO(...) LOG_INFO(__VA_ARGS__)
+#else
+	#define LOG_VULKAN_MESSAGE(...)
+	#define LOG_VULKAN_INFO(...)
+#endif
+
 #define LOG_VULKAN_ERROR(result, ...) \
 	LOG_ERROR(__VA_ARGS__); \
 	LOG_ERROR("[%s]: %s", LambdaEngine::VkResultToString(result), LambdaEngine::GetVkErrorString(result)) \
@@ -442,6 +452,7 @@ namespace LambdaEngine
 		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_POINT_LIST:		return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_LINE_LIST:		return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST:	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_PATCH_LIST:		return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
 		case EPrimitiveTopology::PRIMITIVE_TOPOLOGY_NONE:
 		default:													return VkPrimitiveTopology(0);
 		}

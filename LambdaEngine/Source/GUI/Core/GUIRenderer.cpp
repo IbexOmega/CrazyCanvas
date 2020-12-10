@@ -12,6 +12,8 @@
 #include "Rendering/Core/API/DescriptorSet.h"
 #include "Rendering/Core/API/Sampler.h"
 
+#include "Threading/API/PlatformThread.h"
+
 #include "Rendering/RenderAPI.h"
 #include "Rendering/RenderGraph.h"
 #include "Rendering/StagingBufferCache.h"
@@ -34,10 +36,7 @@ namespace LambdaEngine
 
 	GUIRenderer::~GUIRenderer()
 	{
-		if (m_View != nullptr)
-		{
-			m_View.Reset();
-		}
+		m_View.Reset();
 
 		SAFERELEASE(m_pIndexBuffer);
 		SAFERELEASE(m_pVertexBuffer);
@@ -215,11 +214,11 @@ namespace LambdaEngine
 
 	void GUIRenderer::UpdateTexture(Noesis::Texture* pTexture, uint32_t level, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const void* pData)
 	{
-		EndCurrentRenderPass();
-
 #ifdef PRINT_FUNC
 		LOG_INFO("UpdateTexture");
 #endif
+
+		EndCurrentRenderPass();
 
 		CommandList*	pCommandList	= BeginOrGetUtilityCommandList();
 		GUITexture*		pGUITexture		= reinterpret_cast<GUITexture*>(pTexture);
@@ -235,17 +234,17 @@ namespace LambdaEngine
 			CommandList* pCommandList = BeginOrGetRenderCommandList();
 			if (!offscreen)
 			{
-				BeginMainRenderPass(pCommandList);
 #ifdef PRINT_FUNC
 				LOG_INFO("BeginRender");
 #endif
+				BeginMainRenderPass(pCommandList);
 			}
 			else
 			{
-				BeginTileRenderPass(pCommandList);
 #ifdef PRINT_FUNC
 				LOG_INFO("BeginRender[Offscreen]");
 #endif
+				BeginTileRenderPass(pCommandList);
 			}
 		}
 	}
@@ -255,15 +254,25 @@ namespace LambdaEngine
 		VALIDATE(pSurface != nullptr);
 		
 		m_pCurrentRenderTarget = reinterpret_cast<GUIRenderTarget*>(pSurface);
-		EndCurrentRenderPass();
 
 #ifdef PRINT_FUNC
-		LOG_INFO("SetRenderTarget W: %u, H: %u", m_pCurrentRenderTarget->GetDesc()->Width, m_pCurrentRenderTarget->GetDesc()->Height);
+		LOG_INFO("SetRenderTarget Address: %x, Index: %u, W: %u, H: %u, DepthStencil Address: %x", 
+			uint64(m_pCurrentRenderTarget),
+			m_pCurrentRenderTarget->GetIndex(), 
+			m_pCurrentRenderTarget->GetDesc()->Width, 
+			m_pCurrentRenderTarget->GetDesc()->Height,
+			uint64(m_pCurrentRenderTarget->GetDepthStencil()));
 #endif
+
+		EndCurrentRenderPass();
 	}
 
 	void GUIRenderer::BeginTile(const Noesis::Tile& tile, uint32_t surfaceWidth, uint32_t surfaceHeight)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("BeginTile W: %u, H: %u", surfaceWidth, surfaceHeight);
+#endif
+
 		UNREFERENCED_VARIABLE(surfaceWidth);
 		UNREFERENCED_VARIABLE(surfaceHeight);
 		
@@ -289,19 +298,15 @@ namespace LambdaEngine
 		scissorRect.y		= tile.y;
 
 		pCommandList->SetScissorRects(&scissorRect, 0, 1);
-
-#ifdef PRINT_FUNC
-		LOG_INFO("BeginTile W: %u, H: %u", surfaceWidth, surfaceHeight);
-#endif
 	}
 
 	void GUIRenderer::EndTile()
 	{
-		EndCurrentRenderPass();
-		m_TileBegun					= false;
 #ifdef PRINT_FUNC
 		LOG_INFO("EndTile");
 #endif
+		EndCurrentRenderPass();
+		m_TileBegun					= false;
 
 		ResumeRenderPass();
 	}
@@ -319,15 +324,14 @@ namespace LambdaEngine
 
 	void GUIRenderer::EndRender()
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("EndRender");
+#endif
 		EndCurrentRenderPass();
 		m_RenderPassBegun = false;
 
 		CommandList* pCommandList = BeginOrGetRenderCommandList();
 		pCommandList->End();
-
-#ifdef PRINT_FUNC
-		LOG_INFO("EndRender");
-#endif
 	}
 
 	void* GUIRenderer::MapVertices(uint32_t bytes)
@@ -416,6 +420,10 @@ namespace LambdaEngine
 
 	void GUIRenderer::DrawBatch(const Noesis::Batch& batch)
 	{
+#ifdef PRINT_FUNC
+		LOG_INFO("DrawBatch");
+#endif
+
 		const TextureView* pBackBuffer = m_pBackBuffers[m_BackBufferIndex].Get();
 		CommandList* pRenderCommandList = BeginOrGetRenderCommandList();
 
@@ -657,7 +665,7 @@ namespace LambdaEngine
 		bool sleeping)
 	{
 #ifdef PRINT_FUNC
-		LOG_INFO("Render");
+		LOG_INFO("Render called from Thread: %llx", PlatformThread::GetCurrentThreadHandle());
 #endif
 		m_ModFrameIndex		= modFrameIndex;
 		m_BackBufferIndex	= backBufferIndex;
@@ -734,11 +742,20 @@ namespace LambdaEngine
 
 	void GUIRenderer::SetView(Noesis::Ptr<Noesis::IView> view)
 	{
-		m_View.Reset();
-		m_View = view;
-		if (m_View != nullptr)
+#ifdef PRINT_FUNC
+		LOG_INFO("SetView called from Thread: %llx, Address: %llx", PlatformThread::GetCurrentThreadHandle(), uint64(view.GetPtr()));
+#endif
+		m_pCurrentRenderTarget = nullptr;
+
+		if (view != nullptr)
 		{
+			m_View = view;
 			m_View->GetRenderer()->Init(this);
+		}
+		else
+		{
+			m_View = nullptr;
+			//LOG_ERROR("Setview called with view == nullptr");
 		}
 	}
 
@@ -825,8 +842,17 @@ namespace LambdaEngine
 					pCommandList->BeginRenderPass(&beginRenderPass);
 					m_IsInRenderPass = true;
 				}
+				else
+				{
+					LOG_ERROR("BeginTileRenderPass Failed Address: %x, Index: %u, W: %u, H: %u, DepthStencil Address: %x",
+						uint64(m_pCurrentRenderTarget),
+						m_pCurrentRenderTarget->GetIndex(),
+						m_pCurrentRenderTarget->GetDesc()->Width,
+						m_pCurrentRenderTarget->GetDesc()->Height,
+						uint64(m_pCurrentRenderTarget->GetDepthStencil()));
+				}
 			}
-			
+
 			m_TileBegun = true;
 		}
 	}
@@ -887,21 +913,20 @@ namespace LambdaEngine
 			CommandList* pCommandList = BeginOrGetRenderCommandList();
 			if (m_RenderPassBegun)
 			{
-				m_RenderPassBegun = false;
-				BeginMainRenderPass(pCommandList);
 #ifdef PRINT_FUNC
 				LOG_INFO("Resuming Main");
 #endif
+				m_RenderPassBegun = false;
+				BeginMainRenderPass(pCommandList);
 			}
 
 			if (m_TileBegun)
 			{
-				m_TileBegun = false;
-				BeginTileRenderPass(pCommandList);
-
 #ifdef PRINT_FUNC
 				LOG_INFO("Resuming Tile");
 #endif
+				m_TileBegun = false;
+				BeginTileRenderPass(pCommandList);
 			}
 		}
 	}
@@ -911,13 +936,13 @@ namespace LambdaEngine
 		// If we are currently rendering we exit the current renderpass
 		if (m_IsInRenderPass)
 		{
+#ifdef PRINT_FUNC
+			LOG_INFO("Ending RenderPass");
+#endif
 			CommandList* pCommandList = BeginOrGetRenderCommandList();
 			pCommandList->EndRenderPass();
 
 			m_IsInRenderPass = false;
-#ifdef PRINT_FUNC
-			LOG_INFO("Ending RenderPass");
-#endif
 		}
 	}
 
@@ -967,16 +992,6 @@ namespace LambdaEngine
 				{
 					return false;
 				}
-
-				//CommandList* pCommandList = m_ppRenderCommandLists[b];
-
-				//Profiler::GetGPUProfiler()->AddTimestamp(pCommandList, "GUI Render Command List");
-
-				//pCommandList->Begin(nullptr);
-				//Profiler::GetGPUProfiler()->ResetTimestamp(pCommandList);
-				//pCommandList->End();
-				//RenderAPI::GetGraphicsQueue()->ExecuteCommandLists(&pCommandList, 1, FPipelineStageFlag::PIPELINE_STAGE_FLAG_UNKNOWN, nullptr, 0, nullptr, 0);
-				//RenderAPI::GetGraphicsQueue()->Flush();
 			}
 		}
 

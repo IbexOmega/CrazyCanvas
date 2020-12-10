@@ -21,7 +21,7 @@ using namespace LambdaEngine;
 
 GameOverGUI::GameOverGUI()
 {
-	//m_GameOverSound = ResourceManager::LoadSoundEffect2DFromFile("2currency.wav");
+
 }
 
 GameOverGUI::~GameOverGUI()
@@ -39,6 +39,8 @@ bool GameOverGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 
 void GameOverGUI::OnReturnToLobbyButtonClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	const PacketGameSettings& gameSettings = PlaySessionState::GetInstance()->GetGameSettings();
 	State* pLobbyState = DBG_NEW LobbyState(gameSettings, PlayerManagerClient::GetPlayerLocal());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
@@ -53,7 +55,6 @@ void GameOverGUI::DisplayGameOverGrid(bool isVisible)
 		m_pGameOverGrid->SetVisibility(Visibility_Hidden);
 
 	m_pShowWindowStoryboard->Begin();
-	//ResourceManager::GetSoundEffect2D(m_GameOverSound)->PlayOnce(1.0f);
 }
 
 void GameOverGUI::SetMostKillsStats(uint8 score, const LambdaEngine::String& playerName)

@@ -7,7 +7,11 @@
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
 
-layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ vec4 val[]; }					b_PaintMaskColor;
+layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors 
+{ 
+	vec4 val[]; 
+} b_PaintMaskColor;
+
 #include "../MeshPaintHelper.glsl"
 #include "../MeshPaintFunc.glsl"
 
@@ -22,17 +26,25 @@ layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in vec4		in_PaintInfo4;
 layout(location = 9) in float 		in_PaintDist;
 
-layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters	{ SMaterialParameters val[]; }	b_MaterialParameters;
+layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
+{
+	SPerFrameBuffer Val;
+} u_PerFrameBuffer;
+
+layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters 
+{ 
+	SMaterialParameters val[];
+} b_MaterialParameters;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_AlbedoMaps[];
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 
-
 layout(location = 0) out vec3 out_Albedo;
 layout(location = 1) out vec4 out_AO_Rough_Metal_Valid;
 layout(location = 2) out vec3 out_Compact_Normal;
-layout(location = 3) out vec2 out_Velocity;
+layout(location = 3) out vec4 out_Velocity_fWidth_Normal;
+layout(location = 4) out vec2 out_Geometric_Normal;
 
 void main()
 {
@@ -54,8 +66,8 @@ void main()
 	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, dist);
 
 	//0
-	vec3 storedAlbedo			= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	out_Albedo					= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
+	vec3 storedAlbedo	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+	out_Albedo			= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
 
 	//1
 	vec3 storedMaterial			= vec3(
@@ -67,11 +79,28 @@ void main()
 	//2
 	vec3 shadingNormal			= normalize((sampledNormal * 2.0f) - 1.0f);
 	shadingNormal				= normalize(TBN * normalize(shadingNormal));
-	out_Compact_Normal			= PackNormal(mix(shadingNormal, normalize(paintDescription.Normal+shadingNormal*0.2f), paintDescription.Interpolation));
+    shadingNormal               = mix(shadingNormal, normalize(paintDescription.Normal + shadingNormal * 0.2f), paintDescription.Interpolation);
+	out_Compact_Normal			= PackNormal(shadingNormal);
 
 	//3
-	vec2 currentNDC				= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
-	vec2 prevNDC				= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
-	vec2 screenVelocity			= (prevNDC - currentNDC);
-	out_Velocity				= vec2(screenVelocity);
+	const vec2 size		= u_PerFrameBuffer.Val.ViewPortSize;
+	const vec2 jitter	= u_PerFrameBuffer.Val.Jitter;
+	
+	vec2 currentScreenSpace = in_ClipPosition.xy / in_ClipPosition.w;
+	currentScreenSpace = (currentScreenSpace * vec2(0.5f, -0.5f)) + 0.5f;
+	currentScreenSpace = currentScreenSpace * size;
+
+	vec2 prevScreenSpace = in_PrevClipPosition.xy / in_PrevClipPosition.w;
+	prevScreenSpace = (prevScreenSpace * vec2(0.5f, -0.5f)) + 0.5f;
+	prevScreenSpace = prevScreenSpace * size;
+
+	vec2 screenVelocity	= currentScreenSpace - prevScreenSpace;
+	screenVelocity = screenVelocity - jitter;
+	screenVelocity = screenVelocity / size;
+	
+	float fwidthNorm			= length(fwidth(normal));
+	out_Velocity_fWidth_Normal	= vec4(screenVelocity, fwidthNorm, 0.0f);
+	
+	//4
+	out_Geometric_Normal		= vec2(DirToOct(normal));
 }
