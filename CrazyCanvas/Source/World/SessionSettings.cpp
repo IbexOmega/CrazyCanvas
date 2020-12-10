@@ -98,6 +98,17 @@ void SessionSettings::Init()
 			SessionSettings::SendPacketSessionSettings(ESessionSetting::JUMP_SPEED, input.Arguments.GetFront().Value.Float32);
 	});
 
+	// Respawn Time
+	ConsoleCommand cmdRespawnTime;
+	cmdRespawnTime.Init("session_respawn_time", false);
+	cmdRespawnTime.AddArg(Arg::EType::FLOAT);
+	cmdRespawnTime.AddDescription("Set server respawn time.\n\t'session_respawn_time 10.0'");
+	GameConsole::Get().BindCommand(cmdRespawnTime, [](GameConsole::CallbackInput& input)->void
+	{
+		if(PlayerManagerClient::GetPlayerLocal()->IsHost())
+			SessionSettings::SendPacketSessionSettings(ESessionSetting::RESPAWN_TIME, input.Arguments.GetFront().Value.Float32);
+	});
+
 	LambdaEngine::EventQueue::RegisterEventHandler(SessionSettings::OnPacketSessionSettingsReceived);
 }
 
