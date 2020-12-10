@@ -859,6 +859,10 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
 			// AA Renderer
 			renderGraphDesc.CustomRenderers.PushBack(m_pAARenderer);
+			//Reflection Denoisepass
+			renderGraphDesc.CustomRenderers.PushBack(m_pReflectionsDenoisePass);
+			// Blit Stage
+			renderGraphDesc.CustomRenderers.PushBack(m_pBlitStage);
 
 			// AS Builder
 			if (m_RayTracingEnabled)
@@ -873,7 +877,14 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 		}
 
-		// TODO: Add the game specific custom renderers!
+		// Other Custom Renderers constructed in game
+		for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
+		{
+			if (pCustomRenderer)
+			{
+				renderGraphDesc.CustomRenderers.PushBack(pCustomRenderer);
+			}
+		}
 
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))

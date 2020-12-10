@@ -29,10 +29,10 @@ namespace LambdaEngine
 	{
 		VALIDATE(pDesc != nullptr);
 
-		const PipelineLayoutVK* pPipelineLayoutVk	= reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
-		const RenderPassVK*		pRenderPassVk		= reinterpret_cast<const RenderPassVK*>(pDesc->pRenderPass);
+		const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
+		const RenderPassVK* pRenderPassVk = reinterpret_cast<const RenderPassVK*>(pDesc->pRenderPass);
 
-		 // Define shader stage create infos
+		// Define shader stage create infos
 		TArray<VkPipelineShaderStageCreateInfo>		shaderStagesInfos;
 		TArray<VkSpecializationInfo>				shaderStagesSpecializationInfos;
 		TArray<TArray<VkSpecializationMapEntry>>	shaderStagesSpecializationMaps;
@@ -57,40 +57,40 @@ namespace LambdaEngine
 
 		// InputAssembly
 		VkPipelineInputAssemblyStateCreateInfo inputAssembly = { };
-		inputAssembly.sType						= VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		inputAssembly.pNext						= nullptr;
-		inputAssembly.flags						= 0;
-		inputAssembly.topology					= ConvertPrimitiveToplogy(pDesc->InputAssembly.PrimitiveTopology);
-		inputAssembly.primitiveRestartEnable	= (pDesc->InputAssembly.PrimitiveRestartEnable) ? VK_TRUE : VK_FALSE;
+		inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		inputAssembly.pNext = nullptr;
+		inputAssembly.flags = 0;
+		inputAssembly.topology = ConvertPrimitiveToplogy(pDesc->InputAssembly.PrimitiveTopology);
+		inputAssembly.primitiveRestartEnable = (pDesc->InputAssembly.PrimitiveRestartEnable) ? VK_TRUE : VK_FALSE;
 
 		// RasterizerState
 		VkPipelineRasterizationStateCreateInfo rasterizerState = { };
-		rasterizerState.sType					= VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		rasterizerState.flags					= 0;
-		rasterizerState.pNext					= nullptr;
-		rasterizerState.polygonMode				= ConvertPolygonMode(pDesc->RasterizerState.PolygonMode);
-		rasterizerState.lineWidth				= pDesc->RasterizerState.LineWidth;
-		rasterizerState.cullMode				= ConvertCullMode(pDesc->RasterizerState.CullMode);
-		rasterizerState.frontFace				= (pDesc->RasterizerState.FrontFaceCounterClockWise) ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
-		rasterizerState.depthBiasEnable			= (pDesc->RasterizerState.DepthBiasEnable)			? VK_TRUE : VK_FALSE;
-		rasterizerState.depthClampEnable		= (pDesc->RasterizerState.DepthClampEnable)			? VK_TRUE : VK_FALSE;
-		rasterizerState.rasterizerDiscardEnable = (pDesc->RasterizerState.RasterizerDiscardEnable)	? VK_TRUE : VK_FALSE;
-		rasterizerState.depthBiasClamp			= pDesc->RasterizerState.DepthBiasClamp;
+		rasterizerState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		rasterizerState.flags = 0;
+		rasterizerState.pNext = nullptr;
+		rasterizerState.polygonMode = ConvertPolygonMode(pDesc->RasterizerState.PolygonMode);
+		rasterizerState.lineWidth = pDesc->RasterizerState.LineWidth;
+		rasterizerState.cullMode = ConvertCullMode(pDesc->RasterizerState.CullMode);
+		rasterizerState.frontFace = (pDesc->RasterizerState.FrontFaceCounterClockWise) ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
+		rasterizerState.depthBiasEnable = (pDesc->RasterizerState.DepthBiasEnable) ? VK_TRUE : VK_FALSE;
+		rasterizerState.depthClampEnable = (pDesc->RasterizerState.DepthClampEnable) ? VK_TRUE : VK_FALSE;
+		rasterizerState.rasterizerDiscardEnable = (pDesc->RasterizerState.RasterizerDiscardEnable) ? VK_TRUE : VK_FALSE;
+		rasterizerState.depthBiasClamp = pDesc->RasterizerState.DepthBiasClamp;
 		rasterizerState.depthBiasConstantFactor = pDesc->RasterizerState.DepthBiasConstantFactor;
-		rasterizerState.depthBiasSlopeFactor	= pDesc->RasterizerState.DepthBiasSlopeFactor;
+		rasterizerState.depthBiasSlopeFactor = pDesc->RasterizerState.DepthBiasSlopeFactor;
 
 		// MultisamplingState
 		VkPipelineMultisampleStateCreateInfo multisamplingState = { };
-		multisamplingState.sType					= VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		multisamplingState.flags					= 0;
-		multisamplingState.pNext					= nullptr;
-		multisamplingState.alphaToCoverageEnable	= (pDesc->BlendState.AlphaToCoverageEnable) ? VK_TRUE : VK_FALSE;
-		multisamplingState.alphaToOneEnable			= (pDesc->BlendState.AlphaToOneEnable)		? VK_TRUE : VK_FALSE;
-		multisamplingState.minSampleShading			= 1.0f;
-		multisamplingState.sampleShadingEnable		= (pDesc->RasterizerState.MultisampleEnable) ? VK_TRUE : VK_FALSE;
-		multisamplingState.rasterizationSamples		= ConvertSampleCount(pDesc->SampleCount);
+		multisamplingState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		multisamplingState.flags = 0;
+		multisamplingState.pNext = nullptr;
+		multisamplingState.alphaToCoverageEnable = (pDesc->BlendState.AlphaToCoverageEnable) ? VK_TRUE : VK_FALSE;
+		multisamplingState.alphaToOneEnable = (pDesc->BlendState.AlphaToOneEnable) ? VK_TRUE : VK_FALSE;
+		multisamplingState.minSampleShading = 1.0f;
+		multisamplingState.sampleShadingEnable = (pDesc->RasterizerState.MultisampleEnable) ? VK_TRUE : VK_FALSE;
+		multisamplingState.rasterizationSamples = ConvertSampleCount(pDesc->SampleCount);
 
-		VkSampleMask sampleMask	= pDesc->SampleMask;
+		VkSampleMask sampleMask = pDesc->SampleMask;
 		if (pDesc->SampleCount > 1)
 		{
 			multisamplingState.pSampleMask = &sampleMask;
@@ -105,43 +105,43 @@ namespace LambdaEngine
 		TArray<VkPipelineColorBlendAttachmentState> blendAttachments(blendAttachmentCount);
 		for (uint32 i = 0; i < blendAttachmentCount; i++)
 		{
-			VkPipelineColorBlendAttachmentState*	pAttachmentVk	= &blendAttachments[i];
-			const BlendAttachmentStateDesc*			pAttachment		= &pDesc->BlendState.BlendAttachmentStates[i];
+			VkPipelineColorBlendAttachmentState* pAttachmentVk = &blendAttachments[i];
+			const BlendAttachmentStateDesc* pAttachment = &pDesc->BlendState.BlendAttachmentStates[i];
 
-			pAttachmentVk->blendEnable			= (pAttachment->BlendEnabled) ? VK_TRUE : VK_FALSE;
-			pAttachmentVk->colorWriteMask		= ConvertColorComponentMask(pAttachment->RenderTargetComponentMask);
-			pAttachmentVk->colorBlendOp			= ConvertBlendOp(pAttachment->BlendOp);
-			pAttachmentVk->srcColorBlendFactor	= ConvertBlendFactor(pAttachment->SrcBlend);
-			pAttachmentVk->dstColorBlendFactor	= ConvertBlendFactor(pAttachment->DstBlend);
-			pAttachmentVk->alphaBlendOp			= ConvertBlendOp(pAttachment->BlendOpAlpha);
-			pAttachmentVk->srcAlphaBlendFactor	= ConvertBlendFactor(pAttachment->SrcBlendAlpha);
-			pAttachmentVk->dstAlphaBlendFactor	= ConvertBlendFactor(pAttachment->DstBlendAlpha);
+			pAttachmentVk->blendEnable = (pAttachment->BlendEnabled) ? VK_TRUE : VK_FALSE;
+			pAttachmentVk->colorWriteMask = ConvertColorComponentMask(pAttachment->RenderTargetComponentMask);
+			pAttachmentVk->colorBlendOp = ConvertBlendOp(pAttachment->BlendOp);
+			pAttachmentVk->srcColorBlendFactor = ConvertBlendFactor(pAttachment->SrcBlend);
+			pAttachmentVk->dstColorBlendFactor = ConvertBlendFactor(pAttachment->DstBlend);
+			pAttachmentVk->alphaBlendOp = ConvertBlendOp(pAttachment->BlendOpAlpha);
+			pAttachmentVk->srcAlphaBlendFactor = ConvertBlendFactor(pAttachment->SrcBlendAlpha);
+			pAttachmentVk->dstAlphaBlendFactor = ConvertBlendFactor(pAttachment->DstBlendAlpha);
 		}
 
 		VkPipelineColorBlendStateCreateInfo blendState = { };
-		blendState.sType				= VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		blendState.flags				= 0;
-		blendState.pNext				= nullptr;
-		blendState.logicOp				= ConvertLogicOp(pDesc->BlendState.LogicOp);
-		blendState.logicOpEnable		= (pDesc->BlendState.LogicOpEnable) ? VK_TRUE : VK_FALSE;
-		blendState.pAttachments			= blendAttachments.GetData();
-		blendState.attachmentCount		= blendAttachmentCount;
+		blendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		blendState.flags = 0;
+		blendState.pNext = nullptr;
+		blendState.logicOp = ConvertLogicOp(pDesc->BlendState.LogicOp);
+		blendState.logicOpEnable = (pDesc->BlendState.LogicOpEnable) ? VK_TRUE : VK_FALSE;
+		blendState.pAttachments = blendAttachments.GetData();
+		blendState.attachmentCount = blendAttachmentCount;
 		memcpy(blendState.blendConstants, pDesc->BlendState.BlendConstants, sizeof(float) * 4);
 
 		// DepthstencilState
 		VkPipelineDepthStencilStateCreateInfo depthStencilState = { };
-		depthStencilState.sType					= VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		depthStencilState.flags					= 0;
-		depthStencilState.pNext					= nullptr;
-		depthStencilState.depthTestEnable		= pDesc->DepthStencilState.DepthTestEnable ? VK_TRUE : VK_FALSE;
-		depthStencilState.depthWriteEnable		= pDesc->DepthStencilState.DepthWriteEnable ? VK_TRUE : VK_FALSE;
-		depthStencilState.depthCompareOp		= ConvertCompareOp(pDesc->DepthStencilState.CompareOp);
+		depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		depthStencilState.flags = 0;
+		depthStencilState.pNext = nullptr;
+		depthStencilState.depthTestEnable = pDesc->DepthStencilState.DepthTestEnable ? VK_TRUE : VK_FALSE;
+		depthStencilState.depthWriteEnable = pDesc->DepthStencilState.DepthWriteEnable ? VK_TRUE : VK_FALSE;
+		depthStencilState.depthCompareOp = ConvertCompareOp(pDesc->DepthStencilState.CompareOp);
 		depthStencilState.depthBoundsTestEnable = pDesc->DepthStencilState.DepthBoundsTestEnable ? VK_TRUE : VK_FALSE;
-		depthStencilState.stencilTestEnable		= pDesc->DepthStencilState.StencilTestEnable ? VK_TRUE : VK_FALSE;;
-		depthStencilState.minDepthBounds		= pDesc->DepthStencilState.MinDepthBounds;
-		depthStencilState.maxDepthBounds		= pDesc->DepthStencilState.MaxDepthBounds;
-		depthStencilState.front					= ConvertStencilOpState(pDesc->DepthStencilState.FrontFace);
-		depthStencilState.back					= ConvertStencilOpState(pDesc->DepthStencilState.BackFace);
+		depthStencilState.stencilTestEnable = pDesc->DepthStencilState.StencilTestEnable ? VK_TRUE : VK_FALSE;;
+		depthStencilState.minDepthBounds = pDesc->DepthStencilState.MinDepthBounds;
+		depthStencilState.maxDepthBounds = pDesc->DepthStencilState.MaxDepthBounds;
+		depthStencilState.front = ConvertStencilOpState(pDesc->DepthStencilState.FrontFace);
+		depthStencilState.back = ConvertStencilOpState(pDesc->DepthStencilState.BackFace);
 
 		// InputLayout
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo = { };
@@ -158,24 +158,24 @@ namespace LambdaEngine
 			for (const InputElementDesc& inputElement : pDesc->InputLayout)
 			{
 				VkVertexInputAttributeDescription vkInputAttributeDesc = { };
-				vkInputAttributeDesc.location	= inputElement.Location;
-				vkInputAttributeDesc.binding	= inputElement.Binding;
-				vkInputAttributeDesc.format		= ConvertFormat(inputElement.Format);
-				vkInputAttributeDesc.offset		= inputElement.Offset;
+				vkInputAttributeDesc.location = inputElement.Location;
+				vkInputAttributeDesc.binding = inputElement.Binding;
+				vkInputAttributeDesc.format = ConvertFormat(inputElement.Format);
+				vkInputAttributeDesc.offset = inputElement.Offset;
 				attributeDescriptors.EmplaceBack(vkInputAttributeDesc);
 
 				VkVertexInputBindingDescription vkInputBindingDesc = { };
-				vkInputBindingDesc.binding	 = inputElement.Binding;
-				vkInputBindingDesc.stride	 = inputElement.Stride;
+				vkInputBindingDesc.binding = inputElement.Binding;
+				vkInputBindingDesc.stride = inputElement.Stride;
 				vkInputBindingDesc.inputRate = ConvertVertexInputRate(inputElement.InputRate);
 
 				if (!bindingDescriptors.IsEmpty())
 				{
 					for (auto it = bindingDescriptors.Begin(); it != bindingDescriptors.End(); it++)
 					{
-						if ((*it).binding	!= vkInputBindingDesc.binding	||
-							(*it).inputRate	!= vkInputBindingDesc.inputRate	||
-							(*it).stride	!= vkInputBindingDesc.stride)
+						if ((*it).binding != vkInputBindingDesc.binding ||
+							(*it).inputRate != vkInputBindingDesc.inputRate ||
+							(*it).stride != vkInputBindingDesc.stride)
 						{
 							bindingDescriptors.EmplaceBack(vkInputBindingDesc);
 						}
@@ -187,29 +187,29 @@ namespace LambdaEngine
 				}
 			}
 
-			vertexInputInfo.vertexAttributeDescriptionCount	= static_cast<uint32>(attributeDescriptors.GetSize());
-			vertexInputInfo.pVertexAttributeDescriptions	= attributeDescriptors.GetData();
-			vertexInputInfo.vertexBindingDescriptionCount	= static_cast<uint32>(bindingDescriptors.GetSize());
-			vertexInputInfo.pVertexBindingDescriptions		= bindingDescriptors.GetData();
+			vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32>(attributeDescriptors.GetSize());
+			vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptors.GetData();
+			vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32>(bindingDescriptors.GetSize());
+			vertexInputInfo.pVertexBindingDescriptions = bindingDescriptors.GetData();
 		}
 		else
 		{
-			vertexInputInfo.vertexAttributeDescriptionCount	= 0;
-			vertexInputInfo.pVertexAttributeDescriptions	= nullptr;
-			vertexInputInfo.vertexBindingDescriptionCount	= 0;
-			vertexInputInfo.pVertexBindingDescriptions		= nullptr;
+			vertexInputInfo.vertexAttributeDescriptionCount = 0;
+			vertexInputInfo.pVertexAttributeDescriptions = nullptr;
+			vertexInputInfo.vertexBindingDescriptionCount = 0;
+			vertexInputInfo.pVertexBindingDescriptions = nullptr;
 		}
 
 		// Viewport count
 		// TODO: If we need more than one viewport, we need to support this somehow
 		VkPipelineViewportStateCreateInfo viewportState = {};
-		viewportState.sType			= VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		viewportState.flags			= 0;
-		viewportState.pNext			= nullptr;
-		viewportState.viewportCount	= 1;
-		viewportState.pViewports	= nullptr;
-		viewportState.scissorCount	= 1;
-		viewportState.pScissors		= nullptr;
+		viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		viewportState.flags = 0;
+		viewportState.pNext = nullptr;
+		viewportState.viewportCount = 1;
+		viewportState.pViewports = nullptr;
+		viewportState.scissorCount = 1;
+		viewportState.pScissors = nullptr;
 
 		// Dynamic state
 		TArray<VkDynamicState> dynamicStates =
@@ -236,11 +236,21 @@ namespace LambdaEngine
 		}
 
 		VkPipelineDynamicStateCreateInfo dynamicState = {};
-		dynamicState.sType				= VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-		dynamicState.flags				= 0;
-		dynamicState.pNext				= nullptr;
-		dynamicState.pDynamicStates		= dynamicStates.GetData();
-		dynamicState.dynamicStateCount	= dynamicStates.GetSize();
+		dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+		dynamicState.flags = 0;
+		dynamicState.pNext = nullptr;
+		dynamicState.pDynamicStates = dynamicStates.GetData();
+		dynamicState.dynamicStateCount = dynamicStates.GetSize();
+
+		VkPipelineTessellationStateCreateInfo tessellationState = {};
+		tessellationState.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+		tessellationState.pNext = nullptr;
+		tessellationState.flags = 0;
+		tessellationState.patchControlPoints = 3; // Assume three, because we triangulate all our meshes.
+
+		VkPipelineTessellationStateCreateInfo* pTessellationState = nullptr;
+		if (pDesc->HullShader.pShader != nullptr && pDesc->DomainShader.pShader != nullptr)
+			pTessellationState = &tessellationState;
 
 		// Pipeline info
 		VkGraphicsPipelineCreateInfo pipelineInfo = {};
@@ -256,6 +266,7 @@ namespace LambdaEngine
 		pipelineInfo.pMultisampleState		= &multisamplingState;
 		pipelineInfo.pDepthStencilState		= &depthStencilState;
 		pipelineInfo.pColorBlendState		= &blendState;
+		pipelineInfo.pTessellationState		= pTessellationState;
 		pipelineInfo.pDynamicState			= &dynamicState;
 		pipelineInfo.renderPass				= pRenderPassVk->GetRenderPass();
 		pipelineInfo.layout					= pPipelineLayoutVk->GetPipelineLayout();
