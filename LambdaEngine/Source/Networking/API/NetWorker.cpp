@@ -101,7 +101,7 @@ namespace LambdaEngine
 			m_ThreadsTerminated = false;
 
 			m_pThreadTransmitter = Thread::Create(
-				name + "_TRANSMITER",
+				name + "_TRANSMITTER",
 				std::bind_front(&NetWorker::ThreadTransmitter, this),
 				std::bind_front(&NetWorker::ThreadTransmitterDeleted, this)
 			);
