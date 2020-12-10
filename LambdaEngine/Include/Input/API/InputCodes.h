@@ -437,9 +437,11 @@ namespace LambdaEngine
 		};
 
 		auto itr = keyMap.find(str);
-		if (itr != keyMap.end()) {
+		if (itr != keyMap.end()) 
+		{
 			return itr->second;
 		}
+
 		return EKey::KEY_UNKNOWN;
 	}
 

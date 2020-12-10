@@ -54,7 +54,7 @@ void MultiplayerState::Init()
 
 	CommonApplication::Get()->SetMouseVisibility(true);
 	PlayerActionSystem::SetMouseEnabled(false);
-	Input::PushInputMode(EInputLayer::GUI);
+	Input::PushInputLayer(EInputLayer::GUI);
 
 	DisablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
@@ -76,7 +76,7 @@ void MultiplayerState::Init()
 
 void MultiplayerState::Tick(LambdaEngine::Timestamp delta)
 {
-
+	UNREFERENCED_VARIABLE(delta);
 }
 
 bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
