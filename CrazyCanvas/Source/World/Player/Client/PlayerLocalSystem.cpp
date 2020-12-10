@@ -163,8 +163,6 @@ void PlayerLocalSystem::DoAction(
 	else
 		PlayerActionSystem::ComputeGroundVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
 
-	// PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
-
 	pGameState->DeltaAction		= deltaAction;
 	pGameState->Walking			= walking;
 	pGameState->HoldingFlag		= holdingFlag;
