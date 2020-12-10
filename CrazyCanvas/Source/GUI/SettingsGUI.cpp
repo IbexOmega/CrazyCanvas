@@ -81,10 +81,8 @@ void SettingsGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
 
 	if (m_pSettingsGrid->GetVisibility() == Noesis::Visibility_Visible)
 	{
@@ -161,14 +159,19 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 
 void SettingsGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
-
-	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
 
 	SetDefaultSettings();
+
+	//FOV
+	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	//Glossy
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
+
 
 	OnButtonBackClick(pSender, args);
 }
@@ -178,10 +181,8 @@ void SettingsGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, co
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
 
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Collapsed);
 
@@ -211,10 +212,9 @@ void SettingsGUI::OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, con
 
 void SettingsGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
+
 
 	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
@@ -286,15 +286,18 @@ void SettingsGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, con
 
 void SettingsGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-#ifdef LAMBDA_DEVELOPMENT
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-#endif
+
+	SetDefaultSettings();
 
 	//FOV
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
 
-	SetDefaultSettings();
+	//Glossy
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
 
 	OnButtonBackClick(pSender, args);
 }
