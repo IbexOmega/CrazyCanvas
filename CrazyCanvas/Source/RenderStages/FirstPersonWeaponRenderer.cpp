@@ -674,7 +674,9 @@ namespace LambdaEngine
 		Entity entity = drawArg.EntityIDs[0];
 		m_LiquidPushConstantData.DefaultTransform = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform;
 
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_ALL, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData), 0);
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData)-sizeof(uint32), 0);
+
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)&m_LiquidPushConstantData.TeamIndex, sizeof(uint32), 72);
 
 		// Draw Weapon liquid
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
@@ -1005,14 +1007,19 @@ namespace LambdaEngine
 		}
 
 		ConstantRangeDesc constantRangeDesc = {};
-		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 		constantRangeDesc.OffsetInBytes = 0;
-		constantRangeDesc.SizeInBytes = sizeof(SPushConstantData);
+		constantRangeDesc.SizeInBytes = sizeof(SPushConstantData)-sizeof(uint32);
+
+		ConstantRangeDesc constantRangeDesc2 = {};
+		constantRangeDesc2.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		constantRangeDesc2.OffsetInBytes = constantRangeDesc.SizeInBytes;
+		constantRangeDesc2.SizeInBytes = sizeof(uint32);
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout liquid";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, drawArgDescriptorSetLayoutDesc };
-		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
+		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc, constantRangeDesc2 };
 
 		m_LiquidPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
