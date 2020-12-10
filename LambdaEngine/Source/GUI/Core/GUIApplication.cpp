@@ -14,6 +14,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#define NOESIS_GUI_LOGS_ENABLED
+
 namespace LambdaEngine
 {
 	Noesis::Ptr<Noesis::IView> GUIApplication::s_pView = nullptr;
@@ -84,9 +86,8 @@ namespace LambdaEngine
 
 	void GUIApplication::SetView(Noesis::Ptr<Noesis::IView> view)
 	{
-		s_pView.Reset();
-
 		s_pView = view;
+
 		if (s_pView != nullptr)
 		{
 			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
@@ -131,7 +132,7 @@ namespace LambdaEngine
 
 	void GUIApplication::NoesisLogHandler(const char* file, uint32_t line, uint32_t level, const char* channel, const char* message)
 	{
-#ifdef LAMBDA_DEBUG
+#ifdef NOESIS_GUI_LOGS_ENABLED
 		if (level == 0) // [TRACE]
 		{
 			LOG_MESSAGE("[TRACE] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);

@@ -47,6 +47,8 @@ else \
 #define REGISTER_COLOR_MAP_IN_MATERIAL(GUID, pTexture, pTextureView) REGISTER_TEXTURE_IN_MATERIAL(GUID, GUID_TEXTURE_DEFAULT_COLOR_MAP, pTexture, pTextureView)
 #define REGISTER_NORMAL_MAP_IN_MATERIAL(GUID, pTexture, pTextureView) REGISTER_TEXTURE_IN_MATERIAL(GUID, GUID_TEXTURE_DEFAULT_NORMAL_MAP, pTexture, pTextureView)
 
+//#define RESOURCE_MANAGER_LOGS_ENABLED
+
 namespace LambdaEngine
 {
 	GUID_Lambda ResourceManager::s_NextFreeGUID = SMALLEST_UNRESERVED_GUID;
@@ -194,7 +196,7 @@ namespace LambdaEngine
 
 		for (uint32 i = 0; i < meshes.GetSize(); i++)
 		{
-			GUID_Lambda guid = RegisterMesh("Scene Mesh " + std::to_string(i), meshes[i]);
+			GUID_Lambda guid = RegisterMesh(pSceneLoadDesc->Filename + "Scene Mesh " + std::to_string(i), meshes[i]);
 
 			//Loop through mesh component and set the real mesh GUID
 			for (uint32 g = 0; g < sceneLocalMeshComponents.GetSize(); g++)
@@ -1378,6 +1380,10 @@ namespace LambdaEngine
 		auto meshIt = s_Meshes.find(guid);
 		if (meshIt != s_Meshes.end())
 		{
+#ifdef RESOURCE_MANAGER_LOGS_ENABLED
+			LOG_DEBUG("Deleted Mesh GUID: %d", guid);
+#endif
+
 			SAFEDELETE(meshIt->second);
 			s_Meshes.erase(meshIt);
 
@@ -1447,7 +1453,9 @@ namespace LambdaEngine
 		auto materialIt = s_Materials.find(guid);
 		if (materialIt != s_Materials.end())
 		{
+#ifdef RESOURCE_MANAGER_LOGS_ENABLED
 			LOG_DEBUG("Deleted Material GUID: %d", guid);
+#endif
 
 			SAFEDELETE(materialIt->second);
 			s_Materials.erase(materialIt);
@@ -1515,7 +1523,9 @@ namespace LambdaEngine
 		auto animationIt = s_Animations.find(guid);
 		if (animationIt != s_Animations.end())
 		{
+#ifdef RESOURCE_MANAGER_LOGS_ENABLED
 			LOG_DEBUG("Deleted Animation GUID: %d", guid);
+#endif
 
 			SAFEDELETE(animationIt->second);
 			s_Animations.erase(animationIt);
@@ -1595,7 +1605,9 @@ namespace LambdaEngine
 					return false;
 				}
 
+#ifdef RESOURCE_MANAGER_LOGS_ENABLED
 				LOG_DEBUG("Deleted Texture GUID: %d", guid);
+#endif
 
 				SAFERELEASE(textureViewIt->second);
 				s_TextureViews.erase(textureViewIt);
@@ -1648,7 +1660,9 @@ namespace LambdaEngine
 		auto shaderIt = s_Shaders.find(guid);
 		if (shaderIt != s_Shaders.end())
 		{
+#ifdef RESOURCE_MANAGER_LOGS_ENABLED
 			LOG_DEBUG("Deleted Shader GUID: %d", guid);
+#endif
 
 			SAFERELEASE(shaderIt->second);
 			s_Shaders.erase(shaderIt);
@@ -1697,7 +1711,9 @@ namespace LambdaEngine
 		auto soundEffectIt = s_SoundEffects3D.find(guid);
 		if (soundEffectIt != s_SoundEffects3D.end())
 		{
+#ifdef RESOURCE_MANAGER_LOGS_ENABLED
 			LOG_DEBUG("Deleted 3D Sound Effect GUID: %d", guid);
+#endif
 
 			SAFEDELETE(soundEffectIt->second);
 			s_SoundEffects3D.erase(soundEffectIt);
@@ -1746,7 +1762,9 @@ namespace LambdaEngine
 		auto soundEffectIt = s_SoundEffects2D.find(guid);
 		if (soundEffectIt != s_SoundEffects2D.end())
 		{
+#ifdef RESOURCE_MANAGER_LOGS_ENABLED
 			LOG_DEBUG("Deleted 2D Sound Effect GUID: %d", guid);
+#endif
 
 			SAFEDELETE(soundEffectIt->second);
 			s_SoundEffects2D.erase(soundEffectIt);
@@ -1795,7 +1813,9 @@ namespace LambdaEngine
 		auto musicIt = s_Music.find(guid);
 		if (musicIt != s_Music.end())
 		{
+#ifdef RESOURCE_MANAGER_LOGS_ENABLED
 			LOG_DEBUG("Deleted 2D Sound Effect GUID: %d", guid);
+#endif
 
 			SAFEDELETE(musicIt->second);
 			s_Music.erase(musicIt);
@@ -1917,7 +1937,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetMesh called with invalid GUID %u", guid);
+		LOG_ERROR("GetMesh called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -1929,7 +1949,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetMaterial called with invalid GUID %u", guid);
+		LOG_ERROR("GetMaterial called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -1942,7 +1962,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("GetMaterialDesc called with invalid GUID %u", guid);
+		LOG_ERROR("GetMaterialDesc called with invalid GUID %u", guid);
 
 		// Return empty 
 		ResourceManager::MaterialLoadDesc materialLoadDesc = {};
@@ -1957,7 +1977,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetClip called with invalid GUID %u", guid);
+		LOG_ERROR("GetClip called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -1969,7 +1989,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetTexture called with invalid GUID %u", guid);
+		LOG_ERROR("GetTexture called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -1981,7 +2001,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetTextureView called with invalid GUID %u", guid);
+		LOG_ERROR("GetTextureView called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -1993,7 +2013,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetShader called with invalid GUID %u", guid);
+		LOG_ERROR("GetShader called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -2005,7 +2025,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
+		LOG_ERROR("GetSoundEffect called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -2017,7 +2037,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetSoundEffect called with invalid GUID %u", guid);
+		LOG_ERROR("GetSoundEffect called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
@@ -2029,7 +2049,7 @@ namespace LambdaEngine
 			return it->second;
 		}
 
-		LOG_DEBUG("[ResourceManager]: GetMusic called with invalid GUID %u", guid);
+		LOG_ERROR("GetMusic called with invalid GUID %u", guid);
 		return nullptr;
 	}
 
