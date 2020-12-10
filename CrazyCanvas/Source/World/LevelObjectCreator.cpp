@@ -1316,14 +1316,14 @@ bool LevelObjectCreator::CreatePlayer(
 				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, weaponLiquidComponent);
 
 				WeaponLocalComponent weaponLocalComponent = {};
-				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_MESH_GUID);
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID);
 				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
 				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
 				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
 
 				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
 					{
-						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_MESH_GUID,
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID,
 						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
 					});
 
@@ -1354,14 +1354,14 @@ bool LevelObjectCreator::CreatePlayer(
 				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, weaponLiquidComponent);
 
 				WeaponLocalComponent weaponLocalComponent = {};
-				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_MESH_GUID);
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID);
 				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
 				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
 				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
 
 				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
 					{
-						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_MESH_GUID,
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID,
 						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
 					});
 

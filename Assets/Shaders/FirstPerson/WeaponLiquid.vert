@@ -67,12 +67,9 @@ void main()
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 
-    // vertex offset from origo X: 0.8258, Y: 0.25395, Z: -0.066376
-    vec3 offset = vec3(0.8258f, 0.25395f, -0.066376f);
-    vec3 size = vec3(0.14715f, 0.14715f, 0.317593f);
-    out_Position = (weaponData.Model * instance.Transform * vec4(position - offset, 0.f)).xyz + vec3(0.f, size.y, 0.f);
-    out_Position.y /= size.y*2.f;
-    out_Position.y += position.x*u_PC.WaveX + position.z*u_PC.WaveZ;
+    vec3 offset = vec3(0.f, 0.4f, 0.f);
+    vec3 size = vec3(0., 0.14715f, 0.);
+    out_Position.y = (position.y-offset.y) / size.y;
 
 	gl_Position = out_ClipPosition;
 }

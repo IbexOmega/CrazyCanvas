@@ -14,6 +14,7 @@ layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ v
 layout(push_constant) uniform PushConstants
 {
 	layout(offset = 72) uint TeamIndex;
+	layout(offset = 76) uint IsWater; 
 } u_PC;
 
 layout(location = 0) in vec3		in_WorldPosition;
@@ -52,7 +53,7 @@ void main()
 
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
-	vec3 sampledAlbedo = b_PaintMaskColor.val[u_PC.TeamIndex].rgb;
+	vec3 sampledAlbedo = u_PC.IsWater == 1 ? vec3(0.f, 0.f, 1.f) : b_PaintMaskColor.val[u_PC.TeamIndex].rgb;
 
     // Tells the user how much paint is in the container. A limit of 0.75 is 75% filled. 
     float limit = 0.5f; //u_PC.WaveX + u_PC.WaveZ;
@@ -62,8 +63,8 @@ void main()
     const float midTexCoord = 0.24f;
     const float minTexCoord = midTexCoord-distTexCoord;
     const float maxTexCoord = midTexCoord+distTexCoord;
-    float filling = 1.f-in_Position.y;//(clamp(texCoord.y, minTexCoord, maxTexCoord)-minTexCoord)/(maxTexCoord-minTexCoord);
-    float isLiquid = 1.f;//step(1.f-limit, filling);
+    float filling = in_Position.y;//(clamp(texCoord.y, minTexCoord, maxTexCoord)-minTexCoord)/(maxTexCoord-minTexCoord);
+    float isLiquid = step(1.f-limit, filling);
     
     // Remove the pixels which are not part of the liquid.
     if(isLiquid < 0.5f)

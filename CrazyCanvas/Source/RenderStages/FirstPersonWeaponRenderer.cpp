@@ -506,9 +506,19 @@ namespace LambdaEngine
 								
 								if (pWeaponLiquidComponents->HasComponent(entity))
 								{
-									m_LiquidEntity = entity;
-									m_LiquidIndex = d;
-									m_LiquidDrawArgsDescriptorSet = m_pDrawArgs[d].pDescriptorSet;
+									const WeaponLiquidComponent& weaponLiquidComponent = pWeaponLiquidComponents->GetConstData(entity);
+									if (weaponLiquidComponent.isWater)
+									{
+										m_LiquidWaterDrawArgsDescriptorSet = m_pDrawArgs[d].pDescriptorSet;
+										m_LiquidWaterEntity = entity;
+										m_LiquidWaterIndex = d;
+									}
+									else
+									{
+										m_LiquidPaintDrawArgsDescriptorSet = m_pDrawArgs[d].pDescriptorSet;
+										m_LiquidPaintEntity = entity;
+										m_LiquidPaintIndex = d;
+									}
 								}
 								else
 								{
@@ -635,7 +645,8 @@ namespace LambdaEngine
 			if (m_DrawCount > 0)
 			{
 				RenderCull(false, m_ArmsIndex, pCommandList, m_PipelineStateIDBackCull);
-				RenderLiquid(pCommandList);
+				RenderLiquid(true, pCommandList); // Render water
+				RenderLiquid(false, pCommandList); // Render paint
 
 				RenderCull(true, m_WeaponIndex, pCommandList, m_PipelineStateIDFrontCull);
 				RenderCull(true, m_WeaponIndex, pCommandList, m_PipelineStateIDBackCull);
@@ -664,23 +675,24 @@ namespace LambdaEngine
 		pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 	}
 
-	void FirstPersonWeaponRenderer::RenderLiquid(CommandList* pCommandList)
+	void FirstPersonWeaponRenderer::RenderLiquid(bool isWater, CommandList* pCommandList)
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateIDNoCull));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_LiquidPipelineLayout.Get(), 0); // BUFFER_SET_INDEX
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_LiquidPipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
 		
-		const DrawArg& drawArg = m_pDrawArgs[m_LiquidIndex];
+		const DrawArg& drawArg = m_pDrawArgs[isWater ? m_LiquidWaterIndex : m_LiquidPaintIndex];
 		Entity entity = drawArg.EntityIDs[0];
 		m_LiquidPushConstantData.DefaultTransform = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform;
 
 		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData)-sizeof(uint32), 0);
 
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)&m_LiquidPushConstantData.TeamIndex, sizeof(uint32), 72);
+		uint32 data[2] = { m_LiquidPushConstantData.TeamIndex, isWater ? 1 : 0};
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)data, sizeof(uint32)*2, 72);
 
 		// Draw Weapon liquid
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-		pCommandList->BindDescriptorSetGraphics(m_LiquidDrawArgsDescriptorSet, m_LiquidPipelineLayout.Get(), 2); // Draw arg data
+		pCommandList->BindDescriptorSetGraphics(isWater ? m_LiquidWaterDrawArgsDescriptorSet : m_LiquidPaintDrawArgsDescriptorSet, m_LiquidPipelineLayout.Get(), 2); // Draw arg data
 		pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 	}
 
@@ -1014,7 +1026,7 @@ namespace LambdaEngine
 		ConstantRangeDesc constantRangeDesc2 = {};
 		constantRangeDesc2.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		constantRangeDesc2.OffsetInBytes = constantRangeDesc.SizeInBytes;
-		constantRangeDesc2.SizeInBytes = sizeof(uint32);
+		constantRangeDesc2.SizeInBytes = sizeof(uint32)*2;
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout liquid";
