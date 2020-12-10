@@ -130,6 +130,14 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
+	// Music Volume
+	Noesis::Slider* pMusicVolumeSlider = FrameworkElement::FindName<Noesis::Slider>("MusicVolumeSlider");
+	volume = pMusicVolumeSlider->GetValue();
+	maxVolume = pMusicVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC, volume);
+	AudioAPI::GetDevice()->SetMusicVolume(volume);
+
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
