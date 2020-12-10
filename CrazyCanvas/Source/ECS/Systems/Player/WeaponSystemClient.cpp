@@ -112,10 +112,10 @@ void WeaponSystemClient::FixedTick(LambdaEngine::Timestamp deltaTime)
 			auto paintAmmo = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
 			VALIDATE(paintAmmo != weaponComponent.WeaponTypeAmmo.end())
 
-			const bool hasNoAmmo = (waterAmmo->second.first <= 0) || (paintAmmo->second.first <= 0);
-			const bool hasFullAmmo = (waterAmmo->second.first >= waterAmmo->second.second) && (paintAmmo->second.first >= paintAmmo->second.second);
-			const bool isReloading = weaponComponent.ReloadClock > 0.0f;
-			const bool onCooldown = weaponComponent.CurrentCooldown > 0.0f;
+			const bool hasNoAmmo	= (waterAmmo->second.first <= 0) || (paintAmmo->second.first <= 0);
+			const bool hasFullAmmo	= (waterAmmo->second.first >= waterAmmo->second.second) && (paintAmmo->second.first >= paintAmmo->second.second);
+			const bool isReloading	= weaponComponent.ReloadClock > 0.0f;
+			const bool onCooldown	= weaponComponent.CurrentCooldown > 0.0f;
 
 			if (hasNoAmmo && !isReloading)
 			{

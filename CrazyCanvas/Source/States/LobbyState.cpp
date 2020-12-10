@@ -76,13 +76,13 @@ void LobbyState::Init()
 	
 	CommonApplication::Get()->SetMouseVisibility(true);
 	PlayerActionSystem::SetMouseEnabled(false);
-	Input::PushInputMode(EInputLayer::GUI);
+	Input::PushInputLayer(EInputLayer::GUI);
 
 	DisablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
 
-	m_LobbyGUI = *new LobbyGUI(&m_GameSettings);
-	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
+	m_LobbyGUI	= *new LobbyGUI(&m_GameSettings);
+	m_View		= Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
 	m_LobbyGUI->InitGUI();

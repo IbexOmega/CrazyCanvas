@@ -109,7 +109,7 @@ namespace LambdaEngine
 			if (!m_GraphActive)
 			{
 				m_GraphActive = true;
-				Input::PushInputMode(EInputLayer::GUI);
+				Input::PushInputLayer(EInputLayer::GUI);
 			}
 
 			ImVec2 contentRegionMin = ImGui::GetWindowContentRegionMin();
@@ -221,7 +221,7 @@ namespace LambdaEngine
 		else if (m_GraphActive)
 		{
 			m_GraphActive = false;
-			Input::PopInputMode();
+			Input::PopInputLayer();
 		}
 		ImGui::End();
 

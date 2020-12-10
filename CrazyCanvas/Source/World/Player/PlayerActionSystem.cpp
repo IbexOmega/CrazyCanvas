@@ -50,11 +50,11 @@ void PlayerActionSystem::TickMainThread(Timestamp deltaTime, Entity entityPlayer
 	float addedPitch = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
 	float addedYaw = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
-	const EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+	const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
 
-	if (m_MouseEnabled && (currentInputLayer == EInputLayer::GAME || currentInputLayer  == EInputLayer::DEAD))
+	if (m_MouseEnabled && (currentInputLayer == EInputLayer::GAME || currentInputLayer == EInputLayer::DEAD))
 	{
-		const MouseState& mouseState = Input::GetMouseState(currentInputLayer == EInputLayer::GAME ? EInputLayer::GAME : EInputLayer::DEAD);
+		const MouseState& mouseState = Input::GetMouseState(currentInputLayer);
 
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		const int32 halfWidth	= int32(0.5f * float32(window->GetWidth()));
