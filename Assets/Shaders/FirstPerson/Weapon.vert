@@ -9,8 +9,14 @@
 struct SWeaponData
 {
 	mat4 Model;
+	mat4 DefaultTransform;
 	vec3 PlayerPos;
 };
+
+layout(push_constant) uniform PushConstants
+{
+	mat4 DefaultTransform;
+} u_PC;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;
 layout(binding = 4, set = BUFFER_SET_INDEX) uniform WeaponData					{ SWeaponData val; }		u_WeaponData;
@@ -43,7 +49,7 @@ void main()
 	mat4 normalTransform    = instance.Transform;
 
 	vec3 position 			= vertex.Position.xyz;
-	vec4 worldPosition		= weaponData.Model * vec4(position, 1.0f);
+	vec4 worldPosition		= weaponData.Model * instance.Transform * u_PC.DefaultTransform * vec4(position, 1.0f);
 	vec4 prevWorldPosition	= instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
 

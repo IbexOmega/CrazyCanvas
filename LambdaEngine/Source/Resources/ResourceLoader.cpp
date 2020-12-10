@@ -1754,6 +1754,8 @@ namespace LambdaEngine
 			aiBone* pBoneAI = pMeshAI->mBones[boneIndex];
 			joint.Name = pBoneAI->mName.C_Str();
 
+			LOG_WARNING("[%s] Joint: %s", pMeshAI->mName.C_Str(), joint.Name.GetCString());
+
 			auto it = pSkeleton->JointMap.find(joint.Name);
 			if (it != pSkeleton->JointMap.end())
 			{

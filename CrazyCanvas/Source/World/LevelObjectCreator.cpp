@@ -1236,51 +1236,17 @@ bool LevelObjectCreator::CreatePlayer(
 			//pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
 			//EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
 
-			auto firstPersonWeaponEnity = pECS->CreateEntity();
+			auto firstPersonHandsEntity = pECS->CreateEntity();
 			{
-				pECS->AddComponent<PositionComponent>(firstPersonWeaponEnity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
-				pECS->AddComponent<RotationComponent>(firstPersonWeaponEnity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
-				pECS->AddComponent<ScaleComponent>(firstPersonWeaponEnity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+				pECS->AddComponent<PositionComponent>(firstPersonHandsEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(firstPersonHandsEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(firstPersonHandsEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 
-				pECS->AddComponent<WeaponLocalComponent>(firstPersonWeaponEnity, WeaponLocalComponent());
-				EntityMaskManager::AddExtensionToEntity(firstPersonWeaponEnity, WeaponLocalComponent::Type(), nullptr);
+				pECS->AddComponent<WeaponArmsComponent>(firstPersonHandsEntity, WeaponArmsComponent());
+				pECS->AddComponent<WeaponLocalComponent>(firstPersonHandsEntity, WeaponLocalComponent());
+				EntityMaskManager::AddExtensionToEntity(firstPersonHandsEntity, WeaponLocalComponent::Type(), nullptr);
 
-				pECS->AddComponent<MeshComponent>(firstPersonWeaponEnity, MeshComponent
-					{
-						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID,
-						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
-					});
-
-				ParentComponent parentComponent =
-				{
-					.Parent = playerEntity,
-					.Attached = false,
-					.DeleteParentOnRemoval = false
-				};
-				pECS->AddComponent<ParentComponent>(firstPersonWeaponEnity, parentComponent);
-
-				AnimationComponent animationComponentWeapon = {};
-				animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID)->pSkeleton;
-
-				AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
-				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::WEAPON_FIRST_PERSON_IDLE_GUIDs[0]));
-				pAnimationGraphWeapon->TransitionToState("Idle");
-				animationComponentWeapon.pGraph = pAnimationGraphWeapon;
-
-				pECS->AddComponent<AnimationComponent>(firstPersonWeaponEnity, animationComponentWeapon);
-			}
-
-			auto firstPersonHandsEnity = pECS->CreateEntity();
-			{
-				pECS->AddComponent<PositionComponent>(firstPersonHandsEnity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
-				pECS->AddComponent<RotationComponent>(firstPersonHandsEnity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
-				pECS->AddComponent<ScaleComponent>(firstPersonHandsEnity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
-
-				pECS->AddComponent<WeaponArmsComponent>(firstPersonHandsEnity, WeaponArmsComponent());
-				pECS->AddComponent<WeaponLocalComponent>(firstPersonHandsEnity, WeaponLocalComponent());
-				EntityMaskManager::AddExtensionToEntity(firstPersonHandsEnity, WeaponLocalComponent::Type(), nullptr);
-
-				pECS->AddComponent<MeshComponent>(firstPersonHandsEnity, MeshComponent
+				pECS->AddComponent<MeshComponent>(firstPersonHandsEntity, MeshComponent
 					{
 						.MeshGUID = ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID,
 						.MaterialGUID = ResourceCatalog::ARMS_FIRST_PERSON_MATERIAL_GUID,
@@ -1290,21 +1256,48 @@ bool LevelObjectCreator::CreatePlayer(
 				animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID)->pSkeleton;
 
 				AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
-				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[0]));
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[1]));
 				pAnimationGraphWeapon->TransitionToState("Idle");
 				animationComponentWeapon.pGraph = pAnimationGraphWeapon;
 
-				pECS->AddComponent<AnimationComponent>(firstPersonHandsEnity, animationComponentWeapon);
+				pECS->AddComponent<AnimationComponent>(firstPersonHandsEntity, animationComponentWeapon);
 
 				ParentComponent parentComponent =
 				{
-					.Parent = firstPersonWeaponEnity,
+					.Parent = playerEntity,
+					.Attached = false,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(firstPersonHandsEntity, parentComponent);
+			}
+
+			auto firstPersonWeaponEntity = pECS->CreateEntity();
+			{
+				pECS->AddComponent<PositionComponent>(firstPersonWeaponEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(firstPersonWeaponEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(firstPersonWeaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				pECS->AddComponent<WeaponLocalComponent>(firstPersonWeaponEntity, weaponLocalComponent);
+				EntityMaskManager::AddExtensionToEntity(firstPersonWeaponEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(firstPersonWeaponEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+					});
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonHandsEntity,
 					.Attached = true,
 					.DeleteParentOnRemoval = false
 				};
-				pECS->AddComponent<ParentComponent>(weaponLiquidEntity, parentComponent);
+				pECS->AddComponent<ParentComponent>(firstPersonWeaponEntity, parentComponent);
 
-				pECS->AddComponent<AnimationAttachedComponent>(weaponLiquidEntity, AnimationAttachedComponent
+				pECS->AddComponent<AnimationAttachedComponent>(firstPersonWeaponEntity, AnimationAttachedComponent
 					{
 						.JointName = "Gun",
 						.Transform = glm::mat4(1.0f),
@@ -1318,7 +1311,11 @@ bool LevelObjectCreator::CreatePlayer(
 				pECS->AddComponent<ScaleComponent>(weaponLiquidEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 
 				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, WeaponLiquidComponent());
-				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, WeaponLocalComponent());
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
 				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
 
 				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
@@ -1329,7 +1326,7 @@ bool LevelObjectCreator::CreatePlayer(
 
 				ParentComponent parentComponent =
 				{
-					.Parent = firstPersonWeaponEnity,
+					.Parent = firstPersonHandsEntity,
 					.Attached = true,
 					.DeleteParentOnRemoval = false
 				};

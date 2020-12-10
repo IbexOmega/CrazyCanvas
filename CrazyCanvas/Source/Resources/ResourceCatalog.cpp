@@ -71,12 +71,12 @@ bool ResourceCatalog::Init()
 
 	// First person weapon and hands
 	{
+		ARMS_FIRST_PERSON_IDLE_GUIDs = ResourceManager::LoadAnimationsFromFile("Gun/ArmsIdleAnimation.glb");
+
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/FirstPersonGun.glb", WEAPON_FIRST_PERSON_MESH_GUID, WEAPON_FIRST_PERSON_MATERIAL_GUID);
-		ResourceManager::LoadMeshAndMaterialFromFile("Gun/ArmsIdleAnimation.glb", WEAPON_FIRST_PERSON_MESH_GUID, WEAPON_FIRST_PERSON_MATERIAL_GUID);
+		ResourceManager::LoadMeshAndMaterialFromFile("Gun/ArmsIdleAnimation.glb", ARMS_FIRST_PERSON_MESH_GUID, ARMS_FIRST_PERSON_MATERIAL_GUID);
 
 		ResourceManager::LoadMeshFromFile("Gun/WeaponLiquid.glb", WEAPON_FIRST_PERSON_LIQUID_MESH_GUID);
-
-		ARMS_FIRST_PERSON_IDLE_GUIDs = ResourceManager::LoadAnimationsFromFile("Gun/ArmsIdleAnimation.glb");
 	}
 
 	// General Sound Effects
