@@ -54,7 +54,7 @@ void MultiplayerState::Init()
 
 	CommonApplication::Get()->SetMouseVisibility(true);
 	PlayerActionSystem::SetMouseEnabled(false);
-	Input::PushInputMode(EInputLayer::GUI);
+	Input::PushInputLayer(EInputLayer::GUI);
 
 	DisablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
@@ -76,7 +76,7 @@ void MultiplayerState::Init()
 
 void MultiplayerState::Tick(LambdaEngine::Timestamp delta)
 {
-
+	UNREFERENCED_VARIABLE(delta);
 }
 
 bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
@@ -90,6 +90,8 @@ bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEven
 		serverInfo.Name		= "";
 		ServerManager::RegisterNewServer(serverInfo);
 	}
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	State* pLobbyState = DBG_NEW LobbyState(m_MultiplayerGUI->GetPlayerName(), HasHostedServer());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);

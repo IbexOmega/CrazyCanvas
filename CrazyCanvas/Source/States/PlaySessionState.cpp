@@ -111,7 +111,7 @@ void PlaySessionState::Init()
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
-	Input::PushInputMode(EInputLayer::GAME);
+	Input::PushInputLayer(EInputLayer::GAME);
 
 	EnablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
@@ -201,6 +201,8 @@ bool PlaySessionState::OnClientDisconnected(const ClientDisconnectedEvent& event
 	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
 
 	PlayerManagerClient::Reset();
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);

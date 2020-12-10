@@ -244,11 +244,11 @@ namespace LambdaEngine
 
 			if (key != EKey::KEY_UNKNOWN)
 			{
-				return Input::IsKeyDown(Input::GetCurrentInputmode(), key);
+				return Input::IsKeyDown(Input::GetCurrentInputLayer(), key);
 			}
 			else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
 			{
-				return Input::GetMouseState(Input::GetCurrentInputmode()).IsButtonPressed(mouseButton);
+				return Input::GetMouseState(Input::GetCurrentInputLayer()).IsButtonPressed(mouseButton);
 			}
 		}
 
