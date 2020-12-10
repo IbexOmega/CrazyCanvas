@@ -165,19 +165,19 @@ void main()
 		float dotNV = max(dot(N, V), 0.0f);
 		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
 		vec3 Ks_IBL	= F_IBL;
-		vec3 Kd_IBL	= vec3(1.0f) - Ks_IBL;
-		Kd_IBL		*= (1.0f - metallic);
+		vec3 Kd_IBL	= 1.0f - Ks_IBL;
+		Kd_IBL		*= 1.0f - metallic;
 	
-		vec3 R				= reflect(-V, N);
-		vec3 irradiance		= texture(u_GlobalDiffuseProbe, R).rgb;
-		vec3 IBL_Diffuse	= irradiance * storedAlbedo;
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
+		vec3 IBL_Diffuse	= irradiance * storedAlbedo * Kd_IBL;
 	
-		const float numberOfMips = 7.0;
-		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, R, roughness * float(numberOfMips)).rgb;
+		const int numberOfMips = textureQueryLevels(u_GlobalSpecularProbe);
+		vec3 reflection			= reflect(-V, N);
+		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, reflection, roughness * float(numberOfMips)).rgb;
 		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
 		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
-
-		vec3 ambient	= (Kd_IBL * IBL_Diffuse + IBL_Specular) * ao;
+	
+		vec3 ambient = (IBL_Diffuse + IBL_Specular) * ao;
 		colorHDR		= ambient + Lo;
 	}
 
