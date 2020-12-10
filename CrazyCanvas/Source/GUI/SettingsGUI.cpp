@@ -81,7 +81,7 @@ void SettingsGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	if (m_pSettingsGrid->GetVisibility() == Noesis::Visibility_Visible)
@@ -99,7 +99,7 @@ void SettingsGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 
 void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	// NOTE: Current implementation does not allow RT toggle - code here if that changes
@@ -159,7 +159,7 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 
 void SettingsGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	SetDefaultSettings();
@@ -181,7 +181,7 @@ void SettingsGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, co
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	m_pSettingsGrid->SetVisibility(Noesis::Visibility_Collapsed);
@@ -191,7 +191,7 @@ void SettingsGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, co
 
 void SettingsGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Noesis::Slider>("VolumeSlider");
@@ -212,7 +212,7 @@ void SettingsGUI::OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, con
 
 void SettingsGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 
@@ -254,7 +254,7 @@ void SettingsGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::R
 {
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	// Starts listening to callbacks with specific button to be changed. This action is deferred to
@@ -270,7 +270,7 @@ void SettingsGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::R
 void SettingsGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Go through all keys to set - and set them
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	for (auto& stringPair : m_KeysToSet)
@@ -286,7 +286,7 @@ void SettingsGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, con
 
 void SettingsGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	SetDefaultSettings();
