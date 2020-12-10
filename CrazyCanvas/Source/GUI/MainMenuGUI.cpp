@@ -99,7 +99,7 @@ void MainMenuGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -122,7 +122,7 @@ void MainMenuGUI::OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -139,7 +139,7 @@ void MainMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -156,7 +156,7 @@ void MainMenuGUI::OnButtonExitClick(BaseComponent* pSender, const RoutedEventArg
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -174,7 +174,7 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -191,7 +191,7 @@ void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedE
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -205,7 +205,7 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -229,7 +229,7 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	// EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -293,7 +293,7 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 void MainMenuGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -316,7 +316,7 @@ void MainMenuGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, co
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -333,7 +333,7 @@ void MainMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const No
 	// only be done when the user presses "Apply"
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -356,7 +356,7 @@ void MainMenuGUI::OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, con
 void MainMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -385,7 +385,7 @@ void MainMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::R
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -402,7 +402,7 @@ void MainMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::R
 void MainMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -421,7 +421,7 @@ void MainMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, con
 void MainMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -451,7 +451,7 @@ void MainMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, co
 void MainMenuGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 

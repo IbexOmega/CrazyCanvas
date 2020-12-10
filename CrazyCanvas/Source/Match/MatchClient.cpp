@@ -278,7 +278,7 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
-	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+	EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
 	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
 
 	if (event.pPlayer == pPlayerLocal)
@@ -287,23 +287,23 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 		{
 			if (currentInputLayer == EInputLayer::GUI)
 			{
-				Input::PopInputMode();
-				Input::PushInputMode(EInputLayer::DEAD);
-				Input::PushInputMode(EInputLayer::GUI);
+				Input::PopInputLayer();
+				Input::PushInputLayer(EInputLayer::DEAD);
+				Input::PushInputLayer(EInputLayer::GUI);
 			}
 			else
-				Input::PushInputMode(EInputLayer::DEAD);
+				Input::PushInputLayer(EInputLayer::DEAD);
 		}
 		else
 		{
 			if (currentInputLayer == EInputLayer::GUI)
 			{
-				Input::PopInputMode();
-				Input::PushInputMode(EInputLayer::GAME);
-				Input::PushInputMode(EInputLayer::GUI);
+				Input::PopInputLayer();
+				Input::PushInputLayer(EInputLayer::GAME);
+				Input::PushInputLayer(EInputLayer::GUI);
 			}
 			else
-				Input::PushInputMode(EInputLayer::GAME);
+				Input::PushInputLayer(EInputLayer::GAME);
 		}
 	}
 

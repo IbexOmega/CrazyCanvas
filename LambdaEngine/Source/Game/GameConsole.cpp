@@ -830,9 +830,9 @@ namespace LambdaEngine
 		{
 			m_IsActive = !m_IsActive;
 			if (m_IsActive)
-				Input::PushInputMode(EInputLayer::DEBUG);
+				Input::PushInputLayer(EInputLayer::DEBUG);
 			else
-				Input::PopInputMode();
+				Input::PopInputLayer();
 			return true;
 		}
 

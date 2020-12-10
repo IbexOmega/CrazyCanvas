@@ -590,7 +590,7 @@ void LobbyGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesi
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -857,7 +857,7 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -874,7 +874,7 @@ void LobbyGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis::R
 
 void LobbyGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	// NOTE: Current implementation does not allow RT toggle - code here if that changes
@@ -914,7 +914,7 @@ void LobbyGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, const 
 void LobbyGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -932,7 +932,7 @@ void LobbyGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const
 	UNREFERENCED_VARIABLE(args);
 
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -943,7 +943,7 @@ void LobbyGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, const
 
 void LobbyGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
@@ -956,7 +956,7 @@ void LobbyGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesi
 void LobbyGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
 #ifdef LAMBDA_DEVELOPMENT
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 #endif
 
@@ -968,7 +968,7 @@ void LobbyGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::Rout
 {
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	// Starts listening to callbacks with specific button to be changed. This action is deferred to
@@ -984,7 +984,7 @@ void LobbyGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::Rout
 void LobbyGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Go through all keys to set - and set them
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	for (auto& stringPair : m_KeysToSet)
@@ -1001,7 +1001,7 @@ void LobbyGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const 
 void LobbyGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	// Reset
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	for (auto& stringPair : m_KeysToSet)
