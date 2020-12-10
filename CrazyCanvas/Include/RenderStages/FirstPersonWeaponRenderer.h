@@ -29,7 +29,7 @@ namespace LambdaEngine {
 	struct SWeaponBuffer
 	{
 		glm::mat4 Model;
-		glm::mat4 PlayerRoation;
+		glm::mat4 PlayerRotaion;
 		glm::vec3 PlayerPos;
 	};
 
@@ -70,25 +70,16 @@ namespace LambdaEngine {
 		static void SetPaintLevel(float waterLevel);
 
 	private:
-		struct SPushConstantDataVert
+		struct SPushConstantData
 		{
-			// Vertex
 			glm::mat4 DefaultTransform;
+			uint32 TeamIndex;
 			float WaveX;
 			float WaveZ;
-		};
-
-		struct SPushConstantDataFrag
-		{
-			// Fragment
-			uint32 TeamIndex;
-			uint32 IsWater;
+			float IsWater;
 			float WaterLevel = 1.f;
 			float PaintLevel = 1.f;
 		};
-
-		const uint64 PC_VERTEX_SIZE		= sizeof(SPushConstantDataVert);
-		const uint64 PC_FRAGMENT_SIZE	= sizeof(SPushConstantDataFrag);
 
 	private:
 		bool PrepareResources(CommandList* pCommandList);
@@ -161,8 +152,7 @@ namespace LambdaEngine {
 		GUID_Lambda								m_LiquidPixelShaderGUID = 0;
 		Entity									m_LiquidWaterEntity = UINT32_MAX;
 		Entity									m_LiquidPaintEntity = UINT32_MAX;
-		SPushConstantDataVert					m_LiquidPushConstantDataVert;
-		static SPushConstantDataFrag			s_LiquidPushConstantDataFrag;
+		static SPushConstantData				s_LiquidPushConstantData;
 
 		// Player variables
 		Entity									m_PlayerEntity = UINT32_MAX;

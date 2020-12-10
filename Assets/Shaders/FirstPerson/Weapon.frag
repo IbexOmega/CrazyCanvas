@@ -86,7 +86,7 @@ void main()
 	vec4 aoRoughMetalValid	= vec4(storedMaterial, 1.0f);
 	
 	float ao		= aoRoughMetalValid.r;
-	float roughness	= 1.0f-aoRoughMetalValid.g; // TODO fix need to invert
+	float roughness	= aoRoughMetalValid.g; // TODO fix need to invert
 	float metallic	= aoRoughMetalValid.b;
 	float depth 	= texture(u_DepthStencil, in_TexCoord).r;
 

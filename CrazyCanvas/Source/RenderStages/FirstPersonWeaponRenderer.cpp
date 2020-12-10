@@ -28,7 +28,7 @@
 
 namespace LambdaEngine
 {
-	FirstPersonWeaponRenderer::SPushConstantDataFrag FirstPersonWeaponRenderer::s_LiquidPushConstantDataFrag;
+	FirstPersonWeaponRenderer::SPushConstantData FirstPersonWeaponRenderer::s_LiquidPushConstantData;
 
 	FirstPersonWeaponRenderer* FirstPersonWeaponRenderer::s_pInstance = nullptr;
 
@@ -199,7 +199,7 @@ namespace LambdaEngine
 			{
 				// Fetch the team index, which is used for coloring the liquid to the same color as the paint.
 				const TeamComponent& teamComponent = pECSCore->GetConstComponent<TeamComponent>(m_PlayerEntity);
-				s_LiquidPushConstantDataFrag.TeamIndex = teamComponent.TeamIndex;
+				s_LiquidPushConstantData.TeamIndex = teamComponent.TeamIndex;
 
 				float dt = (float)delta.AsSeconds();
 
@@ -217,8 +217,8 @@ namespace LambdaEngine
 				s_WaveAddZ = glm::mix(s_WaveAddZ, 0.f, dt * s_Recovery);
 
 				float pulse = dt * 2.f * glm::pi<float>();
-				m_LiquidPushConstantDataVert.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
-				m_LiquidPushConstantDataVert.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
+				s_LiquidPushConstantData.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
+				s_LiquidPushConstantData.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
 
 				// Fetch the player position and rotation to be able to calculate its velocity and angular velocity.
 				static glm::vec3 s_PreviousPosition = glm::vec3(0.f);
@@ -279,13 +279,13 @@ namespace LambdaEngine
 				auto itWater = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
 				if (itWater != weaponComponent.WeaponTypeAmmo.end())
 				{
-					s_LiquidPushConstantDataFrag.WaterLevel = (float)itWater->second.first / (float)itWater->second.second;
+					s_LiquidPushConstantData.WaterLevel = (float)itWater->second.first / (float)itWater->second.second;
 				}
 
 				auto itPaint = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
 				if (itPaint != weaponComponent.WeaponTypeAmmo.end())
 				{
-					s_LiquidPushConstantDataFrag.PaintLevel = (float)itPaint->second.first / (float)itPaint->second.second;
+					s_LiquidPushConstantData.PaintLevel = (float)itPaint->second.first / (float)itPaint->second.second;
 				}
 			}
 		}
@@ -667,12 +667,12 @@ namespace LambdaEngine
 
 	void FirstPersonWeaponRenderer::SetWaterLevel(float waterLevel)
 	{
-		s_LiquidPushConstantDataFrag.WaterLevel = waterLevel;
+		s_LiquidPushConstantData.WaterLevel = waterLevel;
 	}
 
 	void FirstPersonWeaponRenderer::SetPaintLevel(float waterLevel)
 	{
-		s_LiquidPushConstantDataFrag.PaintLevel = waterLevel;
+		s_LiquidPushConstantData.PaintLevel = waterLevel;
 	}
 
 	void FirstPersonWeaponRenderer::RenderCull(bool applyDefaultTransform, uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId)
@@ -684,7 +684,7 @@ namespace LambdaEngine
 		const DrawArg& drawArg = m_pDrawArgs[drawArgIndex];
 		Entity entity = drawArg.EntityIDs[0];
 		glm::mat4 deafultTransform = applyDefaultTransform ? ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform : glm::mat4(1.f);
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&deafultTransform, sizeof(glm::mat4), 0);
+		pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&deafultTransform, sizeof(glm::mat4), 0);
 
 		// Draw Weapon
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
@@ -701,12 +701,12 @@ namespace LambdaEngine
 		const DrawArg& drawArg = m_pDrawArgs[isWater ? m_LiquidWaterIndex : m_LiquidPaintIndex];
 		Entity entity = drawArg.EntityIDs[0];
 		WeaponLocalComponent localWeaponComponent = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity);
-		m_LiquidPushConstantDataVert.DefaultTransform = localWeaponComponent.DefaultTransform;
+		s_LiquidPushConstantData.DefaultTransform = localWeaponComponent.DefaultTransform;
+		s_LiquidPushConstantData.IsWater = isWater ? 1.f : 0.f;
 
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantDataVert, (uint32)PC_VERTEX_SIZE, 0);
-
-		s_LiquidPushConstantDataFrag.IsWater = (uint32)isWater;
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)&s_LiquidPushConstantDataFrag, (uint32)PC_FRAGMENT_SIZE, (uint32)PC_VERTEX_SIZE);
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), 
+			FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, 
+			(void*)&s_LiquidPushConstantData, sizeof(SPushConstantData), 0);
 
 		// Draw Weapon liquid
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
@@ -725,7 +725,7 @@ namespace LambdaEngine
 			data.Model = glm::translate(glm::vec3(0.0f, -0.375f, 0.1f));
 			data.Model = glm::scale(data.Model, glm::vec3(1.0f, 1.0f, 1.0f));
 			data.PlayerPos = pPositionComponents->GetConstData(m_PlayerEntity).Position;
-			data.PlayerRoation = glm::toMat4(pRotationComponents->GetConstData(m_PlayerEntity).Quaternion);
+			data.PlayerRotaion = glm::toMat4(pRotationComponents->GetConstData(m_PlayerEntity).Quaternion);
 
 			Buffer* pStagingBuffer = m_WeaponStagingBuffers[modFrameIndex].Get();
 			byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());
@@ -1062,19 +1062,14 @@ namespace LambdaEngine
 		}
 
 		ConstantRangeDesc constantRangeDesc = {};
-		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		constantRangeDesc.OffsetInBytes = 0;
-		constantRangeDesc.SizeInBytes = sizeof(glm::mat4)+sizeof(uint32)*2;
-
-		ConstantRangeDesc constantRangeDesc2 = {};
-		constantRangeDesc2.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
-		constantRangeDesc2.OffsetInBytes = constantRangeDesc.SizeInBytes;
-		constantRangeDesc2.SizeInBytes = sizeof(uint32)*4;
+		constantRangeDesc.SizeInBytes = sizeof(SPushConstantData);
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout liquid";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, drawArgDescriptorSetLayoutDesc };
-		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc, constantRangeDesc2 };
+		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
 
 		m_LiquidPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 

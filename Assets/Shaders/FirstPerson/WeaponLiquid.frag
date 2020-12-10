@@ -13,10 +13,13 @@ layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ v
 // Pushconstants
 layout(push_constant) uniform PushConstants
 {
-	layout(offset = 72) uint TeamIndex;
-	layout(offset = 76) uint IsWater;
-	layout(offset = 80) float WaterLevel;
-	layout(offset = 84) float PaintLevel;
+	mat4 DefaultTransform;
+	uint TeamIndex;
+	float WaveX;
+	float WaveZ;
+	float IsWater;
+	float WaterLevel;
+	float PaintLevel;
 } u_PC;
 
 layout(location = 0) in flat uint	in_MaterialSlot;
@@ -30,7 +33,7 @@ layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_InstanceIndex;
 layout(location = 9) in vec3 		in_ViewDirection;
 layout(location = 10) in vec3       in_Position;
-	
+
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer              { SPerFrameBuffer val; }        u_PerFrameBuffer;
 layout(binding = 1, set = BUFFER_SET_INDEX) readonly buffer MaterialParameters 	{ SMaterialParameters val[]; }	b_MaterialParameters;
 layout(binding = 3, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffer	
@@ -61,7 +64,7 @@ void main()
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
-	bool isWater = u_PC.IsWater == 1;
+	bool isWater = u_PC.IsWater > 0.5f;
 	if(isWater == false)
 	{
 		materialParameters.Albedo.rgb = vec3(1.f);

@@ -9,15 +9,19 @@
 struct SWeaponData
 {
 	mat4 Model;
-	mat4 PlayerRoation;
+	mat4 PlayerRotaion;
 	vec3 PlayerPos;
 };
 
 layout(push_constant) uniform PushConstants
 {
-	layout(offset = 0) mat4 DefaultTransform;
-    layout(offset = 64) float WaveX;
-    layout(offset = 68) float WaveZ;
+	mat4 DefaultTransform;
+	uint TeamIndex;
+	float WaveX;
+	float WaveZ;
+	float IsWater;
+	float WaterLevel;
+	float PaintLevel;
 } u_PC;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;
@@ -42,6 +46,11 @@ layout(location = 8) out flat uint out_InstanceIndex;
 layout(location = 9) out vec3 out_ViewDirection;
 layout(location = 10) out vec3 out_Position;
 
+vec3 Rotate(vec3 v, mat4 rot)
+{
+	return (rot * vec4(v, 1.0f)).xyz;
+}
+
 vec4 RotateAroundYInDegrees(vec4 vertex, float degrees)
 {
 	float alpha = degrees * 3.1415f / 180.f;
@@ -58,7 +67,7 @@ void main()
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SWeaponData weaponData			= u_WeaponData.val;
 
-	mat4 normalTransform    = instance.Transform;
+	mat4 normalTransform    = weaponData.PlayerRotaion * instance.Transform;
 
 	vec3 position 			= vertex.Position.xyz;
 	vec4 worldPosition		= weaponData.Model * instance.Transform * u_PC.DefaultTransform * vec4(position, 1.0f);
@@ -69,7 +78,7 @@ void main()
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
 	out_MaterialSlot 		= instance.MaterialSlot;
-	out_WorldPosition		= weaponData.PlayerPos + (weaponData.PlayerRoation * vec4(position, 1.0f)).xyz;
+	out_WorldPosition		= weaponData.PlayerPos + Rotate(position, weaponData.PlayerRotaion).xyz;
 	out_Normal				= normal;
 	out_Tangent				= tangent;
 	out_Bitangent			= bitangent;
@@ -79,7 +88,7 @@ void main()
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 
-	vec3 worldPos = (weaponData.PlayerRoation * vec4(position, 1.0f)).xyz - vec3(0.f, 0.f, -0.139f);   
+	vec3 worldPos = (weaponData.PlayerRotaion * vec4(position - vec3(0.f, 0.f, -0.139f), 1.0f)).xyz;   
 	// rotate it around XY
 	vec3 worldPosX = RotateAroundYInDegrees(vec4(worldPos,0),360).xyz;
 	// rotate around XZ

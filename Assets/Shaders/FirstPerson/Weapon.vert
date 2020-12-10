@@ -9,6 +9,7 @@
 struct SWeaponData
 {
 	mat4 Model;
+	mat4 PlayerRotaion;
 	vec3 PlayerPos;
 };
 
@@ -38,6 +39,11 @@ layout(location = 11) out vec4 out_PaintInfo4;
 layout(location = 12) out float out_PaintDist;
 layout(location = 13) out vec3 out_LocalPosition;
 
+vec3 Rotate(vec3 v, mat4 rot)
+{
+	return (rot * vec4(v, 1.0f)).xyz;
+}
+
 void main()
 {
 	SVertex vertex					= b_Vertices.val[gl_VertexIndex];
@@ -45,7 +51,7 @@ void main()
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SWeaponData weaponData			= u_WeaponData.val;
 
-	mat4 normalTransform    = instance.Transform;
+	mat4 normalTransform    = weaponData.PlayerRotaion*instance.Transform;
 
 	vec3 position 			= vertex.Position.xyz;
 	vec4 worldPosition		= weaponData.Model * instance.Transform * u_PC.DefaultTransform * vec4(position, 1.0f);
@@ -56,7 +62,7 @@ void main()
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
 	out_MaterialSlot		= instance.MaterialSlot;
-	out_WorldPosition		= weaponData.PlayerPos;
+	out_WorldPosition		= weaponData.PlayerPos + Rotate(position, weaponData.PlayerRotaion).xyz;
 	out_Normal				= normal;
 	out_Tangent				= tangent;
 	out_Bitangent			= bitangent;
