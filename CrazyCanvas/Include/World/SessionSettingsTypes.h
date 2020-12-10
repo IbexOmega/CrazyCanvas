@@ -12,6 +12,7 @@ enum class ESessionSetting : uint8
 	MAX_WALK_VELOCITY	= 5,
 	MAX_AIR_VELOCITY	= 6,
 	JUMP_SPEED			= 7,
+	RESPAWN_TIME		= 8,
 };
 
 typedef std::variant<int, uint32, float, bool> SettingValue;

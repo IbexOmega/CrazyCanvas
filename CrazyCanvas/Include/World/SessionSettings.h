@@ -120,5 +120,6 @@ private:
 		{ESessionSetting::MAX_WALK_VELOCITY,	2.5f},
 		{ESessionSetting::MAX_AIR_VELOCITY,		5.f},
 		{ESessionSetting::JUMP_SPEED,			5.f},
+		{ESessionSetting::RESPAWN_TIME,			10.f},
 	};
 };
