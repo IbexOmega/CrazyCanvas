@@ -77,7 +77,7 @@ void MainMenuGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
@@ -107,7 +107,7 @@ void MainMenuGUI::OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
@@ -122,7 +122,7 @@ void MainMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
@@ -136,7 +136,7 @@ void MainMenuGUI::OnButtonExitClick(BaseComponent* pSender, const RoutedEventArg
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	CommonApplication::Get()->Terminate();
@@ -152,7 +152,7 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	PacketGameSettings settings;
@@ -167,7 +167,7 @@ void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedE
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	State* pLobbyState = DBG_NEW MultiplayerState();
@@ -179,7 +179,7 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	LambdaEngine::GUIApplication::SetView(nullptr);

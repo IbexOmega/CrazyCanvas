@@ -111,7 +111,7 @@ void PlaySessionState::Init()
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
-	Input::PushInputMode(EInputLayer::GAME);
+	Input::PushInputLayer(EInputLayer::GAME);
 
 	EnablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();

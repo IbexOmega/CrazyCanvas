@@ -573,7 +573,7 @@ void LobbyGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesi
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	m_pSettingsGUI->ToggleSettings();

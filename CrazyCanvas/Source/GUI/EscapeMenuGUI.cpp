@@ -26,7 +26,6 @@
 using namespace LambdaEngine;
 using namespace Noesis;
 
-
 EscapeMenuGUI::EscapeMenuGUI()
 {
 	Noesis::GUI::LoadComponent(this, "EscapeMenuGUI.xaml");
@@ -69,11 +68,11 @@ bool EscapeMenuGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEv
 
 void EscapeMenuGUI::ToggleEscapeMenu()
 {
-	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+	const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
 
 	if ((currentInputLayer == EInputLayer::GAME) || (currentInputLayer == EInputLayer::DEAD) && !m_EscapeMenuActive)
 	{
-		Input::PushInputMode(EInputLayer::GUI);
+		Input::PushInputLayer(EInputLayer::GUI);
 		m_MouseEnabled = !m_MouseEnabled;
 		CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 
@@ -87,22 +86,19 @@ void EscapeMenuGUI::OnButtonResumeClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	m_MouseEnabled = !m_MouseEnabled;
 	m_EscapeMenuActive = false;
 	CommonApplication::Get()->SetMouseVisibility(m_MouseEnabled);
 	m_pEscapeGrid->SetVisibility(Noesis::Visibility_Collapsed);
-	Input::PopInputMode();
+	Input::PopInputLayer();
 }
 
 void EscapeMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	m_pEscapeGrid->SetVisibility(Noesis::Visibility_Collapsed);
@@ -112,10 +108,7 @@ void EscapeMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const 
 
 void EscapeMenuGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	ClientHelper::Disconnect("Left by choice");
@@ -126,15 +119,12 @@ void EscapeMenuGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noe
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 
-	Input::PopInputMode();
+	Input::PopInputLayer();
 }
 
 void EscapeMenuGUI::OnButtonExitClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
-	UNREFERENCED_VARIABLE(pSender);
-	UNREFERENCED_VARIABLE(args);
-
-	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
 	CommonApplication::Get()->Terminate();
