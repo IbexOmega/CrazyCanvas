@@ -17,7 +17,7 @@ namespace LambdaEngine
 			uint32 OutputMaxVertexCount	= 0;
 		};
 
-		struct SCalculationData
+		struct CalculationData
 		{
 			glm::mat4 ScaleMatrix;
 			uint32 PrimitiveCounter;
@@ -41,8 +41,8 @@ namespace LambdaEngine
 
 		void CreateDummyRenderTarget();
 
-		void CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** inBuffer, Buffer** inStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags);
-		void CreateOutBuffer(CommandList* pCommandList, Buffer** outBuffer, Buffer** outSecondStagingBuffer, uint64 size, const String& name);
+		void CreateAndCopyInBuffer(CommandList* pCommandList, Buffer** ppInBuffer, Buffer** ppInStagingBuffer, void* data, uint64 size, const String& name, FBufferFlags flags);
+		void CreateOutBuffer(CommandList* pCommandList, Buffer** ppOutBuffer, Buffer** ppOutSecondStagingBuffer, uint64 size, const String& name);
 
 	private:
 		/*
