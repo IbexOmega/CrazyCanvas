@@ -183,6 +183,5 @@ void main()
 
 	//Gamma Correction
 	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
 	out_Color = vec4(finalColor, luminance);
 }

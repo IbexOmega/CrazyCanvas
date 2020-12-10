@@ -4,13 +4,7 @@
 
 #include "Lobby/ServerInfo.h"
 
-enum EServerState
-{
-	SERVER_STATE_LOBBY,
-	SERVER_STATE_SETUP,
-	SERVER_STATE_LOADING,
-	SERVER_STATE_PLAYING
-};
+#include "Lobby/EServerState.h"
 
 struct ServerStateEvent : public LambdaEngine::Event
 {

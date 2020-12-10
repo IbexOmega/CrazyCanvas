@@ -41,7 +41,7 @@ namespace LambdaEngine
 			m_Desc = *pDesc;
 			SetName(pDesc->DebugName);
 
-			LOG_DEBUG("Created QueryPool");
+			LOG_VULKAN_INFO("Created QueryPool");
 			return true;
 		}
 	}

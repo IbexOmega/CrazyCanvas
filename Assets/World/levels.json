@@ -1,7 +1,7 @@
 {
     "levels": [
 		{
-			"name": "Canvas Map",
+			"name": "Fun Factory",
 			"modules": [
 				{
 					"filename": "CanvasMap.glb",
@@ -14,10 +14,10 @@
             ]
         },
         {
-            "name": "Test Level 0",
+            "name": "The Mines",
             "modules": [
                 {
-                    "filename": "module_0.glb",
+                    "filename": "TheMines.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,
@@ -27,101 +27,10 @@
             ]
         },
         {
-            "name": "Test Level 1",
+            "name": "Simple Geometry",
             "modules": [
                 {
-                    "filename": "module_1.glb",
-                    "translation": {
-                        "x": 0.0,
-                        "y": 0.0,
-                        "z": 0.0
-                    }
-                }
-            ]
-        },
-		{
-            "name": "Test Level Plane",
-            "modules": [
-                {
-                    "filename": "module_2.glb",
-                    "translation": {
-                        "x": 0.0,
-                        "y": 0.0,
-                        "z": 0.0
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Test mirror on floor",
-            "modules": [
-                {
-                    "filename": "module_3.glb",
-                    "translation": {
-                        "x": 0.0,
-                        "y": 0.0,
-                        "z": 0.0
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Test Directional Light",
-            "modules": [
-                {
-                    "filename": "directional_light_debug.glb",
-                    "translation": {
-                        "x": 0.0,
-                        "y": 0.0,
-                        "z": 0.0
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Empty plane",
-            "modules": [
-                {
-                    "filename": "empty_plane.glb",
-                    "translation": {
-                        "x": 0.0,
-                        "y": 0.0,
-                        "z": 0.0
-                    }
-                }
-            ]
-        },
-        {
-            "name": "Subdivided Plane",
-            "modules": [
-                {
-                    "filename": "SubdividedPlane.glb",
-                    "translation": {
-                        "x": 0.0,
-                        "y": 0.0,
-                        "z": 0.0
-                    }
-                }
-            ]
-        },
-        {
-			"name": "CanvasMapSubdivde",
-			"modules": [
-				{
-					"filename": "CanvasMapSubdivde.glb",
-					"translation": {
-						"x": 0.0,
-						"y": 0.0,
-						"z": 0.0
-                    }
-                }
-            ]
-        },
-		{
-            "name": "Glossy Test",
-            "modules": [
-                {
-                    "filename": "GlossyTest.glb",
+                    "filename": "SimpleGeometry.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,

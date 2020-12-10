@@ -315,18 +315,17 @@ float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, float viewDistance, vec3
 	for(int i = 0; i < samples; ++i)
 	{
 		float closestDepth = texture(shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
-		closestDepth *= farPlane;   
+		closestDepth *= farPlane;
 		if(currentDepth - bias > closestDepth)
 			shadow += 1.0;
 	}
-	shadow /= float(samples);  
-
+	shadow /= float(samples);
 	return shadow;
 }
 
 float CalculateLuminance(vec3 color)
 {
-	return sqrt(dot(color, vec3(0.299f, 0.587f, 0.114f)));
+	return dot(color, vec3(0.299f, 0.587f, 0.114f));
 }
 
 #endif

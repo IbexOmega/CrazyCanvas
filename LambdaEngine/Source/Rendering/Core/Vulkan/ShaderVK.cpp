@@ -42,7 +42,7 @@ namespace LambdaEngine
 			m_Desc = *pDesc;
 			SetName(pDesc->DebugName);
 
-			LOG_DEBUG("Created ShaderModule");
+			LOG_VULKAN_INFO("Created ShaderModule");
 
 			return true;
 		}

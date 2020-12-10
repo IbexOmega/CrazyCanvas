@@ -195,6 +195,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 	using namespace LambdaEngine;
 
 	Entity entity = UINT32_MAX;
+	s_HasDirectionalLight = true;
 	/*
 	if (!MultiplayerUtils::IsServer())
 	{
@@ -1191,15 +1192,40 @@ bool LevelObjectCreator::CreatePlayer(
 
 		//Add Audio Instances
 		{
-			SoundInstance3DDesc soundInstanceDesc = {};
-			soundInstanceDesc.pName			= "Step";
-			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
-			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
-			soundInstanceDesc.Position		= pPlayerDesc->Position;
-			soundInstanceDesc.Volume		= 2.0f;
-
 			AudibleComponent audibleComponent = {};
-			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Step";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 2.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Jump";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_JUMP_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 1.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Landing";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_LANDING_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 2.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
 
 			pECS->AddComponent<AudibleComponent>(playerEntity, audibleComponent);
 		}
@@ -1282,17 +1308,20 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
 
 			// Create Directional Light Component
-			DirectionalLightComponent directionalLightComponent =
+			if (s_HasDirectionalLight)
 			{
-				.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
-				.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
-				.FrustumWidth	= 25.0f,
-				.FrustumHeight	= 15.0f,
-				.FrustumZNear	= -60.0f,
-				.FrustumZFar	= 10.0f
-			};
+				DirectionalLightComponent directionalLightComponent =
+				{
+					.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
+					.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
+					.FrustumWidth	= 25.0f,
+					.FrustumHeight	= 15.0f,
+					.FrustumZNear	= -60.0f,
+					.FrustumZFar	= 10.0f
+				};
 
-			pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
+				pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
+			}
 		}
 	}
 	else

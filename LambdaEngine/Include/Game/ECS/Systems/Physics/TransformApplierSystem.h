@@ -24,5 +24,6 @@ namespace LambdaEngine
 	private:
 		IDVector m_MatrixEntities;
 		IDVector m_VelocityEntities;
+		uint64 m_Tick = 0;
 	};
 }

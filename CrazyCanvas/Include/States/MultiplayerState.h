@@ -37,6 +37,7 @@ private:
 	bool OnServerUpdatedEvent(const ServerUpdatedEvent& event);
 
 	bool ConnectToServer(const LambdaEngine::IPEndPoint& endPoint, bool isManual);
+	bool ConnectToServer(const ServerInfo& serverInfo);
 
 	bool HasHostedServer() const;
 	void StartUpServer();
@@ -46,4 +47,5 @@ private:
 	Noesis::Ptr<Noesis::IView> m_View;
 	int32 m_ClientHostID;
 	bool m_IsManualConnection;
+	bool m_IsConnecting;
 };

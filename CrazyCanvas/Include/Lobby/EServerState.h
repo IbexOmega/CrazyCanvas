@@ -1,0 +1,9 @@
+#pragma once
+
+enum EServerState : uint8
+{
+	SERVER_STATE_LOBBY,
+	SERVER_STATE_SETUP,
+	SERVER_STATE_LOADING,
+	SERVER_STATE_PLAYING
+};

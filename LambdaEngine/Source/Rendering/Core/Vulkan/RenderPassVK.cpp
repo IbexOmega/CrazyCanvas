@@ -64,11 +64,11 @@ namespace LambdaEngine
 
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_DEBUG("Renderpass \"%s\" successfully initialized", pDesc->DebugName.c_str());
+				LOG_VULKAN_INFO("Renderpass \"%s\" successfully initialized", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_DEBUG("Renderpass successfully initialized");
+				LOG_VULKAN_INFO("Renderpass successfully initialized");
 			}
 
 			return true;
