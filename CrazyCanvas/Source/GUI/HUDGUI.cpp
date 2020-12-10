@@ -144,8 +144,6 @@ bool HUDGUI::UpdateScore()
 
 bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType)
 {
-	//Returns false if Out Of Ammo
-
 	std::string ammoString;
 	auto ammo = WeaponTypeAmmo.find(ammoType);
 	/*Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
