@@ -20,6 +20,8 @@
 
 #include "Game/ECS/Systems/CameraSystem.h"
 
+#include "Rendering/AARenderer.h"
+#include "Rendering/RenderGraph.h"
 
 using namespace LambdaEngine;
 using namespace Noesis;

@@ -102,7 +102,7 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_DEBUG("Created Buffer");
+			LOG_VULKAN_INFO("Created Buffer");
 
 			m_Desc = *pDesc;
 			SetName(m_Desc.DebugName);

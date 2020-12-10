@@ -26,7 +26,8 @@ using namespace LambdaEngine;
 
 MultiplayerState::MultiplayerState() : 
 	m_IsManualConnection(false),
-	m_ClientHostID(-1)
+	m_ClientHostID(-1),
+	m_IsConnecting(false)
 {
 
 }
@@ -80,6 +81,8 @@ void MultiplayerState::Tick(LambdaEngine::Timestamp delta)
 
 bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
+	m_MultiplayerGUI->CloseNotification();
+
 	if (m_IsManualConnection)
 	{
 		ServerInfo serverInfo;
@@ -96,6 +99,25 @@ bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEven
 
 bool MultiplayerState::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
 {
+	m_MultiplayerGUI->CloseNotification();
+
+	if (m_IsConnecting)
+	{
+		if (event.Reason == "Server Currently Not Accepting")
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("The server is currently busy playing!");
+		}
+		else if (event.Reason == "Server Full")
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("The server is currently full!");
+		}
+		else
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("Failed to join server!");
+		}
+		m_IsConnecting = false;
+	}
+
 	return false;
 }
 
@@ -107,7 +129,7 @@ bool MultiplayerState::OnServerOnlineEvent(const ServerOnlineEvent& event)
 	{
 		if (m_ClientHostID == serverInfo.ClientHostID)
 		{
-			ConnectToServer(serverInfo.EndPoint, false);
+			ConnectToServer(serverInfo);
 		}
 		m_MultiplayerGUI->AddServerLAN(serverInfo);
 	}	
@@ -157,7 +179,32 @@ bool MultiplayerState::OnServerUpdatedEvent(const ServerUpdatedEvent& event)
 bool MultiplayerState::ConnectToServer(const IPEndPoint& endPoint, bool isManual)
 {
 	m_IsManualConnection = isManual;
-	return ClientSystem::GetInstance().Connect(endPoint);
+	m_IsConnecting = true;
+	if (ClientSystem::GetInstance().Connect(endPoint))
+	{
+		m_MultiplayerGUI->DisplayNotification("Joining server!");
+		return true;
+	}
+
+	m_MultiplayerGUI->DisplayErrorMessage("A connection does already exist!");
+	return false;
+}
+
+bool MultiplayerState::ConnectToServer(const ServerInfo& serverInfo)
+{
+	if (serverInfo.State == EServerState::SERVER_STATE_LOBBY)
+	{
+		if (serverInfo.Players < serverInfo.MaxPlayers)
+		{
+			return ConnectToServer(serverInfo.EndPoint, false);
+		}
+
+		m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently full!");
+		return false;
+	}
+
+	m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently busy playing!");
+	return false;
 }
 
 bool MultiplayerState::HasHostedServer() const
@@ -171,6 +218,8 @@ void MultiplayerState::StartUpServer()
 		return;
 
 	static String commandLine = "--state=server";
+
+	m_MultiplayerGUI->DisplayNotification("Starting server!");
 
 	// Get application (.exe) path
 	HANDLE processHandle = NULL;

@@ -47,7 +47,8 @@ public:
 	void AddSettingColorBox(
 		const LambdaEngine::String& settingKey,
 		const LambdaEngine::String& settingText,
-		const LambdaEngine::TArray<glm::vec3>& settingColors,
+		const glm::vec3* pSettingColors, 
+		uint32 numSettingColors,
 		uint8 defaultIndex);
 
 	void AddSettingTextBox(const LambdaEngine::String& settingKey, const LambdaEngine::String& settingText, const LambdaEngine::String& settingValue);
@@ -60,6 +61,7 @@ public:
 	void OnButtonSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
 	void OnComboBoxSelectionChanged(Noesis::BaseComponent* pSender, const Noesis::SelectionChangedEventArgs& args);
 	void OnTextBoxChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args);
+	void OnReadyButtonEnabledChange(Noesis::BaseComponent* pSender, const Noesis::DependencyPropertyChangedEventArgs& args);
 
 private:
 	// Helpers
@@ -75,6 +77,7 @@ private:
 	void TrySendChatMessage();
 	void SendGameSettings() const;
 	void UpdatePlayersLabel();
+	void UpdateReadyButton();
 
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);

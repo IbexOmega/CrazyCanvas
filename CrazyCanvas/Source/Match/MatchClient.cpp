@@ -34,6 +34,8 @@
 
 #include "Teams/TeamHelper.h"
 
+#include "MeshPaint/MeshPaintHandler.h"
+
 using namespace LambdaEngine;
 
 MatchClient::MatchClient()
@@ -184,6 +186,12 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
 			}
 
+			for (Entity playerEntity : createdPlayerEntities)
+			{
+				MeshPaintHandler::ResetServer(playerEntity);
+			}
+			MeshPaintHandler::ResetClient();
+
 			break;
 		}
 		case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
@@ -321,7 +329,6 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 		LOG_ERROR("[MatchClient]: Failed to create projectile!");
 	}
 
-	LOG_INFO("CLIENT: Weapon fired");
 	return true;
 }
 

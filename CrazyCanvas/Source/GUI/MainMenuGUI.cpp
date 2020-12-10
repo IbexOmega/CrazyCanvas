@@ -22,6 +22,9 @@
 
 #include "Game/ECS/Systems/CameraSystem.h"
 
+#include "Rendering/AARenderer.h"
+#include "Rendering/RenderGraph.h"
+
 using namespace Noesis;
 using namespace LambdaEngine;
 
@@ -151,8 +154,6 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
-
-	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	PacketGameSettings settings;
 	settings.MapID		= 0;

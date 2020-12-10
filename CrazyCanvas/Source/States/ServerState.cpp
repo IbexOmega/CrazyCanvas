@@ -96,6 +96,8 @@ void ServerState::Init()
 	m_MultiplayerServer.InitInternal();
 
 	ServerSystem::GetInstance().Start();
+
+	m_PingHandler.Init();
 }
 
 bool ServerState::OnKeyPressed(const KeyPressedEvent& event)
@@ -113,6 +115,7 @@ bool ServerState::OnServerDiscoveryPreTransmit(const LambdaEngine::ServerDiscove
 	pEncoder->WriteUInt8(m_GameSettings.Players);
 	pEncoder->WriteString(m_GameSettings.ServerName);
 	pEncoder->WriteString(m_MapName);
+	pEncoder->WriteUInt8(GetState());
 	pEncoder->WriteInt32(m_ClientHostID);
 
 	return true;
@@ -140,7 +143,7 @@ EServerState ServerState::GetState()
 }
 
 bool ServerState::OnPacketGameSettingsReceived(const PacketReceivedEvent<PacketGameSettings>& event)
-{	
+{
 	const PacketGameSettings& packet = event.Packet;
 
 	const Player* pPlayer = PlayerManagerServer::GetPlayer(event.pClient);
@@ -277,7 +280,7 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 		{
 			const Player* pPlayer = &pair.second;
 			PlayerManagerServer::SetPlayerReady(pPlayer, false);
-			PlayerManagerServer::SetPlayerState(pPlayer, EGameState::GAME_STATE_LOBBY);
+			PlayerManagerServer::SetPlayerState(pPlayer, EGameState::GAME_STATE_GAME_OVER);
 			PlayerManagerServer::SetPlayerAlive(pPlayer, true, nullptr);
 		}
 
@@ -286,7 +289,7 @@ bool ServerState::OnServerStateEvent(const ServerStateEvent& event)
 	else if (state == SERVER_STATE_SETUP)
 	{
 		ServerHelper::SetIgnoreNewClients(true);
-		ServerHelper::SetTimeout(Timestamp::Seconds(15));
+		ServerHelper::SetTimeout(Timestamp::Seconds(30));
 	}
 	else if (state == SERVER_STATE_PLAYING)
 	{

@@ -14,7 +14,7 @@ public:
 	static void HandleMovementSound(
 		const LambdaEngine::VelocityComponent& velocityComponent,
 		LambdaEngine::AudibleComponent& audibleComponent,
-		const glm::i8vec3& deltaAction,
 		bool walking,
-		bool inAir);
+		bool inAir,
+		bool wasInAir);
 };

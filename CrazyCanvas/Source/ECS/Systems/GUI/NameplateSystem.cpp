@@ -18,7 +18,6 @@ void NameplateSystem::Init()
 {
 	using namespace LambdaEngine;
 
-	// Register system
 	{
 		EntitySubscriberRegistration subscriberReg;
 		subscriberReg.EntitySubscriptionRegistrations =
@@ -44,7 +43,6 @@ void NameplateSystem::Init()
 
 		SubscribeToEntities(subscriberReg);
 	}
-
 }
 
 void NameplateSystem::FixedTick(LambdaEngine::Timestamp deltaTime)

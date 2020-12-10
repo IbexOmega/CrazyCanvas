@@ -271,7 +271,7 @@
                         </Grid.ColumnDefinitions>
 
                         <Button x:Name="LeaveLobbyButton" Click="OnButtonLeaveClick" Grid.Column="0" Content="Leave" FontSize="60" Background="#E52C2C" Foreground="White" Margin="30"/>
-                        <ToggleButton x:Name="ReadyButton" Click="OnButtonReadyClick" Grid.Column="1" Content="Ready" FontSize="60" Background="#4CE244" Foreground="White" Margin="30"/>
+                        <ToggleButton x:Name="ReadyButton" Click="OnButtonReadyClick" IsEnabledChanged="OnReadyButtonEnabledChange" Grid.Column="1" Content="Ready" FontSize="60" Background="#4CE244" Foreground="White" Margin="30"/>
                     </Grid>
                 </Grid>
             </Grid>

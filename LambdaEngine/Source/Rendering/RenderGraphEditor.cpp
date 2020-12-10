@@ -967,7 +967,7 @@ namespace LambdaEngine
 						if (pResource->TextureParams.XDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE)
 						{
 							ImGui::SameLine();
-							ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable);
+							ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable, 0.0f, 0.0f, "%.6f");
 						}
 
 						ImGui::Text("Height: ");
@@ -982,7 +982,7 @@ namespace LambdaEngine
 						if (pResource->TextureParams.YDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.YDimType == ERenderGraphDimensionType::RELATIVE)
 						{
 							ImGui::SameLine();
-							ImGui::InputFloat("##Texture Y Variable", &pResource->TextureParams.YDimVariable);
+							ImGui::InputFloat("##Texture Y Variable", &pResource->TextureParams.YDimVariable, 0.0f, 0.0f, "%.6f");
 						}
 					}
 					else
@@ -999,7 +999,7 @@ namespace LambdaEngine
 						if (pResource->TextureParams.XDimType == ERenderGraphDimensionType::CONSTANT || pResource->TextureParams.XDimType == ERenderGraphDimensionType::RELATIVE)
 						{
 							ImGui::SameLine();
-							ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable);
+							ImGui::InputFloat("##Texture X Variable", &pResource->TextureParams.XDimVariable, 0.0f, 0.0f, "%.6f");
 							pResource->TextureParams.YDimVariable = pResource->TextureParams.XDimVariable;
 						}
 					}
@@ -1049,6 +1049,22 @@ namespace LambdaEngine
 					{
 						pResource->MemoryType = MemoryTypeIndexToMemoryType(memoryTypeIndex);
 					}
+
+					ImGui::Text("Additional ShaderResource Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional ShaderResource Access", &pResource->TextureParams.ExtraShaderResourceAccess);
+
+					ImGui::Text("Additional RenderTarget Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional RenderTarget Access", &pResource->TextureParams.ExtraRenderTargetAccess);
+
+					ImGui::Text("Additional DepthStencil Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional DepthStencil Access", &pResource->TextureParams.ExtraDepthStencilAccess);
+
+					ImGui::Text("Additional Unordered Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional Unordered Access", &pResource->TextureParams.ExtraUnorderedAccess);
 				}
 				break;
 			}
@@ -3230,7 +3246,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				if(inputWidth > 0)
 					ImGui::SetNextItemWidth(inputWidth);
-				ImGui::InputFloat("##Render Stage X Variable", &xVariable);
+				ImGui::InputFloat("##Render Stage X Variable", &xVariable, 0.0f, 0.0f, "%.6f");
 			}
 
 			ImGui::Text("Height: ");
@@ -3244,7 +3260,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				if (inputWidth > 0)
 					ImGui::SetNextItemWidth(inputWidth);
-				ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
+				ImGui::InputFloat("##Render Stage Y Variable", &yVariable, 0.0f, 0.0f, "%.6f");
 			}
 		}
 		else if (pipelineStateType == EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE)
@@ -3265,7 +3281,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				if (inputWidth > 0)
 					ImGui::SetNextItemWidth(inputWidth);
-				ImGui::InputFloat("##Render Stage X Variable", &xVariable);
+				ImGui::InputFloat("##Render Stage X Variable", &xVariable, 0.0f, 0.0f, "%.6f");
 			}
 
 			if (selectedXOption != 3)
@@ -3281,7 +3297,7 @@ namespace LambdaEngine
 					ImGui::SameLine();
 					if (inputWidth > 0)
 						ImGui::SetNextItemWidth(inputWidth);
-					ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
+					ImGui::InputFloat("##Render Stage Y Variable", &yVariable, 0.0f, 0.0f, "%.6f");
 				}
 
 				ImGui::Text("Z: ");
@@ -3295,7 +3311,7 @@ namespace LambdaEngine
 					ImGui::SameLine();
 					if (inputWidth > 0)
 						ImGui::SetNextItemWidth(inputWidth);
-					ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
+					ImGui::InputFloat("##Render Stage Z Variable", &zVariable, 0.0f, 0.0f, "%.6f");
 				}
 			}
 		}
@@ -3317,7 +3333,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				if (inputWidth > 0)
 					ImGui::SetNextItemWidth(inputWidth);
-				ImGui::InputFloat("##Render Stage X Variable", &xVariable);
+				ImGui::InputFloat("##Render Stage X Variable", &xVariable, 0.0f, 0.0f, "%.6f");
 			}
 
 			ImGui::Text("Height: ");
@@ -3331,7 +3347,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				if (inputWidth > 0)
 					ImGui::SetNextItemWidth(inputWidth);
-				ImGui::InputFloat("##Render Stage Y Variable", &yVariable);
+				ImGui::InputFloat("##Render Stage Y Variable", &yVariable, 0.0f, 0.0f, "%.6f");
 			}
 
 			ImGui::Text("Depth: ");
@@ -3345,7 +3361,7 @@ namespace LambdaEngine
 				ImGui::SameLine();
 				if (inputWidth > 0)
 					ImGui::SetNextItemWidth(inputWidth);
-				ImGui::InputFloat("##Render Stage Z Variable", &zVariable);
+				ImGui::InputFloat("##Render Stage Z Variable", &zVariable, 0.0f, 0.0f, "%.6f");
 			}
 		}
 	}

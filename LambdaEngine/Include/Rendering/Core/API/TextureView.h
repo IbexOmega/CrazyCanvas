@@ -24,12 +24,13 @@ namespace LambdaEngine
 	/*
 	* TextureView
 	*/
+
 	class TextureView : public DeviceChild
 	{
 	public:
 		DECL_DEVICE_INTERFACE(TextureView);
 		
-		virtual Texture* GetTexture() = 0;
+		virtual Texture* GetTexture() const  = 0;
 		
 		/*
 		* Returns the API-specific handle to the underlaying CommandQueue

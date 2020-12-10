@@ -28,12 +28,16 @@
 
 #include "Game/ECS/Components/Physics/Transform.h"
 
+#include "Resources/MeshTessellator.h"
+
 #include <cstdio>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/pbrmaterial.h>
+
+//#define RESOURCE_LOADER_LOGS_ENABLED
 
 namespace LambdaEngine
 {
@@ -418,18 +422,20 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponents,
 			.pMaterials					= &materials,
 			.pTextures					= &textures,
-			.AnimationsOnly 			= false
+			.AnimationsOnly 			= false,
+			.ShouldTessellate			= true
 		};
 
 		return LoadSceneWithAssimp(loadRequest);
 	}
 
 	Mesh* ResourceLoader::LoadMeshFromFile(
-		const String& filepath,
-		TArray<LoadedMaterial*>* pMaterials,
-		TArray<LoadedTexture*>* pTextures,
-		TArray<Animation*>* pAnimations,
-		int32 assimpFlags)
+		const String& filepath, 
+		TArray<LoadedMaterial*>* pMaterials, 
+		TArray<LoadedTexture*>* pTextures, 
+		TArray<Animation*>* pAnimations, 
+		int32 assimpFlags, 
+		bool shouldTessellate)
 	{
 		TArray<Mesh*>			meshes;
 		TArray<MeshComponent>	meshComponent;
@@ -452,7 +458,8 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponent,
 			.pMaterials					= pMaterials,
 			.pTextures					= pTextures,
-			.AnimationsOnly 			= false
+			.AnimationsOnly 			= false,
+			.ShouldTessellate			= shouldTessellate
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -460,7 +467,9 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_DEBUG("Loaded Mesh \"%s\"", filepath.c_str());
+#endif
 
 		// Find the largest and delete the ones not used
 		uint32 biggest	= 0;
@@ -519,7 +528,8 @@ namespace LambdaEngine
 			.MeshComponents				= meshComponent,
 			.pMaterials					= nullptr,
 			.pTextures					= nullptr,
-			.AnimationsOnly				= true
+			.AnimationsOnly				= true,
+			.ShouldTessellate			= false
 		};
 
 		if (!LoadSceneWithAssimp(loadRequest))
@@ -538,7 +548,9 @@ namespace LambdaEngine
 			meshes.Clear();
 		}
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_DEBUG("Loaded Animations \"%s\"", filepath.c_str());
+#endif
 		return animations;
 	}
 
@@ -703,7 +715,9 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_DEBUG("Loaded Texture \"%s\"", filepath.c_str());
+#endif
 
 		// Create texture for panorama image
 		TextureDesc panoramaDesc;
@@ -999,7 +1013,10 @@ namespace LambdaEngine
 			}
 
 			stbi_pixels[i] = pPixels;
+
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 			LOG_DEBUG("Loaded Texture \"%s\"", filepath.c_str());
+#endif
 		}
 
 		Texture* pTexture = nullptr;
@@ -1350,7 +1367,9 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_DEBUG("Loaded 3D Sound \"%s\"", filepath.c_str());
+#endif
 
 		return pSound;
 	}
@@ -1367,7 +1386,9 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_DEBUG("Loaded 2D Sound \"%s\"", filepath.c_str());
+#endif
 
 		return pSound;
 	}
@@ -1386,7 +1407,9 @@ namespace LambdaEngine
 			return nullptr;
 		}
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_DEBUG("Loaded Music \"%s\"", filepath.c_str());
+#endif
 
 		return pSound;
 	}
@@ -1571,7 +1594,10 @@ namespace LambdaEngine
 		}
 
 		boundingBox.Dimensions = maxExtent - minExtent;
+
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_INFO("Bounding Box Half Extent: %f %f %f", boundingBox.Dimensions.x, boundingBox.Dimensions.y, boundingBox.Dimensions.z);
+#endif
 	}
 
 	void ResourceLoader::LoadVertices(Mesh* pMesh, const aiMesh* pMeshAI)
@@ -1631,7 +1657,10 @@ namespace LambdaEngine
 		}
 
 		pMesh->BoundingBox.Dimensions = maxExtent - minExtent;
+
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_INFO("Bounding Box Half Extent: %f %f %f", pMesh->BoundingBox.Dimensions.x, pMesh->BoundingBox.Dimensions.y, pMesh->BoundingBox.Dimensions.z);
+#endif
 	}
 
 	void ResourceLoader::LoadIndices(Mesh* pMesh, const aiMesh* pMeshAI)
@@ -1680,6 +1709,7 @@ namespace LambdaEngine
 		return retMat;
 	}
 
+#if 0
 	static void PrintChildren(const TArray<JointIndexType>& children, const TArray<TArray<JointIndexType>>& childrenArr, Skeleton* pSkeleton, uint32 depth)
 	{
 		String postfix;
@@ -1696,6 +1726,7 @@ namespace LambdaEngine
 			PrintChildren(childrenArr[child], childrenArr, pSkeleton, depth + 1);
 		}
 	}
+#endif
 
 	static const aiNode* FindNodeInScene(const String& nodeName, const aiNode* pParent)
 	{
@@ -1923,7 +1954,9 @@ namespace LambdaEngine
 			pSkeleton->RootNodeTransform = rootTransform;
 		}
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_INFO("Loaded skeleton with %u bones", pMesh->pSkeleton->Joints.GetSize());
+#endif
 	}
 
 	void ResourceLoader::LoadMaterial(SceneLoadingContext& context, const aiScene* pSceneAI, const aiMesh* pMeshAI)
@@ -2090,11 +2123,13 @@ namespace LambdaEngine
 
 		context.pAnimations->EmplaceBack(pAnimation);
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_INFO("Loaded animation \"%s\", NumChannels=%u, Duration=%.4f ticks, TicksPerSecond=%.4f",
 			pAnimation->Name.GetString().c_str(),
 			pAnimation->Channels.GetSize(),
 			pAnimation->DurationInTicks,
 			pAnimation->TicksPerSecond);
+#endif
 	}
 
 	static void PrintSceneStructure(const aiNode* pNode, int32 depth)
@@ -2106,7 +2141,9 @@ namespace LambdaEngine
 		}
 
 		const uint32 numChildren = pNode->mNumChildren;
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 		LOG_INFO("%s%s | NumChildren=%u", postfix.c_str(), pNode->mName.C_Str(), numChildren);
+#endif
 
 #if 0
 		glm::mat4 glmMat = AssimpToGLMMat4(pNode->mTransformation);
@@ -2159,13 +2196,16 @@ namespace LambdaEngine
 			.MeshComponents				= sceneLoadRequest.MeshComponents,
 			.pAnimations				= sceneLoadRequest.pAnimations,
 			.pMaterials					= sceneLoadRequest.pMaterials,
-			.pTextures					= sceneLoadRequest.pTextures
+			.pTextures					= sceneLoadRequest.pTextures,
+			.ShouldTessellate			= sceneLoadRequest.ShouldTessellate
 		};
 
 		// Metadata
 		if (pScene->mMetaData)
 		{
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 			LOG_INFO("%s metadata:", filepath.c_str());
+#endif
 
 			aiMetadata* pMetaData = pScene->mMetaData;
 			for (uint32 i = 0; i < pMetaData->mNumProperties; i++)
@@ -2176,7 +2216,9 @@ namespace LambdaEngine
 					string = *static_cast<aiString*>(pMetaData->mValues[i].mData);
 				}
 
+#ifdef RESOURCE_LOADER_LOGS_ENABLED
 				LOG_INFO("    [%s]=%s", pMetaData->mKeys[i].C_Str(), string.C_Str());
+#endif
 			}
 		}
 
@@ -2244,6 +2286,9 @@ namespace LambdaEngine
 				}
 			}
 		}
+
+		// Release MeshTessellation Buffers
+		MeshTessellator::GetInstance().ReleaseTessellationBuffers();
 
 		return true;
 	}
@@ -2324,6 +2369,11 @@ namespace LambdaEngine
 
 					LoadVertices(pMesh, pMeshAI);
 					LoadIndices(pMesh, pMeshAI);
+
+					if (context.ShouldTessellate && pMeshAI->mNumBones == 0)
+					{
+						MeshTessellator::GetInstance().Tessellate(pMesh);
+					}
 
 					if (context.pMaterials)
 					{

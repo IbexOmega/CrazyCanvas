@@ -107,6 +107,7 @@ namespace LambdaEngine
 		PRIMITIVE_TOPOLOGY_TRIANGLE_LIST	= 1,
 		PRIMITIVE_TOPOLOGY_LINE_LIST		= 2,
 		PRIMITIVE_TOPOLOGY_POINT_LIST		= 3,
+		PRIMITIVE_TOPOLOGY_PATCH_LIST		= 4
 	};
 
 	enum class EPolygonMode : uint8
@@ -447,6 +448,7 @@ namespace LambdaEngine
 	enum FColorComponentFlag : FColorComponentFlags
 	{
 		COLOR_COMPONENT_FLAG_NONE	= 0,
+		COLOR_COMPONENT_FLAG_ALL	= 0xffffffff,
 		COLOR_COMPONENT_FLAG_R		= FLAG(0),
 		COLOR_COMPONENT_FLAG_G		= FLAG(1),
 		COLOR_COMPONENT_FLAG_B		= FLAG(2),

@@ -14,6 +14,8 @@
 #include "Engine/EngineConfig.h"
 #include "Rendering/RenderAPI.h"
 
+#include "Rendering/RenderGraph.h"
+
 FORCEINLINE void AddColumnDefinition(Noesis::ColumnDefinitionCollection* pColumnCollection, float width, Noesis::GridUnitType unit)
 {
 	using namespace Noesis;
@@ -44,12 +46,14 @@ FORCEINLINE void DisablePlaySessionsRenderstages()
 	rs.SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	true);
 	rs.SetRenderStageSleeping("DIRL_SHADOWMAP",						true);
 	rs.SetRenderStageSleeping("FXAA",								true);
-	rs.SetRenderStageSleeping("POINTL_SHADOW",						true);
+	rs.SetRenderStageSleeping("RENDER_STAGE_LIGHT",					true);
 	rs.SetRenderStageSleeping("RENDER_STAGE_PARTICLE_RENDER",		true);
 	rs.SetRenderStageSleeping("PARTICLE_COMBINE_PASS",				true);
 	rs.SetRenderStageSleeping("PLAYER_PASS",						true);
 	rs.SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON",	true);
 	rs.SetRenderStageSleeping("SHADING_PASS",						true);
+	rs.SetRenderStageSleeping(BLIT_STAGE,							true);
+	rs.SetRenderStageSleeping(REFLECTIONS_DENOISE_PASS,				true);
 	rs.SetRenderStageSleeping("RENDER_STAGE_PROJECTILES",			true);
 
 	rs.SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI", false);
@@ -74,12 +78,14 @@ FORCEINLINE void EnablePlaySessionsRenderstages()
 	rs.SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	false);
 	rs.SetRenderStageSleeping("DIRL_SHADOWMAP",						false);
 	rs.SetRenderStageSleeping("FXAA",								false);
-	rs.SetRenderStageSleeping("POINTL_SHADOW",						false);
+	rs.SetRenderStageSleeping("RENDER_STAGE_LIGHT",					false);
 	rs.SetRenderStageSleeping("RENDER_STAGE_PARTICLE_RENDER",		false);
 	rs.SetRenderStageSleeping("PARTICLE_COMBINE_PASS",				false);
 	rs.SetRenderStageSleeping("PLAYER_PASS",						false);
 	rs.SetRenderStageSleeping("RENDER_STAGE_FIRST_PERSON_WEAPON",	false);
 	rs.SetRenderStageSleeping("SHADING_PASS",						false);
+	rs.SetRenderStageSleeping(REFLECTIONS_DENOISE_PASS,				false);
+	rs.SetRenderStageSleeping(BLIT_STAGE,							false);
 	rs.SetRenderStageSleeping("RENDER_STAGE_PROJECTILES",			false);
 
 	rs.SetRenderStageSleeping("RENDER_STAGE_NOESIS_GUI",			false);
@@ -91,4 +97,39 @@ FORCEINLINE void EnablePlaySessionsRenderstages()
 
 	if (rayTracingEnabled)
 		rs.SetRenderStageSleeping("RAY_TRACING",					false);
+}
+
+FORCEINLINE void ChangeGlossySettings(bool glossyEnabled, int32 spp)
+{
+	using namespace LambdaEngine;
+	RenderSystem& rs = RenderSystem::GetInstance();
+	RenderGraph* pRenderGraph = rs.GetRenderGraph();
+
+	struct
+	{
+		int32 GlossyEnabled;
+		int32 SPP;
+	} rayTracingPushConstant;
+
+	rayTracingPushConstant.GlossyEnabled	= int32(glossyEnabled);
+	rayTracingPushConstant.SPP				= spp;
+
+	PushConstantsUpdate pushContantUpdate = {};
+	pushContantUpdate.pData				= &rayTracingPushConstant;
+	pushContantUpdate.DataSize			= sizeof(rayTracingPushConstant);
+
+	{
+		pushContantUpdate.RenderStageName = "RAY_TRACING";
+		pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+	}
+
+	{
+		pushContantUpdate.RenderStageName = "SHADING_PASS";
+		pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+	}
+
+	{
+		pushContantUpdate.RenderStageName = "REFLECTIONS_DENOISE_PASS";
+		pRenderGraph->UpdatePushConstants(&pushContantUpdate);
+	}
 }

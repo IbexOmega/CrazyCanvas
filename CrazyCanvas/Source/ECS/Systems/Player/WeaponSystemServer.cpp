@@ -68,6 +68,7 @@ void WeaponSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 					packetsToSend.back().FiredAmmo		= ammoType;
 					packetsToSend.back().WeaponPosition	= firePosition;
 					packetsToSend.back().WeaponVelocity	= fireVelocity;
+					packetsToSend.back().Angle			= packetsRecived[i].Angle;
 
 					// Handle fire
 					weaponComp.CurrentCooldown = 1.0f / weaponComp.FireRate;

@@ -90,6 +90,10 @@
             </Grid>
         </Viewbox>
 
+        <Viewbox Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <uc:PromptGUI x:Name="PROMPT" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Viewbox>
+        
         <Viewbox Grid.Column="0" Grid.ColumnSpan="10" Grid.Row="0" Grid.RowSpan="15" Stretch="Fill">
 
             <Grid x:Name="HUD_GRID" MinWidth="1920" MinHeight="1080">
@@ -127,7 +131,7 @@
                     <RowDefinition/>
                 </Grid.RowDefinitions>
 
-                <uc:PromptGUI x:Name="PROMPT" Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
                 <uc:PromptGUI x:Name="SMALLPROMPT" Grid.Row="10" Grid.Column="4" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
 

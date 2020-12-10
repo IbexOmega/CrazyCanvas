@@ -388,8 +388,8 @@ namespace LambdaEngine
 		{
 			uint64 expectedAnswer = NetworkChallenge::Compute(GetStatistics()->GetSalt(), pPacket->GetRemoteSalt());
 			BinaryDecoder decoder(pPacket);
-			uint64 answer = decoder.ReadUInt64();
-			if (answer == expectedAnswer)
+			uint64 answer;
+			if (decoder.ReadUInt64(answer) && answer == expectedAnswer)
 			{
 				NetworkSegment* pSegment = GetFreePacket(NetworkSegment::TYPE_ACCEPTED);
 				if (pSegment)
@@ -406,6 +406,7 @@ namespace LambdaEngine
 			else
 			{
 				LOG_ERROR("[ClientRemoteBase]: Client responded with %lu, expected %lu, is it a fake client? [%s]", answer, expectedAnswer, GetEndPoint().ToString().c_str());
+				Disconnect("Challenge failed!");
 			}
 		}
 		else if (packetType == NetworkSegment::TYPE_DISCONNECT)

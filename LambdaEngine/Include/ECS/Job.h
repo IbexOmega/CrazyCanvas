@@ -10,8 +10,8 @@ namespace LambdaEngine
 
 	struct Job
 	{
-		std::function<void()> Function;
 		TArray<ComponentAccess> Components;
+		std::function<void()> Function;
 	};
 
 	struct RegularJob : Job

@@ -13,6 +13,7 @@
 #include <NoesisGUI/Include/NsGui/TextBlock.h>
 #include <NoesisGUI/Include/NsGui/UserControl.h>
 #include <NoesisGUI/Include/NsGui/Button.h>
+#include <NoesisGUI/Include/NsGui/ComboBox.h>
 
 #include "Math/Math.h"
 

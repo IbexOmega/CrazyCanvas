@@ -30,6 +30,8 @@ public:
 	inline static LambdaEngine::TArray<GUID_Lambda> PLAYER_STRAFE_LEFT_GUIDs;
 	inline static LambdaEngine::TArray<GUID_Lambda> PLAYER_STRAFE_RIGHT_GUIDs;
 	inline static GUID_Lambda PLAYER_STEP_SOUND_GUID = GUID_NONE;
+	inline static GUID_Lambda PLAYER_JUMP_SOUND_GUID = GUID_NONE;
+	inline static GUID_Lambda PLAYER_LANDING_SOUND_GUID = GUID_NONE;
 	inline static GUID_Lambda PLAYER_DEATH_SOUND_GUID = GUID_NONE;
 
 	// Projectile
@@ -46,7 +48,8 @@ public:
 	inline static GUID_Lambda WEAPON_SOUND_GUNFIRE_2D_GUID = GUID_NONE;
 	inline static GUID_Lambda WEAPON_SOUND_OUTOFAMMO_2D_GUID = GUID_NONE;
 
-	// Sounds 
-	inline static GUID_Lambda SOUND_EFFECT_SPLASH0_3D_GUID = GUID_NONE;
-	inline static GUID_Lambda SOUND_EFFECT_SPLASH1_2D_GUID = GUID_NONE;
+	// Sounds
+	inline static GUID_Lambda SOUND_EFFECT_SPLASH0_3D_GUID	= GUID_NONE;
+	inline static GUID_Lambda SOUND_EFFECT_SPLASH1_2D_GUID	= GUID_NONE;
+	inline static GUID_Lambda SOUND_EFFECT_PING				= GUID_NONE;
 };

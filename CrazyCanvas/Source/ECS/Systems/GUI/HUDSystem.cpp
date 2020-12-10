@@ -74,7 +74,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_ProjectedGUIEntities,
 			.ComponentAccesses =
 			{
-				{ R,	ProjectedGUIComponent::Type() }
+				{ R, ProjectedGUIComponent::Type() }, { R, TeamComponent::Type() }, { R, PositionComponent::Type() }
 			},
 			.OnEntityAdded		= std::bind_front(&HUDSystem::OnProjectedEntityAdded, this),
 			.OnEntityRemoval	= std::bind_front(&HUDSystem::RemoveProjectedEntity, this)
@@ -166,12 +166,17 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 		if (!m_DamageTakenEventsToProcess.IsEmpty())
 		{
-			for (ProjectileHitEvent& event : m_DamageTakenEventsToProcess)
+			for (auto& pair : m_DamageTakenEventsToProcess)
 			{
 				const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
-				const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
+				const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(pair.first.CollisionInfo1.Entity);
 
-				m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
+				bool isFriendly = false;
+
+				if (pair.second == m_LocalTeamIndex)
+					isFriendly = true;
+
+				m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), pair.first.CollisionInfo1.Normal, isFriendly);
 			}
 
 			m_DamageTakenEventsToProcess.Clear();
@@ -187,7 +192,7 @@ void HUDSystem::FixedTick(Timestamp delta)
 			m_EnemyHitEventsToProcess.Clear();
 		}
 
-
+		const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 		for (Entity camera : m_CameraEntities)
 		{
 			const ViewProjectionMatricesComponent& viewProjMat = pViewProjMats->GetConstData(camera);
@@ -198,20 +203,19 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
 
-				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity);
+				const IndicatorTypeGUI indicatorType = pProjectedGUIComponents->GetConstData(entity).GUIType;
+				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity, indicatorType);
 			}
 		}
 	}
 
-
-
 	static bool activeButtonChanged = false;
-	if (InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
+	if (InputActionSystem::IsActiveGlobal(EAction::ACTION_GENERAL_SCOREBOARD) && !activeButtonChanged)
 	{
 		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(true);
 		activeButtonChanged = true;
 	}
-	else if (!InputActionSystem::IsActive(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
+	else if (!InputActionSystem::IsActiveGlobal(EAction::ACTION_GENERAL_SCOREBOARD) && activeButtonChanged)
 	{
 		m_HUDGUI->GetScoreBoard()->DisplayScoreboardMenu(false);
 		activeButtonChanged = false;
@@ -430,12 +434,11 @@ bool HUDSystem::OnPacketTeamScored(const PacketReceivedEvent<PacketTeamScored>& 
 	return false;
 }
 
-bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
+void HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 {
 	ECSCore* pECS = ECSCore::GetInstance();
 	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
 	const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(projectedEntity);
-
 
 	if (projectedGUIComponent.GUIType == IndicatorTypeGUI::FLAG_INDICATOR)
 	{
@@ -445,17 +448,13 @@ bool HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 	}
 	else
 	{
-		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex);
+		m_HUDGUI->CreateProjectedPingGUIElement(projectedEntity);
 	}
-
-	return false;
 }
 
-bool HUDSystem::RemoveProjectedEntity(LambdaEngine::Entity projectedEntity)
+void HUDSystem::RemoveProjectedEntity(LambdaEngine::Entity projectedEntity)
 {
 	m_HUDGUI->RemoveProjectedGUIElement(projectedEntity);
-
-	return false;
 }
 
 bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
@@ -466,22 +465,26 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 
 		ECSCore* pECS = ECSCore::GetInstance();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		const ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
+
+		const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
 
 		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 		{
-			m_DeferredDamageTakenHitEvents.EmplaceBack(event);
+			if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
+			{
+				uint8 projectileTeamIndex = pTeamComponents->GetConstData(projectileComponents.Owner).TeamIndex;
+
+				m_DeferredDamageTakenHitEvents.EmplaceBack(std::make_pair(event, projectileTeamIndex));
+			}
 		}
 		else
 		{
-			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			const ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
-
 			if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
 			{
 				if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
 				{
-					const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
-
 					if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex && pPlayerLocalComponents->HasComponent(projectileComponents.Owner))
 					{
 						m_DeferredEnemyHitEvents.EmplaceBack(true);
@@ -540,7 +543,7 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 	return false;
 }
 
-void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
+void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, uint8 teamIndex)
 {
 	m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
 }

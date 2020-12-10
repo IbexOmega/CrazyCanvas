@@ -1,6 +1,8 @@
 #include "Application/API/Events/EventQueue.h"
 #include <unordered_set>
 
+//#define ENABLE_EVENTQUEUE_LOGGING
+
 namespace LambdaEngine
 {
 	/*
@@ -50,7 +52,9 @@ namespace LambdaEngine
 
 		eventHandlers.EmplaceBack(eventHandler);
 
+#ifdef ENABLE_EVENTQUEUE_LOGGING
 		LOG_INFO("Register eventhandler. Eventtype=%s", eventType.pName);
+#endif
 		return true;
 	}
 
@@ -68,7 +72,9 @@ namespace LambdaEngine
 				{
 					eventHandlers.Erase(it);
 
+#ifdef ENABLE_EVENTQUEUE_LOGGING
 					LOG_INFO("Unregister eventhandler. Eventtype=%s", eventType.pName);
+#endif
 					return true;
 				}
 			}
@@ -93,7 +99,9 @@ namespace LambdaEngine
 			}
 		}
 
+#ifdef ENABLE_EVENTQUEUE_LOGGING
 		LOG_INFO("Unregister eventhandler from all types");
+#endif
 		return true;
 	}
 

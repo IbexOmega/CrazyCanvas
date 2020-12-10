@@ -55,19 +55,25 @@ MultiplayerGUI::MultiplayerGUI(MultiplayerState* pMultiplayerState) :
 	m_pTextBoxAddress		= FrameworkElement::FindName<TextBox>("IP_ADDRESS");
 	m_pTextBoxName			= FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
 
-	ErrorPopUpClose();
-	NotiPopUpClose();
-
 	// Use Host name as default In Game name
-	DWORD length = UNLEN + 1;
-	char name[UNLEN + 1];
-	GetUserNameA(name, &length);
+	const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
+	LambdaEngine::String nameStr;
+	if (pLocalPlayer)
+	{
+		nameStr = pLocalPlayer->GetName();
+	}
+	else
+	{
+		char name[UNLEN + 1];
+		DWORD length = UNLEN + 1;
+		GetUserNameA(name, &length);
+		nameStr = name;
+	}
 
-	LambdaEngine::String nameStr = name;
 	TextBox* pNameTextBox = FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
 	pNameTextBox->SetMaxLength(MAX_NAME_LENGTH - 1);
 	pNameTextBox->SetMaxLines(1);
-	pNameTextBox->SetText(name);
+	pNameTextBox->SetText(nameStr.c_str());
 	pNameTextBox->SetText(nameStr.substr(0, glm::min<int32>((int32)nameStr.length(), pNameTextBox->GetMaxLength())).c_str());
 }
 
@@ -78,24 +84,24 @@ MultiplayerGUI::~MultiplayerGUI()
 
 void MultiplayerGUI::AddServerLAN(const ServerInfo& serverInfo)
 {
-	Grid* pGrid = CreateServerItem(serverInfo);
+	Ptr<Grid> grid = CreateServerItem(serverInfo);
 
-	m_pGridServers->SetColumn(pGrid, 1);
-	m_pGridServers->SetColumnSpan(pGrid, 2);
-	m_pGridServers->SetRow(pGrid, 4);
+	m_pGridServers->SetColumn(grid, 1);
+	m_pGridServers->SetColumnSpan(grid, 2);
+	m_pGridServers->SetRow(grid, 4);
 
-	m_pListBoxServersLAN->GetItems()->Add(pGrid);
+	m_pListBoxServersLAN->GetItems()->Add(grid);
 }
 
 void MultiplayerGUI::AddServerSaved(const ServerInfo& serverInfo)
 {
-	Grid* pGrid = CreateServerItem(serverInfo);
+	Ptr<Grid> grid = CreateServerItem(serverInfo);
 
-	m_pGridServers->SetColumn(pGrid, 1);
-	m_pGridServers->SetColumnSpan(pGrid, 2);
-	m_pGridServers->SetRow(pGrid, 4);
+	m_pGridServers->SetColumn(grid, 1);
+	m_pGridServers->SetColumnSpan(grid, 2);
+	m_pGridServers->SetRow(grid, 4);
 
-	m_pListBoxServersSaved->GetItems()->Add(pGrid);
+	m_pListBoxServersSaved->GetItems()->Add(grid);
 }
 
 void MultiplayerGUI::RemoveServerLAN(const ServerInfo& serverInfo)
@@ -132,9 +138,9 @@ void MultiplayerGUI::UpdateServerSaved(const ServerInfo& serverInfo)
 	}
 }
 
-Grid* MultiplayerGUI::CreateServerItem(const ServerInfo& serverInfo)
+Ptr<Grid> MultiplayerGUI::CreateServerItem(const ServerInfo& serverInfo)
 {
-	Grid* pGrid = new Grid();
+	Ptr<Grid> pGrid = *new Grid();
 
 	for (int i = 0; i < SERVER_ITEM_COLUMNS; i++)
 	{
@@ -151,7 +157,7 @@ Grid* MultiplayerGUI::CreateServerItem(const ServerInfo& serverInfo)
 	Ptr<Noesis::Rectangle> isOnline = *new Noesis::Rectangle();
 	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
 
-	isOnline->SetFill(new SolidColorBrush());
+	isOnline->SetFill(brush);
 
 	pGrid->GetChildren()->Add(serverName);
 	pGrid->GetChildren()->Add(mapName);
@@ -197,7 +203,11 @@ void MultiplayerGUI::UpdateServerItem(Grid* pGrid, const ServerInfo& serverInfo)
 	pMapName->SetText(serverInfo.IsOnline ? serverInfo.MapName.c_str() : "-");
 	pPing->SetText((serverInfo.IsOnline ? std::to_string(serverInfo.Ping) + " ms" : "-").c_str());
 	pPlayerCount->SetText(serverInfo.IsOnline ? (std::to_string(serverInfo.Players) + "/" + std::to_string(serverInfo.MaxPlayers)).c_str() : "-");
-	pBrush->SetColor(serverInfo.IsOnline ? Color::Green() : Color::Red());
+
+	if (serverInfo.IsOnline)
+		pBrush->SetColor(serverInfo.State == EServerState::SERVER_STATE_LOBBY ? Color::Green() : Color::Yellow());
+	else
+		pBrush->SetColor(Color::Red());
 }
 
 void MultiplayerGUI::ServerInfoToUniqeString(const ServerInfo& serverInfo, LambdaEngine::String& str) const
@@ -262,7 +272,7 @@ void MultiplayerGUI::OnButtonConnectClick(Noesis::BaseComponent* pSender, const 
 	}
 	else
 	{
-		ErrorPopUp(CONNECT_ERROR_INVALID);
+		DisplayErrorMessage("The address format is not valid!");
 	}
 }
 
@@ -271,7 +281,7 @@ void MultiplayerGUI::OnButtonErrorOKClick(Noesis::BaseComponent* pSender, const 
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	ErrorPopUpClose();
+	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Collapsed);
 }
 
 void MultiplayerGUI::OnButtonHostGameClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
@@ -296,80 +306,51 @@ void MultiplayerGUI::OnButtonJoinClick(Noesis::BaseComponent* pSender, const Noe
 		const THashTable<uint64, ServerInfo>& serversLAN = ServerManager::GetServersLAN();
 		const ServerInfo* pServerInfo = GetServerInfoFromGrid(serversLAN, pSelectedItem);
 
-		bool result = false;
-
-		if (pServerInfo)
-		{
-			result = m_pMulitplayerState->ConnectToServer(pServerInfo->EndPoint, false);
-		}
-		else
+		if (!pServerInfo)
 		{
 			const THashTable<uint64, ServerInfo>& serversWAN = ServerManager::GetServersWAN();
 			pServerInfo = GetServerInfoFromGrid(serversWAN, pSelectedItem);
-
-			if (pServerInfo)
-			{
-				result = m_pMulitplayerState->ConnectToServer(pServerInfo->EndPoint, false);
-			}
 		}
 
-		if (result)
-			NotiPopUP(JOIN_NOTIFICATION);
+		if (pServerInfo)
+		{
+			if (pServerInfo->IsOnline)
+			{
+				m_pMulitplayerState->ConnectToServer(*pServerInfo);
+			}
+			else
+			{
+				DisplayErrorMessage("The selected server is offline!");
+			}
+		}
 		else
-			ErrorPopUp(JOIN_ERROR_OFFLINE);
+		{
+			DisplayErrorMessage("The selected server is not valid anymore!");
+		}
 	}
 	else
 	{
-		ErrorPopUp(JOIN_ERROR);
+		DisplayErrorMessage("No server selected!");
 	}
 }
 
-void MultiplayerGUI::ErrorPopUp(PopUpCode errorCode)
+void MultiplayerGUI::DisplayErrorMessage(const char* error)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("ERROR_BOX_TEXT");
-
-	switch (errorCode)
-	{
-	case CONNECT_ERROR:				pTextBox->SetText("Couldn't Connect To Server!");		break;
-	case CONNECT_ERROR_INVALID:		pTextBox->SetText("The address format is invalid!");	break;
-	case JOIN_ERROR:				pTextBox->SetText("No Server Selected!");				break;
-	case JOIN_ERROR_OFFLINE:		pTextBox->SetText("Server is offline!");				break;
-	case HOST_ERROR:				pTextBox->SetText("Couldn't Host Server!");				break;
-	case OTHER_ERROR:				pTextBox->SetText("Something Went Wrong!");				break;
-	}
+	pTextBox->SetText(error);
 
 	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }
 
-void MultiplayerGUI::NotiPopUP(PopUpCode notificationCode)
+void MultiplayerGUI::DisplayNotification(const char* error)
 {
 	TextBlock* pTextBox = FrameworkElement::FindName<TextBlock>("NOTIFICATION_BOX_TEXT");
-
-	switch (notificationCode)
-	{
-	case HOST_NOTIFICATION:	pTextBox->SetText("Server Starting...");	break;
-	case JOIN_NOTIFICATION:	pTextBox->SetText("Joining Server...");		break;
-	}
+	pTextBox->SetText(error);
 
 	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Visible);
 }
 
-void MultiplayerGUI::ErrorPopUpClose()
+void MultiplayerGUI::CloseNotification()
 {
-	FrameworkElement::FindName<Grid>("ERROR_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
-}
-
-void MultiplayerGUI::NotiPopUpClose()
-{
-	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Hidden);
-}
-
-bool MultiplayerGUI::CheckServerSettings(const HostGameDescription& serverSettings)
-{
-	if (serverSettings.PlayersNumber == -1)
-		return false;
-	else if (serverSettings.MapNumber == -1)
-		return false;
-
-	return true;
+	FrameworkElement::FindName<Grid>("NOTIFICATION_BOX_CONTAINER")->SetVisibility(Visibility_Collapsed);
 }

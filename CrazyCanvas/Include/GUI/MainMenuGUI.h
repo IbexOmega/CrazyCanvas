@@ -8,6 +8,7 @@
 #include "NsGui/GroupBox.h"
 #include "NsGui/Slider.h"
 #include "NsGui/Button.h"
+#include "NsGui/ComboBox.h"
 
 #include "GUI/SettingsGUI.h"
 
@@ -46,6 +47,8 @@ private:
 
 private:
 	bool 	m_ListenToCallbacks			= false;
+
+	int32	m_NewReflectionsSPP			= 0;
 
 	Noesis::Grid*	m_pStartGrid		= nullptr;
 	Noesis::Grid*	m_pPlayGrid			= nullptr;

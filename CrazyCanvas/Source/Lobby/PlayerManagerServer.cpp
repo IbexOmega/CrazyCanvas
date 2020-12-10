@@ -158,7 +158,7 @@ bool PlayerManagerServer::OnPacketPlayerStateReceived(const PacketReceivedEvent<
 	{
 		Player& player = iterator->second;
 
-		if (packet.State == GAME_STATE_LOADING || packet.State == GAME_STATE_LOADED)
+		if (packet.State == GAME_STATE_LOADING || packet.State == GAME_STATE_LOADED || packet.State == GAME_STATE_LOBBY)
 		{
 			if (player.m_State != packet.State)
 			{
@@ -327,6 +327,8 @@ void PlayerManagerServer::SetPlayerHost(const Player* pPlayer)
 {
 	if (!pPlayer->m_IsHost)
 	{
+		SetPlayerReady(pPlayer, false);
+
 		Player* pOldHost = nullptr;
 		for (auto& pair : s_Players)
 		{

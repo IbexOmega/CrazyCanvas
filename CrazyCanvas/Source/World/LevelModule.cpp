@@ -16,6 +16,15 @@ LevelModule::~LevelModule()
 		ResourceManager::UnloadMesh(meshComponent.MeshGUID);
 		ResourceManager::UnloadMaterial(meshComponent.MaterialGUID);
 	}
+
+	for (const LevelObjectOnLoad& levelObjectOnLoad : m_LevelObjects)
+	{
+		for (const MeshComponent& meshComponent : levelObjectOnLoad.MeshComponents)
+		{
+			ResourceManager::UnloadMesh(meshComponent.MeshGUID);
+			ResourceManager::UnloadMaterial(meshComponent.MaterialGUID);
+		}
+	}
 }
 
 bool LevelModule::Init(const LambdaEngine::String& filename, const glm::vec3& translation)
@@ -32,9 +41,4 @@ bool LevelModule::Init(const LambdaEngine::String& filename, const glm::vec3& tr
 	};
 
 	return ResourceManager::LoadSceneFromFile(&loadDesc, m_MeshComponents, m_DirectionalLights, m_PointLights, m_LevelObjects, LEVEL_MODULES_DIRECTORY);
-}
-
-void LevelModule::SetTranslation(const glm::vec3& translation)
-{
-	m_Translation = translation;
 }

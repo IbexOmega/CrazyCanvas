@@ -14,6 +14,8 @@
 
 #include "Application/API/Events/EventQueue.h"
 
+#define NOESIS_GUI_LOGS_ENABLED
+
 namespace LambdaEngine
 {
 	Noesis::Ptr<Noesis::IView> GUIApplication::s_pView = nullptr;
@@ -84,9 +86,8 @@ namespace LambdaEngine
 
 	void GUIApplication::SetView(Noesis::Ptr<Noesis::IView> view)
 	{
-		s_pView.Reset();
-
 		s_pView = view;
+
 		if (s_pView != nullptr)
 		{
 			TSharedRef<Window> mainWindow = CommonApplication::Get()->GetMainWindow();
@@ -99,10 +100,8 @@ namespace LambdaEngine
 
 	bool GUIApplication::InitNoesis()
 	{
-#if defined(LAMBDA_DEBUG)
+#if defined(LAMBDA_DEVELOPMENT)
 		Noesis::GUI::SetLogHandler(GUIApplication::NoesisLogHandler);
-		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
-#elif defined(LAMBDA_RELEASE)
 		Noesis::GUI::SetErrorHandler(GUIApplication::NoesisErrorHandler);
 #endif
 		// Init 26/11
@@ -133,25 +132,36 @@ namespace LambdaEngine
 
 	void GUIApplication::NoesisLogHandler(const char* file, uint32_t line, uint32_t level, const char* channel, const char* message)
 	{
+#ifdef NOESIS_GUI_LOGS_ENABLED
 		if (level == 0) // [TRACE]
 		{
 			LOG_MESSAGE("[TRACE] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
-		else if (level == 1) // [DEBUG]
+
+		if (level == 1) // [DEBUG]
 		{
 			LOG_MESSAGE("[DEBUG] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
-		else if (level == 2) // [INFO]
+
+		if (level == 2) // [INFO]
 		{
 			LOG_INFO("[INFO] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
-		else if (level == 3) // [WARNING]
+#endif
+
+		if (level == 3) // [WARNING]
 		{
 			LOG_WARNING("[WARNING] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
-		else if (level == 4) // [ERROR]
+
+		if (level == 4) // [ERROR]
 		{
 			LOG_ERROR("[ERROR] In \"%s\", at L%d and channel \"%s\":\n \"%s\"", file, line, channel, message);
+			return;
 		}
 	}
 

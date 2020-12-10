@@ -333,8 +333,6 @@ namespace LambdaEngine
 			filterData = *pFilterData;
 		}
 
-		/*	The filter data is first used in a fixed filter function, then the custom query filter callback is called.
-			See the PhysX documentation for details on the fixed filter function. */
 		PxQueryFilterData filterDataPX;
 		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
 		filterDataPX.data.word0 = filterData.IncludedGroup;
@@ -834,6 +832,8 @@ namespace LambdaEngine
 				.Direction = direction,
 				.Normal = { contactPoint.normal.x, contactPoint.normal.y, contactPoint.normal.z }
 			};
+
+			collisionInfos[actorIdx].Normal *= actorIdx == 0 ? 1.f : -1.f;
 		}
 
 		if (pCollisionCallback0 && *pCollisionCallback0)
