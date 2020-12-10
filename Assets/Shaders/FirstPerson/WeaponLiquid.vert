@@ -14,10 +14,9 @@ struct SWeaponData
 
 layout(push_constant) uniform PushConstants
 {
-	mat4 DefaultTransform;
-	uint TeamIndex;
-    float WaveX;
-    float WaveZ;
+	layout(offset = 0) mat4 DefaultTransform;
+    layout(offset = 64) float WaveX;
+    layout(offset = 68) float WaveZ;
 } u_PC;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;

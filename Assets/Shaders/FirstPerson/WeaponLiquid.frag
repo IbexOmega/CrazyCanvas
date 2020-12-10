@@ -13,10 +13,7 @@ layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ v
 // Pushconstants
 layout(push_constant) uniform PushConstants
 {
-	mat4 DefaultTransform;
-	uint TeamIndex;
-    float WaveX;
-    float WaveZ;
+	layout(offset = 72) uint TeamIndex;
 } u_PC;
 
 layout(location = 0) in vec3		in_WorldPosition;
