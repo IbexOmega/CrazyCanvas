@@ -20,6 +20,8 @@
 
 #include "Containers/TUniquePtr.h"
 
+#include "Resources/MeshTessellator.h"
+
 #include <assimp/postprocess.h>
 
 #include <utility>
@@ -110,6 +112,8 @@ namespace LambdaEngine
 		InitMaterialCreation();
 		InitDefaultResources();
 
+		MeshTessellator::GetInstance().Init();
+
 		EventQueue::RegisterEventHandler<ShaderRecompileEvent>(&OnShaderRecompileEvent);
 
 		return true;
@@ -120,6 +124,8 @@ namespace LambdaEngine
 		EventQueue::UnregisterEventHandler<ShaderRecompileEvent>(&OnShaderRecompileEvent);
 
 		ReleaseMaterialCreation();
+
+		MeshTessellator::GetInstance().Release();
 
 		SAFEDELETE_ALL(s_Meshes);
 		SAFEDELETE_ALL(s_Materials);
@@ -284,7 +290,7 @@ namespace LambdaEngine
 		return true;
 	}
 
-	void ResourceManager::LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID)
+	void ResourceManager::LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, bool shouldTessellate)
 	{
 		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
@@ -309,7 +315,7 @@ namespace LambdaEngine
 			aiProcess_OptimizeGraph |
 			aiProcess_FindInvalidData;
 
-		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, nullptr, nullptr, nullptr, assimpFlags);
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, nullptr, nullptr, nullptr, assimpFlags, shouldTessellate);
 
 		//Spinlock
 		{
@@ -320,7 +326,7 @@ namespace LambdaEngine
 		}
 	}
 
-	void ResourceManager::LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, TArray<GUID_Lambda>& animations)
+	void ResourceManager::LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, TArray<GUID_Lambda>& animations, bool shouldTessellate)
 	{
 		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
@@ -352,7 +358,7 @@ namespace LambdaEngine
 			aiProcess_FindInvalidData;
 
 		TArray<Animation*> rawAnimations;
-		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, nullptr, nullptr, &rawAnimations, assimpFlags);
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, nullptr, nullptr, &rawAnimations, assimpFlags, shouldTessellate);
 
 		//Spinlock
 		{
@@ -376,7 +382,7 @@ namespace LambdaEngine
 		s_FileNamesToAnimationGUIDs.insert(std::make_pair(filename, animations));
 	}
 
-	void ResourceManager::LoadMeshAndMaterialFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID)
+	void ResourceManager::LoadMeshAndMaterialFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID, bool shouldTessellate)
 	{
 		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
@@ -417,7 +423,7 @@ namespace LambdaEngine
 			//	assimpFlags |= aiProcess_PopulateArmatureData;
 			//}
 
-		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, &materials, &textures, nullptr, assimpFlags);
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, &materials, &textures, nullptr, assimpFlags, shouldTessellate);
 
 		//Spinlock
 		{
@@ -482,10 +488,11 @@ namespace LambdaEngine
 	}
 
 	void ResourceManager::LoadMeshAndMaterialFromFile(
-		const String& filename,
-		GUID_Lambda& meshGUID,
-		GUID_Lambda& materialGUID,
-		TArray<GUID_Lambda>& animations)
+		const String& filename, 
+		GUID_Lambda& meshGUID, 
+		GUID_Lambda& materialGUID, 
+		TArray<GUID_Lambda>& animations, 
+		bool shouldTessellate)
 	{
 		if (auto loadedMeshGUID = s_MeshNamesToGUIDs.find(filename); loadedMeshGUID != s_MeshNamesToGUIDs.end())
 		{
@@ -523,7 +530,7 @@ namespace LambdaEngine
 		TArray<LoadedMaterial*> materials;
 		TArray<LoadedTexture*> textures;
 		TArray<TextureView*> textureViewsToDelete;
-		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, &materials, &textures, &rawAnimations, assimpFlags);
+		Mesh* pMesh = ResourceLoader::LoadMeshFromFile(MESH_DIR + filename, &materials, &textures, &rawAnimations, assimpFlags, shouldTessellate);
 
 		//Spinlock
 		{

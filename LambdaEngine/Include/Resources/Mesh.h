@@ -234,9 +234,9 @@ namespace std
 		size_t operator()(LambdaEngine::Vertex const& vertex) const
 		{
 			return
-				((hash<glm::vec3>()(vertex.PositionXYZPaintBitsW) ^
-				 (hash<glm::vec3>()(vertex.NormalXYZPaintDistW) << 1)) >> 1) ^
-				 (hash<glm::vec2>()(vertex.TexCoordXYOriginalPosZW) << 1);
+				((hash<glm::vec4>()(vertex.PositionXYZPaintBitsW) ^
+				 (hash<glm::vec4>()(vertex.NormalXYZPaintDistW) << 1)) >> 1) ^
+				 (hash<glm::vec4>()(vertex.TexCoordXYOriginalPosZW) << 1);
 		}
 	};
 }
