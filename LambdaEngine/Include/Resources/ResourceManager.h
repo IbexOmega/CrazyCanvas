@@ -137,7 +137,7 @@ namespace LambdaEngine
 		* @param meshGUID	The loaded Mesh GUID
 		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID);
+		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, bool shouldTessellate);
 
 		/**
 		* Load a mesh from file
@@ -146,7 +146,7 @@ namespace LambdaEngine
 		* @param animations	TArray with valid GUIDs for all the animations
 		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, TArray<GUID_Lambda>& animations);
+		static void LoadMeshFromFile(const String& filename, GUID_Lambda& meshGUID, TArray<GUID_Lambda>& animations, bool shouldTessellate);
 
 		/**
 		* Load a mesh from file
@@ -155,7 +155,7 @@ namespace LambdaEngine
 		* @param materialGUID	The loaded Material GUID
 		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
-		static void LoadMeshAndMaterialFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID);
+		static void LoadMeshAndMaterialFromFile(const String& filename, GUID_Lambda& meshGUID, GUID_Lambda& materialGUID, bool shouldTessellate);
 
 		/**
 		* Load a mesh from file
@@ -166,10 +166,11 @@ namespace LambdaEngine
 		* @return A valid GUID if the mesh was loaded, otherwise returns GUID_NONE
 		*/
 		static void LoadMeshAndMaterialFromFile(
-			const String& filename,
-			GUID_Lambda& meshGUID,
-			GUID_Lambda& materialGUID,
-			TArray<GUID_Lambda>& animations);
+			const String& filename, 
+			GUID_Lambda& meshGUID, 
+			GUID_Lambda& materialGUID, 
+			TArray<GUID_Lambda>& animations, 
+			bool shouldTessellate);
 
 		/**
 		* Load a mesh from file
