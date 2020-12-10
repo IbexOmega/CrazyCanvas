@@ -177,6 +177,8 @@ void EscapeMenuGUI::OnButtonLeaveClick(Noesis::BaseComponent* pSender, const Noe
 	pElement->SetVisibility(Noesis::Visibility_Collapsed);
 	m_ContextStack.pop();
 
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 

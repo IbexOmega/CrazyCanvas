@@ -252,6 +252,8 @@ void MultiplayerGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noe
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }

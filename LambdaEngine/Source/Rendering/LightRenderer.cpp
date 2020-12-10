@@ -263,6 +263,10 @@ namespace LambdaEngine
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
 					const DrawArg& drawArg = m_pDrawArgs[d];
+
+					if (drawArg.InstanceCount == 0)
+						continue;
+
 					pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 
 					auto* descriptorSet = m_DrawArgsDescriptorSets[d].Get();

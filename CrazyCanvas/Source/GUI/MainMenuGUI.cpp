@@ -178,6 +178,8 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 		return;
 #endif
 
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	PacketGameSettings settings;
 	settings.MapID		= 0;
 	settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
@@ -194,6 +196,8 @@ void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedE
 	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
 		return;
 #endif
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	State* pLobbyState = DBG_NEW MultiplayerState();
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);

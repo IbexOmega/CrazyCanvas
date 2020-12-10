@@ -754,7 +754,8 @@ namespace LambdaEngine
 		}
 		else
 		{
-			LOG_ERROR("Setview called with view == nullptr");
+			m_View = nullptr;
+			//LOG_ERROR("Setview called with view == nullptr");
 		}
 	}
 
