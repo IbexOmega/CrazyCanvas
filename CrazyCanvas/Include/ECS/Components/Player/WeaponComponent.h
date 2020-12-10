@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <utility>
 
+#include <glm/mat4x4.hpp>
+
 #define AMMO_CAPACITY 25
 
 /*
@@ -36,6 +38,7 @@ struct WeaponComponent
 struct WeaponLocalComponent
 {
 	DECL_COMPONENT(WeaponLocalComponent);
+	glm::mat4 DefaultTransform;
 };
 
 /*
