@@ -198,9 +198,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		if (sleeping)
-			return;
-
 		m_ModFrameIndex = modFrameIndex;
 
 		//Release Device Resources
@@ -214,6 +211,9 @@ namespace LambdaEngine
 
 			deviceResourcesToRemove.Clear();
 		}
+
+		if (sleeping)
+			return;
 
 		m_ppCommandAllocators[m_ModFrameIndex]->Reset();
 		CommandList* pCommandList = m_ppCommandLists[m_ModFrameIndex];
