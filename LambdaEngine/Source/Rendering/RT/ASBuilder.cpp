@@ -87,7 +87,9 @@ namespace LambdaEngine
 				AccelerationStructureDesc blasCreateDesc = {};
 				blasCreateDesc.DebugName		= "BLAS";
 				blasCreateDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_BOTTOM;
-				blasCreateDesc.Flags			= allowUpdate ? FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE : 0;
+				blasCreateDesc.Flags			= allowUpdate ? 
+					(FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE | FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD) : 
+					FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_TRACE;
 				blasCreateDesc.MaxTriangleCount = indexCount / 3;
 				blasCreateDesc.MaxVertexCount	= vertexCount;
 				blasCreateDesc.AllowsTransform	= false;
@@ -135,7 +137,9 @@ namespace LambdaEngine
 			{
 				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
 				blasBuildDesc.pAccelerationStructure	= blasData.pBLAS;
-				blasBuildDesc.Flags						= allowUpdate ? FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE : 0;
+				blasBuildDesc.Flags = allowUpdate ?
+					(FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE | FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD) :
+					FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_TRACE;
 				blasBuildDesc.pVertexBuffer				= pVertexBuffer;
 				blasBuildDesc.FirstVertexIndex			= 0;
 				blasBuildDesc.VertexStride				= vertexSize;
@@ -158,7 +162,7 @@ namespace LambdaEngine
 				//We assume that vertexCount/indexCount does not change and thus do not check if we need to recreate the BLAS
 				BuildBottomLevelAccelerationStructureDesc blasBuildDesc = {};
 				blasBuildDesc.pAccelerationStructure	= blasData.pBLAS;
-				blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				blasBuildDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE | FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD;
 				blasBuildDesc.pVertexBuffer				= pVertexBuffer;
 				blasBuildDesc.FirstVertexIndex			= 0;
 				blasBuildDesc.VertexStride				= vertexSize;
@@ -569,7 +573,7 @@ namespace LambdaEngine
 					AccelerationStructureDesc createTLASDesc = {};
 					createTLASDesc.DebugName		= "TLAS";
 					createTLASDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
-					createTLASDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+					createTLASDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE | FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD;
 					createTLASDesc.InstanceCount	= m_MaxSupportedTLASInstances;
 
 					m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
@@ -590,7 +594,7 @@ namespace LambdaEngine
 
 				BuildTopLevelAccelerationStructureDesc buildTLASDesc = {};
 				buildTLASDesc.pAccelerationStructure	= m_pTLAS;
-				buildTLASDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE;
+				buildTLASDesc.Flags						= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE | FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD;
 				buildTLASDesc.Update					= update;
 				buildTLASDesc.pInstanceBuffer			= m_pInstanceBuffer;
 				buildTLASDesc.InstanceCount				= instanceCount;
