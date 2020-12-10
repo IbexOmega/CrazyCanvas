@@ -47,7 +47,11 @@ namespace LambdaEngine
 			if (!s_InputLayerStack.empty())
 			{
 				const uint8 currentInputMode = ConvertInputLayerUINT8(s_InputLayerStack.top());
-				std::fill_n(s_KeyboardStates[currentInputMode][STATE_WRITE_INDEX].KeyStates, EKey::KEY_COUNT, false);
+				for (uint32 i = 0; i < EKey::KEY_COUNT; i++)
+				{
+					s_KeyboardStates[currentInputMode][STATE_WRITE_INDEX].KeyStates[i].Reset();
+				}
+
 				std::fill_n(s_MouseStates[currentInputMode][STATE_WRITE_INDEX].ButtonStates, EMouseButton::MOUSE_BUTTON_COUNT, false);
 
 				UpdateReadIndex(currentInputMode);
@@ -80,6 +84,11 @@ namespace LambdaEngine
 			return s_KeyboardStates[ConvertInputLayerUINT8(inputMode)][STATE_READ_INDEX].IsKeyUp(key);
 		}
 
+		FORCEINLINE static bool IsKeyJustPressed(EInputLayer inputMode, EKey key)
+		{
+			return s_KeyboardStates[ConvertInputLayerUINT8(inputMode)][STATE_READ_INDEX].IsKeyJustPressed(key);
+		}
+
 		FORCEINLINE static bool IsInputEnabled()
 		{
 			return s_InputEnabled;
@@ -90,8 +99,16 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> keyboardLock(s_WriteBufferLockKeyboard);
 			std::scoped_lock<SpinLock> mouseLock(s_WriteBufferLockMouse);
 
-			s_KeyboardStates[inputMode][0]	= s_KeyboardStates[inputMode][1];
-			s_MouseStates[inputMode][0]		= s_MouseStates[inputMode][1];
+			for (uint32 i = 0; i < EKey::KEY_COUNT; i++)
+			{
+				if (s_KeyboardStates[inputMode][STATE_READ_INDEX].KeyStates[i].JustPressed)
+				{
+					s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[i].JustPressed = false;
+				}
+			}
+
+			s_KeyboardStates[inputMode][STATE_READ_INDEX]	= s_KeyboardStates[inputMode][STATE_WRITE_INDEX];
+			s_MouseStates[inputMode][STATE_READ_INDEX]		= s_MouseStates[inputMode][STATE_WRITE_INDEX];
 		}
 
 		FORCEINLINE static const KeyboardState& GetKeyboardState(EInputLayer inputMode)

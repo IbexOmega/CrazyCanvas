@@ -48,7 +48,8 @@ namespace LambdaEngine
 				std::scoped_lock<SpinLock> keyboardLock(s_WriteBufferLockKeyboard);
 				
 				const KeyPressedEvent& keyEvent = EventCast<KeyPressedEvent>(event);
-				s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[keyEvent.Key] = true;
+				s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[keyEvent.Key].IsDown	= true;
+				s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[keyEvent.Key].JustPressed	= keyEvent.IsRepeat ? false : true;
 
 				return true;
 			}
@@ -57,8 +58,8 @@ namespace LambdaEngine
 				std::scoped_lock<SpinLock> keyboardLock(s_WriteBufferLockKeyboard);
 				
 				const KeyReleasedEvent& keyEvent = EventCast<KeyReleasedEvent>(event);
-				s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[keyEvent.Key] = false;
-
+				s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[keyEvent.Key].Reset();
+				
 				return true;
 			}
 			else if (IsEventOfType<MouseButtonClickedEvent>(event))
@@ -148,8 +149,9 @@ namespace LambdaEngine
 
 	void Input::Tick()
 	{
-		const uint8 inputMode = ConvertInputLayerUINT8(GetCurrentInputLayer());
-		UpdateReadIndex(inputMode);
+		const EInputLayer currentInputLayout = GetCurrentInputLayer();
+		const uint8 inputLayer = ConvertInputLayerUINT8(currentInputLayout);
+		UpdateReadIndex(inputLayer);
 	}
 
 	void Input::Disable()
@@ -160,7 +162,11 @@ namespace LambdaEngine
 		s_InputEnabled = false;
 
 		const uint8 inputMode = ConvertInputLayerUINT8(GetCurrentInputLayer());
-		std::fill_n(s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates, EKey::KEY_COUNT, false);
+		for (uint32 i = 0; i < EKey::KEY_COUNT; i++)
+		{
+			s_KeyboardStates[inputMode][STATE_WRITE_INDEX].KeyStates[i].Reset();
+		}
+
 		std::fill_n(s_MouseStates[inputMode][STATE_WRITE_INDEX].ButtonStates, EMouseButton::MOUSE_BUTTON_COUNT, false);
 	}
 }
