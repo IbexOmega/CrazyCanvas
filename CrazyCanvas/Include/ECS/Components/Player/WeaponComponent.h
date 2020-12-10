@@ -39,6 +39,7 @@ struct WeaponLocalComponent
 {
 	DECL_COMPONENT(WeaponLocalComponent);
 	glm::mat4 DefaultTransform;
+	LambdaEngine::Entity weaponEntity; // The real weapon
 };
 
 /*

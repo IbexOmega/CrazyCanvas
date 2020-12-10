@@ -1280,6 +1280,7 @@ bool LevelObjectCreator::CreatePlayer(
 				WeaponLocalComponent weaponLocalComponent = {};
 				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
 				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				weaponLocalComponent.weaponEntity = weaponEntity;
 				pECS->AddComponent<WeaponLocalComponent>(firstPersonWeaponEntity, weaponLocalComponent);
 				EntityMaskManager::AddExtensionToEntity(firstPersonWeaponEntity, WeaponLocalComponent::Type(), nullptr);
 
@@ -1318,13 +1319,14 @@ bool LevelObjectCreator::CreatePlayer(
 				WeaponLocalComponent weaponLocalComponent = {};
 				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID);
 				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				weaponLocalComponent.weaponEntity = weaponEntity;
 				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
 				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
 
 				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
 					{
 						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID,
-						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+						.MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL,
 					});
 
 				ParentComponent parentComponent =

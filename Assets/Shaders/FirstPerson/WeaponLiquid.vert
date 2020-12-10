@@ -29,16 +29,26 @@ layout(binding = 2, set = 2) restrict readonly buffer Meshlets {SMeshlet val[]; 
 layout(binding = 3, set = 2) restrict readonly buffer UniqueIndices {uint val[]; }		b_UniqueIndices; // Not used
 layout(binding = 4, set = 2) restrict readonly buffer PrimitiveIndices {uint val[]; }	b_PrimitiveIndices; // Not used
 
-layout(location = 0) out vec3 out_WorldPosition;
-layout(location = 1) out vec3 out_Normal;
-layout(location = 2) out vec3 out_Tangent;
-layout(location = 3) out vec3 out_Bitangent;
-layout(location = 4) out vec2 out_TexCoord;
-layout(location = 5) out vec4 out_ClipPosition;
-layout(location = 6) out vec4 out_PrevClipPosition;
-layout(location = 7) out flat uint out_InstanceIndex;
-layout(location = 8) out vec3 out_ViewDirection;
-layout(location = 9) out vec3 out_Position;
+layout(location = 0) out flat uint out_MaterialSlot;
+layout(location = 1) out vec3 out_WorldPosition;
+layout(location = 2) out vec3 out_Normal;
+layout(location = 3) out vec3 out_Tangent;
+layout(location = 4) out vec3 out_Bitangent;
+layout(location = 5) out vec2 out_TexCoord;
+layout(location = 6) out vec4 out_ClipPosition;
+layout(location = 7) out vec4 out_PrevClipPosition;
+layout(location = 8) out flat uint out_InstanceIndex;
+layout(location = 9) out vec3 out_ViewDirection;
+layout(location = 10) out vec3 out_Position;
+
+vec4 RotateAroundYInDegrees(vec4 vertex, float degrees)
+{
+	float alpha = degrees * 3.1415f / 180.f;
+	float sina = sin(alpha);
+	float cosa = cos(alpha);
+	mat2 m = mat2(cosa, sina, -sina, cosa);
+	return vec4(vertex.yz , m * vertex.xz).xzyw;				
+}
 
 void main()
 {
@@ -57,6 +67,7 @@ void main()
 	vec3 tangent			= normalize((normalTransform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
+	out_MaterialSlot 		= instance.MaterialSlot;
 	out_WorldPosition		= weaponData.PlayerPos;
 	out_Normal				= normal;
 	out_Tangent				= tangent;
@@ -67,9 +78,15 @@ void main()
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 
-    vec3 offset = vec3(0.f, 0.4f, 0.f);
-    vec3 size = vec3(0., 0.14715f, 0.);
-    out_Position.y = (position.y-offset.y) / size.y;
+	vec3 worldPos = position - vec3(0.f, 0.f, -0.139f);   
+	// rotate it around XY
+	vec3 worldPosX = RotateAroundYInDegrees(vec4(worldPos,0),360).xyz;
+	// rotate around XZ
+	vec3 worldPosZ = vec3(worldPosX.y, worldPosX.z, worldPosX.x);		
+	// combine rotations with worldPos, based on sine wave
+	vec3 worldPosAdjusted = worldPos + (worldPosX  * u_PC.WaveX) + (worldPosZ* u_PC.WaveZ);
+
+    out_Position.y = worldPosAdjusted.y;//position.y + (position.x - 0.239f)*u_PC.WaveX + position.z*u_PC.WaveZ;
 
 	gl_Position = out_ClipPosition;
 }
