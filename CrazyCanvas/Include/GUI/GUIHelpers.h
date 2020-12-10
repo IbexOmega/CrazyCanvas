@@ -45,7 +45,7 @@ FORCEINLINE void DisablePlaySessionsRenderstages()
 	rs.SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",				true);
 	rs.SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	true);
 	rs.SetRenderStageSleeping("DIRL_SHADOWMAP",						true);
-	rs.SetRenderStageSleeping("FXAA",								true);
+	rs.SetRenderStageSleeping("AA_RENDERER",						true);
 	rs.SetRenderStageSleeping("RENDER_STAGE_LIGHT",					true);
 	rs.SetRenderStageSleeping("RENDER_STAGE_PARTICLE_RENDER",		true);
 	rs.SetRenderStageSleeping("PARTICLE_COMBINE_PASS",				true);
@@ -77,7 +77,7 @@ FORCEINLINE void EnablePlaySessionsRenderstages()
 	rs.SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS",				false);
 	rs.SetRenderStageSleeping("DEFERRED_GEOMETRY_PASS_MESH_PAINT",	false);
 	rs.SetRenderStageSleeping("DIRL_SHADOWMAP",						false);
-	rs.SetRenderStageSleeping("FXAA",								false);
+	rs.SetRenderStageSleeping("AA_RENDERER",						false);
 	rs.SetRenderStageSleeping("RENDER_STAGE_LIGHT",					false);
 	rs.SetRenderStageSleeping("RENDER_STAGE_PARTICLE_RENDER",		false);
 	rs.SetRenderStageSleeping("PARTICLE_COMBINE_PASS",				false);
