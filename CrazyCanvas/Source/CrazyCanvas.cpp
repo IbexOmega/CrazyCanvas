@@ -27,6 +27,7 @@
 #include "Networking/API/NetworkUtils.h"
 
 #include "World/LevelManager.h"
+#include "World/SessionSettings.h"
 
 #include "Teams/TeamHelper.h"
 
@@ -134,6 +135,8 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Team Helper Init Failed");
 	}
 
+	SessionSettings::Init();
+
 	PacketType::Init();
 	PacketTranscoderSystem::GetInstance().Init();
 
@@ -199,6 +202,7 @@ CrazyCanvas::~CrazyCanvas()
 	m_MeshPaintHandler.Release();
 	ChatManager::Release();
 	PlayerManagerBase::Release();
+	SessionSettings::Release();
 	PacketType::Release();
 
 	if(!LambdaEngine::MultiplayerUtils::IsServer())
