@@ -4,8 +4,6 @@
 #include "ECS/EntitySubscriber.h"
 #include "Math/Math.h"
 
-#define GRAVITATIONAL_ACCELERATION 9.81f
-
 namespace LambdaEngine
 {
 	const glm::vec3 g_DefaultForward	= glm::vec3(0.0f, 0.0f, -1.0f);

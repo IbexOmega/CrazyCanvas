@@ -41,6 +41,7 @@ MainMenuGUI::MainMenuGUI()
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &MainMenuGUI::KeyboardCallback);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseButtonCallback);
+	EventQueue::RegisterEventHandler<MouseScrolledEvent>(this, &MainMenuGUI::MouseScrollCallback);
 
 	SetDefaultSettings();
 }
@@ -49,6 +50,7 @@ MainMenuGUI::~MainMenuGUI()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &MainMenuGUI::KeyboardCallback);
 	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &MainMenuGUI::MouseButtonCallback);
+	EventQueue::UnregisterEventHandler<MouseScrolledEvent>(this, &MainMenuGUI::MouseScrollCallback);
 }
 
 bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -594,6 +596,26 @@ bool MainMenuGUI::MouseButtonCallback(const MouseButtonClickedEvent& event)
 	if (m_ListenToCallbacks)
 	{
 		LambdaEngine::String mouseButtonStr = ButtonToString(event.Button);
+
+		m_pSetKeyButton->SetContent(mouseButtonStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = mouseButtonStr;
+
+		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
+
+		return true;
+	}
+
+	return false;
+}
+
+bool MainMenuGUI::MouseScrollCallback(const LambdaEngine::MouseScrolledEvent& event)
+{
+	if (m_ListenToCallbacks)
+	{
+		EMouseButton mouseButton = event.DeltaY > 0 ? EMouseButton::MOUSE_BUTTON_SCROLL_UP : EMouseButton::MOUSE_BUTTON_SCROLL_DOWN;
+
+		LambdaEngine::String mouseButtonStr = ButtonToString(mouseButton);
 
 		m_pSetKeyButton->SetContent(mouseButtonStr.c_str());
 		m_KeysToSet[m_pSetKeyButton->GetName()] = mouseButtonStr;

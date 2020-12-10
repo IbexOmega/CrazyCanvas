@@ -102,7 +102,6 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 
 void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag, float acceleration, float maxVelocity)
 {
-	constexpr const float OPPOSITE_ACC = 7.0f;
 	bool verticalMovement = deltaAction.y != 0;
 
 	if (isHoldingFlag)
@@ -125,15 +124,9 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 		rotationNoPitch.z = 0.0f;
 		rotationNoPitch = glm::normalize(rotationNoPitch);
 
-		dir = rotationNoPitch * glm::normalize(dir);
+		dir = glm::normalize(rotationNoPitch * dir);
 		float projVel = glm::dot(velocity, dir);
 		float accelVel = acceleration * dt;
-
-		// If going in opposite direction, apply a higher direction to allow turning
-		if (projVel < 0)
-		{
-			accelVel *= OPPOSITE_ACC;
-		}
 
 		if (projVel + accelVel > maxVelocity)
 		{
@@ -151,32 +144,23 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 
 void PlayerActionSystem::ComputeAirVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
 {
-	constexpr const float AIR_ACC = 4.0f;
-	constexpr const float MAX_VELOCITY_AIR = 6.f;
-
-	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, AIR_ACC, MAX_VELOCITY_AIR);
+	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, PLAYER_ACCELERATION_AIR, PLAYER_MAX_VELOCITY_AIR);
 }
 
 void PlayerActionSystem::ComputeGroundVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
 {
-	constexpr const float FRICTION = 15.f;
-	constexpr const float GROUND_ACC = 100.f;
-	constexpr const float MAX_VELOCITY_GROUND = 5.0f;
-
 	// Apply ground friction
 	float speed = glm::length(velocity);
 	if (speed > glm::epsilon<float>())
 	{
- 		float drop = speed * FRICTION * dt;
+ 		float drop = speed * PLAYER_FRICTION * dt;
 		velocity *= std::max(speed - drop, 0.f) / speed;
-
-		//LOG_WARNING("Velocity %f %f %f, Speed: %f, Drop: %f", velocity.x, velocity.y, velocity.z, speed, drop);
 
 		if (glm::length2(velocity) < glm::epsilon<float>())
 			velocity *= 0;
 	}
-
-	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, GROUND_ACC, MAX_VELOCITY_GROUND);
+	float maxVelocity = walking ? PLAYER_MAX_WALK_VELOCITY_GROUND : PLAYER_MAX_RUN_VELOCITY_GROUND;
+	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, PLAYER_ACCELERATION_GROUND, maxVelocity);
 }
 
 void PlayerActionSystem::SetMouseEnabled(bool isEnabled)
