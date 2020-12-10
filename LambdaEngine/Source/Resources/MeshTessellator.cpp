@@ -246,7 +246,6 @@ namespace LambdaEngine
 
 	void MeshTessellator::Tessellate(Mesh* pMesh)
 	{
-		return;
 		LOG_INFO("Tesselate...");
 
 		// Only tessellate on client

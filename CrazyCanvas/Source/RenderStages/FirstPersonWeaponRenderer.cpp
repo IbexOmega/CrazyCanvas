@@ -779,7 +779,7 @@ namespace LambdaEngine
 		if (m_PlayerEntity != MAXUINT32 && pPositionComponents->HasComponent(m_PlayerEntity)) {
 			SWeaponBuffer data = {};
 
-			data.Model = glm::translate(glm::vec3(0.0f, -0.375f, 0.1f));
+			data.Model = glm::translate(glm::vec3(0.0f, -0.385f, 0.1f));
 			data.Model = glm::scale(data.Model, glm::vec3(1.0f, 1.0f, 1.0f));
 			data.PlayerPos = pPositionComponents->GetConstData(m_PlayerEntity).Position;
 			data.PlayerRotation = glm::toMat4(pRotationComponents->GetConstData(m_PlayerEntity).Quaternion);
