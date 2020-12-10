@@ -90,7 +90,7 @@ namespace LambdaEngine
 			m_pThreadTransmitter->Wait();
 	}
 
-	bool NetWorker::StartThreads()
+	bool NetWorker::StartThreads(const String& name)
 	{
 		std::scoped_lock<SpinLock> lock(m_Lock);
 		if (!ThreadsAreRunning() && m_ThreadsTerminated)
@@ -101,11 +101,13 @@ namespace LambdaEngine
 			m_ThreadsTerminated = false;
 
 			m_pThreadTransmitter = Thread::Create(
+				name + "_TRANSMITER",
 				std::bind_front(&NetWorker::ThreadTransmitter, this),
 				std::bind_front(&NetWorker::ThreadTransmitterDeleted, this)
 			);
 
 			m_pThreadReceiver = Thread::Create(
+				name + "_RECEIVER",
 				std::bind_front(&NetWorker::ThreadReceiver, this),
 				std::bind_front(&NetWorker::ThreadReceiverDeleted, this)
 			);

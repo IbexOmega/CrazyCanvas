@@ -35,7 +35,7 @@ namespace LambdaEngine
 		virtual void OnTerminationRequested(const std::string& reason) = 0;
 		virtual void OnReleaseRequested(const std::string& reason) = 0;
 
-		bool StartThreads();
+		bool StartThreads(const String& name);
 		bool TerminateThreads(const std::string& reason);
 		bool ThreadsAreRunning() const;
 		bool ThreadsHasTerminated() const;
