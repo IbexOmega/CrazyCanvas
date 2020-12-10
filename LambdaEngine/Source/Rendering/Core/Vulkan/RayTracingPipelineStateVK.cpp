@@ -130,8 +130,10 @@ namespace LambdaEngine
 		const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
 
 		VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo = {};
-		rayTracingPipelineInfo.sType						= VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-		rayTracingPipelineInfo.flags						= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
+		rayTracingPipelineInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+		rayTracingPipelineInfo.flags = 
+			VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | 
+			VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
 		rayTracingPipelineInfo.stageCount					= static_cast<uint32>(shaderStagesInfos.GetSize());
 		rayTracingPipelineInfo.pStages						= shaderStagesInfos.GetData();
 		rayTracingPipelineInfo.groupCount					= static_cast<uint32>(shaderGroups.GetSize());
@@ -139,8 +141,12 @@ namespace LambdaEngine
 		rayTracingPipelineInfo.maxPipelineRayRecursionDepth = pDesc->MaxRecursionDepth;
 		rayTracingPipelineInfo.layout						= pPipelineLayoutVk->GetPipelineLayout();
 		rayTracingPipelineInfo.pLibraryInfo					= &rayTracingPipelineLibrariesInfo;
+		rayTracingPipelineInfo.basePipelineHandle			= VK_NULL_HANDLE;
+		rayTracingPipelineInfo.basePipelineIndex			= -1;
+		rayTracingPipelineInfo.pDynamicState				= nullptr;
+		rayTracingPipelineInfo.pLibraryInterface			= nullptr;
 
-		VkResult result = m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &m_Pipeline);
+		VkResult result = m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
 		{
 			if (!pDesc->DebugName.empty())

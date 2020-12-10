@@ -1202,7 +1202,7 @@ namespace LambdaEngine
 
 		VkPhysicalDeviceImagelessFramebufferFeatures supportedImagelessFramebufferFeatures = {};
 		supportedImagelessFramebufferFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
-		supportedImagelessFramebufferFeatures.pNext = &supportedRayQueryFeatures;
+		supportedImagelessFramebufferFeatures.pNext = nullptr;
 
 		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = { };
 		supportedMeshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
