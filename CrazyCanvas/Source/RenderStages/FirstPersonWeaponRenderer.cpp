@@ -28,6 +28,8 @@
 
 namespace LambdaEngine
 {
+	FirstPersonWeaponRenderer::SPushConstantDataFrag FirstPersonWeaponRenderer::s_LiquidPushConstantDataFrag;
+
 	FirstPersonWeaponRenderer* FirstPersonWeaponRenderer::s_pInstance = nullptr;
 
 	FirstPersonWeaponRenderer::FirstPersonWeaponRenderer()
@@ -143,7 +145,7 @@ namespace LambdaEngine
 			stagingBufferDesc.SizeInBytes = sizeof(FrameBuffer);
 	
 			m_FrameCopyBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-			succeded = m_FrameCopyBuffer != nullptr;
+			succeded = succeded && m_FrameCopyBuffer != nullptr;
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = "FirstPersonWeapon Renderer Data Buffer";
@@ -152,53 +154,8 @@ namespace LambdaEngine
 			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
 
 			m_FrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_FrameBuffer != nullptr;
+			succeded = succeded && m_FrameBuffer != nullptr;
 		}
-
-		//Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
-
-		//// Weapon Vertex Buffer
-		//{
-
-		//	BufferDesc stagingBufferDesc = {};
-		//	stagingBufferDesc.DebugName = "FirstPersonWeapon Renderer Vertex Copy Buffer";
-		//	stagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		//	stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		//	stagingBufferDesc.SizeInBytes = sizeof(Vertex) * pMesh->Vertices.GetSize();
-
-		//	m_VertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-		//	succeded = m_VertexStagingBuffer != nullptr;
-
-		//	BufferDesc bufferDesc = {};
-		//	bufferDesc.DebugName = "FirstPersonWeapon Vertex Data Buffer";
-		//	bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-		//	bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-		//	bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
-
-		//	m_VertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		//	succeded = m_VertexBuffer != nullptr;
-		//}
-
-		//// Weapon Index Buffer
-		//{
-		//	BufferDesc stagingBufferDesc = {};
-		//	stagingBufferDesc.DebugName = "FirstPersonWeapon Renderer Index Copy Buffer";
-		//	stagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-		//	stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-		//	stagingBufferDesc.SizeInBytes = sizeof(MeshIndexType) * pMesh->Indices.GetSize();
-
-		//	m_IndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-		//	succeded = m_IndexStagingBuffer != nullptr;
-
-		//	BufferDesc bufferDesc = {};
-		//	bufferDesc.DebugName = "FirstPersonWeapon Index Data Buffer";
-		//	bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-		//	bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-		//	bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
-
-		//	m_IndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-		//	succeded = m_IndexBuffer != nullptr;
-		//}
 
 		// Weapon Data Buffer
 		{
@@ -212,7 +169,7 @@ namespace LambdaEngine
 			for (uint32 b = 0; b < m_WeaponStagingBuffers.GetSize(); b++)
 			{
 				m_WeaponStagingBuffers[b] = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-				succeded = m_WeaponStagingBuffers[b] != nullptr;
+				succeded = succeded && m_WeaponStagingBuffers[b] != nullptr;
 			}
 
 			BufferDesc bufferDesc = {};
@@ -222,7 +179,7 @@ namespace LambdaEngine
 			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
 
 			m_WeaponBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_WeaponBuffer != nullptr;
+			succeded = succeded && m_WeaponBuffer != nullptr;
 		}
 
 		return succeded;
@@ -235,22 +192,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
 
-		/*{
-			// Hack to make the animation attatched component be used (Did not work..., dirty bool was reset before applying transform)
-			PositionComponent pcomp = {};
-			ECSCore::GetInstance()->GetComponentIf<PositionComponent>(m_LiquidEntity, pcomp);
-			RotationComponent rcomp = {};
-			ECSCore::GetInstance()->GetComponentIf<RotationComponent>(m_LiquidEntity, rcomp);
-			ScaleComponent scomp = {};
-			ECSCore::GetInstance()->GetComponentIf<ScaleComponent>(m_LiquidEntity, scomp);
-		}
-
-		{
-			PositionComponent pcomp = {};
-			ECSCore::GetInstance()->GetComponentIf<PositionComponent>(m_LiquidEntity, pcomp);
-			LOG_WARNING("Is pos dirty: %s", pcomp.Dirty ? "True" : "False");
-		}*/
-
 		// Fetch data from the player
 		{
 			ECSCore* pECSCore = ECSCore::GetInstance();
@@ -258,7 +199,7 @@ namespace LambdaEngine
 			{
 				// Fetch the team index, which is used for coloring the liquid to the same color as the paint.
 				const TeamComponent& teamComponent = pECSCore->GetConstComponent<TeamComponent>(m_PlayerEntity);
-				m_LiquidPushConstantData.TeamIndex = teamComponent.TeamIndex;
+				s_LiquidPushConstantDataFrag.TeamIndex = teamComponent.TeamIndex;
 
 				float dt = (float)delta.AsSeconds();
 
@@ -269,15 +210,15 @@ namespace LambdaEngine
 				static float s_Recovery = 1.f;
 				static float s_WaveAddX = 0.f;
 				static float s_WaveAddZ = 0.f;
-				static float s_MaxWave = 0.03f;
+				static float s_MaxWave = 0.003f;
 
 				// Soften the wave over time.
 				s_WaveAddX = glm::mix(s_WaveAddX, 0.f, dt * s_Recovery);
 				s_WaveAddZ = glm::mix(s_WaveAddZ, 0.f, dt * s_Recovery);
 
 				float pulse = dt * 2.f * glm::pi<float>();
-				m_LiquidPushConstantData.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
-				m_LiquidPushConstantData.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
+				m_LiquidPushConstantDataVert.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
+				m_LiquidPushConstantDataVert.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
 
 				// Fetch the player position and rotation to be able to calculate its velocity and angular velocity.
 				static glm::vec3 s_PreviousPosition = glm::vec3(0.f);
@@ -326,6 +267,27 @@ namespace LambdaEngine
 			}
 
 			m_InitilizedWeaponBuffer = true;
+		}
+
+		// Update ammo
+		if(m_WeaponEntity != UINT32_MAX)
+		{
+			WeaponComponent weaponComponent = {};
+			bool succeded = ECSCore::GetInstance()->GetConstComponentIf<WeaponComponent>(m_WeaponEntity, weaponComponent);
+			if (succeded)
+			{
+				auto itWater = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+				if (itWater != weaponComponent.WeaponTypeAmmo.end())
+				{
+					s_LiquidPushConstantDataFrag.WaterLevel = (float)itWater->second.first / (float)itWater->second.second;
+				}
+
+				auto itPaint = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+				if (itPaint != weaponComponent.WeaponTypeAmmo.end())
+				{
+					s_LiquidPushConstantDataFrag.PaintLevel = (float)itPaint->second.first / (float)itPaint->second.second;
+				}
+			}
 		}
 	}
 
@@ -392,6 +354,54 @@ namespace LambdaEngine
 			else
 			{
 				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] SCENE_COMBINED_MATERIAL_MAPS", setIndex);
+			}
+		}
+		else if (resourceName == "GLOBAL_SPECULAR_PROBE")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 4;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] GLOBAL_SPECULAR_PROBE", setIndex);
+			}
+		}
+		else if (resourceName == "GLOBAL_DIFFUSE_PROBE")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 5;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] GLOBAL_DIFFUSE_PROBE", setIndex);
+			}
+		}
+		else if (resourceName == "INTEGRATION_LUT")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 6;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] INTEGRATION_LUT", setIndex);
 			}
 		}
 	}
@@ -489,8 +499,6 @@ namespace LambdaEngine
 				const ComponentArray<WeaponLiquidComponent>* pWeaponLiquidComponents = pECSCore->GetComponentArray<WeaponLiquidComponent>();
 				const ComponentArray<WeaponArmsComponent>* pArmsComponents = pECSCore->GetComponentArray<WeaponArmsComponent>();
 				const ComponentArray<WeaponLocalComponent>* pWeaponLocalComponents = pECSCore->GetComponentArray<WeaponLocalComponent>();
-				//const ComponentArray<AnimationComponent>* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
-				//const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 				const ComponentArray<ParentComponent>* pParentComponents = pECSCore->GetComponentArray<ParentComponent>();
 
 				for (uint32 d = 0; d < m_DrawCount; d++)
@@ -512,6 +520,8 @@ namespace LambdaEngine
 										m_LiquidWaterDrawArgsDescriptorSet = m_pDrawArgs[d].pDescriptorSet;
 										m_LiquidWaterEntity = entity;
 										m_LiquidWaterIndex = d;
+
+										m_WeaponEntity = pWeaponLocalComponents->GetConstData(entity).weaponEntity;
 									}
 									else
 									{
@@ -522,9 +532,6 @@ namespace LambdaEngine
 								}
 								else
 								{
-									//if (pAnimationComponents->HasComponent(entity))
-									//	LOG_INFO("ALL GOOD IN THE HOOD");
-
 									if (pArmsComponents->HasComponent(entity))
 									{
 										if (pParentComponents->HasComponent(entity))
@@ -658,6 +665,16 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
+	void FirstPersonWeaponRenderer::SetWaterLevel(float waterLevel)
+	{
+		s_LiquidPushConstantDataFrag.WaterLevel = waterLevel;
+	}
+
+	void FirstPersonWeaponRenderer::SetPaintLevel(float waterLevel)
+	{
+		s_LiquidPushConstantDataFrag.PaintLevel = waterLevel;
+	}
+
 	void FirstPersonWeaponRenderer::RenderCull(bool applyDefaultTransform, uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId)
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
@@ -683,12 +700,13 @@ namespace LambdaEngine
 		
 		const DrawArg& drawArg = m_pDrawArgs[isWater ? m_LiquidWaterIndex : m_LiquidPaintIndex];
 		Entity entity = drawArg.EntityIDs[0];
-		m_LiquidPushConstantData.DefaultTransform = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform;
+		WeaponLocalComponent localWeaponComponent = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity);
+		m_LiquidPushConstantDataVert.DefaultTransform = localWeaponComponent.DefaultTransform;
 
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData)-sizeof(uint32), 0);
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantDataVert, PC_VERTEX_SIZE, 0);
 
-		uint32 data[2] = { m_LiquidPushConstantData.TeamIndex, isWater ? 1U : 0U};
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)data, sizeof(uint32)*2, 72);
+		s_LiquidPushConstantDataFrag.IsWater = (uint32)isWater;
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)&s_LiquidPushConstantDataFrag, PC_FRAGMENT_SIZE, PC_VERTEX_SIZE);
 
 		// Draw Weapon liquid
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
@@ -717,27 +735,6 @@ namespace LambdaEngine
 
 	bool FirstPersonWeaponRenderer::PrepareResources(CommandList* pCommandList)
 	{
-		//Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
-
-		//// Copy vertices
-		//const TArray<Vertex>& vertices = pMesh->Vertices;
-		//const uint32 verticesSize = sizeof(Vertex) * vertices.GetSize();
-
-		//byte* pMapping = reinterpret_cast<byte*>(m_VertexStagingBuffer->Map());
-		//memcpy(pMapping, vertices.GetData(), verticesSize);
-		//m_VertexStagingBuffer->Unmap();
-		//pCommandList->CopyBuffer(m_VertexStagingBuffer.Get(), 0, m_VertexBuffer.Get(), 0, verticesSize);
-	
-		//// Copy indices
-		//const TArray<MeshIndexType>& indices = pMesh->Indices;
-		//m_IndicesCount = indices.GetSize();
-		//const uint32 indicesSize = sizeof(MeshIndexType) * m_IndicesCount;
-
-		//pMapping = reinterpret_cast<byte*>(m_IndexStagingBuffer->Map());
-		//memcpy(pMapping, indices.GetData(), indicesSize);
-		//m_IndexStagingBuffer->Unmap();
-		//pCommandList->CopyBuffer(m_IndexStagingBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indicesSize);
-
 		// Copy Per FrameBuffer
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		float32 windowWidth = float32(window->GetWidth());
@@ -870,13 +867,35 @@ namespace LambdaEngine
 		depthStencilDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		depthStencilDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
+		// u_GlobalSpecularProbe
+		DescriptorBindingDesc globalSpecularProbeDesc = {};
+		globalSpecularProbeDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		globalSpecularProbeDesc.DescriptorCount = 1;
+		globalSpecularProbeDesc.Binding = 4;
+		globalSpecularProbeDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_GlobalDiffuseProbe
+		DescriptorBindingDesc globalDiffuseProbeDesc = {};
+		globalDiffuseProbeDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		globalDiffuseProbeDesc.DescriptorCount = 1;
+		globalDiffuseProbeDesc.Binding = 5;
+		globalDiffuseProbeDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_IntegrationLUT
+		DescriptorBindingDesc integrationLUTDesc = {};
+		integrationLUTDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		integrationLUTDesc.DescriptorCount = 1;
+		integrationLUTDesc.Binding = 6;
+		integrationLUTDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
 		// maps to SET = 0 (BUFFER_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
 		descriptorSetLayoutDesc0.DescriptorBindings = { frameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc, weaponDataDesc };
 
 		// maps to SET = 1 (TEXTURE_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc };
+		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc, 
+			globalSpecularProbeDesc, globalDiffuseProbeDesc, integrationLUTDesc };
 
 		// maps to SET = 2 (DRAW_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
@@ -966,13 +985,35 @@ namespace LambdaEngine
 		depthStencilDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		depthStencilDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
+		// u_GlobalSpecularProbe
+		DescriptorBindingDesc globalSpecularProbeDesc = {};
+		globalSpecularProbeDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		globalSpecularProbeDesc.DescriptorCount = 1;
+		globalSpecularProbeDesc.Binding = 4;
+		globalSpecularProbeDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_GlobalDiffuseProbe
+		DescriptorBindingDesc globalDiffuseProbeDesc = {};
+		globalDiffuseProbeDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		globalDiffuseProbeDesc.DescriptorCount = 1;
+		globalDiffuseProbeDesc.Binding = 5;
+		globalDiffuseProbeDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_IntegrationLUT
+		DescriptorBindingDesc integrationLUTDesc = {};
+		integrationLUTDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		integrationLUTDesc.DescriptorCount = 1;
+		integrationLUTDesc.Binding = 6;
+		integrationLUTDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
 		// maps to SET = 0 (BUFFER_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
 		descriptorSetLayoutDesc0.DescriptorBindings = { frameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc, weaponDataDesc };
 
 		// maps to SET = 1 (TEXTURE_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc };
+		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc,
+			globalSpecularProbeDesc, globalDiffuseProbeDesc, integrationLUTDesc };
 
 		// Set 2
 		DescriptorSetLayoutDesc drawArgDescriptorSetLayoutDesc = {};
@@ -1021,12 +1062,12 @@ namespace LambdaEngine
 		ConstantRangeDesc constantRangeDesc = {};
 		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
 		constantRangeDesc.OffsetInBytes = 0;
-		constantRangeDesc.SizeInBytes = sizeof(SPushConstantData)-sizeof(uint32);
+		constantRangeDesc.SizeInBytes = sizeof(glm::mat4)+sizeof(uint32)*2;
 
 		ConstantRangeDesc constantRangeDesc2 = {};
 		constantRangeDesc2.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		constantRangeDesc2.OffsetInBytes = constantRangeDesc.SizeInBytes;
-		constantRangeDesc2.SizeInBytes = sizeof(uint32)*2;
+		constantRangeDesc2.SizeInBytes = sizeof(uint32)*4;
 
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout liquid";
