@@ -127,7 +127,7 @@ void PlaySessionState::Init()
 			}
 
 			PipelineStateRecompileEvent recompileEvent = {};
-			EventQueue::SendEventImmediate(recompileEvent);
+			EventQueue::SendEvent(recompileEvent);
 			});
 	}
 
