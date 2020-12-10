@@ -134,7 +134,8 @@ namespace LambdaEngine {
 		// end
 
 		// Weapon liquid variables
-		DescriptorSet*							m_LiquidDrawArgsDescriptorSet;
+		DescriptorSet*							m_LiquidWaterDrawArgsDescriptorSet;
+		DescriptorSet*							m_LiquidPaintDrawArgsDescriptorSet;
 		uint64									m_PipelineStateIDNoCull = 0;
 		TSharedRef<PipelineLayout>				m_LiquidPipelineLayout = nullptr;
 		GUID_Lambda								m_LiquidVertexShaderGUID = 0;

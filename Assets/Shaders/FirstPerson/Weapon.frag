@@ -65,30 +65,12 @@ void main()
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	uint packedPaintInfo = 0;
-	float dist = 1.f;
-	GetVec4ToPackedPaintInfoAndDistance(in_LocalPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_LocalPosition, tangent, bitangent, packedPaintInfo, dist);
-
-	vec3 paintNormal =  normalize(paintDescription.Normal + shadingNormal * 0.2f);
-
-	shadingNormal = mix(shadingNormal, paintNormal, paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
-	float shouldPaint = float(step(1, packedPaintInfo));
-	bool isPainted = (shouldPaint > 0.5f) && (paintDescription.Interpolation > 0.001f);
-
-	// Darken back faces like inside of painted legs
-	float backSide = 1.0f - step(0.0f, dot(in_ViewDirection, shadingNormal));
-	paintDescription.Albedo = mix(paintDescription.Albedo, paintDescription.Albedo*0.8, backSide);
-
 	// Get weapon albedo
 	vec3 storedAlbedo = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-
-	// Apply paint
-	storedAlbedo = mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
 
 	// PBR
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
@@ -96,8 +78,8 @@ void main()
 
 	vec3 storedMaterial	= vec3(
 								materialParameters.AO * sampledCombinedMaterial.b, 
-								mix(materialParameters.Roughness * sampledCombinedMaterial.r, paintDescription.Roughness, paintDescription.Interpolation), 
-								materialParameters.Metallic * sampledCombinedMaterial.g * float(paintDescription.Interpolation == 0.0f));
+								materialParameters.Roughness * sampledCombinedMaterial.r, 
+								materialParameters.Metallic * sampledCombinedMaterial.g);
 	vec4 aoRoughMetalValid	= vec4(storedMaterial, 1.0f);
 	
 	float ao		= aoRoughMetalValid.r;

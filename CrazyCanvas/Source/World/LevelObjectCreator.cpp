@@ -1304,13 +1304,54 @@ bool LevelObjectCreator::CreatePlayer(
 					});
 			}
 
+			// Liquid water
 			{
 				auto weaponLiquidEntity = pECS->CreateEntity();
 				pECS->AddComponent<PositionComponent>(weaponLiquidEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
 				pECS->AddComponent<RotationComponent>(weaponLiquidEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
 				pECS->AddComponent<ScaleComponent>(weaponLiquidEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
 
-				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, WeaponLiquidComponent());
+				WeaponLiquidComponent weaponLiquidComponent = {};
+				weaponLiquidComponent.isWater = true;
+				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, weaponLiquidComponent);
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
+				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+					});
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonHandsEntity,
+					.Attached = true,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(weaponLiquidEntity, parentComponent);
+
+				pECS->AddComponent<AnimationAttachedComponent>(weaponLiquidEntity, AnimationAttachedComponent
+					{
+						.JointName = "Gun",
+						.Transform = glm::mat4(1.0f),
+					});
+			}
+
+			// Liquid paint
+			{
+				auto weaponLiquidEntity = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(weaponLiquidEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(weaponLiquidEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(weaponLiquidEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				WeaponLiquidComponent weaponLiquidComponent = {};
+				weaponLiquidComponent.isWater = false;
+				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, weaponLiquidComponent);
 
 				WeaponLocalComponent weaponLocalComponent = {};
 				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_MESH_GUID);

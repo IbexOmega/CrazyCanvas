@@ -47,6 +47,7 @@ struct WeaponLocalComponent
 struct WeaponLiquidComponent
 {
 	DECL_COMPONENT(WeaponLiquidComponent);
+	bool isWater = false;
 };
 
 /*

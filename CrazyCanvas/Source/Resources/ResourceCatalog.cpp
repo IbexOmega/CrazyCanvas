@@ -76,7 +76,8 @@ bool ResourceCatalog::Init()
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/FirstPersonGun.glb", WEAPON_FIRST_PERSON_MESH_GUID, WEAPON_FIRST_PERSON_MATERIAL_GUID);
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/ArmsIdleAnimation.glb", ARMS_FIRST_PERSON_MESH_GUID, ARMS_FIRST_PERSON_MATERIAL_GUID);
 
-		ResourceManager::LoadMeshFromFile("Gun/WeaponLiquid.glb", WEAPON_FIRST_PERSON_LIQUID_MESH_GUID);
+		ResourceManager::LoadMeshFromFile("Gun/WeaponLiquidWater.glb", WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID);
+		ResourceManager::LoadMeshFromFile("Gun/WeaponLiquidPaint.glb", WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID);
 	}
 
 	// General Sound Effects
