@@ -54,8 +54,10 @@ void main()
 
 	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
 	float isContainer = (1.f-step(0.5f, texCoord.x)) * (1.f-step(0.5f, texCoord.y));
-	out_Color = vec4(sampledAlbedo, 0.6f*isContainer + (1.f-isContainer));
-	return;
+	//out_Color = vec4(sampledAlbedo, 0.6f*isContainer + (1.f-isContainer));
+
+	float alpha = 0.6f*isContainer + (1.f-isContainer);
+	//return;
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 
@@ -184,5 +186,5 @@ void main()
 	// Transparent team players
 	//float alpha = isPainted ? 1.0f : 0.65f;
 	
-	out_Color = vec4(finalColor, 1.0f);
+	out_Color = vec4(finalColor, alpha);
 }

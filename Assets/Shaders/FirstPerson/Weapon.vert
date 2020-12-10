@@ -9,7 +9,6 @@
 struct SWeaponData
 {
 	mat4 Model;
-	mat4 DefaultTransform;
 	vec3 PlayerPos;
 };
 
@@ -51,7 +50,6 @@ void main()
 	vec3 position 			= vertex.Position.xyz;
 	vec4 worldPosition		= weaponData.Model * instance.Transform * u_PC.DefaultTransform * vec4(position, 1.0f);
 	vec4 prevWorldPosition	= instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
-
 
 	vec3 normal				= normalize((normalTransform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
 	vec3 tangent			= normalize((normalTransform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);

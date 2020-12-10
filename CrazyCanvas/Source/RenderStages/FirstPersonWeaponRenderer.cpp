@@ -634,11 +634,11 @@ namespace LambdaEngine
 
 			if (m_DrawCount > 0)
 			{
-				RenderCull(m_ArmsIndex, pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(false, m_ArmsIndex, pCommandList, m_PipelineStateIDBackCull);
 				RenderLiquid(pCommandList);
 
-				RenderCull(m_WeaponIndex, pCommandList, m_PipelineStateIDFrontCull);
-				RenderCull(m_WeaponIndex, pCommandList, m_PipelineStateIDBackCull);
+				RenderCull(true, m_WeaponIndex, pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(true, m_WeaponIndex, pCommandList, m_PipelineStateIDBackCull);
 			}
 		}
 
@@ -647,7 +647,7 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void FirstPersonWeaponRenderer::RenderCull(uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId)
+	void FirstPersonWeaponRenderer::RenderCull(bool applyDefaultTransform, uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId)
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
@@ -655,7 +655,7 @@ namespace LambdaEngine
 
 		const DrawArg& drawArg = m_pDrawArgs[drawArgIndex];
 		Entity entity = drawArg.EntityIDs[0];
-		glm::mat4 deafultTransform = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform;
+		glm::mat4 deafultTransform = applyDefaultTransform ? ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform : glm::mat4(1.f);
 		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&deafultTransform, sizeof(glm::mat4), 0);
 
 		// Draw Weapon
@@ -674,7 +674,7 @@ namespace LambdaEngine
 		Entity entity = drawArg.EntityIDs[0];
 		m_LiquidPushConstantData.DefaultTransform = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform;
 
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData), 0);
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_ALL, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData), 0);
 
 		// Draw Weapon liquid
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
@@ -1005,7 +1005,7 @@ namespace LambdaEngine
 		}
 
 		ConstantRangeDesc constantRangeDesc = {};
-		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
 		constantRangeDesc.OffsetInBytes = 0;
 		constantRangeDesc.SizeInBytes = sizeof(SPushConstantData);
 

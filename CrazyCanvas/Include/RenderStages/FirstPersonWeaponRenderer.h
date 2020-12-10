@@ -82,7 +82,7 @@ namespace LambdaEngine {
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc);
 		bool CreatePipelineState();
 		bool CreateBuffers();
-		void RenderCull(uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId);
+		void RenderCull(bool applyDefaultTransform, uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId);
 		void RenderLiquid(CommandList* pCommandList);
 
 		void UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex);
