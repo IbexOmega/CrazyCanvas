@@ -58,6 +58,7 @@ namespace LambdaEngine
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 		m_UsingMeshShader = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
+		m_Entity = MAXUINT32;
 
 		if (!CreateBuffers())
 		{
@@ -487,10 +488,9 @@ namespace LambdaEngine
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
 				const ComponentArray<WeaponLiquidComponent>* pWeaponLiquidComponents = pECSCore->GetComponentArray<WeaponLiquidComponent>();
-				const ComponentArray<WeaponArmsComponent>* pArmsComponents = pECSCore->GetComponentArray<WeaponArmsComponent>();
 				const ComponentArray<WeaponLocalComponent>* pWeaponLocalComponents = pECSCore->GetComponentArray<WeaponLocalComponent>();
-				//const ComponentArray<AnimationComponent>* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
-				//const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
+				const ComponentArray<AnimationComponent>* pAnimationComponents = pECSCore->GetComponentArray<AnimationComponent>();
+				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
 				const ComponentArray<ParentComponent>* pParentComponents = pECSCore->GetComponentArray<ParentComponent>();
 
 				for (uint32 d = 0; d < m_DrawCount; d++)
@@ -512,23 +512,20 @@ namespace LambdaEngine
 								}
 								else
 								{
-									//if (pAnimationComponents->HasComponent(entity))
-									//	LOG_INFO("ALL GOOD IN THE HOOD");
+									if (pAnimationComponents->HasComponent(entity))
+										LOG_INFO("ALL GOOD IN THE HOOD");
 
-									if (pArmsComponents->HasComponent(entity))
+									if (pParentComponents->HasComponent(entity))
 									{
-										if (pParentComponents->HasComponent(entity))
-										{
-											m_PlayerEntity = pParentComponents->GetConstData(entity).Parent;
-										}
-										m_ArmsIndex = d;
+										m_PlayerEntity = pParentComponents->GetConstData(entity).Parent;
 									}
-									else
-									{
-										m_WeaponIndex = d;
-									}
+
+									m_Entity = entity;
+									m_WeaponIndex = d;
+									m_WorldPos = pPositionComponents->GetConstData(entity).Position;
 
 									// Set Vertex and Instance buffer for rendering
+									//Buffer* ppBuffers[2] = { m_VertexBuffer.Get(), m_pDrawArgs[d].pInstanceBuffer };
 									Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
 									uint64 pOffsets[2] = { 0, 0 };
 									uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
@@ -634,11 +631,10 @@ namespace LambdaEngine
 
 			if (m_DrawCount > 0)
 			{
-				RenderCull(m_ArmsIndex, pCommandList, m_PipelineStateIDFrontCull);
 				RenderLiquid(pCommandList);
 
-				RenderCull(m_WeaponIndex, pCommandList, m_PipelineStateIDFrontCull);
-				RenderCull(m_WeaponIndex, pCommandList, m_PipelineStateIDBackCull);
+				RenderCull(pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(pCommandList, m_PipelineStateIDBackCull);
 			}
 		}
 
@@ -647,20 +643,16 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void FirstPersonWeaponRenderer::RenderCull(uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId)
+	void FirstPersonWeaponRenderer::RenderCull(CommandList* pCommandList, uint64& pipelineId)
 	{
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
 
-		const DrawArg& drawArg = m_pDrawArgs[drawArgIndex];
-		Entity entity = drawArg.EntityIDs[0];
-		glm::mat4 deafultTransform = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform;
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&deafultTransform, sizeof(glm::mat4), 0);
-
 		// Draw Weapon
+		const DrawArg& drawArg = m_pDrawArgs[m_WeaponIndex];
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[drawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[m_WeaponIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
 		pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
 	}
 
@@ -669,14 +661,11 @@ namespace LambdaEngine
 		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateIDNoCull));
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_LiquidPipelineLayout.Get(), 0); // BUFFER_SET_INDEX
 		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_LiquidPipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
-		
-		const DrawArg& drawArg = m_pDrawArgs[m_LiquidIndex];
-		Entity entity = drawArg.EntityIDs[0];
-		m_LiquidPushConstantData.DefaultTransform = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform;
 
 		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData), 0);
 
 		// Draw Weapon liquid
+		const DrawArg& drawArg = m_pDrawArgs[m_LiquidIndex];
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
 		pCommandList->BindDescriptorSetGraphics(m_LiquidDrawArgsDescriptorSet, m_LiquidPipelineLayout.Get(), 2); // Draw arg data
 		pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
@@ -868,15 +857,10 @@ namespace LambdaEngine
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
 		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, meshletBindingDesc, uniqueIndicesDesc, primitiveIndicesDesc };
 
-		ConstantRangeDesc constantRangeDesc = {};
-		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
-		constantRangeDesc.OffsetInBytes = 0;
-		constantRangeDesc.SizeInBytes = sizeof(glm::mat4);
-
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
-		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
+		pipelineLayoutDesc.ConstantRanges = { };
 
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 

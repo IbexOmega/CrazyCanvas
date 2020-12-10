@@ -66,7 +66,6 @@ namespace LambdaEngine {
 	private:
 		struct SPushConstantData
 		{
-			glm::mat4 DefaultTransform;
 			uint32 TeamIndex = 0;
 			float WaveX = 0.0f;
 			float WaveZ = 0.0f;
@@ -82,7 +81,7 @@ namespace LambdaEngine {
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc);
 		bool CreatePipelineState();
 		bool CreateBuffers();
-		void RenderCull(uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId);
+		void RenderCull(CommandList* pCommandList, uint64& pipelineId);
 		void RenderLiquid(CommandList* pCommandList);
 
 		void UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex);
@@ -109,6 +108,8 @@ namespace LambdaEngine {
 		TSharedRef<Buffer>						m_FrameCopyBuffer = nullptr;
 		TSharedRef<Buffer>						m_FrameBuffer = nullptr;
 		// First Person Weapon Vertex and Index Buffer
+		Entity									m_Entity;
+		glm::vec3								m_WorldPos = glm::vec3(0);
 		TSharedRef<Buffer>						m_VertexBuffer = nullptr;
 		TSharedRef<Buffer>						m_VertexStagingBuffer = nullptr;
 
@@ -145,9 +146,8 @@ namespace LambdaEngine {
 		// Player variables
 		Entity									m_PlayerEntity = UINT32_MAX;
 
-		uint32									m_WeaponIndex	= 0;
-		uint32									m_LiquidIndex	= 0;
-		uint32									m_ArmsIndex		= 0;
+		uint32									m_WeaponIndex = 0;
+		uint32									m_LiquidIndex = 0;
 
 		DescriptorCache							m_DescriptorCache;
 		uint32									m_BackBufferCount = 0;

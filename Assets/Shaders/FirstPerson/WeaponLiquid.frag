@@ -13,7 +13,6 @@ layout(binding = 2, set = BUFFER_SET_INDEX) readonly buffer PaintMaskColors		{ v
 // Pushconstants
 layout(push_constant) uniform PushConstants
 {
-	mat4 DefaultTransform;
 	uint TeamIndex;
     float WaveX;
     float WaveZ;
@@ -66,7 +65,7 @@ void main()
     const float minTexCoord = midTexCoord-distTexCoord;
     const float maxTexCoord = midTexCoord+distTexCoord;
     float filling = 1.f-in_Position.y;//(clamp(texCoord.y, minTexCoord, maxTexCoord)-minTexCoord)/(maxTexCoord-minTexCoord);
-    float isLiquid = 1.f;//step(1.f-limit, filling);
+    float isLiquid = step(1.f-limit, filling);
     
     // Remove the pixels which are not part of the liquid.
     if(isLiquid < 0.5f)

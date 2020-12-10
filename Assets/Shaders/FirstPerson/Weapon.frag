@@ -45,6 +45,7 @@ layout(location = 0) out vec4 out_Color;
 
 void main()
 {
+
 	vec3 normal		= normalize(in_Normal);
 	vec3 tangent	= normalize(in_Tangent);
 	vec3 bitangent	= normalize(in_Bitangent);
