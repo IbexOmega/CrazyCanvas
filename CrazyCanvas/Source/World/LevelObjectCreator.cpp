@@ -1238,6 +1238,13 @@ bool LevelObjectCreator::CreatePlayer(
 
 			auto firstPersonHandsEntity = pECS->CreateEntity();
 			{
+				StepParentComponent stepParentComponent =
+				{
+					.Owner = firstPersonHandsEntity,
+				};
+
+				pECS->AddComponent<StepParentComponent>(weaponEntity, { .Owner = firstPersonHandsEntity });
+
 				pECS->AddComponent<PositionComponent>(firstPersonHandsEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
 				pECS->AddComponent<RotationComponent>(firstPersonHandsEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
 				pECS->AddComponent<ScaleComponent>(firstPersonHandsEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
@@ -1257,18 +1264,45 @@ bool LevelObjectCreator::CreatePlayer(
 
 				AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
 				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[1]));
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Shooting", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[2]));
+
+
+				{
+					AnimationState* pAnimationState = DBG_NEW AnimationState("Idle & Shooting");
+					ClipNode* pIdle = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[1]);
+					ClipNode* pShooting = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[2], 1.5f, true);
+
+					pShooting->AddTrigger(ClipTrigger(1.0f, [](const ClipNode& clip, AnimationGraph& graph)
+						{
+							UNREFERENCED_VARIABLE(clip);
+							graph.TransitionToState("Idle");
+						}));
+						
+					BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pIdle, pShooting, BlendInfo(0.5f));
+					pAnimationState->SetOutputNode(pBlendNode);
+					pAnimationGraphWeapon->AddState(pAnimationState);
+				}
+
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Shooting", "Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Shooting", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle & Shooting", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Idle & Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle & Shooting", "Idle & Shooting"));
 				pAnimationGraphWeapon->TransitionToState("Idle");
+
 				animationComponentWeapon.pGraph = pAnimationGraphWeapon;
 
 				pECS->AddComponent<AnimationComponent>(firstPersonHandsEntity, animationComponentWeapon);
 
-				ParentComponent parentComponent =
+				ParentComponent parentComp =
 				{
 					.Parent = playerEntity,
 					.Attached = false,
 					.DeleteParentOnRemoval = false
 				};
-				pECS->AddComponent<ParentComponent>(firstPersonHandsEntity, parentComponent);
+				pECS->AddComponent<ParentComponent>(firstPersonHandsEntity, parentComp);
 			}
 
 			auto firstPersonWeaponEntity = pECS->CreateEntity();

@@ -687,7 +687,7 @@ namespace LambdaEngine
 
 		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantData, sizeof(SPushConstantData)-sizeof(uint32), 0);
 
-		uint32 data[2] = { m_LiquidPushConstantData.TeamIndex, isWater ? 1 : 0};
+		uint32 data[2] = { m_LiquidPushConstantData.TeamIndex, isWater ? 1U : 0U};
 		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)data, sizeof(uint32)*2, 72);
 
 		// Draw Weapon liquid
