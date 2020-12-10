@@ -488,7 +488,7 @@ namespace LambdaEngine
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount					= 0;
 		descriptorCountDesc.TextureDescriptorCount					= 0;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount	= 32;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount	= 64;
 		descriptorCountDesc.ConstantBufferDescriptorCount			= 0;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount	= 0;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount	= 16;

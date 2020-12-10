@@ -177,9 +177,10 @@ bool LevelObjectCreator::Init()
 
 	//Register Create Special Object by Type Functions
 	{
-		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]		= &LevelObjectCreator::CreateFlag;
-		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]		= &LevelObjectCreator::CreatePlayer;
-		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]	= &LevelObjectCreator::CreateProjectile;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG]				= &LevelObjectCreator::CreateFlag;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER]				= &LevelObjectCreator::CreatePlayer;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPECTATOR]	= &LevelObjectCreator::CreatePlayerSpectator;
+		s_LevelObjectByTypeCreateFunctions[ELevelObjectType::LEVEL_OBJECT_TYPE_PROJECTILE]			= &LevelObjectCreator::CreateProjectile;
 	}
 
 	return true;
@@ -1355,6 +1356,56 @@ bool LevelObjectCreator::CreatePlayer(
 	LOG_DEBUG("Created Weapon with EntityID %d and NetworkID %d", weaponEntity, weaponNetworkUID);
 
 	return true;
+}
+
+bool LevelObjectCreator::CreatePlayerSpectator(const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities)
+{
+	using namespace LambdaEngine;
+
+	const CameraDesc* cameraDesc = reinterpret_cast<const CameraDesc*>(pData);
+
+	ECSCore* pECS = ECSCore::GetInstance();
+
+	const glm::vec3 position(0.0f, 1.0f, 0.0f);
+	const glm::vec3 forward(1.0f, 0.0f, 0.0f);
+	const glm::quat lookDirQuat = glm::quatLookAt(forward, g_DefaultUp);
+
+	Entity cameraEntity = pECS->CreateEntity();
+
+	CameraComponent cameraComp = {};
+	cameraComp.NearPlane = cameraDesc->NearPlane;
+	cameraComp.FarPlane = cameraDesc->FarPlane;
+	cameraComp.FOV = cameraDesc->FOVDegrees;
+	cameraComp.IsActive = true;
+
+	pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
+
+	pECS->AddComponent<FreeCameraComponent>(cameraEntity, { 3.0f, 0.15f });
+
+	const ViewProjectionMatricesComponent viewProjComp =
+	{
+		.Projection = glm::perspective(
+			glm::radians(cameraDesc->FOVDegrees),
+			cameraDesc->Width / cameraDesc->Height,
+			cameraDesc->NearPlane,
+			cameraDesc->FarPlane),
+
+		.View = glm::lookAt(
+			position,
+			position + forward,
+			g_DefaultUp)
+	};
+	pECS->AddComponent<ViewProjectionMatricesComponent>(cameraEntity, viewProjComp);
+
+	pECS->AddComponent<VelocityComponent>(cameraEntity, VelocityComponent{ });
+	pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = position });
+	pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
+	pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
+	pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->GetAudioListener(false) });
+
+	createdEntities.PushBack(cameraEntity);
+
+	return false;
 }
 
 bool LevelObjectCreator::CreateProjectile(

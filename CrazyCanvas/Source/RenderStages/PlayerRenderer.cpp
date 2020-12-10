@@ -566,12 +566,12 @@ namespace LambdaEngine
 
 				// Remove enemies if rendering teamates
 				if (!renderEnemy && isEnemy) {
-					continue;
+					//continue;
 				}
 
 				// Remove teammates if rendering enemies
 				if (renderEnemy && isTeamMate) {
-					continue;
+					//continue;
 				}
 
 				// Draw player

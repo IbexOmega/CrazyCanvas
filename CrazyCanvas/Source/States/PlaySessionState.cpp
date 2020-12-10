@@ -109,12 +109,6 @@ void PlaySessionState::Init()
 		//Called to tell the server we are ready to load the match
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 		m_CamSystem.Init();
-
-		const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
-		if (pPlayerLocal->IsSpectator())
-		{
-			CreateSpectatorCamera();
-		}
 	}
 
 	CommonApplication::Get()->SetMouseVisibility(false);
@@ -232,57 +226,4 @@ const PacketGameSettings& PlaySessionState::GetGameSettings() const
 PlaySessionState* PlaySessionState::GetInstance()
 {
 	return s_pInstance;
-}
-
-void PlaySessionState::CreateSpectatorCamera()
-{
-	TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-
-	const CameraDesc cameraDesc =
-	{
-		.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
-		.Width		= (float)window->GetWidth(),
-		.Height		= (float)window->GetHeight(),
-		.NearPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
-		.FarPlane	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
-	};
-
-	ECSCore* pECS = ECSCore::GetInstance();
-
-	const glm::vec3 position(0.0f, 1.0f, 0.0f);
-	const glm::vec3 forward(1.0f, 0.0f, 0.0f);
-	const glm::quat lookDirQuat = glm::quatLookAt(forward, g_DefaultUp);
-
-	Entity cameraEntity = pECS->CreateEntity();
-
-	CameraComponent cameraComp = {};
-	cameraComp.NearPlane	= cameraDesc.NearPlane;
-	cameraComp.FarPlane		= cameraDesc.FarPlane;
-	cameraComp.FOV			= cameraDesc.FOVDegrees;
-	cameraComp.IsActive		= true;
-
-	pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
-
-	pECS->AddComponent<FreeCameraComponent>(cameraEntity, { 1.4f, 0.35f});
-
-	const ViewProjectionMatricesComponent viewProjComp =
-	{
-		.Projection = glm::perspective(
-			glm::radians(cameraDesc.FOVDegrees),
-			cameraDesc.Width / cameraDesc.Height,
-			cameraDesc.NearPlane,
-			cameraDesc.FarPlane),
-
-		.View = glm::lookAt(
-			position,
-			position + forward,
-			g_DefaultUp)
-	};
-	pECS->AddComponent<ViewProjectionMatricesComponent>(cameraEntity, viewProjComp);
-
-	pECS->AddComponent<VelocityComponent>(cameraEntity, VelocityComponent{ });
-	pECS->AddComponent<PositionComponent>(cameraEntity, PositionComponent{ .Position = position });
-	pECS->AddComponent<RotationComponent>(cameraEntity, RotationComponent{ .Quaternion = lookDirQuat });
-	pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
-	pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->GetAudioListener(false) });
 }

@@ -80,6 +80,27 @@ bool MatchClient::InitInternal()
 		m_HasStarted = true;
 	}
 
+	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayerLocal->IsSpectator())
+	{
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+
+		const CameraDesc cameraDesc =
+		{
+			.FOVDegrees = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
+			.Width = (float)window->GetWidth(),
+			.Height = (float)window->GetHeight(),
+			.NearPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_NEAR_PLANE),
+			.FarPlane = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FAR_PLANE)
+		};
+
+		TArray<Entity> createdFlagEntities;
+		if (!m_pLevel->CreateObject(ELevelObjectType::LEVEL_OBJECT_TYPE_PLAYER_SPECTATOR, &cameraDesc, createdFlagEntities))
+		{
+			LOG_ERROR("[MatchClient]: Failed to create PlayerSpectate!");
+		}
+	}
+
 	return true;
 }
 

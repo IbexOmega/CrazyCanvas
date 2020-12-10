@@ -35,17 +35,18 @@ enum class ELevelObjectType : uint8
 	LEVEL_OBJECT_TYPE_POINT_LIGHT					= 3,
 	LEVEL_OBJECT_TYPE_PLAYER_SPAWN					= 4,
 	LEVEL_OBJECT_TYPE_PLAYER						= 5,
-	LEVEL_OBJECT_TYPE_FLAG_SPAWN					= 6,
-	LEVEL_OBJECT_TYPE_FLAG							= 7,
-	LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT			= 8,
-	LEVEL_OBJECT_TYPE_PROJECTILE					= 9,
-	LEVEL_OBJECT_TYPE_KILL_PLANE					= 10,
-	LEVEL_OBJECT_TYPE_PLAYER_JAIL					= 11,
-	LEVEL_OBJECT_TYPE_SPECTATE_MAP_POINT			= 12,
-	LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE			= 13,
-	LEVEL_OBJECT_TYPE_PARTICLE_SHOWER				= 14,
-	LEVEL_OBJECT_TYPE_TEAM_INDICATOR				= 15,
-	LEVEL_OBJECT_TYPE_STATIC_GEOMETRY_NO_COLLIDER	= 16,
+	LEVEL_OBJECT_TYPE_PLAYER_SPECTATOR				= 6,
+	LEVEL_OBJECT_TYPE_FLAG_SPAWN					= 7,
+	LEVEL_OBJECT_TYPE_FLAG							= 8,
+	LEVEL_OBJECT_TYPE_FLAG_DELIVERY_POINT			= 9,
+	LEVEL_OBJECT_TYPE_PROJECTILE					= 10,
+	LEVEL_OBJECT_TYPE_KILL_PLANE					= 11,
+	LEVEL_OBJECT_TYPE_PLAYER_JAIL					= 12,
+	LEVEL_OBJECT_TYPE_SPECTATE_MAP_POINT			= 13,
+	LEVEL_OBJECT_TYPE_GLOBAL_LIGHT_PROBE			= 14,
+	LEVEL_OBJECT_TYPE_PARTICLE_SHOWER				= 15,
+	LEVEL_OBJECT_TYPE_TEAM_INDICATOR				= 16,
+	LEVEL_OBJECT_TYPE_STATIC_GEOMETRY_NO_COLLIDER	= 17,
 };
 
 /*
@@ -195,6 +196,11 @@ private:
 		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
 
 	static bool CreatePlayer(
+		const void* pData,
+		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
+		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
+
+	static bool CreatePlayerSpectator(
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities,
 		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities);
