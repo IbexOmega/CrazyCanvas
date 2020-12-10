@@ -101,7 +101,7 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 	return false;
 }
 
-void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag, float acceleration, float maxVelocity)
+void PlayerActionSystem::ComputeVelocityInternal(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag, float acceleration, float maxVelocity)
 {
 	bool verticalMovement = deltaAction.y != 0;
 
@@ -148,7 +148,7 @@ void PlayerActionSystem::ComputeAirVelocity(const glm::quat& rotation, const glm
 {
 	const float airAccel	= SessionSettings::GetSettingValue<float>(ESessionSetting::AIR_ACCELERATION);
 	const float maxVelo		= SessionSettings::GetSettingValue<float>(ESessionSetting::MAX_AIR_VELOCITY);
-	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, airAccel, maxVelo);
+	ComputeVelocityInternal(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, airAccel, maxVelo);
 }
 
 void PlayerActionSystem::ComputeGroundVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
@@ -166,7 +166,15 @@ void PlayerActionSystem::ComputeGroundVelocity(const glm::quat& rotation, const 
 	}
 	const float maxVelocity = walking ? SessionSettings::GetSettingValue<float>(ESessionSetting::MAX_WALK_VELOCITY) : SessionSettings::GetSettingValue<float>(ESessionSetting::MAX_RUN_VELOCITY);
 	const float groundAccel = SessionSettings::GetSettingValue<float>(ESessionSetting::GROUND_ACCELERATION);
-	ComputeVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, groundAccel, maxVelocity);
+	ComputeVelocityInternal(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, groundAccel, maxVelocity);
+}
+
+void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag, bool inAir)
+{
+	if (inAir)
+		ComputeAirVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag);
+	else
+		ComputeGroundVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag);
 }
 
 void PlayerActionSystem::SetMouseEnabled(bool isEnabled)

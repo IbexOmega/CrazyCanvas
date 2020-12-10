@@ -47,4 +47,5 @@ private:
 	LambdaEngine::IDVector m_Entities;
 	LambdaEngine::IDVector m_FlagEntities;
 	PlayerActionSystem m_PlayerActionSystem;
+	bool m_InAir;
 };
