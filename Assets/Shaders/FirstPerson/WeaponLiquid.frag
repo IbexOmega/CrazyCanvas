@@ -82,7 +82,7 @@ void main()
     // Tells the user how much paint is in the container. A limit of 0.75 is 75% filled.
 	float MAX = 0.19f;
 	float MIN = 0.04f;
-    float limit = isWater ? u_PC.WaterLevel : u_PC.PaintLevel; //u_PC.WaveX + u_PC.WaveZ;
+    float limit = isWater ? u_PC.WaterLevel : u_PC.PaintLevel;
 
     // Use the texture coordinate to find the height at this pixel from the bottom of the container to the top.
     const float distTexCoord = 0.087f;
@@ -98,8 +98,6 @@ void main()
 
     // Color the side with the paint color and the top with a lighter paint color.
     vec3 color = gl_FrontFacing ? sampledAlbedo : clamp(sampledAlbedo + vec3(1.f)*.3f, vec3(0.f), vec3(1.f));
-	//out_Color = vec4(color, 1.f);
-	//return;
 
 	// Get weapon albedo
 	vec3 storedAlbedo = pow(materialParameters.Albedo.rgb * color, vec3(GAMMA));
@@ -188,18 +186,6 @@ void main()
 
 		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
 	}
-	/*vec3 colorHDR = 0.03f * ao * storedAlbedo + Lo;
-
-	// Reinhard Tone-Mapping
-	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
-
-	// Gamma Correction
-	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
-	// Transparent team players
-	//float alpha = isPainted ? 1.0f : 0.65f;
-	
-	out_Color = vec4(finalColor, 1.f);*/
 
 	vec3 colorHDR;
 	{

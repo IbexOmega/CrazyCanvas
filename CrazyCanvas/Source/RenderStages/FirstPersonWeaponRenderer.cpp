@@ -703,10 +703,10 @@ namespace LambdaEngine
 		WeaponLocalComponent localWeaponComponent = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity);
 		m_LiquidPushConstantDataVert.DefaultTransform = localWeaponComponent.DefaultTransform;
 
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantDataVert, PC_VERTEX_SIZE, 0);
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&m_LiquidPushConstantDataVert, (uint32)PC_VERTEX_SIZE, 0);
 
 		s_LiquidPushConstantDataFrag.IsWater = (uint32)isWater;
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)&s_LiquidPushConstantDataFrag, PC_FRAGMENT_SIZE, PC_VERTEX_SIZE);
+		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, (void*)&s_LiquidPushConstantDataFrag, (uint32)PC_FRAGMENT_SIZE, (uint32)PC_VERTEX_SIZE);
 
 		// Draw Weapon liquid
 		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
@@ -717,6 +717,7 @@ namespace LambdaEngine
 	void FirstPersonWeaponRenderer::UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex)
 	{
 		const ComponentArray<PositionComponent>* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+		const ComponentArray<RotationComponent>* pRotationComponents = ECSCore::GetInstance()->GetComponentArray<RotationComponent>();
 		
 		if (m_PlayerEntity != MAXUINT32 && pPositionComponents->HasComponent(m_PlayerEntity)) {
 			SWeaponBuffer data = {};
@@ -724,6 +725,7 @@ namespace LambdaEngine
 			data.Model = glm::translate(glm::vec3(0.0f, -0.375f, 0.1f));
 			data.Model = glm::scale(data.Model, glm::vec3(1.0f, 1.0f, 1.0f));
 			data.PlayerPos = pPositionComponents->GetConstData(m_PlayerEntity).Position;
+			data.PlayerRoation = glm::toMat4(pRotationComponents->GetConstData(m_PlayerEntity).Quaternion);
 
 			Buffer* pStagingBuffer = m_WeaponStagingBuffers[modFrameIndex].Get();
 			byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());

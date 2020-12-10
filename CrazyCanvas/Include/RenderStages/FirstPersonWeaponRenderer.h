@@ -29,6 +29,7 @@ namespace LambdaEngine {
 	struct SWeaponBuffer
 	{
 		glm::mat4 Model;
+		glm::mat4 PlayerRoation;
 		glm::vec3 PlayerPos;
 	};
 

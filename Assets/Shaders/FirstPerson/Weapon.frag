@@ -160,19 +160,6 @@ void main()
 		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
 	}
 
-	/*vec3 colorHDR = 0.03f * ao * storedAlbedo + Lo;
-
-	// Reinhard Tone-Mapping
-	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
-
-	// Gamma Correction
-	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
-
-	// Transparent team players
-	//float alpha = isPainted ? 1.0f : 0.65f;
-	
-	out_Color = vec4(finalColor, alpha);*/
-
 	vec3 colorHDR;
 	{
 		float dotNV = max(dot(N, V), 0.0f);
