@@ -575,6 +575,8 @@ void LobbyGUI::OnButtonLeaveClick(BaseComponent* pSender, const RoutedEventArgs&
 {
 	ClientHelper::Disconnect("Leaving lobby");
 
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	State* pMainMenuState = DBG_NEW MultiplayerState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
 }

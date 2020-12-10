@@ -91,6 +91,8 @@ bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEven
 		ServerManager::RegisterNewServer(serverInfo);
 	}
 
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	State* pLobbyState = DBG_NEW LobbyState(m_MultiplayerGUI->GetPlayerName(), HasHostedServer());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 

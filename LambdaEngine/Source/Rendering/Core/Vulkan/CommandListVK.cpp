@@ -225,63 +225,72 @@ namespace LambdaEngine
 		AccelerationStructureVK* pAccelerationStructureVk	= reinterpret_cast<AccelerationStructureVK*>(pBuildDesc->pAccelerationStructure);
 		BufferVK*		pScratchBufferVk					= pAccelerationStructureVk->GetScratchBuffer();
 		const BufferVK* pInstanceBufferVk					= reinterpret_cast<const BufferVK*>(pBuildDesc->pInstanceBuffer);
-
 		UNREFERENCED_VARIABLE(pScratchBufferVk);
 		UNREFERENCED_VARIABLE(pInstanceBufferVk);
 
-		//VkAccelerationStructureGeometryKHR geometryData = {};
-		//geometryData.sType									= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		//geometryData.flags									= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
-		//geometryData.geometryType							= VK_GEOMETRY_TYPE_INSTANCES_KHR;
-		//geometryData.geometry.instances.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-		//geometryData.geometry.instances.arrayOfPointers		= VK_FALSE;
-		//geometryData.geometry.instances.data.deviceAddress	= pInstanceBufferVk->GetDeviceAddress();
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType									= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.flags									= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR;
+		geometryData.geometryType							= VK_GEOMETRY_TYPE_INSTANCES_KHR;
+		geometryData.geometry.instances.sType				= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+		geometryData.geometry.instances.arrayOfPointers		= VK_FALSE;
+		geometryData.geometry.instances.data.deviceAddress	= pInstanceBufferVk->GetDeviceAddress();
 
-		//VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
 
-		//VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
-		//accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		//accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		//accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
-		//accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
-		//accelerationStructureBuildInfo.geometryCount				= 1;
-		//accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
-		//accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAddress();
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+		accelerationStructureBuildInfo.flags						= 0;
+		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount				= 1;
+		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAddress();
 
-		////Extra Flags
-		//{
-		//	if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
-		//	{
-		//		accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		//	}
-		//}
+		//Extra Flags
+		{
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
 
-		//if (pBuildDesc->Update)
-		//{
-		//	accelerationStructureBuildInfo.update					= VK_TRUE;
-		//	accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
-		//	accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
-		//}
-		//else
-		//{
-		//	accelerationStructureBuildInfo.update					= VK_FALSE;
-		//	accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-		//	accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
-		//}
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_TRACE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+			}
+			else
+			{
+				//Default is Fast Build (Normally what we want for TLAS)
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+			}
+		}
 
-		//VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
-		//accelerationStructureOffsetInfo.primitiveCount		= pBuildDesc->InstanceCount;
-		//accelerationStructureOffsetInfo.primitiveOffset		= 0x0;
-		//accelerationStructureOffsetInfo.firstVertex			= 0;
-		//accelerationStructureOffsetInfo.transformOffset		= 0x0;
+		if (pBuildDesc->Update)
+		{
+			accelerationStructureBuildInfo.update					= VK_TRUE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		else
+		{
+			accelerationStructureBuildInfo.update					= VK_FALSE;
+			accelerationStructureBuildInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+			accelerationStructureBuildInfo.dstAccelerationStructure = pAccelerationStructureVk->GetAccelerationStructure();
+		}
 
-		//VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
+		accelerationStructureOffsetInfo.primitiveCount		= pBuildDesc->InstanceCount;
+		accelerationStructureOffsetInfo.primitiveOffset		= 0x0;
+		accelerationStructureOffsetInfo.firstVertex			= 0;
+		accelerationStructureOffsetInfo.transformOffset		= 0x0;
 
-		//// Start by flushing barriers
-		//FlushDeferredBarriers();
+		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
-		//VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
-		//m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CmdBuffer, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
+		// Start by flushing barriers
+		FlushDeferredBarriers();
+
+		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CmdBuffer, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
 	void CommandListVK::BuildBottomLevelAccelerationStructure(const BuildBottomLevelAccelerationStructureDesc* pBuildDesc)
@@ -301,68 +310,78 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(pVertexBufferVk);
 		UNREFERENCED_VARIABLE(pIndexBufferVk);
 
-		//VkAccelerationStructureGeometryKHR geometryData = {};
-		//geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-		//geometryData.flags											= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR; //VK_GEOMETRY_OPAQUE_BIT_KHR
-		//geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-		//geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-		//geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
-		//geometryData.geometry.triangles.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAddress();
-		//geometryData.geometry.triangles.vertexStride				= pBuildDesc->VertexStride;
-		//geometryData.geometry.triangles.indexType					= VK_INDEX_TYPE_UINT32;
-		//geometryData.geometry.triangles.indexData.deviceAddress		= pIndexBufferVk->GetDeviceAddress();
+		VkAccelerationStructureGeometryKHR geometryData = {};
+		geometryData.sType											= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+		geometryData.flags											= VK_GEOMETRY_NO_DUPLICATE_ANY_HIT_INVOCATION_BIT_KHR; //VK_GEOMETRY_OPAQUE_BIT_KHR
+		geometryData.geometryType									= VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+		geometryData.geometry.triangles.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+		geometryData.geometry.triangles.vertexFormat				= VK_FORMAT_R32G32B32_SFLOAT;
+		geometryData.geometry.triangles.vertexData.deviceAddress	= pVertexBufferVk->GetDeviceAddress();
+		geometryData.geometry.triangles.vertexStride				= pBuildDesc->VertexStride;
+		geometryData.geometry.triangles.indexType					= VK_INDEX_TYPE_UINT32;
+		geometryData.geometry.triangles.indexData.deviceAddress		= pIndexBufferVk->GetDeviceAddress();
 
-		//if (pBuildDesc->pTransformBuffer != nullptr)
-		//{
-		//	const BufferVK* pTransformBufferVk = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer);
-		//	geometryData.geometry.triangles.transformData.deviceAddress = pTransformBufferVk->GetDeviceAddress();
-		//}
+		if (pBuildDesc->pTransformBuffer != nullptr)
+		{
+			const BufferVK* pTransformBufferVk = reinterpret_cast<const BufferVK*>(pBuildDesc->pTransformBuffer);
+			geometryData.geometry.triangles.transformData.deviceAddress = pTransformBufferVk->GetDeviceAddress();
+		}
 
-		//VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
+		VkAccelerationStructureGeometryKHR* pGeometryData = &geometryData;
 
-		//VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
-		//accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-		//accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		//accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
-		//accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
-		//accelerationStructureBuildInfo.geometryCount				= 1;
-		//accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
-		//accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAddress();
+		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
+		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+		accelerationStructureBuildInfo.flags						= 0;
+		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
+		accelerationStructureBuildInfo.geometryCount				= 1;
+		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
+		accelerationStructureBuildInfo.scratchData.deviceAddress	= pScratchBufferVk->GetDeviceAddress();
 
-		////Extra Flags
-		//{
-		//	if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
-		//	{
-		//		accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
-		//	}
-		//}
+		//Extra Flags
+		{
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
 
-		//if (pBuildDesc->Update)
-		//{
-		//	accelerationStructureBuildInfo.update					= VK_TRUE;
-		//	accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
-		//	accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
-		//}
-		//else
-		//{
-		//	accelerationStructureBuildInfo.update					= VK_FALSE;
-		//	accelerationStructureBuildInfo.srcAccelerationStructure	= VK_NULL_HANDLE;
-		//	accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
-		//}
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+			}
+			else
+			{
+				//Default is Fast Trace (Normally what we want for BLAS)
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+			}
+		}
 
-		//VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
-		//accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
-		//accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
-		//accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
-		//accelerationStructureOffsetInfo.transformOffset = pBuildDesc->TransformByteOffset;
+		if (pBuildDesc->Update)
+		{
+			accelerationStructureBuildInfo.update					= VK_TRUE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+		}
+		else
+		{
+			accelerationStructureBuildInfo.update					= VK_FALSE;
+			accelerationStructureBuildInfo.srcAccelerationStructure	= VK_NULL_HANDLE;
+			accelerationStructureBuildInfo.dstAccelerationStructure	= pAccelerationStructureVk->GetAccelerationStructure();
+		}
 
-		//VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
+		VkAccelerationStructureBuildOffsetInfoKHR accelerationStructureOffsetInfo = {};
+		accelerationStructureOffsetInfo.primitiveCount	= pBuildDesc->TriangleCount;
+		accelerationStructureOffsetInfo.primitiveOffset = pBuildDesc->IndexBufferByteOffset;
+		accelerationStructureOffsetInfo.firstVertex		= pBuildDesc->FirstVertexIndex;
+		accelerationStructureOffsetInfo.transformOffset = pBuildDesc->TransformByteOffset;
 
-		//// Start by flushing barriers
-		//FlushDeferredBarriers();
+		VALIDATE(m_pDevice->vkCmdBuildAccelerationStructureKHR != nullptr);
 
-		//VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
-		//m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CmdBuffer, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
+		// Start by flushing barriers
+		FlushDeferredBarriers();
+
+		VkAccelerationStructureBuildOffsetInfoKHR* pAccelerationStructureOffsetInfo = &accelerationStructureOffsetInfo;
+		m_pDevice->vkCmdBuildAccelerationStructureKHR(m_CmdBuffer, 1, &accelerationStructureBuildInfo, &pAccelerationStructureOffsetInfo);
 	}
 
 	void CommandListVK::ClearColorTexture(

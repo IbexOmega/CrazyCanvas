@@ -132,6 +132,8 @@ bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 	{
 		if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 		{
+			LambdaEngine::GUIApplication::SetView(nullptr);
+
 			State* pStartingState = DBG_NEW PlaySessionState(m_GameSettings);
 			StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 		}
@@ -182,6 +184,8 @@ bool LobbyState::OnClientDisconnected(const ClientDisconnectedEvent& event)
 	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
 
 	PlayerManagerClient::Reset();
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);
