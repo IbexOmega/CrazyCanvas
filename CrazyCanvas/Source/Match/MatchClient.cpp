@@ -278,7 +278,7 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
-	EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
+	const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
 	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
 
 	if (event.pPlayer == pPlayerLocal)
@@ -292,7 +292,9 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 				Input::PushInputLayer(EInputLayer::GUI);
 			}
 			else
+			{
 				Input::PushInputLayer(EInputLayer::DEAD);
+			}
 		}
 		else
 		{
@@ -303,7 +305,9 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 				Input::PushInputLayer(EInputLayer::GUI);
 			}
 			else
+			{
 				Input::PushInputLayer(EInputLayer::GAME);
+			}
 		}
 	}
 

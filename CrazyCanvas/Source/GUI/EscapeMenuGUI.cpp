@@ -82,7 +82,7 @@ bool EscapeMenuGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEv
 
 void EscapeMenuGUI::ToggleEscapeMenu()
 {
-	EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
+	const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
 
 	if ((currentInputLayer == EInputLayer::GAME) || (currentInputLayer == EInputLayer::DEAD) && !m_EscapeActive)
 	{
