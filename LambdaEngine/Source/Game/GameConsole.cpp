@@ -12,7 +12,6 @@
 #include <regex>
 #include <imgui.h>
 
-
 namespace LambdaEngine
 {
 	bool GameConsole::Init()
@@ -480,7 +479,13 @@ namespace LambdaEngine
 				ImGui::PushItemWidth((float)width);
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 0.9f));
 
-				ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackAlways;
+				const ImGuiInputTextFlags input_text_flags = 
+					ImGuiInputTextFlags_EnterReturnsTrue | 
+					ImGuiInputTextFlags_CallbackCompletion | 
+					ImGuiInputTextFlags_CallbackHistory | 
+					ImGuiInputTextFlags_CallbackEdit | 
+					ImGuiInputTextFlags_CallbackAlways;
+				
 				if (ImGui::InputText("###Input", m_Buf, 256, input_text_flags,
 					[](ImGuiInputTextCallbackData* data)->int {
 						GameConsole* console = (GameConsole*)data->UserData;
@@ -974,7 +979,7 @@ namespace LambdaEngine
 			else
 			{
 				// Navigate candidates list
-				if (data->EventKey == ImGuiKey_UpArrow )
+				if (data->EventKey == ImGuiKey_UpArrow)
 				{
 					if (m_ActivePopupIndex <= 0)
 					{

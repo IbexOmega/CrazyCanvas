@@ -38,9 +38,10 @@ namespace LambdaEngine
 		}
 
 		// Update input
-		if (IsInputEnabled() && GetCurrentInputLayer() != EInputLayer::NONE)
+		const EInputLayer currentInputLayer = GetCurrentInputLayer();
+		if (IsInputEnabled() && currentInputLayer != EInputLayer::NONE)
 		{
-			const uint8 inputMode = ConvertInputLayerUINT8(GetCurrentInputLayer());
+			const uint8 inputMode = ConvertInputLayerUINT8(currentInputLayer);
 
 			if (IsEventOfType<KeyPressedEvent>(event))
 			{

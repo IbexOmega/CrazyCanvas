@@ -6,6 +6,7 @@ namespace LambdaEngine
 	/*
 	* KeyboardState
 	*/
+
 	struct KeyboardState
 	{
 	public:
@@ -16,7 +17,7 @@ namespace LambdaEngine
 
 		FORCEINLINE bool IsKeyUp(EKey key) const
 		{
-			return !KeyStates[key];
+			return !(KeyStates[key]);
 		}
 
 	public:
@@ -26,6 +27,7 @@ namespace LambdaEngine
 	/*
 	* ModiferKeyState
 	*/
+
 	struct ModifierKeyState
 	{
 	public:
@@ -76,6 +78,7 @@ namespace LambdaEngine
 	/*
 	* MouseState
 	*/
+
 	struct MouseState
 	{
 	public:
