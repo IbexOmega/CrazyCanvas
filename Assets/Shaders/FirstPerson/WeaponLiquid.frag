@@ -96,7 +96,8 @@ void main()
         discard;
 
     // Color the side with the paint color and the top with a lighter paint color.
-    vec3 color = gl_FrontFacing ? sampledAlbedo : clamp(sampledAlbedo + vec3(1.f)*.3f, vec3(0.f), vec3(1.f));
+    vec3 color = gl_FrontFacing ? sampledAlbedo : clamp(sampledAlbedo + vec3(1.f)*.0f, vec3(0.f), vec3(1.f));
+	normal = gl_FrontFacing ? normal : vec3(0.f, 1.f, 0.f);
 
 	// Get weapon albedo
 	vec3 storedAlbedo = pow(materialParameters.Albedo.rgb * color, vec3(GAMMA));
