@@ -364,7 +364,7 @@ bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
 bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 {
 	m_HUDGUI->GetScoreBoard()->UpdatePlayerProperty(
-		event.pPlayer->GetUID(),
+		*event.pPlayer,
 		EPlayerProperty::PLAYER_PROPERTY_PING,
 		std::to_string(event.pPlayer->GetPing()));
 	return false;
@@ -373,8 +373,7 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
-	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
-
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(*pPlayer);
 
 	if (pPlayer->IsDead())
 	{

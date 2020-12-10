@@ -360,11 +360,11 @@ namespace LambdaEngine
 				m_DirtyUniformBuffers = true;
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
-				const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
-				const ComponentArray<PlayerRelatedComponent>* pPlayerRelatedComponents = pECSCore->GetComponentArray<PlayerRelatedComponent>();
-				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
-				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECSCore->GetComponentArray<PlayerLocalComponent>();
-				const ComponentArray<WeaponComponent>* pWeaponComponents = pECSCore->GetComponentArray<WeaponComponent>();
+				const ComponentArray<TeamComponent>* pTeamComponents					= pECSCore->GetComponentArray<TeamComponent>();
+				const ComponentArray<WeaponComponent>* pWeaponComponents				= pECSCore->GetComponentArray<WeaponComponent>();
+				const ComponentArray<PositionComponent>* pPositionComponents			= pECSCore->GetComponentArray<PositionComponent>();
+				const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents		= pECSCore->GetComponentArray<PlayerLocalComponent>();
+				const ComponentArray<PlayerRelatedComponent>* pPlayerRelatedComponents	= pECSCore->GetComponentArray<PlayerRelatedComponent>();
 
 				m_PlayerData.Clear();
 				TArray<WeaponData> weapons;
@@ -393,19 +393,19 @@ namespace LambdaEngine
 									// Set player data for distance and weapon sorting
 									PlayerData playerData;
 									playerData.DrawArgIndex = d;
-									playerData.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
-									playerData.Position = pPositionComponents->GetConstData(entity).Position;
-									playerData.EntityId = entity;
+									playerData.EntityId		= entity;
+									playerData.TeamId		= pTeamComponents->GetConstData(entity).TeamIndex;
+									playerData.Position		= pPositionComponents->GetConstData(entity).Position;
 									m_PlayerData.PushBack(playerData);
 								}
 
 								// Set viewer data
 								if (pPlayerLocalComponents && pPlayerLocalComponents->HasComponent(entity))
 								{
-									m_Viewer.TeamId = pTeamComponents->GetConstData(entity).TeamIndex;
-									m_Viewer.EntityId = entity;
-									m_Viewer.DrawArgIndex = d;
-									m_Viewer.Positon = pPositionComponents->GetConstData(entity).Position;
+									m_Viewer.DrawArgIndex	= d;
+									m_Viewer.EntityId		= entity;
+									m_Viewer.TeamId			= pTeamComponents->GetConstData(entity).TeamIndex;
+									m_Viewer.Position		= pPositionComponents->GetConstData(entity).Position;
 								}
 								else
 								{
@@ -455,15 +455,15 @@ namespace LambdaEngine
 				}
 
 				// Map player not same team as viewer to 1. Shader will filter
-				for (uint32 i = 0; i < m_PlayerData.GetSize(); i++)
+				for (PlayerData& player : m_PlayerData)
 				{
-					if (m_PlayerData[i].TeamId != m_Viewer.TeamId)
+					if (player.TeamId == m_Viewer.TeamId || m_Viewer.TeamId == 0)
 					{
-						m_PlayerData[i].TeamId = 1;
+						player.TeamId = 0;
 					}
 					else
 					{
-						m_PlayerData[i].TeamId = 0;
+						player.TeamId = 1;
 					}
 				}
 			}
@@ -547,7 +547,7 @@ namespace LambdaEngine
 		// Sort player rendering front to back
 		for (uint32 i = 0; i < m_PlayerData.GetSize(); i++)
 		{
-			m_PlayerData[i].Distance2ToViewer = glm::distance2(m_Viewer.Positon, m_PlayerData[i].Position);
+			m_PlayerData[i].Distance2ToViewer = glm::distance2(m_Viewer.Position, m_PlayerData[i].Position);
 		}
 
 		std::sort(m_PlayerData.Begin(), m_PlayerData.End(),
@@ -719,7 +719,7 @@ namespace LambdaEngine
 		descriptorCountDesc.SamplerDescriptorCount = 0;
 		descriptorCountDesc.TextureDescriptorCount = 0;
 		descriptorCountDesc.TextureCombinedSamplerDescriptorCount = 7;
-			;
+			
 		descriptorCountDesc.ConstantBufferDescriptorCount = 1;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount = 4;
 		descriptorCountDesc.UnorderedAccessTextureDescriptorCount = 0;

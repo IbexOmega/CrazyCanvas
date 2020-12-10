@@ -62,9 +62,119 @@ HUDGUI::~HUDGUI()
 {
 }
 
+void HUDGUI::InitGUI()
+{
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+
+	m_GUIState.Health = m_GUIState.MaxHealth;
+
+	m_GUIState.Scores.PushBack(Match::GetScore(1));
+	m_GUIState.Scores.PushBack(Match::GetScore(2));
+
+	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
+
+	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
+
+	InitScore();
+
+	m_pWaterAmmoRect = FrameworkElement::FindName<Image>("WATER_RECT");
+	m_pPaintAmmoRect = FrameworkElement::FindName<Image>("PAINT_RECT");
+	m_pPaintDropRect = FrameworkElement::FindName<Image>("PAINT_DROP");
+	m_pHealthRect = FrameworkElement::FindName<Image>("HEALTH_RECT");
+
+	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
+	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
+
+	m_pHitIndicatorGrid = FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
+	m_pCarryFlagBorder = FrameworkElement::FindName<Border>("CarryFlagBorder");
+	m_pCarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
+
+	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
+
+	m_pCarryFlagIndicatorStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagStoryBoard");
+	m_pCarryingFlagResetStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagResetStoryBoard");
+
+	if (!pPlayer->IsSpectator())
+	{
+		const ImageSources& imageSources = TeamHelper::GetTeamImage(pPlayer->GetTeam());
+		Ptr<BitmapImage> bitmap = *new BitmapImage(Uri(imageSources.PaintAmmo.c_str()));
+		Ptr<BitmapImage> bitmapDrop = *new BitmapImage(Uri(imageSources.PaintAmmoDrop.c_str()));
+
+		{ // init CarryFlagIndicator and LookAtGrid colors
+
+			Ptr<RadialGradientBrush> gradientBrush = *new RadialGradientBrush();
+			const glm::vec3& teamGradientColor = TeamHelper::GetTeamColor(pPlayer->GetTeam() == 1 ? 2 : 1);
+			Color gradientColor(teamGradientColor.r, teamGradientColor.g, teamGradientColor.b);
+			Ptr<GradientStopCollection> gStops = *new GradientStopCollection();
+			Ptr<GradientStop> teamGradientStopColor = *new GradientStop();
+			Ptr<GradientStop> teamGradientStop = *new GradientStop();
+
+			teamGradientStopColor->SetColor(gradientColor);
+			teamGradientStopColor->SetOffset(1.0f);
+			gStops->Add(teamGradientStopColor);
+			gStops->Add(teamGradientStop);
+			gradientBrush->SetGradientStops(gStops);
+
+			m_pCarryFlagBorder->SetBackground(gradientBrush);
+
+
+			Ptr<SolidColorBrush> brush = *new SolidColorBrush();
+			const glm::vec3& teamColor = TeamHelper::GetTeamColor(pPlayer->GetTeam());
+			Color color(teamColor.r, teamColor.g, teamColor.b);
+
+			brush->SetColor(color);
+			brush->SetOpacity(0.25f);
+
+			m_pLookAtGrid->SetBackground(brush);
+		}
+
+		m_pPaintAmmoRect->SetSource(bitmap);
+		m_pPaintDropRect->SetSource(bitmapDrop);
+
+
+		std::string ammoString;
+
+		ammoString = std::to_string((int)m_GUIState.WaterAmmo) + "/" + std::to_string((int)m_GUIState.WaterAmmoCapacity);
+
+		m_pWaterAmmoText->SetText(ammoString.c_str());
+		m_pPaintAmmoText->SetText(ammoString.c_str());
+	}
+	else
+	{
+		FrameworkElement::FindName<Image>("AMMUNITION_GRID")->SetVisibility(Visibility::Visibility_Collapsed);
+		FrameworkElement::FindName<Image>("HEALTH_DISPLAY_GRID")->SetVisibility(Visibility::Visibility_Collapsed);
+	}
+
+	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Visibility_Visible);
+	CommonApplication::Get()->SetMouseVisibility(false);
+
+	m_WindowSize.x = CommonApplication::Get()->GetMainWindow()->GetWidth();
+	m_WindowSize.y = CommonApplication::Get()->GetMainWindow()->GetHeight();
+}
+
+void HUDGUI::InitScore()
+{
+	m_pTeam1Score = FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_1");
+	m_pTeam2Score = FrameworkElement::FindName<TextBlock>("SCORE_DISPLAY_TEAM_2");
+
+	Ptr<SolidColorBrush> pBrush1 = *new SolidColorBrush();
+	Ptr<SolidColorBrush> pBrush2 = *new SolidColorBrush();
+
+	const glm::vec3& teamColor1 = TeamHelper::GetTeamColor(1);
+	const glm::vec3& teamColor2 = TeamHelper::GetTeamColor(2);
+
+	pBrush1->SetColor(Color(teamColor1.r, teamColor1.g, teamColor1.b));
+	pBrush2->SetColor(Color(teamColor2.r, teamColor2.g, teamColor2.b));
+
+	m_pTeam1Score->SetForeground(pBrush1);
+	m_pTeam2Score->SetForeground(pBrush2);
+
+	m_pTeam1Score->SetText("0");
+	m_pTeam2Score->SetText("0");
+}
+
 void HUDGUI::FixedTick(LambdaEngine::Timestamp delta)
 {
-
 	UpdateKillFeedTimer(delta);
 	UpdateScore();
 
@@ -76,8 +186,8 @@ void HUDGUI::FixedTick(LambdaEngine::Timestamp delta)
 
 void HUDGUI::AnimateReload(const float32 timePassed)
 {
-	Noesis::ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
-	Noesis::ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
+	ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
+	ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
 
 	pWaterScale->SetScaleX(glm::clamp<float>(pWaterScale->GetScaleX() + m_WaterAmmoFactor * timePassed, 0.0f, 1.0f));
 	pPaintScale->SetScaleX(glm::clamp<float>(pPaintScale->GetScaleX() + m_PaintAmmoFactor * timePassed, 0.0f, 1.0f));
@@ -86,7 +196,7 @@ void HUDGUI::AnimateReload(const float32 timePassed)
 	m_pPaintAmmoRect->SetRenderTransform(pPaintScale);
 }
 
-bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
+bool HUDGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const char* pHandler)
 {
 	UNREFERENCED_VARIABLE(pSource);
 	UNREFERENCED_VARIABLE(pEvent);
@@ -99,7 +209,7 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 	//Returns false if player is dead
 	if (currentHealth != m_GUIState.Health)
 	{
-		Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
+		Ptr<ScaleTransform> scale = *new ScaleTransform();
 
 		float healthScale = (float)currentHealth / (float)m_GUIState.MaxHealth;
 		scale->SetCenterX(0.0);
@@ -108,7 +218,7 @@ bool HUDGUI::UpdateHealth(int32 currentHealth)
 		m_pHealthRect->SetRenderTransform(scale);
 
 		std::string hpString = std::to_string((int32)(healthScale * 100)) + "%";
-		FrameworkElement::FindName<Noesis::TextBlock>("HEALTH_DISPLAY")->SetText(hpString.c_str());
+		FrameworkElement::FindName<TextBlock>("HEALTH_DISPLAY")->SetText(hpString.c_str());
 
 		m_GUIState.Health = currentHealth;
 	}
@@ -144,10 +254,14 @@ bool HUDGUI::UpdateScore()
 
 bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType)
 {
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer->IsSpectator())
+		return true;
+
 	//Returns false if Out Of Ammo
 
 	std::string ammoString;
-	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
+	Ptr<ScaleTransform> scale = *new ScaleTransform();
 	float ammoScale = 0.0f;
 	auto ammo = WeaponTypeAmmo.find(ammoType);
 
@@ -185,6 +299,10 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading)
 {
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer->IsSpectator())
+		return;
+
 	m_IsReloading = isReloading;
 
 	if (m_IsReloading)
@@ -201,7 +319,7 @@ void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>
 	}
 	else
 	{
-		Noesis::Ptr<Noesis::ScaleTransform> scaleTransform = *new ScaleTransform();
+		Ptr<ScaleTransform> scaleTransform = *new ScaleTransform();
 		std::string ammoString = std::to_string(25) + "/" + std::to_string(25);
 		scaleTransform->SetCenterX(0.0);
 		scaleTransform->SetCenterY(0.0);
@@ -217,10 +335,14 @@ void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>
 
 void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo)
 {
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer->IsSpectator())
+		return;
+
 	m_IsReloading = false;
 	m_ReloadAnimationTime = 2.0f;
-	Noesis::Ptr<Noesis::ScaleTransform> waterScaleTransform = *new ScaleTransform();
-	Noesis::Ptr<Noesis::ScaleTransform> paintScaleTransform = *new ScaleTransform();
+	Ptr<ScaleTransform> waterScaleTransform = *new ScaleTransform();
+	Ptr<ScaleTransform> paintScaleTransform = *new ScaleTransform();
 
 	CancelSmallPrompt();
 
@@ -255,7 +377,11 @@ void HUDGUI::UpdateCountdown(uint8 countDownTime)
 
 void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal, bool isFriendly)
 {
-	Noesis::Ptr<Noesis::RotateTransform> rotateTransform = *new RotateTransform();
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer->IsSpectator())
+		return;
+
+	Ptr<RotateTransform> rotateTransform = *new RotateTransform();
 
 	glm::vec3 forwardDir = glm::normalize(glm::vec3(direction.x, 0.0f, direction.z));
 	glm::vec3 nor = glm::normalize(glm::vec3(collisionNormal.x, 0.0f, collisionNormal.z));
@@ -293,12 +419,20 @@ void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::
 
 void HUDGUI::DisplayHitIndicator()
 {
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer->IsSpectator())
+		return;
+
 	EnemyHitIndicatorGUI* pEnemyHitIndicatorGUI = FindName<EnemyHitIndicatorGUI>("HIT_INDICATOR");
 	pEnemyHitIndicatorGUI->DisplayIndicator();
 }
 
 void HUDGUI::DisplayCarryFlagIndicator(Entity flagEntity, bool isCarrying)
 {
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer->IsSpectator())
+		return;
+
 	auto grid = m_ProjectedElements.find(flagEntity);
 
 	if (isCarrying)
@@ -323,16 +457,16 @@ void HUDGUI::UpdateKillFeed(const LambdaEngine::String& killed, const LambdaEngi
 	m_pKillFeedGUI->AddToKillFeed(killed, killer, killedPlayerTeamIndex);
 }
 
-void HUDGUI::UpdateKillFeedTimer(LambdaEngine::Timestamp delta)
+void HUDGUI::UpdateKillFeedTimer(Timestamp delta)
 {
 	m_pKillFeedGUI->UpdateFeedTimer(delta);
 }
 
 void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity, IndicatorTypeGUI indicatorType)
 {
-	Noesis::Ptr<Noesis::TranslateTransform> translation = *new Noesis::TranslateTransform();
-	Noesis::Ptr<Noesis::RotateTransform> rotation = *new RotateTransform();
-	Noesis::Ptr<Noesis::TransformGroup> transformGroup = *new Noesis::TransformGroup();
+	Ptr<TranslateTransform> translation = *new TranslateTransform();
+	Ptr<RotateTransform> rotation = *new RotateTransform();
+	Ptr<Noesis::TransformGroup> transformGroup = *new Noesis::TransformGroup();
 
 	if (indicatorType == IndicatorTypeGUI::PING_INDICATOR)
 		rotation->SetAngle(45.0f);
@@ -370,8 +504,6 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 	}
 
 	TranslateIndicator(transformGroup, entity);
-
-
 }
 
 void HUDGUI::SetWindowSize(uint32 width, uint32 height)
@@ -382,19 +514,19 @@ void HUDGUI::SetWindowSize(uint32 width, uint32 height)
 void HUDGUI::ShowHUD(const bool isVisible)
 {
 	if(isVisible)
-		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
+		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Visibility_Visible);
 	else
-		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
+		FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Visibility_Hidden);
 }
 
 void HUDGUI::ShowNamePlate(const LambdaEngine::String& name, bool isLooking)
 {
-	((Noesis::TextBlock*)m_pLookAtGrid->GetChildren()->Get(0))->SetText(name.c_str());
+	((TextBlock*)m_pLookAtGrid->GetChildren()->Get(0))->SetText(name.c_str());
 
 	if (isLooking)
-		m_pLookAtGrid->SetVisibility(Noesis::Visibility::Visibility_Visible);
+		m_pLookAtGrid->SetVisibility(Visibility::Visibility_Visible);
 	else
-		m_pLookAtGrid->SetVisibility(Noesis::Visibility::Visibility_Collapsed);
+		m_pLookAtGrid->SetVisibility(Visibility::Visibility_Collapsed);
 }
 
 ScoreBoardGUI* HUDGUI::GetScoreBoard() const
@@ -404,7 +536,7 @@ ScoreBoardGUI* HUDGUI::GetScoreBoard() const
 
 void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags)
 {
-	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Hidden);
+	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Visibility_Hidden);
 
 	GameOverGUI* pGameOverGUI = FindName<GameOverGUI>("GAME_OVER");
 	pGameOverGUI->InitGUI();
@@ -434,6 +566,10 @@ void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSma
 
 void HUDGUI::DisplaySpectateText(const LambdaEngine::String& name, bool isSpectating)
 {
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer->IsSpectator())
+		return;
+
 	if (isSpectating)
 	{
 		LambdaEngine::String spectateText = "Spectating " + name;
@@ -454,108 +590,6 @@ void HUDGUI::CancelSmallPrompt()
 	pPromptGUI->CancelSmallPrompt();
 }
 
-void HUDGUI::InitGUI()
-{
-	m_GUIState.Health			= m_GUIState.MaxHealth;
-
-	m_GUIState.Scores.PushBack(Match::GetScore(1));
-	m_GUIState.Scores.PushBack(Match::GetScore(2));
-
-	m_pWaterAmmoRect	= FrameworkElement::FindName<Image>("WATER_RECT");
-	m_pPaintAmmoRect	= FrameworkElement::FindName<Image>("PAINT_RECT");
-	m_pPaintDropRect	= FrameworkElement::FindName<Image>("PAINT_DROP");
-	m_pHealthRect		= FrameworkElement::FindName<Image>("HEALTH_RECT");
-
-	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
-	m_pPaintAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_PAINT_DISPLAY");
-
-	m_pHitIndicatorGrid	= FrameworkElement::FindName<Grid>("DAMAGE_INDICATOR_GRID");
-	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
-	m_pCarryFlagBorder = FrameworkElement::FindName<Border>("CarryFlagBorder");
-	m_pCarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
-	
-	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
-
-	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
-
-	m_pCarryFlagIndicatorStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagStoryBoard");
-	m_pCarryingFlagResetStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagResetStoryBoard");
-
-
-	Noesis::Ptr<BitmapImage> bitmap = *new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
-	Noesis::Ptr<BitmapImage> bitmapDrop = *new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
-
-	{ // init CarryFlagIndicator and LookAtGrid colors
-
-		Ptr<Noesis::RadialGradientBrush> gradientBrush = *new Noesis::RadialGradientBrush();
-		const glm::vec3& teamGradientColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam() == 1 ? 2 : 1);
-		Noesis::Color gradientColor(teamGradientColor.r, teamGradientColor.g, teamGradientColor.b);
-		Ptr<Noesis::GradientStopCollection> gStops = *new GradientStopCollection();
-		Ptr<Noesis::GradientStop> teamGradientStopColor = *new GradientStop();
-		Ptr<Noesis::GradientStop> teamGradientStop = *new GradientStop();
-
-		teamGradientStopColor->SetColor(gradientColor);
-		teamGradientStopColor->SetOffset(1.0f);
-		gStops->Add(teamGradientStopColor);
-		gStops->Add(teamGradientStop);
-		gradientBrush->SetGradientStops(gStops);
-
-		m_pCarryFlagBorder->SetBackground(gradientBrush);
-
-
-		Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
-		const glm::vec3& teamColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
-		Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
-
-		brush->SetColor(color);
-		brush->SetOpacity(0.25f);
-
-		m_pLookAtGrid->SetBackground(brush);
-
-	}
-
-	m_pPaintAmmoRect->SetSource(bitmap);
-	m_pPaintDropRect->SetSource(bitmapDrop);
-
-	InitScore();
-
-	std::string ammoString;
-
-	ammoString	= std::to_string((int)m_GUIState.WaterAmmo) + "/" + std::to_string((int)m_GUIState.WaterAmmoCapacity);
-
-	m_pWaterAmmoText->SetText(ammoString.c_str());
-	m_pPaintAmmoText->SetText(ammoString.c_str());
-
-	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Noesis::Visibility_Visible);
-	CommonApplication::Get()->SetMouseVisibility(false);
-
-	m_WindowSize.x = CommonApplication::Get()->GetMainWindow()->GetWidth();
-	m_WindowSize.y = CommonApplication::Get()->GetMainWindow()->GetHeight();
-}
-
-void HUDGUI::InitScore()
-{
-	m_pTeam1Score = FrameworkElement::FindName<Noesis::TextBlock>("SCORE_DISPLAY_TEAM_1");
-	m_pTeam2Score = FrameworkElement::FindName<Noesis::TextBlock>("SCORE_DISPLAY_TEAM_2");
-
-	Noesis::Ptr<Noesis::SolidColorBrush> pBrush1 = *new Noesis::SolidColorBrush();
-	Noesis::Ptr<Noesis::SolidColorBrush> pBrush2 = *new Noesis::SolidColorBrush();
-
-	glm::vec3 teamColor1 = TeamHelper::GetTeamColor(1);
-	glm::vec3 teamColor2 = TeamHelper::GetTeamColor(2);
-	Noesis::Color Color1(teamColor1.r, teamColor1.g, teamColor1.b);
-	Noesis::Color Color2(teamColor2.r, teamColor2.g, teamColor2.b);
-
-	pBrush1->SetColor(Color1);
-	pBrush2->SetColor(Color2);
-
-	m_pTeam1Score->SetForeground(pBrush1);
-	m_pTeam2Score->SetForeground(pBrush2);
-
-	m_pTeam1Score->SetText("0");
-	m_pTeam2Score->SetText("0");
-}
-
 void HUDGUI::SetRenderStagesInactive()
 {
 	/*
@@ -567,14 +601,14 @@ void HUDGUI::SetRenderStagesInactive()
 
 void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, uint8 teamIndex)
 {
-	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
+	Ptr<Grid> gridIndicator = *new Grid();
 
-	Noesis::Ptr<Noesis::Image> flagImage = *new Noesis::Image();
-	Noesis::Ptr<Noesis::Ellipse> ellipseIndicator = *new Noesis::Ellipse();
+	Ptr<Image> flagImage = *new Image();
+	Ptr<Noesis::Ellipse> ellipseIndicator = *new Noesis::Ellipse();
 
-	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+	Ptr<TranslateTransform> translation = *new TranslateTransform();
 
-	Noesis::Ptr<BitmapImage> bitmapFlag = *new BitmapImage(Uri("Roller.png"));
+	Ptr<BitmapImage> bitmapFlag = *new BitmapImage(Uri("Roller.png"));
 
 	flagImage->SetSource(bitmapFlag);
 
@@ -582,21 +616,21 @@ void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, 
 	translation->SetX(100.0f);
 
 	gridIndicator->SetRenderTransform(translation);
-	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+	gridIndicator->SetRenderTransformOrigin(Point(0.5f, 0.5f));
 
-	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
-	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
+	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
+	Ptr<SolidColorBrush> strokeBrush = *new SolidColorBrush();
 
-	strokeBrush->SetColor(Noesis::Color::Black());
+	strokeBrush->SetColor(Color::Black());
 
 	if (teamIndex != 0)
 	{
 		const glm::vec3& teamColor = TeamHelper::GetTeamColor(teamIndex);
-		Noesis::Color color(teamColor.r, teamColor.g, teamColor.b);
+		Color color(teamColor.r, teamColor.g, teamColor.b);
 		brush->SetColor(color);
 	}
 	else
-		brush->SetColor(Noesis::Color::Green());
+		brush->SetColor(Color::Green());
 
 	flagImage->SetHeight(50);
 	flagImage->SetWidth(50);
@@ -623,16 +657,16 @@ void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, 
 	}
 }
 
-void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
+void HUDGUI::CreateProjectedPingGUIElement(Entity entity)
 {
-	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
+	Ptr<Grid> gridIndicator = *new Grid();
 
-	Noesis::Ptr<Noesis::Border> pingBorderIndicator = *new Noesis::Border();
+	Ptr<Border> pingBorderIndicator = *new Border();
 
-	Noesis::Ptr<Noesis::TranslateTransform> translation = *new Noesis::TranslateTransform();
-	Noesis::Ptr<Noesis::RotateTransform> rotation = *new Noesis::RotateTransform();
+	Ptr<TranslateTransform> translation = *new TranslateTransform();
+	Ptr<RotateTransform> rotation = *new RotateTransform();
 
-	Noesis::Ptr<Noesis::TransformGroup> transformGroup = *new Noesis::TransformGroup();
+	Ptr<Noesis::TransformGroup> transformGroup = *new Noesis::TransformGroup();
 
 	transformGroup->GetChildren()->Add(rotation);
 	transformGroup->GetChildren()->Add(translation);
@@ -645,12 +679,12 @@ void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
 
 	rotation->SetAngle(45.0f);
 
-	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+	gridIndicator->SetRenderTransformOrigin(Point(0.5f, 0.5f));
 
 	gridIndicator->SetRenderTransform(transformGroup);
 
-	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
-	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
+	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
+	Ptr<SolidColorBrush> strokeBrush = *new SolidColorBrush();
 
 	strokeBrush->SetColor(Noesis::Color::Black());
 	brush->SetColor(Noesis::Color::Orange());
@@ -676,7 +710,7 @@ void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
 	}
 }
 
-void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
+void HUDGUI::RemoveProjectedGUIElement(Entity entity)
 {
 	auto indicator = m_ProjectedElements.find(entity);
 	VALIDATE(indicator != m_ProjectedElements.end())
