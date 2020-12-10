@@ -112,6 +112,8 @@ namespace LambdaEngine
 		static uint64 CreateComputePipelineState(const ManagedComputePipelineStateDesc* pDesc);
 		static uint64 CreateRayTracingPipelineState(const ManagedRayTracingPipelineStateDesc* pDesc);
 
+		static THashTable<uint64, ManagedGraphicsPipelineStateDesc>& GetGraphicsPipelineStateDescriptions();
+
 		static void ReleasePipelineState(uint64 id);
 
 		static PipelineState* GetPipelineState(uint64 id);
