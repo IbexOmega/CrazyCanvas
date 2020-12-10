@@ -59,7 +59,7 @@ void main()
 	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
 	float isContainer = (1.f-step(0.5f, texCoord.x)) * (1.f-step(0.5f, texCoord.y));
 
-	float alpha = 0.6f*isContainer + (1.f-isContainer);
+	float alpha = 0.1f*isContainer + (1.f-isContainer);
 	
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
@@ -86,7 +86,7 @@ void main()
 	vec4 aoRoughMetalValid	= vec4(storedMaterial, 1.0f);
 	
 	float ao		= aoRoughMetalValid.r;
-	float roughness	= aoRoughMetalValid.g; // TODO fix need to invert
+	float roughness	= aoRoughMetalValid.g;
 	float metallic	= aoRoughMetalValid.b;
 	float depth 	= texture(u_DepthStencil, in_TexCoord).r;
 

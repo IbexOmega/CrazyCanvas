@@ -51,7 +51,7 @@ void main()
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SWeaponData weaponData			= u_WeaponData.val;
 
-	mat4 normalTransform    = weaponData.PlayerRotaion*instance.Transform;
+	mat4 normalTransform    = instance.Transform * weaponData.PlayerRotaion;
 
 	vec3 position 			= vertex.Position.xyz;
 	vec4 worldPosition		= weaponData.Model * instance.Transform * u_PC.DefaultTransform * vec4(position, 1.0f);

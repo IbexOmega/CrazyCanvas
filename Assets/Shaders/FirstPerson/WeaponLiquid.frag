@@ -65,22 +65,18 @@ void main()
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
 	bool isWater = u_PC.IsWater > 0.5f;
+	vec3 sampledCombinedMaterial = texture(u_CombinedMaterialMaps[in_MaterialSlot], texCoord).rgb;
 	if(isWater == false)
 	{
 		materialParameters.Albedo.rgb = vec3(1.f);
 		materialParameters.AO = 1.f;
-		materialParameters.Roughness = PAINT_ROUGHNESS;
-		materialParameters.Metallic = 1.f;
+		materialParameters.Roughness = 0.8f;
+		materialParameters.Metallic = 0.f;
+		sampledCombinedMaterial = vec3(1.f);
 	}
 
 	vec3 waterAlbedo = texture(u_AlbedoMaps[in_MaterialSlot], texCoord).rgb;
 	vec3 sampledAlbedo = isWater ? waterAlbedo : b_PaintMaskColor.val[u_PC.TeamIndex].rgb;
-
-	vec3 sampledNormal				= isWater == false ? normal : texture(u_NormalMaps[in_MaterialSlot], texCoord).rgb;
-	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot], texCoord).rgb;
-
-	vec3 shadingNormal		= normalize((sampledNormal * 2.0f) - 1.0f);
-	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
     // Tells the user how much paint is in the container. A limit of 0.75 is 75% filled.
 	float MAX = 0.19f;
@@ -116,11 +112,11 @@ void main()
 	vec4 aoRoughMetalValid	= vec4(storedMaterial, 1.0f);
 	
 	float ao		= aoRoughMetalValid.r;
-	float roughness	= 1.0f-aoRoughMetalValid.g; // TODO fix need to invert
+	float roughness	= aoRoughMetalValid.g;
 	float metallic	= aoRoughMetalValid.b;
 	float depth 	= texture(u_DepthStencil, in_TexCoord).r;
 
-	vec3 N 					= normalize(shadingNormal);
+	vec3 N 					= normalize(normal);
 	vec3 viewVector			= perFrameBuffer.CameraPosition.xyz - in_WorldPosition;
 	float viewDistance		= length(viewVector);
 	vec3 V 					= normalize(viewVector);
