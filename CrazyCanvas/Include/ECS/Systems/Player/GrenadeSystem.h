@@ -3,6 +3,9 @@
 #include "ECS/System.h"
 #include "Math/Math.h"
 
+#include "Events/PacketEvents.h"
+#include "Multiplayer/Packet/PacketGrenadeThrown.h"
+
 namespace LambdaEngine
 {
 	struct KeyPressedEvent;
@@ -27,8 +30,8 @@ private:
 	bool OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEvent);
 
 	// A player is attempting to throw a grenade. Throw one if the grenade is off cooldown.
-	void TryThrowGrenade(LambdaEngine::Entity throwingPlayer);
-	void ThrowGrenade(LambdaEngine::Entity throwingPlayer);
+	bool TryThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm::vec3& position, const glm::vec3& velocity);
+	bool ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm::vec3& position, const glm::vec3& velocity);
 
 	void Explode(LambdaEngine::Entity grenade);
 
@@ -42,7 +45,11 @@ private:
 	 * Should be called after finding the players within the blast radius of the grenade using the function above.
 	 * @param players Players assumed to be within the blast radius of the grenade.
 	*/
-	void RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::Entity>& players, const glm::vec3& grenadePosition);
+	void RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::Entity>& players, LambdaEngine::Entity grenadeEntity, const glm::vec3& grenadePosition, uint8 grenadeTeam);
+
+
+private:
+	bool OnPacketGrenadeThrownReceived(const PacketReceivedEvent<PacketGrenadeThrown>& grenadeThrownEvent);
 
 private:
 	LambdaEngine::IDVector m_Grenades;

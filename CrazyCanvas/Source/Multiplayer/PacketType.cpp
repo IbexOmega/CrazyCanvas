@@ -26,6 +26,7 @@
 #include "Multiplayer/Packet/PacketPositionPing.h"
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 #include "Multiplayer/Packet/PacketResetPlayerTexture.h"
+#include "Multiplayer/Packet/PacketGrenadeThrown.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -57,6 +58,7 @@ void PacketType::Init()
 	PLAYER_STATE			= RegisterPacketType<PacketPlayerState>();
 	PROJECTILE_HIT			= RegisterPacketType<PacketProjectileHit>();
 	RESET_PLAYER_TEXTURE	= RegisterPacketTypeWithComponent<PacketResetPlayerTexture>();
+	GRENADE_THROWN			= RegisterPacketType<PacketGrenadeThrown>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw(const char* pName)

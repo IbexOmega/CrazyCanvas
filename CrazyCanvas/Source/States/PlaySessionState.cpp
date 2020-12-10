@@ -125,7 +125,6 @@ void PlaySessionState::Init()
 	m_HUDSystem.Init();
 	m_NameplateSystem.Init();
 	m_DestructionSystem.Init();
-	m_GrenadeSystem.Init();
 
 	// Commands
 	ConsoleCommand cmd1;

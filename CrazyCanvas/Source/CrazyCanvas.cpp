@@ -35,6 +35,7 @@
 #include "ECS/Systems/Multiplayer/PacketTranscoderSystem.h"
 #include "ECS/Components/Player/WeaponComponent.h"
 #include "ECS/Components/Player/HealthComponent.h"
+#include "ECS/Components/Player/GrenadeComponent.h"
 
 #include "Multiplayer/Packet/PacketType.h"
 
@@ -310,6 +311,7 @@ bool CrazyCanvas::BindComponentTypeMasks()
 	EntityMaskManager::BindTypeToExtensionDesc(HealthComponent::Type(),	{ 0 }, false, 0x20);	// Bit = 0x20
 
 	EntityMaskManager::BindTypeToExtensionDesc(ProjectileComponent::Type(), { 0 }, false, 0x40);	// Bit = 0x40
+	EntityMaskManager::BindTypeToExtensionDesc(GrenadeComponent::Type(), { 0 }, false, 0x80);
 
 	EntityMaskManager::Finalize();
 
