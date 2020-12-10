@@ -382,6 +382,11 @@ ELevelObjectType LevelObjectCreator::CreateNoColliderObject(const LambdaEngine::
 		pECS->AddComponent<ScaleComponent>(entity, { true, pMesh->DefaultScale }),
 		pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
 		pECS->AddComponent<MeshComponent>(entity, meshComp);
+		pECS->AddComponent<RayTracedComponent>(entity,
+			RayTracedComponent
+			{
+				.HitMask = 0xFF
+			});
 
 		createdEntities.PushBack(entity);
 	}
@@ -565,6 +570,11 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+		pECS->AddComponent<RayTracedComponent>(entity,
+			RayTracedComponent
+			{
+				.HitMask = 0xFF
+			});
 	}
 
 	createdEntities.PushBack(entity);
@@ -889,15 +899,15 @@ bool LevelObjectCreator::CreateFlag(
 				.JointName = "mixamorig:Spine2",
 				.Transform = glm::mat4(1.0f),
 			});
+
+		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 	}
 	else
 	{
 		EFlagColliderType flagPlayerColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER;
 		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
-
-		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
-				.HitMask = 0xFF
-			});
 
 		//Only the server checks collision with the flag
 		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
@@ -975,7 +985,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
 	PlayerIndexHelper::AddPlayerEntity(playerEntity);
-
 
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,

@@ -213,10 +213,9 @@ Level* LevelManager::LoadLevel(uint32 index)
 		{
 			auto moduleIt = loadedModules.find(moduleDesc.Filename);
 
-			if (moduleIt != loadedModules.end())
+			if (moduleIt != loadedModules.end() && moduleIt->second->GetTranslation() == moduleDesc.Translation)
 			{
-				//Module is already loaded, just update translation
-				moduleIt->second->SetTranslation(moduleDesc.Translation);
+				//Module is already loaded
 				s_LoadedModules[moduleIt->first] = moduleIt->second;
 				levelCreateDesc.LevelModules.PushBack(moduleIt->second);
 				loadedModules.erase(moduleIt);

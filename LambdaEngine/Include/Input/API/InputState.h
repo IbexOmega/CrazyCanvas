@@ -6,26 +6,45 @@ namespace LambdaEngine
 	/*
 	* KeyboardState
 	*/
+
 	struct KeyboardState
 	{
+		struct KeyState
+		{
+			uint8 IsDown		: 1;
+			uint8 JustPressed	: 1;
+
+			FORCEINLINE void Reset()
+			{
+				IsDown		= 0;
+				JustPressed	= 0;
+			}
+		};
+
 	public:
 		FORCEINLINE bool IsKeyDown(EKey key) const
 		{
-			return KeyStates[key];
+			return KeyStates[key].IsDown;
 		}
 
 		FORCEINLINE bool IsKeyUp(EKey key) const
 		{
-			return !KeyStates[key];
+			return !(KeyStates[key].IsDown);
+		}
+
+		FORCEINLINE bool IsKeyJustPressed(EKey key) const
+		{
+			return KeyStates[key].JustPressed;
 		}
 
 	public:
-		bool KeyStates[EKey::KEY_COUNT];
+		KeyState KeyStates[EKey::KEY_COUNT];
 	};
 
 	/*
 	* ModiferKeyState
 	*/
+
 	struct ModifierKeyState
 	{
 	public:
@@ -76,6 +95,7 @@ namespace LambdaEngine
 	/*
 	* MouseState
 	*/
+
 	struct MouseState
 	{
 	public:
