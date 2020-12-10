@@ -45,7 +45,7 @@ namespace LambdaEngine
 			vkGetDeviceQueue(m_pDevice->Device, queueFamilyIndex, index, &m_Queue);
 			SetName(debugName);
 
-			LOG_DEBUG("Created commandqueue from queuefamily=%u with index=%u", queueFamilyIndex, index);
+			LOG_VULKAN_INFO("Created commandqueue from queuefamily=%u with index=%u", queueFamilyIndex, index);
 
 			m_Type = m_pDevice->GetCommandQueueTypeFromQueueIndex(queueFamilyIndex);
 

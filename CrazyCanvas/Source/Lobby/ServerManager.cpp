@@ -59,7 +59,7 @@ void ServerManager::RegisterNewServer(const ServerInfo& serverInfo)
 	}
 
 	TArray<ServerInfo> servers;
-	servers.Reserve(s_ServersWAN.size());
+	servers.Reserve((uint32)s_ServersWAN.size());
 
 	for (auto& pair : s_ServersWAN)
 	{
@@ -107,11 +107,23 @@ bool ServerManager::OnServerResponse(const ServerDiscoveredEvent& event)
 	serverInfo.IsLAN		= event.IsLAN;
 	serverInfo.IsOnline		= true;
 
-	pDecoder->ReadUInt8(serverInfo.Players);
-	pDecoder->ReadUInt8(serverInfo.MaxPlayers);
-	pDecoder->ReadString(serverInfo.Name);
-	pDecoder->ReadString(serverInfo.MapName);
-	pDecoder->ReadInt32(serverInfo.ClientHostID);
+	if (!pDecoder->ReadUInt8(serverInfo.Players))
+		return false;
+
+	if (!pDecoder->ReadUInt8(serverInfo.MaxPlayers))
+		return false;
+
+	if (!pDecoder->ReadString(serverInfo.Name))
+		return false;
+
+	if (!pDecoder->ReadString(serverInfo.MapName))
+		return false;
+
+	if (!pDecoder->ReadUInt8((uint8&)serverInfo.State))
+		return false;
+
+	if (!pDecoder->ReadInt32(serverInfo.ClientHostID))
+		return false;
 
 	if (serverInfo.IsLAN)
 		AddOrUpdateServer(s_ServersLAN, serverInfo);

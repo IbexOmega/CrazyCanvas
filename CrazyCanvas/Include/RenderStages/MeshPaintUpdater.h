@@ -18,6 +18,7 @@ namespace LambdaEngine
 		{
 			uint32 VertexCount;
 			uint32 ShouldResetServer;
+			uint32 HitPointBufferValid;
 		};
 
 	public:
@@ -51,6 +52,7 @@ namespace LambdaEngine
 		}
 
 		static void ClearServer(Entity entity);
+		static void SetHitPointBufferValid(bool valid);
 
 	private:
 		bool CreatePipelineLayout();
@@ -75,6 +77,7 @@ namespace LambdaEngine
 		CommandList** m_ppComputeCommandLists = nullptr;
 
 		static std::unordered_set<Entity> s_EntitiesToClear;
+		static uint32 s_HitPointBufferValid;
 	};
 }
 

@@ -17,10 +17,17 @@
 
 #include "Multiplayer/ClientHelper.h"
 
+#include "Math/Random.h"
+
+#include <Psapi.h>
+#include "Utilities/StringUtilities.h"
+
 using namespace LambdaEngine;
 
 MultiplayerState::MultiplayerState() : 
-	m_IsManualConnection(false)
+	m_IsManualConnection(false),
+	m_ClientHostID(-1),
+	m_IsConnecting(false)
 {
 
 }
@@ -74,6 +81,8 @@ void MultiplayerState::Tick(LambdaEngine::Timestamp delta)
 
 bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEvent& event)
 {
+	m_MultiplayerGUI->CloseNotification();
+
 	if (m_IsManualConnection)
 	{
 		ServerInfo serverInfo;
@@ -82,7 +91,7 @@ bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEven
 		ServerManager::RegisterNewServer(serverInfo);
 	}
 
-	State* pLobbyState = DBG_NEW LobbyState(m_MultiplayerGUI->GetPlayerName(), m_MultiplayerGUI->HasHostedServer());
+	State* pLobbyState = DBG_NEW LobbyState(m_MultiplayerGUI->GetPlayerName(), HasHostedServer());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 
 	return false;
@@ -90,6 +99,25 @@ bool MultiplayerState::OnClientConnected(const LambdaEngine::ClientConnectedEven
 
 bool MultiplayerState::OnClientDisconnected(const LambdaEngine::ClientDisconnectedEvent& event)
 {
+	m_MultiplayerGUI->CloseNotification();
+
+	if (m_IsConnecting)
+	{
+		if (event.Reason == "Server Currently Not Accepting")
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("The server is currently busy playing!");
+		}
+		else if (event.Reason == "Server Full")
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("The server is currently full!");
+		}
+		else
+		{
+			m_MultiplayerGUI->DisplayErrorMessage("Failed to join server!");
+		}
+		m_IsConnecting = false;
+	}
+
 	return false;
 }
 
@@ -98,10 +126,17 @@ bool MultiplayerState::OnServerOnlineEvent(const ServerOnlineEvent& event)
 	const ServerInfo& serverInfo = event.Server;
 
 	if (serverInfo.IsLAN)
+	{
+		if (m_ClientHostID == serverInfo.ClientHostID)
+		{
+			ConnectToServer(serverInfo);
+		}
 		m_MultiplayerGUI->AddServerLAN(serverInfo);
+	}	
 	else
+	{
 		m_MultiplayerGUI->AddServerSaved(serverInfo);
-
+	}
 	return true;
 }
 
@@ -144,5 +179,104 @@ bool MultiplayerState::OnServerUpdatedEvent(const ServerUpdatedEvent& event)
 bool MultiplayerState::ConnectToServer(const IPEndPoint& endPoint, bool isManual)
 {
 	m_IsManualConnection = isManual;
-	return ClientSystem::GetInstance().Connect(endPoint);
+	m_IsConnecting = true;
+	if (ClientSystem::GetInstance().Connect(endPoint))
+	{
+		m_MultiplayerGUI->DisplayNotification("Joining server!");
+		return true;
+	}
+
+	m_MultiplayerGUI->DisplayErrorMessage("A connection does already exist!");
+	return false;
+}
+
+bool MultiplayerState::ConnectToServer(const ServerInfo& serverInfo)
+{
+	if (serverInfo.State == EServerState::SERVER_STATE_LOBBY)
+	{
+		if (serverInfo.Players < serverInfo.MaxPlayers)
+		{
+			return ConnectToServer(serverInfo.EndPoint, false);
+		}
+
+		m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently full!");
+		return false;
+	}
+
+	m_MultiplayerGUI->DisplayErrorMessage("The selected server is currently busy playing!");
+	return false;
+}
+
+bool MultiplayerState::HasHostedServer() const
+{
+	return m_ClientHostID != -1;
+}
+
+void MultiplayerState::StartUpServer()
+{
+	if (HasHostedServer())
+		return;
+
+	static String commandLine = "--state=server";
+
+	m_MultiplayerGUI->DisplayNotification("Starting server!");
+
+	// Get application (.exe) path
+	HANDLE processHandle = NULL;
+	WString filePath;
+
+	processHandle = GetCurrentProcess();
+	if (processHandle != NULL)
+	{
+		TCHAR filename[MAX_PATH];
+		if (GetModuleFileNameEx(processHandle, NULL, filename, MAX_PATH) > 0)
+		{
+			filePath = WString(filename);
+		}
+		else
+		{
+			LOG_ERROR("Failed to get current process file path - cannot start server");
+			return;
+		}
+	}
+
+	//additional Info
+	STARTUPINFOA lpStartupInfo;
+	PROCESS_INFORMATION lpProcessInfo;
+	m_ClientHostID = Random::Int32();
+
+	std::string finalCLine = ConvertToAscii(filePath) + " " + commandLine + " " + std::to_string(m_ClientHostID);
+
+	// set the size of the structures
+	ZeroMemory(&lpStartupInfo, sizeof(lpStartupInfo));
+	lpStartupInfo.cb = sizeof(lpStartupInfo);
+	ZeroMemory(&lpProcessInfo, sizeof(lpProcessInfo));
+
+	SetLastError(0);
+
+	if (!CreateProcessA(
+		NULL,
+		finalCLine.data(),	//Command line
+		NULL,			// Process handle not inheritable
+		NULL,			// Thread handle not inheritable
+		NULL,
+		NULL,			// No creation flags
+		NULL,			// Use parent's environment block
+		NULL,			// Use parent's starting directory
+		&lpStartupInfo,
+		&lpProcessInfo)
+		)
+	{
+		int dError2 = GetLastError();
+
+		LOG_ERROR("Create Process LastError: %d", dError2);
+	}
+	else
+	{
+		LOG_MESSAGE("Create Process Success");
+
+		// Close process and thread handles. 
+		CloseHandle(lpProcessInfo.hProcess);
+		CloseHandle(lpProcessInfo.hThread);
+	}
 }

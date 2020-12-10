@@ -42,6 +42,11 @@ vec3 UnpackNormal(vec3 normal)
 	return normalize((normal * 2.0f) - 1.0f);
 }
 
+vec3 F0(vec3 albedo, float metallic)
+{
+	return mix(vec3(0.04f), albedo, metallic);
+}
+
 /*
 	Schlick Fresnel function
 */
@@ -61,6 +66,15 @@ vec3 FresnelRoughness(vec3 F0, float cosTheta, float roughness)
 /*
 	GGX Distribution function
 */
+float Distribution(float n_dot_h, float alphaSqrd)
+{
+	float denom = max(0.0001f, ((n_dot_h * n_dot_h) * (alphaSqrd - 1.0f)) + 1.0f);
+	return alphaSqrd * INV_PI / (denom * denom);
+}
+
+/*
+	GGX Distribution function
+*/
 float Distribution(vec3 normal, vec3 halfVector, float roughness)
 {
 	float roughnessSqrd = roughness * roughness;
@@ -70,6 +84,14 @@ float Distribution(vec3 normal, vec3 halfVector, float roughness)
 
 	float denom = ((NdotH * NdotH) * (alphaSqrd - 1.0f)) + 1.0f;
 	return alphaSqrd / (PI * denom * denom);
+}
+
+/*
+	Schlick and GGX Geometry-Function
+*/
+float GeometryGGXOptimized(float n_dot_v, float k)
+{
+	return n_dot_v / ((n_dot_v * (1.0f - k)) + k);
 }
 
 /*
@@ -87,6 +109,16 @@ float GeometryGGXIBL(float NdotV, float roughness)
 {
 	float K = (roughness * roughness) / 2.0f;
 	return NdotV / (NdotV * (1.0f - K) + K);
+}
+
+/*
+	Smith Geometry-Function
+*/
+float Geometry(float n_dot_o, float n_dot_i, float roughness)
+{
+	float r_1 	= roughness + 1.0f;
+    float k 	= r_1 * r_1 / 8.0f;
+	return GeometryGGXOptimized(n_dot_o, roughness) * GeometryGGXOptimized(n_dot_i, roughness);
 }
 
 /*
@@ -283,18 +315,17 @@ float PointShadowDepthTest(vec3 fragPos, vec3 lightPos, float viewDistance, vec3
 	for(int i = 0; i < samples; ++i)
 	{
 		float closestDepth = texture(shadowMap, fragToLight + sampleOffsetDirections[i] * diskRadius).r;
-		closestDepth *= farPlane;   
+		closestDepth *= farPlane;
 		if(currentDepth - bias > closestDepth)
 			shadow += 1.0;
 	}
-	shadow /= float(samples);  
-
+	shadow /= float(samples);
 	return shadow;
 }
 
 float CalculateLuminance(vec3 color)
 {
-	return sqrt(dot(color, vec3(0.299f, 0.587f, 0.114f)));
+	return dot(color, vec3(0.299f, 0.587f, 0.114f));
 }
 
 #endif

@@ -8,7 +8,7 @@ namespace LambdaEngine
 	RegularWorker::~RegularWorker()
 	{
 		ECSCore* pECS = ECSCore::GetInstance();
-		if (pECS)
+		if (pECS && m_JobID != UINT32_MAX)
 			pECS->DescheduleRegularJob(m_Phase, m_JobID);
 	}
 
@@ -26,8 +26,8 @@ namespace LambdaEngine
 
 		const RegularJob regularJob =
 		{
-			/* Function */		std::bind(&RegularWorker::Tick, this),
 			/* Components */	RegularWorker::GetUniqueComponentAccesses(regularWorkInfo.EntitySubscriberRegistration),
+			/* Function */		std::bind(&RegularWorker::Tick, this),
 			/* TickPeriod */	m_TickPeriod,
 			/* Accumulator */	0.0f
 		};

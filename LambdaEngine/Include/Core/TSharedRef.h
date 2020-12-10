@@ -257,7 +257,7 @@ namespace LambdaEngine
 			static_assert(std::is_convertible<TOther*, TRefCountedObject*>());
 			static_assert(std::is_base_of<RefCountedObject, TOther>());
 
-			if (this != std::addressof(other))
+			if (m_pPtr != other.m_pPtr)
 			{
 				Reset();
 

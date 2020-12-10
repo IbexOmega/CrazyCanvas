@@ -46,11 +46,11 @@ namespace LambdaEngine
 
 		if (!pDesc->DebugName.empty())
 		{
-			LOG_DEBUG("Created SBT %s", pDesc->DebugName.c_str());
+			LOG_VULKAN_INFO("Created SBT %s", pDesc->DebugName.c_str());
 		}
 		else
 		{
-			LOG_DEBUG("Created SBT");
+			LOG_VULKAN_INFO("Created SBT");
 		}
 
 		return true;

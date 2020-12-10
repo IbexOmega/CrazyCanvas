@@ -3,10 +3,9 @@
 
 enum class IndicatorTypeGUI
 {
-	FLAG_INDICATOR
-	//DROP_OFF_INDICATOR //example
+	FLAG_INDICATOR,
+	PING_INDICATOR
 };
-
 
 struct ProjectedGUIComponent
 {

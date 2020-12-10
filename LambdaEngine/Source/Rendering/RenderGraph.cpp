@@ -1,4 +1,4 @@
-#include "Rendering/RenderGraph.h"
+ #include "Rendering/RenderGraph.h"
 #include "Rendering/CustomRenderer.h"
 #include "Rendering/ImGuiRenderer.h"
 #include "Rendering/LineRenderer.h"
@@ -362,20 +362,27 @@ namespace LambdaEngine
 			if (renderStageIt != m_RenderStageMap.end())
 			{
 				RenderStage* pRenderStage = &m_pRenderStages[renderStageIt->second];
-
-				if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+				
+				if (pRenderStage->UsesCustomRenderer)
 				{
-					if (pRenderStage->ExternalPushConstants.pData == nullptr)
-					{
-						pRenderStage->ExternalPushConstants.pData = DBG_NEW byte[pRenderStage->ExternalPushConstants.MaxDataSize];
-					}
-
-					memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
-					pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+					pRenderStage->pCustomRenderer->UpdatePushConstants(pDesc->pData, pDesc->DataSize);
 				}
 				else
 				{
-					LOG_ERROR("Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+					if (pDesc->DataSize <= pRenderStage->ExternalPushConstants.MaxDataSize)
+					{
+						if (pRenderStage->ExternalPushConstants.pData == nullptr)
+						{
+							pRenderStage->ExternalPushConstants.pData = DBG_NEW byte[pRenderStage->ExternalPushConstants.MaxDataSize];
+						}
+
+						memcpy(pRenderStage->ExternalPushConstants.pData, pDesc->pData, pDesc->DataSize);
+						pRenderStage->ExternalPushConstants.DataSize = pDesc->DataSize;
+					}
+					else
+					{
+						LOG_ERROR("Render Stage \"%s\" has a Max External Push Constant size of %d but Update Desc has a size of %d", pDesc->RenderStageName.c_str(), pRenderStage->ExternalPushConstants.MaxDataSize, pDesc->DataSize);
+					}
 				}
 			}
 			else
@@ -520,9 +527,10 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(modFrameIndex);
 		UNREFERENCED_VARIABLE(backBufferIndex);
 
-		for (CustomRenderer* pCustomRenderer : m_CustomRenderers)
+		for (uint32 i = 0; i < m_CustomRenderers.GetSize(); i++)
 		{
-			pCustomRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex);
+			CustomRenderer* pCustomRenderer = m_CustomRenderers[i];
+			PROFILE_FUNCTION("Update: " + pCustomRenderer->GetName(), pCustomRenderer->Update(delta, (uint32)m_ModFrameIndex, m_BackBufferIndex));
 		}
 
 		UpdateResourceBindings();
@@ -839,6 +847,7 @@ namespace LambdaEngine
 			currentFrameDeviceResourcesToDestroy.Clear();
 		}
 
+		BEGIN_PROFILING_SEGMENT("Record Pipeline Stages");
 		for (uint32 p = 0; p < m_PipelineStageCount; p++)
 		{
 			//Seperate Thread
@@ -848,11 +857,15 @@ namespace LambdaEngine
 				if (pPipelineStage->Type == ERenderGraphPipelineStageType::RENDER)
 				{
 					RenderStage* pRenderStage = &m_pRenderStages[pPipelineStage->StageIndex];
+					BEGIN_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 
 					if (pRenderStage->UsesCustomRenderer)
 					{
 						if ((pRenderStage->FrameCounter != pRenderStage->FrameOffset) && pRenderStage->pDisabledRenderPass == nullptr)
+						{
+							END_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 							continue;
+						}
 
 						CustomRenderer* pCustomRenderer = pRenderStage->pCustomRenderer;
 						pCustomRenderer->Render(
@@ -889,6 +902,8 @@ namespace LambdaEngine
 						//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
 						pRenderStage->FrameCounter = 1;
 					}
+
+					END_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
 				}
 				else if (pPipelineStage->Type == ERenderGraphPipelineStageType::SYNCHRONIZATION)
 				{
@@ -907,8 +922,10 @@ namespace LambdaEngine
 				}
 			}
 		}
+		END_PROFILING_SEGMENT("Record Pipeline Stages");
 
 		//Execute Copy Command Lists
+		BEGIN_PROFILING_SEGMENT("Execute General Purpose Command Lists");
 		{
 			CommandList* pGraphicsCopyCommandList = m_ppGraphicsCopyCommandLists[m_ModFrameIndex];
 
@@ -928,10 +945,12 @@ namespace LambdaEngine
 				m_SignalValue++;
 			}
 		}
+		END_PROFILING_SEGMENT("Execute General Purpose Command Lists");
 
 		//Wait Threads
 
 		//Execute the recorded Command Lists, we do this in a Batched mode where we batch as many "same queue" command lists that execute in succession together. This reduced the overhead caused by QueueSubmit
+		BEGIN_PROFILING_SEGMENT("Execute Other Command Lists");
 		{
 			//This is safe since the first Execution Stage should never be nullptr
 			ECommandQueueType currentBatchType = ECommandQueueType::COMMAND_QUEUE_TYPE_NONE;
@@ -987,6 +1006,7 @@ namespace LambdaEngine
 				currentBatch.Clear();
 			}
 		}
+		END_PROFILING_SEGMENT("Execute Other Command Lists");
 
 		m_ModFrameIndex = modFrameIndex;
 	}
@@ -1499,11 +1519,13 @@ namespace LambdaEngine
 						TextureViewDesc textureViewDesc		= {};
 						SamplerDesc		samplerDesc			= {};
 
+						bool isDepthStencil = pResourceDesc->TextureParams.TextureFormat == EFormat::FORMAT_D24_UNORM_S8_UINT;
+
 						textureDesc.DebugName			= !isCubeTexture ? pResourceDesc->Name + " Texture" : pResourceDesc->Name + " Texture Cube";
 						textureDesc.MemoryType			= pResourceDesc->MemoryType;
 						textureDesc.Format				= pResourceDesc->TextureParams.TextureFormat;
 						textureDesc.Type				= ETextureType::TEXTURE_TYPE_2D;
-						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags;
+						textureDesc.Flags				= pResourceDesc->TextureParams.TextureFlags | FTextureFlag::TEXTURE_FLAG_COPY_SRC | FTextureFlag::TEXTURE_FLAG_COPY_DST;
 						textureDesc.Width				= uint32(pResourceDesc->TextureParams.XDimVariable);
 						textureDesc.Height				= uint32(pResourceDesc->TextureParams.YDimVariable);
 						textureDesc.Depth				= 1U;
@@ -1520,6 +1542,36 @@ namespace LambdaEngine
 						textureViewDesc.ArrayCount		= arrayCount;
 						textureViewDesc.Miplevel		= 0U;
 						textureViewDesc.ArrayIndex		= 0U;
+
+						if (pResourceDesc->TextureParams.ExtraShaderResourceAccess)
+						{
+							textureDesc.Flags		|= FTextureFlag::TEXTURE_FLAG_SHADER_RESOURCE;
+							textureViewDesc.Flags	|= FTextureViewFlag::TEXTURE_VIEW_FLAG_SHADER_RESOURCE;
+						}
+						
+						if (pResourceDesc->TextureParams.ExtraRenderTargetAccess)
+						{
+							textureDesc.Flags		|= FTextureFlag::TEXTURE_FLAG_RENDER_TARGET;
+							textureViewDesc.Flags	|= FTextureViewFlag::TEXTURE_VIEW_FLAG_RENDER_TARGET;
+						}
+						
+						if (pResourceDesc->TextureParams.ExtraDepthStencilAccess)
+						{
+							textureDesc.Flags		|= FTextureFlag::TEXTURE_FLAG_DEPTH_STENCIL;
+							textureViewDesc.Flags	|= FTextureViewFlag::TEXTURE_VIEW_FLAG_DEPTH_STENCIL;
+						}
+						
+						if (pResourceDesc->TextureParams.ExtraUnorderedAccess)
+						{
+							textureDesc.Flags		|= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+							textureViewDesc.Flags	|= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+						}
+
+						if (!isDepthStencil)
+						{
+							textureDesc.Flags |= FTextureFlag::TEXTURE_FLAG_UNORDERED_ACCESS;
+							textureViewDesc.Flags |= FTextureViewFlag::TEXTURE_VIEW_FLAG_UNORDERED_ACCESS;
+						}
 
 						samplerDesc.DebugName			= pResourceDesc->Name + " Sampler";
 						samplerDesc.MinFilter			= RenderGraphSamplerToFilter(pResourceDesc->TextureParams.SamplerType);
@@ -2265,7 +2317,6 @@ namespace LambdaEngine
 							return false;
 						}
 
-						m_CustomRenderers.PushBack(pLineRenderer);
 						m_DebugRenderers.PushBack(pLineRenderer);
 
 						pCustomRenderer = pLineRenderer;
@@ -2294,7 +2345,6 @@ namespace LambdaEngine
 							return false;
 						}
 
-						m_CustomRenderers.PushBack(pImGuiRenderer);
 						m_DebugRenderers.PushBack(pImGuiRenderer);
 
 						pCustomRenderer = pImGuiRenderer;
@@ -3603,8 +3653,6 @@ namespace LambdaEngine
 			}
 		}
 
-		LOG_MESSAGE("Updating Resource: %s", pResource->Name.c_str());
-
 		if (pResource->ResourceBindings.GetSize() > 0)
 		{
 			m_DirtyBoundTextureResources.insert(pResource);
@@ -4075,18 +4123,18 @@ namespace LambdaEngine
 	{
 		if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE_1D)
 		{
-			pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth * m_WindowHeight);
+			pRenderStage->Dimensions.x = uint32(ceil(pRenderStage->Parameters.XDimVariable * m_WindowWidth * m_WindowHeight));
 		}
 		else
 		{
 			if (pRenderStage->Parameters.XDimType == ERenderGraphDimensionType::RELATIVE)
 			{
-				pRenderStage->Dimensions.x = uint32(pRenderStage->Parameters.XDimVariable * m_WindowWidth);
+				pRenderStage->Dimensions.x = uint32(ceil(pRenderStage->Parameters.XDimVariable * m_WindowWidth));
 			}
 
 			if (pRenderStage->Parameters.YDimType == ERenderGraphDimensionType::RELATIVE)
 			{
-				pRenderStage->Dimensions.y = uint32(pRenderStage->Parameters.YDimVariable * m_WindowHeight);
+				pRenderStage->Dimensions.y = uint32(ceil(pRenderStage->Parameters.YDimVariable * m_WindowHeight));
 			}
 		}
 	}
@@ -4531,6 +4579,9 @@ namespace LambdaEngine
 
 			pComputeCommandList->BindComputePipeline(pRenderStage->pPipelineState);
 
+			if (pRenderStage->ExternalPushConstants.DataSize > 0)
+				pComputeCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
+
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
 				pComputeCommandList->BindDescriptorSetCompute(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);
 
@@ -4561,6 +4612,9 @@ namespace LambdaEngine
 			Profiler::GetGPUProfiler()->StartTimestamp(pComputeCommandList);
 
 			pComputeCommandList->BindRayTracingPipeline(pRenderStage->pPipelineState);
+
+			if (pRenderStage->ExternalPushConstants.DataSize > 0)
+				pComputeCommandList->SetConstantRange(pRenderStage->pPipelineLayout, pRenderStage->PipelineStageMask, pRenderStage->ExternalPushConstants.pData, pRenderStage->ExternalPushConstants.DataSize, pRenderStage->ExternalPushConstants.Offset);
 
 			if (pRenderStage->ppBufferDescriptorSets != nullptr)
 				pComputeCommandList->BindDescriptorSetRayTracing(pRenderStage->ppBufferDescriptorSets[m_BackBufferIndex], pRenderStage->pPipelineLayout, pRenderStage->BufferSetIndex);

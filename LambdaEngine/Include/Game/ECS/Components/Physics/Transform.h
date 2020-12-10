@@ -42,6 +42,7 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT(VelocityComponent);
 		glm::vec3 Velocity = glm::vec3(0.0f);
+		glm::vec3 LastNonZeroVelocityComponents = glm::vec3(0.0f);
 	};
 
 	struct OffsetComponent

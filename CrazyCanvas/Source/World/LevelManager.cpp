@@ -14,6 +14,8 @@
 #include <rapidjson/filereadstream.h>
 #pragma warning( pop )
 
+//#define LEVEL_MANAGER_LOGS_ENABLED
+
 bool LevelManager::Init()
 {
 	using namespace LambdaEngine;
@@ -137,11 +139,13 @@ bool LevelManager::Init()
 
 				byteRepresentation.clear();
 
+#ifdef LEVEL_MANAGER_LOGS_ENABLED
 				LOG_DEBUG("\nLevel Registered:\nName: %s\nNum Modules: %d\nSHA256: %x%x\n",
 					levelDesc.Name.c_str(),
 					levelDesc.LevelModuleDescriptions.GetSize(),
 					levelDesc.Hash.SHA256Chunk0,
 					levelDesc.Hash.SHA256Chunk1);
+#endif
 			}
 		}
 
@@ -209,10 +213,9 @@ Level* LevelManager::LoadLevel(uint32 index)
 		{
 			auto moduleIt = loadedModules.find(moduleDesc.Filename);
 
-			if (moduleIt != loadedModules.end())
+			if (moduleIt != loadedModules.end() && moduleIt->second->GetTranslation() == moduleDesc.Translation)
 			{
-				//Module is already loaded, just update translation
-				moduleIt->second->SetTranslation(moduleDesc.Translation);
+				//Module is already loaded
 				s_LoadedModules[moduleIt->first] = moduleIt->second;
 				levelCreateDesc.LevelModules.PushBack(moduleIt->second);
 				loadedModules.erase(moduleIt);
@@ -247,7 +250,9 @@ Level* LevelManager::LoadLevel(uint32 index)
 		}
 		else
 		{
+#ifdef LEVEL_MANAGER_LOGS_ENABLED
 			LOG_DEBUG("Level %s created", levelDesc.Name.c_str());
+#endif
 			return pLevel;
 		}
 	}

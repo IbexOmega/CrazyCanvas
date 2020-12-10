@@ -8,6 +8,7 @@
 #pragma warning( pop )
 #include <fstream>
 
+//#define INPUT_ACTION_SYSTEM_LOGS_ENABLED
 
 namespace LambdaEngine
 {
@@ -73,6 +74,7 @@ namespace LambdaEngine
 			if (strAction == s_LookSensitivityName)
 			{
 				s_CurrentLookSensitivityPercentage = s_ConfigDocument[s_LookSensitivityName.c_str()].GetFloat();
+				s_CurrentLookSensitivity = s_CurrentLookSensitivityPercentage * LOOK_SENSITIVITY_BASE;
 			}
 			else
 			{
@@ -88,7 +90,10 @@ namespace LambdaEngine
 				else
 				{
 					s_CurrentBindings.insert({ action, strBinding });
+
+#ifdef INPUT_ACTION_SYSTEM_LOGS_ENABLED
 					LOG_INFO("Action %s is bounded to %s\n", strAction.c_str(), strBinding.c_str());
+#endif
 				}
 			}
 		}
@@ -134,8 +139,10 @@ namespace LambdaEngine
 
 				WriteToFile();
 
+#ifdef INPUT_ACTION_SYSTEM_LOGS_ENABLED
 				LOG_INFO("Action %s has changed keybinding to %s\n",
 					actionStr.c_str(), keyStr.c_str());
+#endif
 				return true;
 			}
 		}
@@ -158,8 +165,10 @@ namespace LambdaEngine
 
 				WriteToFile();
 
+#ifdef INPUT_ACTION_SYSTEM_LOGS_ENABLED
 				LOG_INFO("Action %s has changed keybinding to %s\n",
 					actionStr.c_str(), buttonStr.c_str());
+#endif
 				return true;
 			}
 		}
@@ -226,9 +235,35 @@ namespace LambdaEngine
 		return false;
 	}
 
+	bool InputActionSystem::IsActiveGlobal(EAction action)
+	{
+		if (s_CurrentBindings.contains(action))
+		{
+			EKey key = StringToKey(s_CurrentBindings[action]);
+			EMouseButton mouseButton = StringToButton(s_CurrentBindings[action]);
+
+			if (key != EKey::KEY_UNKNOWN)
+			{
+				return Input::IsKeyDown(Input::GetCurrentInputmode(), key);
+			}
+			else if (mouseButton != EMouseButton::MOUSE_BUTTON_UNKNOWN)
+			{
+				return Input::GetMouseState(Input::GetCurrentInputmode()).IsButtonPressed(mouseButton);
+			}
+		}
+
+		LOG_ERROR("Action %s is not defined.", ActionToString(action));
+		return false;
+	}
+
 	bool InputActionSystem::IsBoundToKey(EAction action)
 	{
 		return GetKey(action) != EKey::KEY_UNKNOWN;
+	}
+
+	bool InputActionSystem::IsActionBoundToKey(EAction action, EKey key)
+	{
+		return GetKey(action) == key;
 	}
 
 	bool InputActionSystem::IsBoundToMouseButton(EAction action)

@@ -8,6 +8,8 @@
 
 #include "Networking/API/IPEndPoint.h"
 
+#include "Lobby/EServerState.h"
+
 struct ServerInfo
 {
 	LambdaEngine::String Name;
@@ -19,6 +21,7 @@ struct ServerInfo
 	uint64 ServerUID	= 0;
 	bool IsLAN			= false;
 	bool IsOnline		= false;
+	EServerState State;
 
 	LambdaEngine::IPEndPoint EndPoint;
 	LambdaEngine::Timestamp LastPinged;
@@ -36,6 +39,7 @@ struct ServerInfo
 			ServerUID == other.ServerUID &&
 			IsLAN == other.IsLAN &&
 			IsOnline == other.IsOnline &&
+			State == other.State &&
 			EndPoint == other.EndPoint;
 	}
 
@@ -50,6 +54,7 @@ struct ServerInfo
 			ServerUID != other.ServerUID ||
 			IsLAN != other.IsLAN ||
 			IsOnline != other.IsOnline ||
+			State != other.State ||
 			EndPoint != other.EndPoint;
 	}
 
@@ -65,6 +70,7 @@ struct ServerInfo
 			ServerUID = other.ServerUID;
 			IsLAN = other.IsLAN;
 			IsOnline = other.IsOnline;
+			State = other.State;
 			EndPoint = other.EndPoint;
 			LastPinged = other.LastPinged;
 		}

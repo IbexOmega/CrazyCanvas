@@ -132,13 +132,18 @@ void HealthSystemServer::FixedTick(LambdaEngine::Timestamp deltaTime)
 			MeshPaintHandler::ResetServer(entity);
 
 			// Reset health and send to client
-			HealthComponent& healthComponent	= pHealthComponents->GetData(entity);
-			healthComponent.CurrentHealth		= START_HEALTH;
 
-			PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
-			PacketHealthChanged packet = {};
-			packet.CurrentHealth = healthComponent.CurrentHealth;
-			packets.SendPacket(packet);
+			HealthComponent healthComponent = {};
+
+			if (pHealthComponents->GetIf(entity, healthComponent))
+			{
+				healthComponent.CurrentHealth		= START_HEALTH;
+
+				PacketComponent<PacketHealthChanged>& packets = pHealthChangedComponents->GetData(entity);
+				PacketHealthChanged packet = {};
+				packet.CurrentHealth = healthComponent.CurrentHealth;
+				packets.SendPacket(packet);
+			}
 		}
 
 		m_ResetsToProcess.Clear();

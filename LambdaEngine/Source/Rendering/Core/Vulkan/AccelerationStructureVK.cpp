@@ -148,11 +148,11 @@ namespace LambdaEngine
 
 		if (!m_Desc.DebugName.empty())
 		{
-			LOG_DEBUG("Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.DebugName.c_str(), memoryRequirements.size);
+			LOG_VULKAN_INFO("Acceleration Structure \"%s\" created with size of %u bytes", m_Desc.DebugName.c_str(), memoryRequirements.size);
 		}
 		else
 		{
-			LOG_DEBUG("Acceleration Structure created with size of %u bytes", memoryRequirements.size);
+			LOG_VULKAN_INFO("Acceleration Structure created with size of %u bytes", memoryRequirements.size);
 		}
 
 		VkMemoryRequirements scratchMemoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_BUILD_SCRATCH_KHR);

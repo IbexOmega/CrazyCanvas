@@ -83,15 +83,14 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 		pPlayer->m_Team = 1;
 	}
 
+	ClientHelper::Send(packet);
+	NetworkDebugger::RegisterClientName(pClient, name);
+
 	if (isHost)
 	{
 		PlayerHostUpdatedEvent event(pPlayer);
 		EventQueue::SendEventImmediate(event);
 	}
-
-	ClientHelper::Send(packet);
-
-	NetworkDebugger::RegisterClientName(pClient, name);
 }
 
 void PlayerManagerClient::SetLocalPlayerReady(bool ready)
@@ -107,13 +106,7 @@ void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 		{
 			pPlayer->m_State = GAME_STATE_SETUP;
 
-			PacketPlayerState packet;
-			packet.State = pPlayer->m_State;
-
-			ClientHelper::Send(packet);
-
-			PlayerStateUpdatedEvent event(pPlayer);
-			EventQueue::SendEventImmediate(event);
+			ApplyStateChange(pPlayer);
 		}
 		else if (pPlayer->m_IsReady != ready)
 		{
@@ -130,6 +123,19 @@ void PlayerManagerClient::SetLocalPlayerReady(bool ready)
 	}
 }
 
+void PlayerManagerClient::SetLocalPlayerStateLobby()
+{
+	ASSERT(!MultiplayerUtils::IsServer());
+
+	Player* pPlayer = GetPlayerLocalNoConst();
+	if (pPlayer)
+	{
+		pPlayer->m_State = GAME_STATE_LOBBY;
+
+		ApplyStateChange(pPlayer);
+	}
+}
+
 void PlayerManagerClient::SetLocalPlayerStateLoading()
 {
 	ASSERT(!MultiplayerUtils::IsServer());
@@ -139,17 +145,11 @@ void PlayerManagerClient::SetLocalPlayerStateLoading()
 	{
 		ASSERT_MSG(pPlayer->GetState() == GAME_STATE_SETUP, "Player not in SETUP state!");
 
-		ClientHelper::SetTimeout(Timestamp::Seconds(15));
+		ClientHelper::SetTimeout(Timestamp::Seconds(30));
 
 		pPlayer->m_State = GAME_STATE_LOADING;
 
-		PacketPlayerState packet;
-		packet.State = pPlayer->m_State;
-
-		ClientHelper::Send(packet);
-
-		PlayerStateUpdatedEvent event(pPlayer);
-		EventQueue::SendEventImmediate(event);
+		ApplyStateChange(pPlayer);
 	}
 }
 
@@ -166,14 +166,19 @@ void PlayerManagerClient::SetLocalPlayerStateLoaded()
 
 		pPlayer->m_State = GAME_STATE_LOADED;
 
-		PacketPlayerState packet;
-		packet.State = pPlayer->m_State;
-
-		ClientHelper::Send(packet);
-
-		PlayerStateUpdatedEvent event(pPlayer);
-		EventQueue::SendEventImmediate(event);
+		ApplyStateChange(pPlayer);
 	}
+}
+
+void PlayerManagerClient::ApplyStateChange(const Player* pPlayer)
+{
+	PacketPlayerState packet;
+	packet.State = pPlayer->m_State;
+
+	ClientHelper::Send(packet);
+
+	PlayerStateUpdatedEvent event(pPlayer);
+	EventQueue::SendEventImmediate(event);
 }
 
 bool PlayerManagerClient::OnPacketJoinReceived(const PacketReceivedEvent<PacketJoin>& event)

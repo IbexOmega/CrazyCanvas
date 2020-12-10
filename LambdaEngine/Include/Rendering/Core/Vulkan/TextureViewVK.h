@@ -12,6 +12,7 @@ namespace LambdaEngine
 	/*
 	* TextureViewVK
 	*/
+
 	class TextureViewVK : public TDeviceChildBase<GraphicsDeviceVK, TextureView>
 	{
 		using TDeviceChild = TDeviceChildBase<GraphicsDeviceVK, TextureView>;
@@ -21,8 +22,7 @@ namespace LambdaEngine
 		~TextureViewVK();
 		
 		bool Init(const TextureViewDesc* pDesc);
-		bool Reinit(const TextureViewDesc* pDesc);
-		
+
 		FORCEINLINE VkImageView GetImageView() const
 		{
 			return m_ImageView;
@@ -35,7 +35,7 @@ namespace LambdaEngine
 		virtual void SetName(const String& name) override final;
 		
 		// TextureView interface
-		virtual Texture* GetTexture() override final;
+		virtual Texture* GetTexture() const override final;
 		
 		FORCEINLINE virtual uint64 GetHandle() const override final
 		{

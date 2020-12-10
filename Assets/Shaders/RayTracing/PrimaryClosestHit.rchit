@@ -43,7 +43,7 @@ hitAttributeEXT vec3 attribs;
 
 vec3 ExtractOriginalPosition(SVertex v)
 {
-	vec3 pos = vec3(v.Tangent.x, v.TexCoord.z, v.TexCoord.w);
+	vec3 pos = vec3(v.Tangent.w, v.TexCoord.z, v.TexCoord.w);
 	if(floatBitsToUint(pos.x) == UINT32_MAX || floatBitsToUint(pos.y) == UINT32_MAX || floatBitsToUint(pos.z) == UINT32_MAX)
 		pos = v.Position.xyz;
 	return pos;

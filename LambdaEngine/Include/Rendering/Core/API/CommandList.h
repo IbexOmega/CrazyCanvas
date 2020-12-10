@@ -246,7 +246,7 @@ namespace LambdaEngine
 		virtual void BlitTexture(
 			const Texture* pSrc, 
 			ETextureState srcState, 
-			Texture* pDst, 
+			const Texture* pDst,
 			ETextureState dstState, 
 			EFilterType filter)	= 0;
 

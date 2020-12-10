@@ -169,7 +169,7 @@ namespace LambdaEngine
 			}
 			else
 			{
-				LOG_DEBUG("Created DescriptorSetLayout");
+				LOG_VULKAN_INFO("Created DescriptorSetLayout");
 
 				m_DescriptorSetLayouts.EmplaceBack(layout);
 				layoutBindings.Clear();
@@ -228,11 +228,11 @@ namespace LambdaEngine
 
 			if (!pDesc->DebugName.empty())
 			{
-				LOG_DEBUG("Created PipelineLayout \"%s\"", pDesc->DebugName.c_str());
+				LOG_VULKAN_INFO("Created PipelineLayout \"%s\"", pDesc->DebugName.c_str());
 			}
 			else
 			{
-				LOG_DEBUG("Created PipelineLayout");
+				LOG_VULKAN_INFO("Created PipelineLayout");
 			}
 		}
 

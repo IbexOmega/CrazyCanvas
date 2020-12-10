@@ -8,6 +8,7 @@
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/StateManager.h"
 #include "Game/State.h"
+#include "Input/API/Input.h"
 #include "Input/API/InputActionSystem.h"
 #include "States/BenchmarkState.h"
 #include "States/PlaySessionState.h"
@@ -20,6 +21,9 @@
 #include "GUI/GUIHelpers.h"
 
 #include "Game/ECS/Systems/CameraSystem.h"
+
+#include "Rendering/AARenderer.h"
+#include "Rendering/RenderGraph.h"
 
 using namespace Noesis;
 using namespace LambdaEngine;
@@ -67,7 +71,9 @@ bool MainMenuGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 	// SettingsGrid
 	NS_CONNECT_EVENT(Button, Click, OnButtonChangeControlsClick);
 	NS_CONNECT_EVENT(Slider, ValueChanged, OnVolumeSliderChanged);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnMusicVolumeSliderChanged);
 	NS_CONNECT_EVENT(Slider, ValueChanged, OnFOVSliderChanged);
+	NS_CONNECT_EVENT(Slider, ValueChanged, OnReflectionsSPPSliderChanged);
 
 	// Settings
 	NS_CONNECT_EVENT(Button, Click, OnButtonApplySettingsClick);
@@ -92,6 +98,11 @@ void MainMenuGUI::OnButtonBackClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
@@ -110,6 +121,11 @@ void MainMenuGUI::OnButtonPlayClick(Noesis::BaseComponent* pSender, const Noesis
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
@@ -122,6 +138,11 @@ void MainMenuGUI::OnButtonSettingsClick(Noesis::BaseComponent* pSender, const No
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
@@ -133,6 +154,11 @@ void MainMenuGUI::OnButtonExitClick(BaseComponent* pSender, const RoutedEventArg
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	CommonApplication::Get()->Terminate();
 }
@@ -147,7 +173,10 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
-	LambdaEngine::GUIApplication::SetView(nullptr);
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	PacketGameSettings settings;
 	settings.MapID		= 0;
@@ -161,6 +190,11 @@ void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedE
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	State* pLobbyState = DBG_NEW MultiplayerState();
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);
 }
@@ -169,6 +203,11 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
@@ -188,6 +227,11 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	// Noesis::CheckBox* pRayTracingCheckBox = FrameworkElement::FindName<CheckBox>("RayTracingCheckBox");
 	// m_RayTracingEnabled = pRayTracingCheckBox->GetIsChecked().GetValue();
 	// EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_RAY_TRACING, m_RayTracingEnabled);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	// Mesh Shader
 	Noesis::CheckBox* pMeshShaderCheckBox = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
@@ -211,8 +255,35 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
+	// AA
+	Noesis::ComboBox* pAAComboBox = FrameworkElement::FindName<Noesis::ComboBox>("AAComboBox");
+	LambdaEngine::String AAOption =  static_cast<TextBlock*>(pAAComboBox->GetSelectedItem())->GetText();
+	EngineConfig::SetStringProperty(EConfigOption::CONFIG_OPTION_AA, AAOption);
+	SetAA(pAAComboBox, AAOption);
+	
+	// Music Volume
+	Noesis::Slider* pMusicVolumeSlider = FrameworkElement::FindName<Slider>("MusicVolumeSlider");
+	float musicVolume = pMusicVolumeSlider->GetValue();
+	float maxMusicVolume = pVolumeSlider->GetMaximum();
+	musicVolume /= maxMusicVolume;
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC, musicVolume);
+	AudioAPI::GetDevice()->SetMusicVolume(musicVolume);
+
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
+
+	// Glossy
+	{
+		//Enabled
+		Noesis::CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<CheckBox>("GlossyReflectionsCheckBox");
+		bool glossyEnabled = pGlossyReflectionsCheckbox->GetIsChecked().GetValue();
+		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, glossyEnabled);
+
+		//SPP
+		EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
+
+		ChangeGlossySettings(glossyEnabled, m_NewReflectionsSPP);
+	}
 
 	EngineConfig::WriteToFile();
 
@@ -221,10 +292,20 @@ void MainMenuGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 
 void MainMenuGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	SetDefaultSettings();
 
 	//FOV
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	//Glossy
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
 
 	OnButtonBackClick(pSender, args);
 }
@@ -233,6 +314,11 @@ void MainMenuGUI::OnButtonChangeControlsClick(Noesis::BaseComponent* pSender, co
 {
 	UNREFERENCED_VARIABLE(pSender);
 	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
 	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
@@ -246,6 +332,11 @@ void MainMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const No
 	// Update volume for easier changing of it. Do not save it however as that should
 	// only be done when the user presses "Apply"
 
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pVolumeSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	float volume = pVolumeSlider->GetValue();
 	float maxVolume = pVolumeSlider->GetMaximum();
@@ -253,10 +344,35 @@ void MainMenuGUI::OnVolumeSliderChanged(Noesis::BaseComponent* pSender, const No
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 }
 
+void MainMenuGUI::OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pVolumeSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+	float volume = pVolumeSlider->GetValue();
+	float maxVolume = pVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	AudioAPI::GetDevice()->SetMusicVolume(volume);
+}
+
 void MainMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pFOVSlider = reinterpret_cast<Noesis::Slider*>(pSender);
 	CameraSystem::GetInstance().SetMainFOV(pFOVSlider->GetValue());
+}
+
+void MainMenuGUI::OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
+{
+	Noesis::Slider* pReflectionsSPPSlider = reinterpret_cast<Noesis::Slider*>(pSender);
+
+	m_NewReflectionsSPP = int32(pReflectionsSPPSlider->GetValue());
+
+	ChangeGlossySettings(
+		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
+		m_NewReflectionsSPP);
 }
 
 /*
@@ -267,6 +383,11 @@ void MainMenuGUI::OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesi
 void MainMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
 	UNREFERENCED_VARIABLE(args);
+
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
 
 	// Starts listening to callbacks with specific button to be changed. This action is deferred to
 	// the callback functions of KeyboardCallback and MouseButtonCallback.
@@ -280,6 +401,11 @@ void MainMenuGUI::OnButtonSetKey(Noesis::BaseComponent* pSender, const Noesis::R
 
 void MainMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	// Go through all keys to set - and set them
 	for (auto& stringPair : m_KeysToSet)
 	{
@@ -294,6 +420,11 @@ void MainMenuGUI::OnButtonApplyControlsClick(Noesis::BaseComponent* pSender, con
 
 void MainMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, const Noesis::RoutedEventArgs& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	// Reset
 	for (auto& stringPair : m_KeysToSet)
 	{
@@ -319,6 +450,11 @@ void MainMenuGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, co
 
 void MainMenuGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args)
 {
+#ifdef LAMBDA_DEVELOPMENT
+	if (Input::GetCurrentInputmode() == EInputLayer::DEBUG)
+		return;
+#endif
+
 	Noesis::Slider* pLookSensitivitySlider = reinterpret_cast<Noesis::Slider*>(pSender);
 
 	m_LookSensitivityPercentageToSet = pLookSensitivitySlider->GetValue() / pLookSensitivitySlider->GetMaximum();
@@ -326,16 +462,31 @@ void MainMenuGUI::OnLookSensitivityChanged(Noesis::BaseComponent* pSender, const
 
 void MainMenuGUI::SetDefaultSettings()
 {
-	// Set inital volume
+	// Set inital Master volume
 	Noesis::Slider* pVolumeSlider = FrameworkElement::FindName<Slider>("VolumeSlider");
 	NS_ASSERT(pVolumeSlider);
 	float volume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER);
 	pVolumeSlider->SetValue(volume * pVolumeSlider->GetMaximum());
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
+	// Set inital Music volume
+	Noesis::Slider* pMusicVolumeSlider = FrameworkElement::FindName<Slider>("MusicVolumeSlider");
+	NS_ASSERT(pMusicVolumeSlider);
+	float musicVolume = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC);
+	pMusicVolumeSlider->SetValue(musicVolume * pMusicVolumeSlider->GetMaximum());
+	AudioAPI::GetDevice()->SetMusicVolume(musicVolume);
+
 	//Set initial FOV
 	Noesis::Slider* pFOVSlider = FrameworkElement::FindName<Slider>("FOVSlider");
 	pFOVSlider->SetValue(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
+
+	//Set initial Glossy Toggle
+	CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<CheckBox>("GlossyReflectionsCheckBox");
+	pGlossyReflectionsCheckbox->SetIsChecked(EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS));
+
+	//Set initial SPP
+	Noesis::Slider* pReflectionsSPPSlider = FrameworkElement::FindName<Slider>("ReflectionsSPPSlider");
+	pReflectionsSPPSlider->SetValue(float32(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP)));
 
 	SetDefaultKeyBindings();
 
@@ -351,15 +502,21 @@ void MainMenuGUI::SetDefaultSettings()
 
 	// Mesh Shader Toggle
 	m_MeshShadersEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
-	CheckBox* pToggleMeshShader = FrameworkElement::FindName<CheckBox>("MeshShaderCheckBox");
+	Noesis::CheckBox* pToggleMeshShader = FrameworkElement::FindName<Noesis::CheckBox>("MeshShaderCheckBox");
 	NS_ASSERT(pToggleMeshShader);
 	pToggleMeshShader->SetIsChecked(m_MeshShadersEnabled);
 
 	// Fullscreen Toggle
 	m_FullscreenEnabled = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_FULLSCREEN);
-	CheckBox* pToggleFullscreen = FrameworkElement::FindName<CheckBox>("FullscreenCheckBox");
+	Noesis::CheckBox* pToggleFullscreen = FrameworkElement::FindName<Noesis::CheckBox>("FullscreenCheckBox");
 	NS_ASSERT(pToggleFullscreen);
 	pToggleFullscreen->SetIsChecked(m_FullscreenEnabled);
+
+	// AA option
+	LambdaEngine::String AAOption = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_AA);
+	Noesis::ComboBox* pAAComboBox = FrameworkElement::FindName<Noesis::ComboBox>("AAComboBox");
+	NS_ASSERT(pAAComboBox);
+	SetAA(pAAComboBox, AAOption);
 }
 
 void MainMenuGUI::SetDefaultKeyBindings()
@@ -392,6 +549,25 @@ void MainMenuGUI::SetDefaultKeyBindings()
 		{
 			FrameworkElement::FindName<Button>(ActionToString(action))->SetContent(ButtonToString(mouseButton));
 		}
+	}
+}
+
+void MainMenuGUI::SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption)
+{
+	if (AAOption == "NONE")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_NONE);
+		pComboBox->SetSelectedIndex(0);
+	}
+	else if (AAOption == "FXAA")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_FXAA);
+		pComboBox->SetSelectedIndex(1);
+	}
+	else if (AAOption == "TAA")
+	{
+		AARenderer::GetInstance()->SetAAMode(EAAMode::AAMODE_TAA);
+		pComboBox->SetSelectedIndex(2);
 	}
 }
 

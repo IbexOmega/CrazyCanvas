@@ -5,6 +5,8 @@
 #include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Systems/Player/HealthSystem.h"
 
+#include "Debug/Profiler.h"
+
 MultiplayerBase::MultiplayerBase()
 {
 
@@ -39,13 +41,9 @@ void MultiplayerBase::TickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 
 void MultiplayerBase::FixedTickMainThreadInternal(LambdaEngine::Timestamp deltaTime)
 {
-	HealthSystem::GetInstance().FixedTick(deltaTime);
-	
-	Match::FixedTick(deltaTime);
-
-	FixedTickMainThread(deltaTime);
-
-	WeaponSystem::GetInstance().FixedTick(deltaTime);
-
-	PostFixedTickMainThread(deltaTime);
+	PROFILE_FUNCTION("HealthSystem.FixedTick", HealthSystem::GetInstance().FixedTick(deltaTime));
+	PROFILE_FUNCTION("Match::FixedTick", Match::FixedTick(deltaTime));
+	PROFILE_FUNCTION("FixedTickMainThread", FixedTickMainThread(deltaTime));
+	PROFILE_FUNCTION("WeaponSystem::FixedTick", WeaponSystem::GetInstance().FixedTick(deltaTime));
+	PROFILE_FUNCTION("PostFixedTickMainThread", PostFixedTickMainThread(deltaTime));
 }

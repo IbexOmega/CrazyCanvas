@@ -46,6 +46,7 @@
 #include "Game/ECS/Systems/CameraSystem.h"
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/ECS/Systems/Physics/TransformApplierSystem.h"
+#include "Game/ECS/Systems/Physics/VelocityComponentSystem.h"
 #include "Game/ECS/Systems/Networking/NetworkSystem.h"
 #include "Game/Multiplayer/Client/ClientSystem.h"
 #include "Game/Multiplayer/Server/ServerSystem.h"
@@ -53,6 +54,10 @@
 #include "Game/ECS/ComponentOwners/Misc/InheritanceComponentOwner.h"
 
 #include "GUI/Core/GUIApplication.h"
+
+#include "Debug/Profiler.h"
+
+#include "Threading/API/PlatformThread.h"
 
 #include <imgui/imgui.h>
 
@@ -69,6 +74,8 @@ namespace LambdaEngine
 	*/
 	void EngineLoop::Run()
 	{
+		LOG_INFO("EngineLoop Run called from Thread: %llx", PlatformThread::GetCurrentThreadHandle());
+
 		Clock fixedClock;
 		Timestamp accumulator = Timestamp(0);
 
@@ -81,7 +88,15 @@ namespace LambdaEngine
 
 			// Update
 			const Timestamp& delta = g_Clock.GetDeltaTime();
+
+#if PROFILING_ENABLED
+			Profiler::Tick(delta);
+#endif
+			BEGIN_PROFILING_SEGMENT("Full Frame");
+
+			BEGIN_PROFILING_SEGMENT("EngineLoop::Tick");
 			isRunning = Tick(delta);
+			END_PROFILING_SEGMENT("EngineLoop::Tick");
 
 			// Fixed update
 			accumulator += delta;
@@ -89,7 +104,7 @@ namespace LambdaEngine
 			while (accumulator >= g_FixedTimestep)
 			{
 				fixedClock.Tick();
-				FixedTick(g_FixedTimestep);
+				PROFILE_FUNCTION("EngineLoop::FixedTick", FixedTick(g_FixedTimestep));
 				accumulator -= g_FixedTimestep;
 
 				//Bailout so we don't get stuck in Fixed Tick
@@ -100,6 +115,8 @@ namespace LambdaEngine
 					break;
 				}
 			}
+
+			END_PROFILING_SEGMENT("Full Frame");
 		}
 	}
 
@@ -131,6 +148,7 @@ namespace LambdaEngine
 		}
 
 		TransformApplierSystem::GetInstance()->Init();
+		VelocityComponentSystem::GetInstance()->Init();
 		return true;
 	}
 
@@ -140,38 +158,40 @@ namespace LambdaEngine
 		RuntimeStats::SetFrameTime((float)delta.AsSeconds());
 
 		// Input
-		Input::Tick();
+		PROFILE_FUNCTION("Input", Input::Tick());
 
 		// Misc
-		GameConsole::Get().Tick();
+		PROFILE_FUNCTION("GameConsole Tick", GameConsole::Get().Tick());
 
-		Thread::Join();
+		PROFILE_FUNCTION("EngineLoop Thread::Join", Thread::Join());
 
-		PlatformNetworkUtils::Tick(delta);
+		PROFILE_FUNCTION("PlatformNetworkUtils::Tick", PlatformNetworkUtils::Tick(delta));
 
 		// Event
+		BEGIN_PROFILING_SEGMENT("CommonApplication::Tick");
 		if (!CommonApplication::Get()->Tick())
 		{
+			END_PROFILING_SEGMENT("CommonApplication::Tick");
 			return false;
 		}
+		END_PROFILING_SEGMENT("CommonApplication::Tick");
 
-		EventQueue::Tick();
+		PROFILE_FUNCTION("EventQueue::Tick", EventQueue::Tick());
 
 		// Audio
-		AudioAPI::Tick();
+		PROFILE_FUNCTION("AudioAPI::Tick", AudioAPI::Tick());
 
 		// States / ECS-systems
-		ClientSystem::StaticTickMainThread(delta);
-		ServerSystem::StaticTickMainThread(delta);
-		CameraSystem::GetInstance().MainThreadTick(delta);
-		StateManager::GetInstance()->Tick(delta);
-		AudioSystem::GetInstance().Tick(delta);
-		ECSCore::GetInstance()->Tick(delta);
-
-		InheritanceComponentOwner::GetInstance()->Tick();
+		PROFILE_FUNCTION("ClientSystem::StaticTickMainThread", ClientSystem::StaticTickMainThread(delta));
+		PROFILE_FUNCTION("ServerSystem::StaticTickMainThread", ServerSystem::StaticTickMainThread(delta));
+		PROFILE_FUNCTION("CameraSystem::MainThreadTick", CameraSystem::GetInstance().MainThreadTick(delta));
+		PROFILE_FUNCTION("StateManager::Tick", StateManager::GetInstance()->Tick(delta));
+		PROFILE_FUNCTION("AudioSystem::Tick", AudioSystem::GetInstance().Tick(delta));
+		PROFILE_FUNCTION("ECSCore::Tick", ECSCore::GetInstance()->Tick(delta));
+		PROFILE_FUNCTION("InheritanceComponentOwner::Tick", InheritanceComponentOwner::GetInstance()->Tick());
 
 		// Game
-		Game::Get().Tick(delta);
+		PROFILE_FUNCTION("Game::Tick", Game::Get().Tick(delta));
 
 		// Rendering
 #ifdef LAMBDA_DEVELOPMENT
@@ -226,17 +246,23 @@ namespace LambdaEngine
 				ImGui::PopStyleColor();
 			});
 #endif
+		
+		PROFILE_FUNCTION("RenderSystem::Render", RenderSystem::GetInstance().Render(delta));
 
-		RenderSystem::GetInstance().Render(delta);
-
+#if PROFILING_ENABLED
+		ImGuiRenderer::Get().DrawUI([&]()
+			{
+				Profiler::Render();
+			});
+#endif
 		return true;
 	}
 
 	void EngineLoop::FixedTick(Timestamp delta)
 	{
-		Game::Get().FixedTick(delta);
-		NetworkUtils::FixedTick(delta);
-		StateManager::GetInstance()->FixedTick(delta);
+		PROFILE_FUNCTION("Game::FixedTick", Game::Get().FixedTick(delta));
+		PROFILE_FUNCTION("NetworkUtils::FixedTick", NetworkUtils::FixedTick(delta));
+		PROFILE_FUNCTION("StateManager::FixedTick", StateManager::GetInstance()->FixedTick(delta));
 	}
 
 	bool EngineLoop::PreInit(const argh::parser& flagParser)
@@ -311,7 +337,7 @@ namespace LambdaEngine
 			return false;
 		}
 
-		if (!ResourceLoader::Init())
+ 		if (!ResourceLoader::Init())
 		{
 			return false;
 		}
