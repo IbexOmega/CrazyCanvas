@@ -322,8 +322,10 @@ namespace LambdaEngine
 
 	bool PhysicsSystem::Raycast(const RaycastInfo& raycastInfo, PxRaycastHit& raycastHit)
 	{
+		const PxQueryFlags queryFlags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+
 		PxRaycastBuffer raycastBuffer;
-		const bool hit = RaycastInternal(raycastInfo, raycastBuffer, &m_RaycastQueryFilterCallback);
+		const bool hit = RaycastInternal(raycastInfo, raycastBuffer, queryFlags);
 		if (hit)
 		{
 			raycastHit = raycastBuffer.block;
@@ -334,7 +336,8 @@ namespace LambdaEngine
 
 	bool PhysicsSystem::Raycast(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer)
 	{
-		return RaycastInternal(raycastInfo, raycastBuffer, &m_RaycastTouchingQueryFilterCallback);
+		const PxQueryFlags queryFlags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER | PxQueryFlag::eNO_BLOCK;
+		return RaycastInternal(raycastInfo, raycastBuffer, queryFlags);
 	}
 
 	bool PhysicsSystem::QueryOverlap(const OverlapQueryInfo& overlapInfo, PxOverlapBuffer& overlaps, const QueryFilterData* pFilterData)
@@ -371,12 +374,12 @@ namespace LambdaEngine
 		}
 
 		PxQueryFilterData filterDataPX;
-		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER | PxQueryFlag::eNO_BLOCK;
 		filterDataPX.data.word0 = filterData.IncludedGroup;
 		filterDataPX.data.word1 = filterData.ExcludedGroup;
 		filterDataPX.data.word2 = filterData.ExcludedEntity;
 
-		return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastTouchingQueryFilterCallback);
+		return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
 	}
 
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
@@ -565,7 +568,7 @@ namespace LambdaEngine
 		return PxTransformFromPlaneEquation(plane);
 	}
 
-	bool PhysicsSystem::RaycastInternal(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer, PxQueryFilterCallback* pFilterCallback)
+	bool PhysicsSystem::RaycastInternal(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer, PxQueryFlags queryFlags)
 	{
 		const glm::vec3& origin = raycastInfo.Origin;
 		const glm::vec3& direction = raycastInfo.Direction;
@@ -582,12 +585,12 @@ namespace LambdaEngine
 		}
 
 		PxQueryFilterData filterDataPX;
-		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+		filterDataPX.flags = queryFlags;
 		filterDataPX.data.word0 = filterData.IncludedGroup;
 		filterDataPX.data.word1 = filterData.ExcludedGroup;
 		filterDataPX.data.word2 = filterData.ExcludedEntity;
 
-		return m_pScene->raycast(originPX, directionPX, raycastInfo.MaxDistance, raycastBuffer, hitFlags, filterDataPX, pFilterCallback);
+		return m_pScene->raycast(originPX, directionPX, raycastInfo.MaxDistance, raycastBuffer, hitFlags, filterDataPX, &m_RaycastQueryFilterCallback);
 	}
 
 	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity)

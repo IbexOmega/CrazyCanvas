@@ -238,7 +238,7 @@ namespace LambdaEngine
 
 		static PxTransform CreatePlaneTransform(const glm::vec3& position, const glm::quat& rotation);
 
-		bool RaycastInternal(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer, PxQueryFilterCallback* pFilterCallback);
+		bool RaycastInternal(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer, PxQueryFlags queryFlags);
 
 		static void StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity);
 		static void DynamicCollisionDestructor(DynamicCollisionComponent& collisionComponent, Entity entity);
@@ -298,6 +298,5 @@ namespace LambdaEngine
 
 		QueryFilterCallback m_QueryFilterCallback;
 		RaycastQueryFilterCallback m_RaycastQueryFilterCallback;
-		RaycastTouchingQueryFilterCallback m_RaycastTouchingQueryFilterCallback;
 	};
 }

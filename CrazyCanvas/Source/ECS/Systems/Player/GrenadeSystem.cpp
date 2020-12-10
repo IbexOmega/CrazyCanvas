@@ -281,7 +281,10 @@ void GrenadeSystem::FindPlayersWithinBlast(LambdaEngine::TArray<LambdaEngine::En
 		.IncludedGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
 	};
 
-	PxOverlapBuffer overlapsBuffer;
+	constexpr const uint32 maxOverlaps = 10;
+	std::array<PxOverlapHit, maxOverlaps> overlapsUserBuffer;
+	PxOverlapBuffer overlapsBuffer(overlapsUserBuffer.data(), (PxU32)overlapsUserBuffer.size());
+
 	if (PhysicsSystem::GetInstance()->QueryOverlap(overlapQueryInfo, overlapsBuffer, &queryFilterData))
 	{
 		const PxOverlapHit* pOverlaps = overlapsBuffer.getTouches();
@@ -342,7 +345,9 @@ void GrenadeSystem::RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::En
 		{
 			raycastInfo.Direction = glm::normalize(glm::vec3(playerPos.x, playerPos.y + rayHeightOffset, playerPos.z) - grenadePosition);
 
-			PxRaycastBuffer rayHits;
+			constexpr const uint32 maxOverlaps = 10;
+			std::array<PxRaycastHit, maxOverlaps> rayHitsUserBuffer;
+			PxRaycastBuffer rayHits(rayHitsUserBuffer.data(), (PxU32)rayHitsUserBuffer.size());
 			if (pPhysicsSystem->Raycast(raycastInfo, rayHits))
 			{
 				const uint32 hitCount = rayHits.getNbTouches();
@@ -354,8 +359,7 @@ void GrenadeSystem::RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::En
 					if (reinterpret_cast<const ActorUserData*>(hit.actor->userData)->Entity == player)
 					{
 						// The player was hit by the ray, paint him in the hit position
-
-						LambdaEngine::EntityCollisionInfo collisionInfo0 =
+						const LambdaEngine::EntityCollisionInfo collisionInfo0 =
 						{
 							.Entity		= grenadeEntity,
 							.Position	= glm::vec3(hit.position.x, hit.position.y, hit.position.z),
@@ -363,7 +367,7 @@ void GrenadeSystem::RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::En
 							.Normal		= glm::vec3(hit.normal.x, hit.normal.y, hit.normal.z)
 						};
 
-						LambdaEngine::EntityCollisionInfo collisionInfo1 =
+						const LambdaEngine::EntityCollisionInfo collisionInfo1 =
 						{
 							.Entity		= player,
 							.Position	= glm::vec3(hit.position.x, hit.position.y, hit.position.z),
@@ -377,10 +381,13 @@ void GrenadeSystem::RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::En
 
 						ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team, angle);
 						EventQueue::SendEventImmediate(hitEvent);
+
+						goto nextPlayer;
 					}
 				}
 			}
 		}
+		nextPlayer: ;
 	}
 }
 
