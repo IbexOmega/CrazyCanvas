@@ -216,6 +216,10 @@ namespace LambdaEngine
 			{
 				pAllocator = m_pCBAllocator;
 			}
+			else if (flags == FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_STORAGE)
+			{
+				pAllocator = m_pAccelerationStructureAllocator;
+			}
 			else
 			{
 				pAllocator = m_pBufferAllocator;
@@ -233,25 +237,6 @@ namespace LambdaEngine
 		}
 	}
 
-	bool GraphicsDeviceVK::AllocateAccelerationStructureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
-	{
-		VALIDATE(m_pAccelerationStructureAllocator != nullptr);
-		VALIDATE(pAllocation != nullptr);
-
-		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
-		if (alignedSize >= LARGE_ACCELERATION_STRUCTURE_ALLOCATION_SIZE)
-		{
-			pAllocation->Offset = 0;
-			pAllocation->pAllocator = nullptr;
-			pAllocation->pBlock = nullptr;
-			return (AllocateMemory(&pAllocation->Memory, sizeInBytes, memoryIndex) == VK_SUCCESS);
-		}
-		else
-		{
-			return m_pAccelerationStructureAllocator->Allocate(pAllocation, sizeInBytes, alignment, memoryIndex);
-		}
-	}
-
 	bool GraphicsDeviceVK::AllocateTextureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const
 	{
 		VALIDATE(m_pTextureAllocator != nullptr);
@@ -260,9 +245,9 @@ namespace LambdaEngine
 		VkDeviceSize alignedSize = AlignUp(sizeInBytes, alignment);
 		if (alignedSize >= LARGE_TEXTURE_ALLOCATION_SIZE)
 		{
-			pAllocation->Offset = 0;
-			pAllocation->pAllocator = nullptr;
-			pAllocation->pBlock = nullptr;
+			pAllocation->Offset		= 0;
+			pAllocation->pAllocator	= nullptr;
+			pAllocation->pBlock		= nullptr;
 			return (AllocateMemory(&pAllocation->Memory, sizeInBytes, memoryIndex) == VK_SUCCESS);
 		}
 		else

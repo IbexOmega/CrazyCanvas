@@ -57,7 +57,6 @@ namespace LambdaEngine
 		bool Init(const GraphicsDeviceDesc* pDesc);
 
 		bool AllocateBufferMemory(AllocationVK* pAllocation, FBufferFlags bufferFlags, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const;
-		bool AllocateAccelerationStructureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const;
 		bool AllocateTextureMemory(AllocationVK* pAllocation, uint64 sizeInBytes, uint64 alignment, uint32 memoryIndex) const;
 		bool FreeMemory(AllocationVK* pAllocation) const;
 

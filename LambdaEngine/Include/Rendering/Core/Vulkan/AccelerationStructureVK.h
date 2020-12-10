@@ -4,11 +4,10 @@
 #include "Rendering/Core/API/AccelerationStructure.h"
 #include "Rendering/Core/API/TDeviceChildBase.h"
 
-#include "Rendering/Core/Vulkan/DeviceAllocatorVK.h"
+#include "Rendering/Core/Vulkan/BufferVK.h"
 
 namespace LambdaEngine
 {
-	class BufferVK;
 	class GraphicsDeviceVK;
 
 	class AccelerationStructureVK : public TDeviceChildBase<GraphicsDeviceVK, AccelerationStructure>
@@ -26,6 +25,11 @@ namespace LambdaEngine
 			return m_AccelerationStructure;
 		}
 
+		FORCEINLINE BufferVK* GetStorageBuffer()
+		{
+			return m_ScratchBuffer.Get();
+		}
+
 		FORCEINLINE BufferVK* GetScratchBuffer()
 		{
 			return m_ScratchBuffer.Get();
@@ -38,7 +42,7 @@ namespace LambdaEngine
 		// AccelerationStructure interface
 		FORCEINLINE virtual uint64 GetDeviceAddress() const override final
 		{
-			return m_AccelerationStructureDeviceAddress;
+			return m_AccelerationStructureBuffer->GetDeviceAddress();
 		}
 
 		FORCEINLINE virtual uint64 GetHandle() const override final
@@ -52,14 +56,9 @@ namespace LambdaEngine
 		}
 
 	private:
-		VkMemoryRequirements GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type);
-
-	private:
-		VkAccelerationStructureKHR	m_AccelerationStructure					= VK_NULL_HANDLE;
-		VkDeviceMemory				m_AccelerationStructureMemory			= VK_NULL_HANDLE;
-		VkDeviceAddress				m_AccelerationStructureDeviceAddress	= 0;
-		TSharedRef<BufferVK>		m_ScratchBuffer							= nullptr;
-		AllocationVK				m_Allocation;
+		VkAccelerationStructureKHR	m_AccelerationStructure = VK_NULL_HANDLE;
+		TSharedRef<BufferVK>		m_AccelerationStructureBuffer;
+		TSharedRef<BufferVK>		m_ScratchBuffer;
 		uint32						m_MaxInstanceCount;
 	};
 }

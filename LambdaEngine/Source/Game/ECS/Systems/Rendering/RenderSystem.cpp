@@ -1261,7 +1261,7 @@ bool RenderSystem::InitIntegrationLUT()
 					BufferDesc vertexBufferDesc = {};
 					vertexBufferDesc.DebugName		= "Vertex Buffer";
 					vertexBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-					vertexBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					vertexBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_BUILD_INPUT;
 					vertexBufferDesc.SizeInBytes	= vertexStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pVertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexBufferDesc);
@@ -1304,7 +1304,7 @@ bool RenderSystem::InitIntegrationLUT()
 
 						vertexWeightBufferDesc.DebugName	= "Vertex Weight Buffer";
 						vertexWeightBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+						vertexWeightBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_BUILD_INPUT;
 
 						meshEntry.pVertexWeightsBuffer = RenderAPI::GetDevice()->CreateBuffer(&vertexWeightBufferDesc);
 						VALIDATE(meshEntry.pVertexWeightsBuffer != nullptr);
@@ -1340,7 +1340,7 @@ bool RenderSystem::InitIntegrationLUT()
 					BufferDesc indexBufferDesc = {};
 					indexBufferDesc.DebugName	= "Index Buffer";
 					indexBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-					indexBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+					indexBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_BUILD_INPUT;
 					indexBufferDesc.SizeInBytes	= indexStagingBufferDesc.SizeInBytes;
 
 					meshEntry.pIndexBuffer	= RenderAPI::GetDevice()->CreateBuffer(&indexBufferDesc);
@@ -1408,7 +1408,7 @@ bool RenderSystem::InitIntegrationLUT()
 						BufferDesc uniqueIndicesBufferDesc = {};
 						uniqueIndicesBufferDesc.DebugName	= "Unique Indices Buffer";
 						uniqueIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-						uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+						uniqueIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_BUILD_INPUT;
 						uniqueIndicesBufferDesc.SizeInBytes	= uniqueIndicesStagingBufferDesc.SizeInBytes;
 
 						meshEntry.pUniqueIndices = RenderAPI::GetDevice()->CreateBuffer(&uniqueIndicesBufferDesc);
@@ -1445,7 +1445,7 @@ bool RenderSystem::InitIntegrationLUT()
 						BufferDesc primitiveIndicesBufferDesc = {};
 						primitiveIndicesBufferDesc.DebugName	= "Primitive Indices Buffer";
 						primitiveIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-						primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+						primitiveIndicesBufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_BUILD_INPUT;
 						primitiveIndicesBufferDesc.SizeInBytes	= primitiveIndicesStagingBufferDesc.SizeInBytes;
 
 						meshEntry.pPrimitiveIndices = RenderAPI::GetDevice()->CreateBuffer(&primitiveIndicesBufferDesc);

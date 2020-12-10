@@ -29,8 +29,15 @@ namespace LambdaEngine
 			return m_Pipeline;
 		}
 		
-		FORCEINLINE virtual uint32 HitShaderCount() const { return m_HitShaderCount; }
-		FORCEINLINE virtual uint32 MissShaderCount() const { return m_MissShaderCount; }
+		FORCEINLINE virtual uint32 HitShaderCount() const 
+		{ 
+			return m_HitShaderCount; 
+		}
+
+		FORCEINLINE virtual uint32 MissShaderCount() const 
+		{ 
+			return m_MissShaderCount; 
+		}
 
 		//DeviceChild interface
 		virtual void SetName(const String& debugName) override final;

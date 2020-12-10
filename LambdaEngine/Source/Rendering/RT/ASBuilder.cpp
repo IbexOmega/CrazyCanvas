@@ -528,7 +528,7 @@ namespace LambdaEngine
 						BufferDesc instanceBufferDesc = {};
 						instanceBufferDesc.DebugName		= "Instance Buffer";
 						instanceBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_GPU;
-						instanceBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+						instanceBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_BUILD_INPUT;
 						instanceBufferDesc.SizeInBytes		= requiredInstanceBufferSize;
 
 						m_pInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&instanceBufferDesc);
@@ -745,7 +745,7 @@ namespace LambdaEngine
 			BufferDesc instanceIndicesBufferDesc = {};
 			instanceIndicesBufferDesc.DebugName		= "Instance Dummy Buffer";
 			instanceIndicesBufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
-			instanceIndicesBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_RAY_TRACING;
+			instanceIndicesBufferDesc.Flags			= FBufferFlag::BUFFER_FLAG_COPY_DST | FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_BUILD_INPUT;
 			instanceIndicesBufferDesc.SizeInBytes	= 1;
 
 			m_pInstanceBuffer = RenderAPI::GetDevice()->CreateBuffer(&instanceIndicesBufferDesc);

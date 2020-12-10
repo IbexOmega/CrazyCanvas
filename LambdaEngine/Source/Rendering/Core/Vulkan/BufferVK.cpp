@@ -83,10 +83,20 @@ namespace LambdaEngine
 			info.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
 		}
-		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_RAY_TRACING)
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_STORAGE)
 		{
-			info.usage |= VK_BUFFER_USAGE_RAY_TRACING_BIT_KHR;
-			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 1LLU);
+			info.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 256LLU);
+		}
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_BUILD_INPUT)
+		{
+			info.usage |= VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 256LLU);
+		}
+		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_SHADER_BINDING_TABLE)
+		{
+			info.usage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR;
+			m_AlignmentRequirement = std::max(m_AlignmentRequirement, 32LLU);
 		}
 		if (pDesc->Flags & FBufferFlag::BUFFER_FLAG_INDIRECT_BUFFER)
 		{

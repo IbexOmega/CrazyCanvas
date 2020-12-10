@@ -10,7 +10,9 @@ namespace LambdaEngine
 {
 	AccelerationStructureVK::AccelerationStructureVK(const GraphicsDeviceVK* pDevice)
 		: TDeviceChild(pDevice)
-		, m_Allocation()
+		, m_AccelerationStructureBuffer(nullptr)
+		, m_ScratchBuffer(nullptr)
+		, m_MaxInstanceCount(0)
 	{
 	}
 
@@ -22,16 +24,24 @@ namespace LambdaEngine
 
 			m_pDevice->vkDestroyAccelerationStructureKHR(m_pDevice->Device, m_AccelerationStructure, nullptr);
 			m_AccelerationStructure = VK_NULL_HANDLE;
-
-			m_AccelerationStructureDeviceAddress = 0;
 		}
-
-		m_pDevice->FreeMemory(&m_Allocation);
-		ZERO_MEMORY(&m_Allocation, sizeof(m_Allocation));
 	}
 
 	bool AccelerationStructureVK::Init(const AccelerationStructureDesc* pDesc)
 	{
+		BufferDesc bufferDesc = {};
+		bufferDesc.DebugName	= pDesc->DebugName + " Buffer";
+		bufferDesc.Flags		= FBufferFlag::BUFFER_FLAG_ACCELERATIONS_STRUCTURE_STORAGE;
+		bufferDesc.SizeInBytes	= 256;
+		bufferDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
+
+		m_AccelerationStructureBuffer = reinterpret_cast<BufferVK*>(m_pDevice->CreateBuffer(&bufferDesc));
+		if (!m_AccelerationStructureBuffer)
+		{
+			LOG_ERROR("Failed to create AccelerationStructure Buffer");
+			return false;
+		}
+
 		VkAccelerationStructureCreateInfoKHR accelerationStructureCreateInfo = {};
 		accelerationStructureCreateInfo.sType			= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
 		accelerationStructureCreateInfo.pNext			= nullptr;
@@ -98,7 +108,7 @@ namespace LambdaEngine
 			SetName(m_Desc.DebugName);
 		}
 
-		VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
+		/*VkMemoryRequirements memoryRequirements = GetMemoryRequirements(VK_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_TYPE_OBJECT_KHR);
 		int32 memoryTypeIndex = FindMemoryType(m_pDevice->PhysicalDevice, memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		VkBindAccelerationStructureMemoryInfoKHR accelerationStructureMemoryInfo = {};
@@ -167,7 +177,7 @@ namespace LambdaEngine
 		if (!m_ScratchBuffer)
 		{
 			return false;
-		}
+		}*/
 
 		return true;
 	}
@@ -178,26 +188,26 @@ namespace LambdaEngine
 		m_Desc.DebugName = name;
 	}
 
-	VkMemoryRequirements AccelerationStructureVK::GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type)
-	{
-		VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo = {};
-		memoryRequirementsInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
-		memoryRequirementsInfo.pNext					= nullptr;
-		memoryRequirementsInfo.type						= type;
-		memoryRequirementsInfo.accelerationStructure	= m_AccelerationStructure;
-		memoryRequirementsInfo.buildType				= VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
+	//VkMemoryRequirements AccelerationStructureVK::GetMemoryRequirements(VkAccelerationStructureMemoryRequirementsTypeKHR type)
+	//{
+	//	VkAccelerationStructureMemoryRequirementsInfoKHR memoryRequirementsInfo = {};
+	//	memoryRequirementsInfo.sType					= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_MEMORY_REQUIREMENTS_INFO_KHR;
+	//	memoryRequirementsInfo.pNext					= nullptr;
+	//	memoryRequirementsInfo.type						= type;
+	//	memoryRequirementsInfo.accelerationStructure	= m_AccelerationStructure;
+	//	memoryRequirementsInfo.buildType				= VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR;
 
-		VkMemoryRequirements2 memoryRequirements2 = {};
-		memoryRequirements2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
-		memoryRequirements2.pNext = nullptr;
+	//	VkMemoryRequirements2 memoryRequirements2 = {};
+	//	memoryRequirements2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+	//	memoryRequirements2.pNext = nullptr;
 
-		VALIDATE(m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR != nullptr);
+	//	VALIDATE(m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR != nullptr);
 
-		m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR(
-			m_pDevice->Device, 
-			&memoryRequirementsInfo, 
-			&memoryRequirements2);
+	//	m_pDevice->vkGetAccelerationStructureMemoryRequirementsKHR(
+	//		m_pDevice->Device, 
+	//		&memoryRequirementsInfo, 
+	//		&memoryRequirements2);
 
-		return memoryRequirements2.memoryRequirements;
-	}
+	//	return memoryRequirements2.memoryRequirements;
+	//}
 }

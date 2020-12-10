@@ -74,7 +74,6 @@ namespace LambdaEngine
 			if (m_pShaderRecordsBuffer != nullptr) removedDeviceResources.PushBack(m_pShaderRecordsBuffer);
 
 			BufferDesc shaderRecordsBufferDesc = {};
-			shaderRecordsBufferDesc.DebugName		= "Shader Records Storage";
 			shaderRecordsBufferDesc.Flags			= BUFFER_FLAG_COPY_SRC;
 			shaderRecordsBufferDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			shaderRecordsBufferDesc.SizeInBytes		= OVER_ALLOCATION_MULT * newShaderRecordsBufferSize;
@@ -117,7 +116,6 @@ namespace LambdaEngine
 			if (m_pShaderHandleStorageBuffer != nullptr) removedDeviceResources.PushBack(m_pShaderHandleStorageBuffer);
 
 			BufferDesc shaderHandleStorageDesc = {};
-			shaderHandleStorageDesc.DebugName		= "Shader Handle Storage";
 			shaderHandleStorageDesc.Flags			= BUFFER_FLAG_COPY_SRC;
 			shaderHandleStorageDesc.MemoryType		= EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
 			shaderHandleStorageDesc.SizeInBytes		= OVER_ALLOCATION_MULT * shaderHandleStorageSize;
@@ -147,8 +145,7 @@ namespace LambdaEngine
 			if (m_pSBTBuffer != nullptr) removedDeviceResources.PushBack(m_pSBTBuffer);
 
 			BufferDesc sbtDesc = {};
-			sbtDesc.DebugName	= "Shader Binding Table";
-			sbtDesc.Flags		= BUFFER_FLAG_COPY_DST | BUFFER_FLAG_RAY_TRACING;
+			sbtDesc.Flags		= BUFFER_FLAG_COPY_DST | BUFFER_FLAG_SHADER_BINDING_TABLE;
 			sbtDesc.MemoryType	= EMemoryType::MEMORY_TYPE_GPU;
 			sbtDesc.SizeInBytes	= OVER_ALLOCATION_MULT * sbtSize;
 
@@ -180,14 +177,15 @@ namespace LambdaEngine
 		m_MissBufferRegion.size				= missSize;
 		m_MissBufferRegion.stride			= missStride;
 
+		SetName(pDesc->DebugName);
 		return true;
 	}
 
 	void SBTVK::SetName(const String& debugName)
 	{
-		m_pDevice->SetVulkanObjectName((debugName + " Handle Storage"), reinterpret_cast<uint64>(m_pShaderHandleStorageBuffer->GetBuffer()), VK_OBJECT_TYPE_BUFFER);
-		m_pDevice->SetVulkanObjectName((debugName + " SBT Buffer"), reinterpret_cast<uint64>(m_pSBTBuffer->GetBuffer()), VK_OBJECT_TYPE_BUFFER);
-		m_pDevice->SetVulkanObjectName((debugName + " Records Buffer"), reinterpret_cast<uint64>(m_pShaderRecordsBuffer->GetBuffer()), VK_OBJECT_TYPE_BUFFER);
+		m_pDevice->SetVulkanObjectName((debugName + " Shader Handle Storage"), reinterpret_cast<uint64>(m_pShaderHandleStorageBuffer->GetBuffer()), VK_OBJECT_TYPE_BUFFER);
+		m_pDevice->SetVulkanObjectName((debugName + " Shader Binding Table"), reinterpret_cast<uint64>(m_pSBTBuffer->GetBuffer()), VK_OBJECT_TYPE_BUFFER);
+		m_pDevice->SetVulkanObjectName((debugName + " Shader Records Buffer"), reinterpret_cast<uint64>(m_pShaderRecordsBuffer->GetBuffer()), VK_OBJECT_TYPE_BUFFER);
 		m_DebugName = debugName;
 	}
 }

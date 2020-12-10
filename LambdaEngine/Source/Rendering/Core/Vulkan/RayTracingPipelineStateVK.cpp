@@ -62,10 +62,11 @@ namespace LambdaEngine
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
 			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
 			shaderGroupCreateInfo.type					= VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-			shaderGroupCreateInfo.generalShader			= 0;
+			shaderGroupCreateInfo.generalShader			= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.intersectionShader	= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.anyHitShader			= VK_SHADER_UNUSED_NV;
 			shaderGroupCreateInfo.closestHitShader		= VK_SHADER_UNUSED_NV;
+			shaderGroupCreateInfo.pShaderGroupCaptureReplayHandle = nullptr;
 			shaderGroups.EmplaceBack(shaderGroupCreateInfo);
 		}
 
@@ -73,9 +74,9 @@ namespace LambdaEngine
 		for (const HitGroupShaderModuleDescs& HitGroupShaders : pDesc->HitGroupShaders)
 		{
 			VkRayTracingShaderGroupCreateInfoKHR shaderGroupCreateInfo = {};
-			shaderGroupCreateInfo.sType					= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-			shaderGroupCreateInfo.type					= VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
-			shaderGroupCreateInfo.generalShader			= VK_SHADER_UNUSED_NV;
+			shaderGroupCreateInfo.sType			= VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+			shaderGroupCreateInfo.type			= VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
+			shaderGroupCreateInfo.generalShader	= VK_SHADER_UNUSED_NV;
 
 			CreateShaderStageInfo(&HitGroupShaders.ClosestHitShaders, shaderStagesInfos, shaderStagesSpecializationInfos, shaderStagesSpecializationMaps);
 			shaderGroupCreateInfo.closestHitShader		= static_cast<uint32>(shaderStagesInfos.GetSize() - 1);
@@ -129,15 +130,15 @@ namespace LambdaEngine
 		const PipelineLayoutVK* pPipelineLayoutVk = reinterpret_cast<const PipelineLayoutVK*>(pDesc->pPipelineLayout);
 
 		VkRayTracingPipelineCreateInfoKHR rayTracingPipelineInfo = {};
-		rayTracingPipelineInfo.sType			 = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-		rayTracingPipelineInfo.flags			 = VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
-		rayTracingPipelineInfo.stageCount		 = static_cast<uint32>(shaderStagesInfos.GetSize());
-		rayTracingPipelineInfo.pStages			 = shaderStagesInfos.GetData();
-		rayTracingPipelineInfo.groupCount		 = static_cast<uint32>(shaderGroups.GetSize());
-		rayTracingPipelineInfo.pGroups			 = shaderGroups.GetData();
-		rayTracingPipelineInfo.maxRecursionDepth = pDesc->MaxRecursionDepth;
-		rayTracingPipelineInfo.layout			 = pPipelineLayoutVk->GetPipelineLayout();
-		rayTracingPipelineInfo.libraries		 = rayTracingPipelineLibrariesInfo;
+		rayTracingPipelineInfo.sType						= VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
+		rayTracingPipelineInfo.flags						= VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_CLOSEST_HIT_SHADERS_BIT_KHR | VK_PIPELINE_CREATE_RAY_TRACING_NO_NULL_MISS_SHADERS_BIT_KHR;
+		rayTracingPipelineInfo.stageCount					= static_cast<uint32>(shaderStagesInfos.GetSize());
+		rayTracingPipelineInfo.pStages						= shaderStagesInfos.GetData();
+		rayTracingPipelineInfo.groupCount					= static_cast<uint32>(shaderGroups.GetSize());
+		rayTracingPipelineInfo.pGroups						= shaderGroups.GetData();
+		rayTracingPipelineInfo.maxPipelineRayRecursionDepth = pDesc->MaxRecursionDepth;
+		rayTracingPipelineInfo.layout						= pPipelineLayoutVk->GetPipelineLayout();
+		rayTracingPipelineInfo.pLibraryInfo					= &rayTracingPipelineLibrariesInfo;
 
 		VkResult result = m_pDevice->vkCreateRayTracingPipelinesKHR(m_pDevice->Device, VK_NULL_HANDLE, 1, &rayTracingPipelineInfo, nullptr, &m_Pipeline);
 		if (result != VK_SUCCESS)
