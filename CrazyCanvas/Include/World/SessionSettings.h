@@ -109,12 +109,16 @@ private:
 	static void SendPacketSessionSettings(ESessionSetting setting, SettingValue value);
 
 private:
-	// Default settings
 	inline static LambdaEngine::THashTable<ESessionSetting, SettingValue> s_CurrentSettings;
 
+	// Default settings
 	inline static LambdaEngine::THashTable<ESessionSetting, SettingValue> s_DefaultSettings = {
 		{ESessionSetting::GROUND_ACCELERATION,	100.f},
 		{ESessionSetting::GROUND_FRICTION,		15.f},
 		{ESessionSetting::AIR_ACCELERATION,		4.f},
+		{ESessionSetting::MAX_RUN_VELOCITY,		5.f},
+		{ESessionSetting::MAX_WALK_VELOCITY,	2.5f},
+		{ESessionSetting::MAX_AIR_VELOCITY,		5.f},
+		{ESessionSetting::JUMP_SPEED,			5.f},
 	};
 };

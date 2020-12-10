@@ -54,6 +54,50 @@ void SessionSettings::Init()
 			SessionSettings::SendPacketSessionSettings(ESessionSetting::GROUND_FRICTION, input.Arguments.GetFront().Value.Float32);
 	});
 
+	// Max Air Velocity
+	ConsoleCommand cmdMaxAirVelocity;
+	cmdMaxAirVelocity.Init("session_max_air_velocity", false);
+	cmdMaxAirVelocity.AddArg(Arg::EType::FLOAT);
+	cmdMaxAirVelocity.AddDescription("Set server max air velocity.\n\t'session_max_air_velocity 5.0'");
+	GameConsole::Get().BindCommand(cmdMaxAirVelocity, [](GameConsole::CallbackInput& input)->void
+	{
+		if(PlayerManagerClient::GetPlayerLocal()->IsHost())
+			SessionSettings::SendPacketSessionSettings(ESessionSetting::MAX_AIR_VELOCITY, input.Arguments.GetFront().Value.Float32);
+	});
+
+	// Max Walk Velocity
+	ConsoleCommand cmdMaxWalkVelocity;
+	cmdMaxWalkVelocity.Init("session_max_walk_velocity", false);
+	cmdMaxWalkVelocity.AddArg(Arg::EType::FLOAT);
+	cmdMaxWalkVelocity.AddDescription("Set server max walk velocity.\n\t'session_max_walk_velocity 2.5'");
+	GameConsole::Get().BindCommand(cmdMaxWalkVelocity, [](GameConsole::CallbackInput& input)->void
+	{
+		if(PlayerManagerClient::GetPlayerLocal()->IsHost())
+			SessionSettings::SendPacketSessionSettings(ESessionSetting::MAX_WALK_VELOCITY, input.Arguments.GetFront().Value.Float32);
+	});
+
+	// Max Walk Velocity
+	ConsoleCommand cmdMaxRunVelocity;
+	cmdMaxRunVelocity.Init("session_max_run_velocity", false);
+	cmdMaxRunVelocity.AddArg(Arg::EType::FLOAT);
+	cmdMaxRunVelocity.AddDescription("Set server max run velocity.\n\t'session_max_run_velocity 5.0'");
+	GameConsole::Get().BindCommand(cmdMaxRunVelocity, [](GameConsole::CallbackInput& input)->void
+	{
+		if(PlayerManagerClient::GetPlayerLocal()->IsHost())
+			SessionSettings::SendPacketSessionSettings(ESessionSetting::MAX_RUN_VELOCITY, input.Arguments.GetFront().Value.Float32);
+	});
+
+	// Jump Speed
+	ConsoleCommand cmdJumpSpeed;
+	cmdJumpSpeed.Init("session_jump_speed", false);
+	cmdJumpSpeed.AddArg(Arg::EType::FLOAT);
+	cmdJumpSpeed.AddDescription("Set server jump speed.\n\t'session_jump_speed 5.0'");
+	GameConsole::Get().BindCommand(cmdJumpSpeed, [](GameConsole::CallbackInput& input)->void
+	{
+		if(PlayerManagerClient::GetPlayerLocal()->IsHost())
+			SessionSettings::SendPacketSessionSettings(ESessionSetting::JUMP_SPEED, input.Arguments.GetFront().Value.Float32);
+	});
+
 	LambdaEngine::EventQueue::RegisterEventHandler(SessionSettings::OnPacketSessionSettingsReceived);
 }
 

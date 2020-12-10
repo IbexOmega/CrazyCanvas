@@ -2,8 +2,6 @@
 
 #include "LambdaEngine.h"
 
-constexpr const float32 GRAVITATIONAL_ACCELERATION		= -9.81f;
-
 constexpr const float32 PLAYER_FALLING_MULTIPLIER		= 1.0f;
 constexpr const float32 PLAYER_FRICTION					= 20.0f;
 constexpr const float32 PLAYER_ACCELERATION_AIR			= 2.5f;
