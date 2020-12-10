@@ -198,9 +198,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		if (sleeping)
-			return;
-
 		m_ModFrameIndex = modFrameIndex;
 
 		//Release Device Resources
@@ -214,6 +211,9 @@ namespace LambdaEngine
 
 			deviceResourcesToRemove.Clear();
 		}
+
+		if (sleeping)
+			return;
 
 		m_ppCommandAllocators[m_ModFrameIndex]->Reset();
 		CommandList* pCommandList = m_ppCommandLists[m_ModFrameIndex];
@@ -491,10 +491,10 @@ namespace LambdaEngine
 		DescriptorHeapInfo descriptorCountDesc = { };
 		descriptorCountDesc.SamplerDescriptorCount					= 0;
 		descriptorCountDesc.TextureDescriptorCount					= 0;
-		descriptorCountDesc.TextureCombinedSamplerDescriptorCount	= 32;
+		descriptorCountDesc.TextureCombinedSamplerDescriptorCount	= 64;
 		descriptorCountDesc.ConstantBufferDescriptorCount			= 0;
 		descriptorCountDesc.UnorderedAccessBufferDescriptorCount	= 0;
-		descriptorCountDesc.UnorderedAccessTextureDescriptorCount	= 8;
+		descriptorCountDesc.UnorderedAccessTextureDescriptorCount	= 16;
 		descriptorCountDesc.AccelerationStructureDescriptorCount	= 0;
 
 		DescriptorHeapDesc descriptorHeapDesc = { };
