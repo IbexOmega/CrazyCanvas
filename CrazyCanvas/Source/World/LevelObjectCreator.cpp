@@ -1270,9 +1270,9 @@ bool LevelObjectCreator::CreatePlayer(
 				{
 					AnimationState* pAnimationState = DBG_NEW AnimationState("Idle & Shooting");
 					ClipNode* pIdle = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[1]);
-					ClipNode* pShooting = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[2], 1.5f, true);
+					ClipNode* pShooting = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[2], 1.0f, false);
 
-					pShooting->AddTrigger(ClipTrigger(1.0f, [](const ClipNode& clip, AnimationGraph& graph)
+					pShooting->AddTrigger(ClipTrigger(0.95f, [](const ClipNode& clip, AnimationGraph& graph)
 						{
 							UNREFERENCED_VARIABLE(clip);
 							graph.TransitionToState("Idle");

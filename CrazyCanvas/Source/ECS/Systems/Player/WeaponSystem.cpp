@@ -138,6 +138,7 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 	if (pECS->GetComponentIf(weaponEntity, firstPersonWeaponComp))
 	{
 		Entity firstPersonWeapon = firstPersonWeaponComp.Owner;
+		pECS->GetComponent<AnimationComponent>(firstPersonWeapon).pGraph->GetState("Idle & Shooting")->Reset();
 		pECS->GetComponent<AnimationComponent>(firstPersonWeapon).pGraph->TransitionToState("Idle & Shooting");
 	}
 }
