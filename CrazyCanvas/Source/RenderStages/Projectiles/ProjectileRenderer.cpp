@@ -5,6 +5,7 @@
 
 #include "ECS/Components/Player/ProjectileComponent.h"
 #include "Game/ECS/Components/Rendering/RayTracedComponent.h"
+#include "ECS/Components/Player/GrenadeComponent.h"
 #include "Game/ECS/Systems/Rendering/RenderSystem.h"
 #include "Game/GameConsole.h"
 
@@ -623,6 +624,10 @@ void ProjectileRenderer::SubscribeToProjectiles()
 					{ NDA, PositionComponent::Type() },
 					{ NDA, RotationComponent::Type() },
 					{ NDA, ScaleComponent::Type() }
+				},
+				.ExcludedComponentTypes =
+				{
+					{ GrenadeComponent::Type() }
 				},
 				.OnEntityAdded = std::bind_front(&ProjectileRenderer::OnProjectileCreated, this),
 				.OnEntityRemoval = std::bind_front(&ProjectileRenderer::OnProjectileRemoval, this)

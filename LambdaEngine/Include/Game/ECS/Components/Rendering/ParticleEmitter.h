@@ -48,10 +48,19 @@ namespace LambdaEngine
 		*	The shape that particles will spawn upon
 		*/
 		EEmitterShape	EmitterShape			= EEmitterShape::CONE;
-		/*
-		*	Used for cone shap to determine arc of cone
-		*/
-		float			Angle					= 90.f;
+		
+		union
+		{
+			/*
+			*	Used for cone shape to determine arc of cone
+			*/
+			float ConeAngle;
+
+			/*
+			*	Used for sphere radius
+			*/
+			float SphereRadius;
+		};
 		/*
 		* Randomness factor for particle velocity, should be between 0.0 - 1.0
 		*/

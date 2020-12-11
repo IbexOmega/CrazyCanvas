@@ -9,7 +9,6 @@
 #include "Physics/PhysX/FilterShader.h"
 #include "Resources/ResourceManager.h"
 
-#define PX_RELEASE(x) if(x)	{ x->release(); x = nullptr; }
 #define PVD_HOST "127.0.0.1"	// The IP address to stream debug visualization data to
 
 namespace LambdaEngine
@@ -24,12 +23,12 @@ namespace LambdaEngine
 		m_pVisDbg(nullptr),
 		m_pDispatcher(nullptr),
 		m_pScene(nullptr),
-		m_pMaterial(nullptr)
+		m_pDefaultMaterial(nullptr)
 	{}
 
 	PhysicsSystem::~PhysicsSystem()
 	{
-		PX_RELEASE(m_pMaterial);
+		PX_RELEASE(m_pDefaultMaterial);
 		PX_RELEASE(m_pCooking);
 		PX_RELEASE(m_pControllerManager);
 		PX_RELEASE(m_pDispatcher);
@@ -174,8 +173,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_pMaterial = m_pPhysics->createMaterial(0.5f, 0.5f, 0.6f);
-		return m_pMaterial;
+		m_pDefaultMaterial = m_pPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+		return m_pDefaultMaterial;
 	}
 
 	void PhysicsSystem::Tick(Timestamp deltaTime)
@@ -212,6 +211,11 @@ namespace LambdaEngine
 				velocityComp.Velocity = { velocityPX.x, velocityPX.y, velocityPX.z };
 			}
 		}
+	}
+
+	PxMaterial* PhysicsSystem::CreateMaterial(float32 staticFriction, float32 dynamicFriction, float32 restitution)
+	{
+		return m_pPhysics->createMaterial(staticFriction, dynamicFriction, restitution);
 	}
 
 	StaticCollisionComponent PhysicsSystem::CreateStaticActor(const CollisionCreateInfo& collisionInfo)
@@ -320,33 +324,77 @@ namespace LambdaEngine
 		halfHeight = halfHeight - radius;
 	}
 
-	bool PhysicsSystem::Raycast(const glm::vec3& origin, const glm::vec3& direction, float32 maxDistance, PxRaycastHit& raycastHit, const RaycastFilterData* pFilterData)
+	bool PhysicsSystem::Raycast(const RaycastInfo& raycastInfo, PxRaycastHit& raycastHit)
 	{
-		const PxVec3 originPX = { origin.x, origin.y, origin.z };
-		const PxVec3 directionPX = { direction.x, direction.y, direction.z };
-
-		const PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
-
-		RaycastFilterData filterData = {};
-		if (pFilterData)
-		{
-			filterData = *pFilterData;
-		}
-
-		PxQueryFilterData filterDataPX;
-		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
-		filterDataPX.data.word0 = filterData.IncludedGroup;
-		filterDataPX.data.word1 = filterData.ExcludedGroup;
-		filterDataPX.data.word2 = filterData.ExcludedEntity;
+		const PxQueryFlags queryFlags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
 
 		PxRaycastBuffer raycastBuffer;
-		const bool hit = m_pScene->raycast(originPX, directionPX, maxDistance, raycastBuffer, hitFlags, filterDataPX, &m_RaycastQueryFilterCallback);
+		const bool hit = RaycastInternal(raycastInfo, raycastBuffer, queryFlags);
 		if (hit)
 		{
 			raycastHit = raycastBuffer.block;
 		}
 
 		return hit;
+	}
+
+	bool PhysicsSystem::Raycast(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer)
+	{
+		const PxQueryFlags queryFlags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER | PxQueryFlag::eNO_BLOCK;
+		return RaycastInternal(raycastInfo, raycastBuffer, queryFlags);
+	}
+
+	bool PhysicsSystem::QueryOverlap(const OverlapQueryInfo& overlapInfo, PxOverlapBuffer& overlaps, const QueryFilterData* pFilterData)
+	{
+		const glm::vec3& position = overlapInfo.Position;
+		const glm::quat& rotation = overlapInfo.Rotation;
+		const GeometryParameters& geometryParams = overlapInfo.GeometryParams;
+
+		QueryFilterData filterData = {};
+		if (pFilterData)
+		{
+			filterData = *pFilterData;
+		}
+
+		PxQueryFilterData filterDataPX;
+		filterDataPX.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER | PxQueryFlag::eNO_BLOCK;
+		filterDataPX.data.word0 = filterData.IncludedGroup;
+		filterDataPX.data.word1 = filterData.ExcludedGroup;
+		filterDataPX.data.word2 = filterData.ExcludedEntity;
+
+		// There's no default constructor for PxGeometry, so a sphere is used as a default
+
+		PxTransform transform = PxTransform(position.x, position.y, position.z, PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
+
+		switch (overlapInfo.GeometryType)
+		{
+			case EGeometryType::BOX:
+			{
+				PxBoxGeometry queryGeometry(PxVec3(geometryParams.HalfExtents.x, geometryParams.HalfExtents.y, geometryParams.HalfExtents.z));
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+			case EGeometryType::CAPSULE:
+			{
+				PxCapsuleGeometry queryGeometry(geometryParams.Radius, geometryParams.HalfHeight);
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+			case EGeometryType::PLANE:
+			{
+				transform = CreatePlaneTransform(position, rotation);
+				PxPlaneGeometry queryGeometry;
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+			case EGeometryType::MESH:
+			{
+				PxTriangleMeshGeometry queryGeometry = CreateTriangleMeshGeometry(geometryParams.pMesh, glm::vec3(1.0f));
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+			default:
+			{
+				PxSphereGeometry queryGeometry(geometryParams.Radius);
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+		}
 	}
 
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
@@ -387,13 +435,14 @@ namespace LambdaEngine
 		const glm::quat& rotation) const
 	{
 		PxShape* pShape = nullptr;
+		const PxMaterial* pMaterial = shapeCreateInfo.pMaterial ? shapeCreateInfo.pMaterial : m_pDefaultMaterial;
 
 		switch (shapeCreateInfo.GeometryType)
 		{
 			case EGeometryType::SPHERE:
 			{
 				const float32 maxScale = glm::compMax(scale);
-				pShape = m_pPhysics->createShape(PxSphereGeometry(shapeCreateInfo.GeometryParams.Radius * maxScale), *m_pMaterial);
+				pShape = m_pPhysics->createShape(PxSphereGeometry(shapeCreateInfo.GeometryParams.Radius * maxScale), *pMaterial);
 				break;
 			}
 			case EGeometryType::BOX:
@@ -404,12 +453,12 @@ namespace LambdaEngine
 					scale.y * shapeCreateInfo.GeometryParams.HalfExtents.y,
 					scale.z * shapeCreateInfo.GeometryParams.HalfExtents.z
 				};
-				pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
+				pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *pMaterial);
 				break;
 			}
 			case EGeometryType::CAPSULE:
 			{
-				pShape = CreateCollisionCapsule(shapeCreateInfo.GeometryParams.Radius, shapeCreateInfo.GeometryParams.HalfHeight);
+				pShape = CreateCollisionCapsule(shapeCreateInfo.GeometryParams.Radius, shapeCreateInfo.GeometryParams.HalfHeight, pMaterial);
 
 				// Rotate around Z-axis to get the capsule pointing upwards
 				const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
@@ -419,19 +468,13 @@ namespace LambdaEngine
 			}
 			case EGeometryType::PLANE:
 			{
-				/*	PhysX treats the planes' x-axis as their normals, whilst the PhysicsSystem API says the Y-axis is
-					the normal. Set a local pose for the shape to make the Y-axis the plane normal. */
-				const glm::vec3 planeNormal = GetUp(rotation);
-				const PxPlane plane({ position.x, position.y, position.z }, { planeNormal.x, planeNormal.y, planeNormal.z });
-				const PxTransform transformPX = PxTransformFromPlaneEquation(plane);
-
-				pShape = m_pPhysics->createShape(PxPlaneGeometry(), *m_pMaterial);
-				pShape->setLocalPose(transformPX);
+				pShape = m_pPhysics->createShape(PxPlaneGeometry(), *pMaterial);
+				pShape->setLocalPose(CreatePlaneTransform(position, rotation));
 				break;
 			}
 			case EGeometryType::MESH:
 			{
-				pShape = CreateCollisionTriangleMesh(shapeCreateInfo.GeometryParams.pMesh, scale);
+				pShape = m_pPhysics->createShape(CreateTriangleMeshGeometry(shapeCreateInfo.GeometryParams.pMesh, scale), *pMaterial);
 				break;
 			}
 		}
@@ -475,24 +518,7 @@ namespace LambdaEngine
 		return pShape;
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionCapsule(float32 radius, float32 halfHeight) const
-	{
-		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
-			it is rotated around the z-axis. */
-		PxShape* pShape = nullptr;
-		if (halfHeight > 0.0f)
-		{
-			pShape = m_pPhysics->createShape(PxCapsuleGeometry(radius, halfHeight), *m_pMaterial);
-		}
-		else
-		{
-			pShape = m_pPhysics->createShape(PxSphereGeometry(radius), *m_pMaterial);
-		}
-
-		return pShape;
-	}
-
-	PxShape* PhysicsSystem::CreateCollisionTriangleMesh(const Mesh* pMesh, const glm::vec3& scale) const
+	PxTriangleMeshGeometry PhysicsSystem::CreateTriangleMeshGeometry(const Mesh* pMesh, const glm::vec3& scale) const
 	{
 		/* Perform mesh 'cooking'; generate an optimized collision mesh from triangle data */
 		const TArray<Vertex>& vertices = pMesh->Vertices;
@@ -522,8 +548,24 @@ namespace LambdaEngine
 		PxTriangleMesh* pTriangleMesh = m_pPhysics->createTriangleMesh(readBuffer);
 
 		// Create a geometry instance of the mesh and scale it
-		PxTriangleMeshGeometry triangleMeshGeometry(pTriangleMesh, PxMeshScale({ scale.x, scale.y, scale.z }));
-		return m_pPhysics->createShape(triangleMeshGeometry, *m_pMaterial);
+		return PxTriangleMeshGeometry(pTriangleMesh, PxMeshScale({ scale.x, scale.y, scale.z }));
+	}
+
+	PxShape* PhysicsSystem::CreateCollisionCapsule(float32 radius, float32 halfHeight, const PxMaterial* pMaterial) const
+	{
+		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
+			it is rotated around the z-axis. */
+		PxShape* pShape = nullptr;
+		if (halfHeight > 0.0f)
+		{
+			pShape = m_pPhysics->createShape(PxCapsuleGeometry(radius, halfHeight), *pMaterial);
+		}
+		else
+		{
+			pShape = m_pPhysics->createShape(PxSphereGeometry(radius), *pMaterial);
+		}
+
+		return pShape;
 	}
 
 	PxTransform PhysicsSystem::CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const
@@ -531,6 +573,40 @@ namespace LambdaEngine
 		const PxVec3 positionPX = { position.x, position.y, position.z };
 		const PxQuat rotationPX = PxQuat(rotation.x, rotation.y, rotation.z, rotation.w);
 		return PxTransform(positionPX, rotationPX);
+	}
+
+	PxTransform PhysicsSystem::CreatePlaneTransform(const glm::vec3& position, const glm::quat& rotation)
+	{
+		/*	PhysX treats the planes' x-axis as their normals, whilst the PhysicsSystem API says the Y-axis is
+			the normal. Set a local pose for the shape to make the Y-axis the plane normal. */
+		const glm::vec3 planeNormal = GetUp(rotation);
+		const PxPlane plane({ position.x, position.y, position.z }, { planeNormal.x, planeNormal.y, planeNormal.z });
+		return PxTransformFromPlaneEquation(plane);
+	}
+
+	bool PhysicsSystem::RaycastInternal(const RaycastInfo& raycastInfo, PxRaycastBuffer& raycastBuffer, PxQueryFlags queryFlags)
+	{
+		const glm::vec3& origin = raycastInfo.Origin;
+		const glm::vec3& direction = raycastInfo.Direction;
+
+		const PxVec3 originPX = { origin.x, origin.y, origin.z };
+		const PxVec3 directionPX = { direction.x, direction.y, direction.z };
+
+		const PxHitFlags hitFlags = PxHitFlag::ePOSITION | PxHitFlag::eNORMAL;
+
+		QueryFilterData filterData = {};
+		if (raycastInfo.pFilterData)
+		{
+			filterData = *raycastInfo.pFilterData;
+		}
+
+		PxQueryFilterData filterDataPX;
+		filterDataPX.flags = queryFlags;
+		filterDataPX.data.word0 = filterData.IncludedGroup;
+		filterDataPX.data.word1 = filterData.ExcludedGroup;
+		filterDataPX.data.word2 = filterData.ExcludedEntity;
+
+		return m_pScene->raycast(originPX, directionPX, raycastInfo.MaxDistance, raycastBuffer, hitFlags, filterDataPX, &m_RaycastQueryFilterCallback);
 	}
 
 	void PhysicsSystem::StaticCollisionDestructor(StaticCollisionComponent& collisionComponent, Entity entity)
@@ -669,11 +745,21 @@ namespace LambdaEngine
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
 		const PxTransform transformPX = CreatePxTransform(position, rotation);
 
-		const glm::vec3& initialVelocity = collisionInfo.Velocity.Velocity;
-		const PxVec3 initialVelocityPX = { initialVelocity.x, initialVelocity.y, initialVelocity.z };
+		const glm::vec3& velocity = collisionInfo.Velocity.Velocity;
+		const PxVec3 velocityPX = { velocity.x, velocity.y, velocity.z };
+
+		const glm::vec3& angularVelocity = collisionInfo.AngularVelocity;
+		const PxVec3 angularVelocityPX(angularVelocity.x, angularVelocity.y, angularVelocity.z);
 
 		PxRigidDynamic* pActor = m_pPhysics->createRigidDynamic(transformPX);
-		pActor->setLinearVelocity(initialVelocityPX);
+		pActor->setLinearVelocity(velocityPX);
+		pActor->setAngularVelocity(angularVelocityPX);
+
+		if (collisionInfo.pMass)
+		{
+			pActor->setMass(*collisionInfo.pMass);
+		}
+
 		FinalizeCollisionActor(collisionInfo, pActor);
 
 		return { pActor };
@@ -694,7 +780,7 @@ namespace LambdaEngine
 		const glm::vec3& position = characterColliderInfo.Position.Position;
 		const glm::vec3 upDirection = g_DefaultUp * glm::quat(characterColliderInfo.Rotation.Quaternion.w, 0.0f, characterColliderInfo.Rotation.Quaternion.y, 0.0f);
 
-		controllerDesc.material			= m_pMaterial;
+		controllerDesc.material			= m_pDefaultMaterial;
 		controllerDesc.position			= { position.x, position.y, position.z };
 		controllerDesc.upDirection		= { upDirection.x, upDirection.y, upDirection.z };
 		controllerDesc.stepOffset		= STEP_OFFSET;

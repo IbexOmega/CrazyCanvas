@@ -8,8 +8,8 @@
 
 #include "Game/State.h"
 
-#include "ECS/Systems/GUI/HUDSystem.h"
 #include "ECS/Systems/Camera/SpectateCameraSystem.h"
+#include "ECS/Systems/GUI/HUDSystem.h"
 
 #include "Application/API/Events/NetworkEvents.h"
 

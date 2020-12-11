@@ -3,6 +3,7 @@
 #include "LambdaEngine.h"
 #include "Time/API/Timestamp.h"
 #include "ECS/Systems/Player/PlayerAnimationSystem.h"
+#include "ECS/Systems/Player/GrenadeSystem.h"
 
 class MultiplayerBase
 {
@@ -24,4 +25,5 @@ protected:
 
 protected:
 	PlayerAnimationSystem m_PlayerAnimationSystem;
+	GrenadeSystem m_GrenadeSystem;
 };

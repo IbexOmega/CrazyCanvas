@@ -27,6 +27,7 @@
 #include "Multiplayer/Packet/PacketProjectileHit.h"
 #include "Multiplayer/Packet/PacketResetPlayerTexture.h"
 #include "Multiplayer/Packet/PacketSessionSettingChanged.h"
+#include "Multiplayer/Packet/PacketGrenadeThrown.h"
 
 uint16 PacketType::s_PacketTypeCount = 0;
 PacketTypeMap PacketType::s_PacketTypeToEvent;
@@ -59,6 +60,7 @@ void PacketType::Init()
 	PROJECTILE_HIT			= RegisterPacketType<PacketProjectileHit>();
 	RESET_PLAYER_TEXTURE	= RegisterPacketTypeWithComponent<PacketResetPlayerTexture>();
 	SESSION_SETTING_CHANGED	= RegisterPacketType<PacketSessionSettingChanged>();
+	GRENADE_THROWN			= RegisterPacketType<PacketGrenadeThrown>();
 }
 
 uint16 PacketType::RegisterPacketTypeRaw(const char* pName)
