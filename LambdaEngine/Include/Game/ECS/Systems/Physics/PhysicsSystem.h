@@ -12,6 +12,8 @@
 
 #include <variant>
 
+#define PX_RELEASE(x) if(x)	{ x->release(); x = nullptr; }
+
 namespace LambdaEngine
 {
 	using namespace physx;
@@ -103,6 +105,7 @@ namespace LambdaEngine
 		EShapeType ShapeType;
 		EGeometryType GeometryType;
 		GeometryParameters GeometryParams;
+		PxMaterial* pMaterial = nullptr;			// If nullptr, a default material will be used
 		CollisionGroup CollisionGroup;				// The category of the object
 		uint32 CollisionMask;						// Includes the masks of the groups this object collides with
 		uint32 EntityID;							// EntityID so that entities cannot collide with objects that has the same EntityID
@@ -127,6 +130,7 @@ namespace LambdaEngine
 	struct DynamicCollisionCreateInfo : CollisionCreateInfo
 	{
 		const VelocityComponent& Velocity;	// Initial velocity
+		const float32* pMass = nullptr;		// Mass of the actor in kilograms. If nullptr, a default mass of 1.0 is used.
 	};
 
 	// CharacterColliderInfo contains information required to create a character collider
@@ -172,6 +176,8 @@ namespace LambdaEngine
 		bool Init();
 
 		void Tick(Timestamp deltaTime) override final;
+
+		PxMaterial* CreateMaterial(float32 staticFriction, float32 dynamicFriction, float32 restitution);
 
 		/* Static collision actors */
 		StaticCollisionComponent CreateStaticActor(const CollisionCreateInfo& collisionInfo);
@@ -232,7 +238,7 @@ namespace LambdaEngine
 		PxTriangleMeshGeometry CreateTriangleMeshGeometry(const Mesh* pMesh, const glm::vec3& scale) const;
 
 		// CreateCollisionCapsule creates a sphere if no capsule can be made
-		PxShape* CreateCollisionCapsule(float32 radius, float32 halfHeight) const;
+		PxShape* CreateCollisionCapsule(float32 radius, float32 halfHeight, const PxMaterial* pMaterial) const;
 
 		PxTransform CreatePxTransform(const glm::vec3& position, const glm::quat& rotation) const;
 
@@ -294,7 +300,7 @@ namespace LambdaEngine
 		PxDefaultCpuDispatcher*	m_pDispatcher;
 		PxScene*				m_pScene;
 
-		PxMaterial* m_pMaterial;
+		PxMaterial* m_pDefaultMaterial;
 
 		QueryFilterCallback m_QueryFilterCallback;
 		RaycastQueryFilterCallback m_RaycastQueryFilterCallback;

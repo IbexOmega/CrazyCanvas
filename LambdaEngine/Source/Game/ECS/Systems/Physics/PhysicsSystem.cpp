@@ -9,7 +9,6 @@
 #include "Physics/PhysX/FilterShader.h"
 #include "Resources/ResourceManager.h"
 
-#define PX_RELEASE(x) if(x)	{ x->release(); x = nullptr; }
 #define PVD_HOST "127.0.0.1"	// The IP address to stream debug visualization data to
 
 namespace LambdaEngine
@@ -24,12 +23,12 @@ namespace LambdaEngine
 		m_pVisDbg(nullptr),
 		m_pDispatcher(nullptr),
 		m_pScene(nullptr),
-		m_pMaterial(nullptr)
+		m_pDefaultMaterial(nullptr)
 	{}
 
 	PhysicsSystem::~PhysicsSystem()
 	{
-		PX_RELEASE(m_pMaterial);
+		PX_RELEASE(m_pDefaultMaterial);
 		PX_RELEASE(m_pCooking);
 		PX_RELEASE(m_pControllerManager);
 		PX_RELEASE(m_pDispatcher);
@@ -174,8 +173,8 @@ namespace LambdaEngine
 			return false;
 		}
 
-		m_pMaterial = m_pPhysics->createMaterial(0.5f, 0.5f, 0.6f);
-		return m_pMaterial;
+		m_pDefaultMaterial = m_pPhysics->createMaterial(0.5f, 0.5f, 0.6f);
+		return m_pDefaultMaterial;
 	}
 
 	void PhysicsSystem::Tick(Timestamp deltaTime)
@@ -212,6 +211,11 @@ namespace LambdaEngine
 				velocityComp.Velocity = { velocityPX.x, velocityPX.y, velocityPX.z };
 			}
 		}
+	}
+
+	PxMaterial* PhysicsSystem::CreateMaterial(float32 staticFriction, float32 dynamicFriction, float32 restitution)
+	{
+		return m_pPhysics->createMaterial(staticFriction, dynamicFriction, restitution);
 	}
 
 	StaticCollisionComponent PhysicsSystem::CreateStaticActor(const CollisionCreateInfo& collisionInfo)
@@ -359,7 +363,7 @@ namespace LambdaEngine
 		filterDataPX.data.word2 = filterData.ExcludedEntity;
 
 		// There's no default constructor for PxGeometry, so a sphere is used as a default
-		
+
 		PxTransform transform = PxTransform(position.x, position.y, position.z, PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
 
 		switch (overlapInfo.GeometryType)
@@ -431,13 +435,14 @@ namespace LambdaEngine
 		const glm::quat& rotation) const
 	{
 		PxShape* pShape = nullptr;
+		const PxMaterial* pMaterial = shapeCreateInfo.pMaterial ? shapeCreateInfo.pMaterial : m_pDefaultMaterial;
 
 		switch (shapeCreateInfo.GeometryType)
 		{
 			case EGeometryType::SPHERE:
 			{
 				const float32 maxScale = glm::compMax(scale);
-				pShape = m_pPhysics->createShape(PxSphereGeometry(shapeCreateInfo.GeometryParams.Radius * maxScale), *m_pMaterial);
+				pShape = m_pPhysics->createShape(PxSphereGeometry(shapeCreateInfo.GeometryParams.Radius * maxScale), *pMaterial);
 				break;
 			}
 			case EGeometryType::BOX:
@@ -448,12 +453,12 @@ namespace LambdaEngine
 					scale.y * shapeCreateInfo.GeometryParams.HalfExtents.y,
 					scale.z * shapeCreateInfo.GeometryParams.HalfExtents.z
 				};
-				pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *m_pMaterial);
+				pShape = m_pPhysics->createShape(PxBoxGeometry(halfExtentsPX), *pMaterial);
 				break;
 			}
 			case EGeometryType::CAPSULE:
 			{
-				pShape = CreateCollisionCapsule(shapeCreateInfo.GeometryParams.Radius, shapeCreateInfo.GeometryParams.HalfHeight);
+				pShape = CreateCollisionCapsule(shapeCreateInfo.GeometryParams.Radius, shapeCreateInfo.GeometryParams.HalfHeight, pMaterial);
 
 				// Rotate around Z-axis to get the capsule pointing upwards
 				const glm::quat uprightRotation = glm::rotate(glm::identity<glm::quat>(), glm::half_pi<float32>() * g_DefaultForward);
@@ -463,13 +468,13 @@ namespace LambdaEngine
 			}
 			case EGeometryType::PLANE:
 			{
-				pShape = m_pPhysics->createShape(PxPlaneGeometry(), *m_pMaterial);
+				pShape = m_pPhysics->createShape(PxPlaneGeometry(), *pMaterial);
 				pShape->setLocalPose(CreatePlaneTransform(position, rotation));
 				break;
 			}
 			case EGeometryType::MESH:
 			{
-				pShape = m_pPhysics->createShape(CreateTriangleMeshGeometry(shapeCreateInfo.GeometryParams.pMesh, scale), *m_pMaterial);
+				pShape = m_pPhysics->createShape(CreateTriangleMeshGeometry(shapeCreateInfo.GeometryParams.pMesh, scale), *pMaterial);
 				break;
 			}
 		}
@@ -546,18 +551,18 @@ namespace LambdaEngine
 		return PxTriangleMeshGeometry(pTriangleMesh, PxMeshScale({ scale.x, scale.y, scale.z }));
 	}
 
-	PxShape* PhysicsSystem::CreateCollisionCapsule(float32 radius, float32 halfHeight) const
+	PxShape* PhysicsSystem::CreateCollisionCapsule(float32 radius, float32 halfHeight, const PxMaterial* pMaterial) const
 	{
 		/*	A PhysX capsule's height extends along the x-axis. To make the capsule stand upright,
 			it is rotated around the z-axis. */
 		PxShape* pShape = nullptr;
 		if (halfHeight > 0.0f)
 		{
-			pShape = m_pPhysics->createShape(PxCapsuleGeometry(radius, halfHeight), *m_pMaterial);
+			pShape = m_pPhysics->createShape(PxCapsuleGeometry(radius, halfHeight), *pMaterial);
 		}
 		else
 		{
-			pShape = m_pPhysics->createShape(PxSphereGeometry(radius), *m_pMaterial);
+			pShape = m_pPhysics->createShape(PxSphereGeometry(radius), *pMaterial);
 		}
 
 		return pShape;
@@ -745,6 +750,12 @@ namespace LambdaEngine
 
 		PxRigidDynamic* pActor = m_pPhysics->createRigidDynamic(transformPX);
 		pActor->setLinearVelocity(initialVelocityPX);
+
+		if (collisionInfo.pMass)
+		{
+			pActor->setMass(*collisionInfo.pMass);
+		}
+
 		FinalizeCollisionActor(collisionInfo, pActor);
 
 		return { pActor };
@@ -765,7 +776,7 @@ namespace LambdaEngine
 		const glm::vec3& position = characterColliderInfo.Position.Position;
 		const glm::vec3 upDirection = g_DefaultUp * glm::quat(characterColliderInfo.Rotation.Quaternion.w, 0.0f, characterColliderInfo.Rotation.Quaternion.y, 0.0f);
 
-		controllerDesc.material			= m_pMaterial;
+		controllerDesc.material			= m_pDefaultMaterial;
 		controllerDesc.position			= { position.x, position.y, position.z };
 		controllerDesc.upDirection		= { upDirection.x, upDirection.y, upDirection.z };
 		controllerDesc.stepOffset		= STEP_OFFSET;

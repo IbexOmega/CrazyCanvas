@@ -8,6 +8,11 @@
 #define GRENADE_PLAYER_BLAST_RADIUS 3.0f		// In meters
 #define GRENADE_ENVIRONMENT_BLAST_RADIUS 6.0f	// In meters
 
+#define GRENADE_STATIC_FRICTION 1.4f
+#define GRENADE_DYNAMIC_FRICTION 1.4f
+#define GRENADE_RESTITUTION 0.18f
+#define GRENADE_MASS 0.20f				// In kilograms
+
 struct GrenadeWielderComponent
 {
 	DECL_COMPONENT(GrenadeWielderComponent);
