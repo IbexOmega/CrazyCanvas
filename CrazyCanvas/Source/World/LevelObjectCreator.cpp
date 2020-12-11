@@ -1340,11 +1340,6 @@ bool LevelObjectCreator::CreatePlayer(
 					.DeleteParentOnRemoval = false
 				};
 				pECS->AddComponent<ParentComponent>(firstPersonHandsEntity, parentComp);
-
-				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
-				pECS->AddComponent<RayTracedComponent>(firstPersonHandsEntity, RayTracedComponent{
-					.HitMask = 0x00
-				});
 			}
 
 			{
@@ -1378,11 +1373,6 @@ bool LevelObjectCreator::CreatePlayer(
 					{
 						.JointName = "Gun",
 						.Transform = glm::mat4(1.0f),
-					});
-
-				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
-				pECS->AddComponent<RayTracedComponent>(firstPersonWeaponEntity, RayTracedComponent{
-					.HitMask = 0x00
 					});
 			}
 
@@ -1423,11 +1413,6 @@ bool LevelObjectCreator::CreatePlayer(
 						.JointName = "Gun",
 						.Transform = glm::mat4(1.0f),
 					});
-
-				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
-				pECS->AddComponent<RayTracedComponent>(weaponLiquidEntity, RayTracedComponent{
-					.HitMask = 0x00
-					});
 			}
 
 			// Liquid paint
@@ -1465,11 +1450,6 @@ bool LevelObjectCreator::CreatePlayer(
 					{
 						.JointName = "Gun",
 						.Transform = glm::mat4(1.0f),
-					});
-
-				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
-				pECS->AddComponent<RayTracedComponent>(weaponLiquidEntity, RayTracedComponent{
-					.HitMask = 0x00
 					});
 			}
 
