@@ -39,9 +39,10 @@ private:
 	void Explode(LambdaEngine::Entity grenade);
 
 	/**
-	 * @param players Players within the blast radius of the exploding grenade are pushed to this array
+	 * @param localPlayer The local player if within blast radius, otherwise UINT32_MAX
+	 * @param opponents Players within the blast radius of the exploding grenade are pushed to this array
 	*/
-	void FindPlayersWithinBlast(LambdaEngine::TArray<LambdaEngine::Entity>& players, const glm::vec3& grenadePosition, uint8 grenadeTeam);
+	void FindPlayersWithinBlast(LambdaEngine::Entity& localPlayer, LambdaEngine::TArray<LambdaEngine::Entity>& opponents, const glm::vec3& grenadePosition, uint8 grenadeTeam);
 
 	/**
 	 * Sends raycasts from the grenade to different places on players' bodies to figure out if they were hit.
