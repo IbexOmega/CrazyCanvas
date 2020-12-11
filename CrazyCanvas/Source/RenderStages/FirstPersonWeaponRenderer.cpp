@@ -291,8 +291,6 @@ namespace LambdaEngine
 			{
 				static float maxTP = 0.f;
 				static float maxTW = 0.f;
-				static float newCTP = 0.0f;
-				static float currentTP = 0.0f;
 				static bool isReloadingP = false;
 				static bool isReloadingW = false;
 
@@ -326,11 +324,6 @@ namespace LambdaEngine
 				{
 					float ct = (float)itPaint->second.first / (float)itPaint->second.second;
 
-					newCTP = (float)(itPaint->second.second - itPaint->second.first) / (float)itPaint->second.second;
-
-					if(isReloadingP)
-						currentTP = t;
-
 					if (t > ct)
 						maxTP = t;
 
@@ -338,10 +331,8 @@ namespace LambdaEngine
 					{
 						isReloadingP = false;
 						maxTP = 0.f;
-						currentTP = 0.f;
 					}
-
-					s_LiquidPushConstantData.PaintLevel = isReloadingP ? glm::max(ct, ct + currentTP*newCTP) : ct;
+					s_LiquidPushConstantData.PaintLevel = isReloadingP ? glm::max(ct, maxTP) : ct;
 				}
 			}
 		}
