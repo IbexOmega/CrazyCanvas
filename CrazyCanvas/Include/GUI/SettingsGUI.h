@@ -47,7 +47,7 @@ private:
 
 	bool KeyboardCallback(const LambdaEngine::KeyPressedEvent& event);
 	bool MouseButtonCallback(const LambdaEngine::MouseButtonClickedEvent& event);
-
+	bool MouseScrollCallback(const LambdaEngine::MouseScrolledEvent& event);
 	NS_IMPLEMENT_INLINE_REFLECTION_(SettingsGUI, Noesis::UserControl, "CrazyCanvas.SettingsGUI");
 
 

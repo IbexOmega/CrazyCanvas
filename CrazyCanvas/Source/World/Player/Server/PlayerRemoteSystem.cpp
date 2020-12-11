@@ -90,7 +90,14 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 					rotationComponent.Dirty = true;
 				}
 
-				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, gameState.DeltaAction, gameState.Walking, dt, velocityComponent.Velocity, gameState.HoldingFlag);
+				physx::PxControllerState playerControllerState;
+				characterColliderComponent.pController->getState(playerControllerState);
+				bool inAir = playerControllerState.touchedShape == nullptr;
+
+				glm::i8vec3 deltaAction(gameState.DeltaActionX, gameState.DeltaActionY, gameState.DeltaActionZ);
+
+				PlayerActionSystem::ComputeVelocity(constRotationComponent.Quaternion, deltaAction, gameState.Walking, dt, velocityComponent.Velocity, gameState.HoldingFlag, inAir);
+
 				CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, netPosComponent, velocityComponent);
 
 				PacketPlayerActionResponse packet;
@@ -100,8 +107,8 @@ void PlayerRemoteSystem::FixedTickMainThread(LambdaEngine::Timestamp deltaTime)
 				packet.Velocity = velocityComponent.Velocity;
 				packet.Rotation = constRotationComponent.Quaternion;
 
-				packet.DeltaAction = gameState.DeltaAction;
 				packet.Walking = gameState.Walking;
+				packet.InAir = inAir;
 
 				packet.Angle = currentGameState.Angle;
 				playerActionResponseComponent.SendPacket(packet);
