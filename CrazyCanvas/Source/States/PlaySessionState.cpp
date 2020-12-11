@@ -144,7 +144,6 @@ void PlaySessionState::Init()
 	else
 		Input::PushInputLayer(EInputLayer::GAME);
 
-
 	EnablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
 
