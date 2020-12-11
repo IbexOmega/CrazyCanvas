@@ -2327,6 +2327,30 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "COMBINED_SAMPLER",
                     "src_stage": "RENDER_STAGE_LIGHT"
+                },
+                {
+                    "name": "GLOBAL_SPECULAR_PROBE",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "LIGHT_PROBE_RENDERER"
+                },
+                {
+                    "name": "GLOBAL_DIFFUSE_PROBE",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "LIGHT_PROBE_RENDERER"
+                },
+                {
+                    "name": "INTEGRATION_LUT",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]
         },
@@ -2727,6 +2751,30 @@
                     "draw_args_exclude_mask": 0,
                     "binding_type": "ATTACHMENT",
                     "src_stage": ""
+                },
+                {
+                    "name": "GLOBAL_SPECULAR_PROBE",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "LIGHT_PROBE_RENDERER"
+                },
+                {
+                    "name": "GLOBAL_DIFFUSE_PROBE",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "LIGHT_PROBE_RENDERER"
+                },
+                {
+                    "name": "INTEGRATION_LUT",
+                    "removable": true,
+                    "draw_args_include_mask": 1,
+                    "draw_args_exclude_mask": 0,
+                    "binding_type": "COMBINED_SAMPLER",
+                    "src_stage": "EXTERNAL_RESOURCES"
                 }
             ]
         },

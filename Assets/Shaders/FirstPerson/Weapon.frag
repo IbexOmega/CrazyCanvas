@@ -41,11 +41,14 @@ layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_NormalMaps[];
 layout(binding = 2, set = TEXTURE_SET_INDEX) uniform sampler2D u_CombinedMaterialMaps[];
 layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_DepthStencil;
 
+layout(binding = 4, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
+layout(binding = 5, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
+
 layout(location = 0) out vec4 out_Color;
 
 void main()
 {
-
 	vec3 normal		= normalize(in_Normal);
 	vec3 tangent	= normalize(in_Tangent);
 	vec3 bitangent	= normalize(in_Bitangent);
@@ -54,7 +57,10 @@ void main()
 	mat3 TBN = mat3(tangent, bitangent, normal);
 
 	vec3 sampledAlbedo				= texture(u_AlbedoMaps[in_MaterialSlot],			texCoord).rgb;
+	float isContainer = (1.f-step(0.5f, texCoord.x)) * (1.f-step(0.5f, texCoord.y));
 
+	float alpha = 0.0f*isContainer + (1.f-isContainer);
+	
 	vec3 sampledNormal				= texture(u_NormalMaps[in_MaterialSlot],			texCoord).rgb;
 	vec3 sampledCombinedMaterial	= texture(u_CombinedMaterialMaps[in_MaterialSlot],	texCoord).rgb;
 
@@ -62,30 +68,12 @@ void main()
 	shadingNormal			= normalize(TBN * normalize(shadingNormal));
 
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
-	uint packedPaintInfo = 0;
-	float dist = 1.f;
-	GetVec4ToPackedPaintInfoAndDistance(in_LocalPosition, in_PaintInfo4, in_PaintDist, packedPaintInfo, dist);
-	SPaintDescription paintDescription = InterpolatePaint(TBN, in_LocalPosition, tangent, bitangent, packedPaintInfo, dist);
-
-	vec3 paintNormal =  normalize(paintDescription.Normal + shadingNormal * 0.2f);
-
-	shadingNormal = mix(shadingNormal, paintNormal, paintDescription.Interpolation);
 
 	vec2 currentNDC		= (in_ClipPosition.xy / in_ClipPosition.w) * 0.5f + 0.5f;
 	vec2 prevNDC		= (in_PrevClipPosition.xy / in_PrevClipPosition.w) * 0.5f + 0.5f;
 
-	float shouldPaint = float(step(1, packedPaintInfo));
-	bool isPainted = (shouldPaint > 0.5f) && (paintDescription.Interpolation > 0.001f);
-
-	// Darken back faces like inside of painted legs
-	float backSide = 1.0f - step(0.0f, dot(in_ViewDirection, shadingNormal));
-	paintDescription.Albedo = mix(paintDescription.Albedo, paintDescription.Albedo*0.8, backSide);
-
 	// Get weapon albedo
 	vec3 storedAlbedo = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-
-	// Apply paint
-	storedAlbedo = mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
 
 	// PBR
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
@@ -93,12 +81,12 @@ void main()
 
 	vec3 storedMaterial	= vec3(
 								materialParameters.AO * sampledCombinedMaterial.b, 
-								mix(materialParameters.Roughness * sampledCombinedMaterial.r, paintDescription.Roughness, paintDescription.Interpolation), 
-								materialParameters.Metallic * sampledCombinedMaterial.g * float(paintDescription.Interpolation == 0.0f));
+								materialParameters.Roughness * sampledCombinedMaterial.r, 
+								materialParameters.Metallic * sampledCombinedMaterial.g);
 	vec4 aoRoughMetalValid	= vec4(storedMaterial, 1.0f);
 	
 	float ao		= aoRoughMetalValid.r;
-	float roughness	= 1.0f-aoRoughMetalValid.g; // TODO fix need to invert
+	float roughness	= aoRoughMetalValid.g;
 	float metallic	= aoRoughMetalValid.b;
 	float depth 	= texture(u_DepthStencil, in_TexCoord).r;
 
@@ -172,16 +160,34 @@ void main()
 		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
 	}
 
-	vec3 colorHDR = 0.03f * ao * storedAlbedo + Lo;
+	vec3 colorHDR;
+	{
+		float dotNV = max(dot(N, V), 0.0f);
+		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
+		vec3 Ks_IBL	= F_IBL;
+		vec3 Kd_IBL	= 1.0f - Ks_IBL;
+		Kd_IBL		*= 1.0f - metallic;
+	
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, N).rgb;
+		vec3 IBL_Diffuse	= irradiance * storedAlbedo * Kd_IBL;
+	
+		const int numberOfMips = textureQueryLevels(u_GlobalSpecularProbe);
+		vec3 reflection			= reflect(-V, N);
+		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, reflection, roughness * float(numberOfMips)).rgb;
+		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
+		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
+	
+		vec3 ambient = (IBL_Diffuse + IBL_Specular) * ao;
+		colorHDR		= ambient + Lo;
+	}
 
-	// Reinhard Tone-Mapping
+	float luminance = CalculateLuminance(colorHDR);
+
+	//Reinhard Tone-Mapping
 	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
 
-	// Gamma Correction
+	//Gamma Correction
 	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
 
-	// Transparent team players
-	//float alpha = isPainted ? 1.0f : 0.65f;
-	
-	out_Color = vec4(finalColor, 1.0f);
+	out_Color = vec4(finalColor, alpha);
 }
