@@ -38,6 +38,7 @@ namespace LambdaEngine
 		FORCEINLINE const GUIRenderTargetDesc* GetDesc() const { return &m_Desc; }
 
 		FORCEINLINE RenderPass* GetRenderPass() { return m_pRenderPass; }
+		FORCEINLINE Texture* GetDepthStencilTexture() { return m_pDepthStencilTexture; }
 		FORCEINLINE TextureView** GetRenderTargets() { return m_ppRenderTargets; }
 		FORCEINLINE TextureView* GetDepthStencil() { return m_pDepthStencilTextureView; }
 		FORCEINLINE const ClearColorDesc* GetClearColors() const { return m_pClearColorDesc; }

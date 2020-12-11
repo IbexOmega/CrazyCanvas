@@ -72,8 +72,6 @@ namespace LambdaEngine
 
 	void CameraSystem::Tick(Timestamp deltaTime)
 	{
-		UNREFERENCED_VARIABLE(deltaTime);
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
 		ComponentArray<CameraComponent>*					pCameraComponents			= pECSCore->GetComponentArray<CameraComponent>();
