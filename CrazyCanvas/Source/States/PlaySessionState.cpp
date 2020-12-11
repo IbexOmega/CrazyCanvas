@@ -130,7 +130,7 @@ void PlaySessionState::Init()
 			EventQueue::SendEvent(recompileEvent);
 			});
 	}
-
+  
 	ConsoleCommand cmdDebugWindow;
 	cmdDebugWindow.Init("show_debug_window", false);
 	cmdDebugWindow.AddArg(Arg::EType::BOOL);
