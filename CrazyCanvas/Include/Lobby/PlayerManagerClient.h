@@ -24,6 +24,8 @@ public:
 
 	static void Reset();
 
+	static float GetSpectatorSpeed();
+
 private:
 	static void Init();
 	static void Release();
@@ -43,5 +45,6 @@ private:
 	static bool OnPacketPlayerPingReceived(const PacketReceivedEvent<PacketPlayerPing>& event);
 
 private:
-	static inline bool s_IsSpectator;
+	static inline bool s_IsSpectator = false;
+	static inline float s_SpectatorSpeed = 3.0f;
 };

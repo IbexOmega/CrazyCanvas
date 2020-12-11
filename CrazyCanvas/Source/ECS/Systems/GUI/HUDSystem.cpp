@@ -144,6 +144,7 @@ void HUDSystem::Init()
 
 void HUDSystem::Tick(LambdaEngine::Timestamp deltaTime)
 {
+
 }
 
 void HUDSystem::FixedTick(Timestamp delta)

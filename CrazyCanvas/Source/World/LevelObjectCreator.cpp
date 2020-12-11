@@ -1563,7 +1563,7 @@ bool LevelObjectCreator::CreatePlayerSpectator(const void* pData, LambdaEngine::
 
 	pECS->AddComponent<CameraComponent>(cameraEntity, cameraComp);
 
-	pECS->AddComponent<FreeCameraComponent>(cameraEntity, { 3.0f, 0.15f });
+	pECS->AddComponent<FreeCameraComponent>(cameraEntity, { PlayerManagerClient::GetSpectatorSpeed() });
 
 	const ViewProjectionMatricesComponent viewProjComp =
 	{
@@ -1586,9 +1586,23 @@ bool LevelObjectCreator::CreatePlayerSpectator(const void* pData, LambdaEngine::
 	pECS->AddComponent<ScaleComponent>(cameraEntity, ScaleComponent{ .Scale = {1.0f, 1.0f, 1.0f} });
 	pECS->AddComponent<ListenerComponent>(cameraEntity, { AudioAPI::GetDevice()->GetAudioListener(false) });
 
+	DirectionalLightComponent directionalLightComponent =
+	{
+		.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
+		.Rotation = GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f + g_DefaultUp + g_DefaultForward * 0.5f)),
+		.FrustumWidth = 25.0f,
+		.FrustumHeight = 15.0f,
+		.FrustumZNear = -60.0f,
+		.FrustumZFar = 10.0f
+	};
+
+	pECS->AddComponent<DirectionalLightComponent>(cameraEntity, directionalLightComponent);
+
 	createdEntities.PushBack(cameraEntity);
 
-	return false;
+	PlayerManagerBase::SetPlayerEntity(PlayerManagerClient::GetPlayerLocal(), cameraEntity);
+
+	return true;
 }
 
 bool LevelObjectCreator::CreateProjectile(

@@ -15,9 +15,16 @@
 
 #include "Engine/EngineConfig.h"
 
+#include "Application/API/Events/EventQueue.h"
+
 namespace LambdaEngine
 {
 	CameraSystem CameraSystem::s_Instance;
+
+	CameraSystem::~CameraSystem()
+	{
+		EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &CameraSystem::OnKeyPressed);
+	}
 
 	bool CameraSystem::Init()
 	{
@@ -58,24 +65,25 @@ namespace LambdaEngine
 
 		m_MainFOV = EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV);
 
+		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &CameraSystem::OnKeyPressed);
+
 		return true;
 	}
 
 	void CameraSystem::Tick(Timestamp deltaTime)
 	{
-		const float32 dt = (float32)deltaTime.AsSeconds();
+		UNREFERENCED_VARIABLE(deltaTime);
+
+
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
 		ComponentArray<CameraComponent>*					pCameraComponents			= pECSCore->GetComponentArray<CameraComponent>();
 		ComponentArray<ViewProjectionMatricesComponent>*	pViewProjectionComponent	= pECSCore->GetComponentArray<ViewProjectionMatricesComponent>();
-		ComponentArray<FreeCameraComponent>*				pFreeCameraComponents		= pECSCore->GetComponentArray<FreeCameraComponent>();
-		const ComponentArray<FPSControllerComponent>*		pFPSCameraComponents		= pECSCore->GetComponentArray<FPSControllerComponent>();
 		const ComponentArray<ParentComponent>*				pParentComponents			= pECSCore->GetComponentArray<ParentComponent>();
 		const ComponentArray<StepParentComponent>*			pStepParentComponents		= pECSCore->GetComponentArray<StepParentComponent>();
 		const ComponentArray<OffsetComponent>*				pOffsetComponents			= pECSCore->GetComponentArray<OffsetComponent>();
 		ComponentArray<PositionComponent>*					pPositionComponents			= pECSCore->GetComponentArray<PositionComponent>();
 		ComponentArray<RotationComponent>*					pRotationComponents			= pECSCore->GetComponentArray<RotationComponent>();
-		ComponentArray<VelocityComponent>*					pVelocityComponents			= pECSCore->GetComponentArray<VelocityComponent>();
 
 		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
 		float32 windowWidth = float32(window->GetWidth());
@@ -117,6 +125,23 @@ namespace LambdaEngine
 				}
 			}
 		}
+	}
+
+	void CameraSystem::MainThreadTick(Timestamp deltaTime)
+	{
+		const float32 dt = (float32)deltaTime.AsSeconds();
+		ECSCore* pECSCore = ECSCore::GetInstance();
+
+		ComponentArray<CameraComponent>* pCameraComponents = pECSCore->GetComponentArray<CameraComponent>();
+		ComponentArray<ViewProjectionMatricesComponent>* pViewProjectionComponent = pECSCore->GetComponentArray<ViewProjectionMatricesComponent>();
+		ComponentArray<FreeCameraComponent>* pFreeCameraComponents = pECSCore->GetComponentArray<FreeCameraComponent>();
+		const ComponentArray<FPSControllerComponent>* pFPSCameraComponents = pECSCore->GetComponentArray<FPSControllerComponent>();
+		ComponentArray<RotationComponent>* pRotationComponents = pECSCore->GetComponentArray<RotationComponent>();
+		ComponentArray<VelocityComponent>* pVelocityComponents = pECSCore->GetComponentArray<VelocityComponent>();
+
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+		float32 windowWidth = float32(window->GetWidth());
+		float32 windowHeight = float32(window->GetHeight());
 
 		for (Entity entity : m_CameraEntities)
 		{
@@ -135,10 +160,10 @@ namespace LambdaEngine
 
 			if (cameraComp.IsActive)
 			{
-				auto& rotationComp	= pRotationComponents->GetData(entity);
-				auto& velocityComp	= pVelocityComponents->GetData(entity);
+				auto& rotationComp = pRotationComponents->GetData(entity);
+				auto& velocityComp = pVelocityComponents->GetData(entity);
 
-				if(pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
+				if (pFreeCameraComponents != nullptr && pFreeCameraComponents->HasComponent(entity))
 				{
 					MoveFreeCamera(dt, velocityComp, rotationComp, pFreeCameraComponents->GetConstData(entity));
 				}
@@ -147,27 +172,13 @@ namespace LambdaEngine
 					MoveFPSCamera(dt, velocityComp, rotationComp, pFPSCameraComponents->GetConstData(entity));
 				}
 
-				#ifdef LAMBDA_DEBUG
-					if (Input::IsKeyDown(EInputLayer::GAME, EKey::KEY_T))
-					{
-						RenderFrustum(entity, pPositionComponents->GetData(entity), rotationComp);
-					}
-				#endif // LAMBDA_DEBUG
+/*#ifdef LAMBDA_DEBUG
+				if (Input::IsKeyDown(EInputLayer::GAME, EKey::KEY_T))
+				{
+					RenderFrustum(entity, pPositionComponents->GetData(entity), rotationComp);
+				}
+#endif // LAMBDA_DEBUG*/
 			}
-		}
-	}
-
-	void CameraSystem::MainThreadTick(Timestamp)
-	{
-		if (m_VisbilityChanged)
-		{
-			CommonApplication::Get()->SetMouseVisibility(!m_MouseEnabled);
-			m_VisbilityChanged = false;
-		}
-
-		if (m_MouseEnabled)
-		{
-			CommonApplication::Get()->SetMousePosition(m_NewMousePos.x, m_NewMousePos.y);
 		}
 	}
 
@@ -191,7 +202,7 @@ namespace LambdaEngine
 			velocity = velocity.x * right + velocity.y * GetUp(rotationComp.Quaternion) + velocity.z * forward;
 		}
 
-		RotateCamera(dt, freeCamComp.MouseSpeedFactor, forward, rotationComp.Quaternion);
+		RotateCamera(dt, forward, rotationComp.Quaternion);
 	}
 
 	void CameraSystem::MoveFPSCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotationComp, const FPSControllerComponent& FPSComp)
@@ -223,45 +234,36 @@ namespace LambdaEngine
 
 		velocity = velocity.x * rightHorizontal + velocity.y * g_DefaultUp + velocity.z * forwardHorizontal;
 
-		RotateCamera(dt, FPSComp.MouseSpeedFactor, forward, rotationComp.Quaternion);
+		RotateCamera(dt, forward, rotationComp.Quaternion);
 	}
 
-	void CameraSystem::RotateCamera(float32 dt, float32 mouseSpeedFactor, const glm::vec3& forward, glm::quat& rotation)
+	void CameraSystem::RotateCamera(float32 dt, const glm::vec3& forward, glm::quat& rotation)
 	{
-		// Rotation from keyboard input. Applied later, after input from mouse has been read as well.
-		float addedPitch	= dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
-		float addedYaw		= dt * float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
+		float addedPitch = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
+		float addedYaw = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 
-		if (InputActionSystem::IsActive(EAction::ACTION_TOGGLE_MOUSE))
-		{
-			if (!m_CIsPressed)
-			{
-				m_MouseEnabled		= !m_MouseEnabled;
-				m_VisbilityChanged	= true;
-				m_CIsPressed		= true;
-			}
-		}
-		else
-		{
-			m_CIsPressed = false;
-		}
+		addedPitch *= InputActionSystem::GetLookSensitivityPercentage();
+		addedYaw *= InputActionSystem::GetLookSensitivityPercentage();
 
-		if (m_MouseEnabled)
+		const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
+
+		if (m_MouseEnabled && (currentInputLayer == EInputLayer::GAME || currentInputLayer == EInputLayer::DEAD))
 		{
-			const MouseState& mouseState = Input::GetMouseState(EInputLayer::GAME);
+			const MouseState& mouseState = Input::GetMouseState(currentInputLayer);
 
 			TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
-			const uint16 width = window->GetWidth();
-			const uint16 height = window->GetHeight();
+			const int32 halfWidth = int32(0.5f * float32(window->GetWidth()));
+			const int32 halfHeight = int32(0.5f * float32(window->GetHeight()));
 
-			const glm::vec2 mouseDelta(mouseState.Position.x - (int)(width * 0.5), mouseState.Position.y - (int)(height * 0.5));
-			m_NewMousePos = glm::ivec2((int)(width * 0.5), (int)(height * 0.5));
+			const glm::vec2 mouseDelta(mouseState.Position.x - halfWidth, mouseState.Position.y - halfHeight);
 
 			if (glm::length(mouseDelta) > glm::epsilon<float>())
 			{
-				addedYaw	-= mouseSpeedFactor * (float)mouseDelta.x * dt;
-				addedPitch	-= mouseSpeedFactor * (float)mouseDelta.y * dt;
+				addedYaw -= InputActionSystem::GetLookSensitivity() * (float)mouseDelta.x;
+				addedPitch -= InputActionSystem::GetLookSensitivity() * (float)mouseDelta.y;
 			}
+
+			CommonApplication::Get()->SetMousePosition(halfWidth, halfHeight);
 		}
 
 		const float MAX_PITCH = glm::half_pi<float>() - 0.01f;
@@ -333,5 +335,16 @@ namespace LambdaEngine
 				m_LineGroupEntityIDs[entity] = pLineRenderer->UpdateLineGroup(UINT32_MAX, points, { 0.0f, 1.0f, 0.0f });
 			}
 		}
+	}
+
+	bool CameraSystem::OnKeyPressed(const KeyPressedEvent& event)
+	{
+		if (event.Key == EKey::KEY_KEYPAD_0 || event.Key == EKey::KEY_END)
+		{
+			m_MouseEnabled = !m_MouseEnabled;
+			CommonApplication::Get()->SetMouseVisibility(!m_MouseEnabled);
+		}
+
+		return false;
 	}
 }

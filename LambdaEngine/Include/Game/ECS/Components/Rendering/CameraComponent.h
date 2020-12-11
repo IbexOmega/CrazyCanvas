@@ -26,7 +26,6 @@ namespace LambdaEngine
 	{
 		DECL_COMPONENT(FreeCameraComponent);
 		float SpeedFactor = 3.0f;
-		float MouseSpeedFactor = 0.25f;
 	};
 
 	struct FPSControllerComponent : FreeCameraComponent

@@ -17,6 +17,9 @@
 
 #include "Game/GameConsole.h"
 
+#include "ECS/ECSCore.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+
 using namespace LambdaEngine;
 
 void PlayerManagerClient::Init()
@@ -41,6 +44,39 @@ void PlayerManagerClient::Init()
 	{
 		s_IsSpectator = input.Arguments.GetFront().Value.Boolean;
 	});
+
+	ConsoleCommand spectateSpeedCmd;
+	spectateSpeedCmd.Init("spectate_speed", false);
+	spectateSpeedCmd.AddArg(Arg::EType::FLOAT);
+	spectateSpeedCmd.AddDescription("Sets the movement speed of the spectator.\n\t'spectate_speed 3.0'");
+	GameConsole::Get().BindCommand(spectateSpeedCmd, [&](GameConsole::CallbackInput& input)->void
+	{
+		s_SpectatorSpeed = input.Arguments.GetFront().Value.Float32;
+		
+		const Job pingJob =
+		{
+			.Components =
+			{
+				{ RW, FreeCameraComponent::Type() }
+			},
+			.Function = []()
+			{
+				const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+				if (pPlayer)
+				{
+					auto* pComponents = ECSCore::GetInstance()->GetComponentArray<FreeCameraComponent>();
+
+					if (pComponents->HasComponent(pPlayer->GetEntity()))
+					{
+						FreeCameraComponent& cameraComponent = pComponents->GetData(pPlayer->GetEntity());
+						cameraComponent.SpeedFactor = s_SpectatorSpeed;
+					}
+				}
+			}
+		};
+
+		ECSCore::GetInstance()->ScheduleJobASAP(pingJob);
+	});
 }
 
 void PlayerManagerClient::Release()
@@ -61,6 +97,11 @@ void PlayerManagerClient::Release()
 void PlayerManagerClient::Reset()
 {
 	PlayerManagerBase::Reset();
+}
+
+float PlayerManagerClient::GetSpectatorSpeed()
+{
+	return s_SpectatorSpeed;
 }
 
 const Player* PlayerManagerClient::GetPlayerLocal()
