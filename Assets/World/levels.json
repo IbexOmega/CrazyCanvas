@@ -2,7 +2,7 @@
     "levels": [
 		{
             "name": "Fun Factory",
-            "thumbnail": "levels/funfactory.png",
+            "thumbnail": "Thumbnails/Fun Factory.png",
 			"modules": [
 				{
 					"filename": "CanvasMap.glb",
@@ -16,7 +16,7 @@
         },
         {
             "name": "The Mines",
-            "thumbnail": "levels/themines.png",
+            "thumbnail": "Thumbnails/The Mines.png",
             "modules": [
                 {
                     "filename": "TheMines.glb",
