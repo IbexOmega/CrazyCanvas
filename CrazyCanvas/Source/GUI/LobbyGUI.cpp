@@ -680,7 +680,7 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	{
 		m_pGameSettings->MapID = (uint8)indexSelected;
 
-		if (m_MapImages[glm::min(indexSelected, m_MapImages.GetSize() - 1)].find(LevelManager::GetLevelNames()[indexSelected]))
+		if (indexSelected < m_MapImages.GetSize())
 		{
 			Ptr<BitmapImage> bitmapImage = *new BitmapImage(Uri(m_MapImages[indexSelected].c_str()));
 			FrameworkElement::FindName<Image>("THUMBNAIL_IMAGE")->SetSource(bitmapImage);
