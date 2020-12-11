@@ -22,7 +22,7 @@
 
             <DoubleAnimationUsingKeyFrames  Storyboard.TargetProperty="Y" Storyboard.TargetName="AnimatedTranslateTransform" Duration="0:0:4">
                 <EasingDoubleKeyFrame KeyTime="0:0:2" Value="0"/>
-                <EasingDoubleKeyFrame KeyTime="0:0:4" Value="-245"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:4" Value="-260"/>
             </DoubleAnimationUsingKeyFrames>
 
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="ScaleX" Storyboard.TargetName="AnimatedScaleTransform">
