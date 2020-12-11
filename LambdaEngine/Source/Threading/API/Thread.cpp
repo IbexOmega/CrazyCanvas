@@ -9,13 +9,15 @@ namespace LambdaEngine
 	std::set<Thread*>* Thread::s_Threads;
 	SpinLock* Thread::s_Lock;
 
-	Thread::Thread(const std::function<void()>& func, const std::function<void()>& funcOnFinished) :
+	Thread::Thread(const String& name, const std::function<void()>& func, const std::function<void()>& funcOnFinished) :
 		m_Func(func),
-		m_FuncOnFinished(funcOnFinished)
+		m_FuncOnFinished(funcOnFinished),
+		m_Name(name)
 	{
 		std::scoped_lock<SpinLock> lock(*s_Lock);
 		s_Threads->insert(this);
 		m_Thread = std::thread(&Thread::Run, this);
+		PlatformThread::SetThreadName(PlatformThread::GetThreadHandle(m_Thread), name);
 	}
 
 	Thread::~Thread()
@@ -38,19 +40,14 @@ namespace LambdaEngine
 		m_Condition.notify_one();
 	}
 
-	void Thread::SetName(const String& name)
-	{
-		PlatformThread::SetThreadName(PlatformThread::GetThreadHandle(m_Thread), name);
-	}
-
 	void Thread::Sleep(int32 milliseconds)
 	{
 		std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 	}
 
-	Thread* Thread::Create(const std::function<void()>& func, const std::function<void()>& funcOnFinished)
+	Thread* Thread::Create(const String& name, const std::function<void()>& func, const std::function<void()>& funcOnFinished)
 	{
-		return DBG_NEW Thread(func, funcOnFinished);
+		return DBG_NEW Thread(name, func, funcOnFinished);
 	}
 
 	void Thread::Run()
@@ -74,6 +71,7 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(*s_Lock);
 			for (Thread* thread : *s_ThreadsToJoin)
 			{
+				thread->Notify();
 				thread->m_Thread.join();
 				if(thread->m_FuncOnFinished)
 					thread->m_FuncOnFinished();

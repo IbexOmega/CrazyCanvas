@@ -22,7 +22,7 @@
 
             <DoubleAnimationUsingKeyFrames  Storyboard.TargetProperty="Y" Storyboard.TargetName="AnimatedTranslateTransform" Duration="0:0:4">
                 <EasingDoubleKeyFrame KeyTime="0:0:2" Value="0"/>
-                <EasingDoubleKeyFrame KeyTime="0:0:4" Value="-245"/>
+                <EasingDoubleKeyFrame KeyTime="0:0:4" Value="-260"/>
             </DoubleAnimationUsingKeyFrames>
 
             <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="ScaleX" Storyboard.TargetName="AnimatedScaleTransform">
@@ -155,15 +155,15 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
-                    <Image Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="3" Source="HealthPlateNew.png"   RenderTransformOrigin="0.5,0.75" HorizontalAlignment="Left" Width="500.205" Margin="0,0,0,-2"/>
-                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="HealthRectNew.png"   RenderTransformOrigin="0.355,0.5"  Width="478" Height=" 245" Margin="11,0,0,0">
+                    <Image Grid.Column="1"  Grid.Row="3" Source="HealthPlateNew.png"   RenderTransformOrigin="0.5,0.75" HorizontalAlignment="Left" Width="400.205" Margin="0,0,0,-2"/>
+                    <Image x:Name="HEALTH_RECT"  Grid.Column="1" Grid.Row="3" Source="HealthRectNew.png"   RenderTransformOrigin="0.355,0.5"  Width="378" Height=" 245" Margin="-10,0,0,0">
                         <Image.RenderTransform>
                             <ScaleTransform/>
                         </Image.RenderTransform>
                     </Image>
-                    <Image Grid.Column="1" Grid.Row="3" Source="HealthBorderNew.png"   RenderTransformOrigin="0.5,0.75"  Width="475" Height="243" Margin="11,0,0,0"/>
+                    <Image Grid.Column="1" Grid.Row="3" Source="HealthBorderNew.png"   RenderTransformOrigin="0.5,0.75"  Width="375" Height="243" Margin="-6,0,0,0"/>
 
-                <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="1" Grid.Row="3" Text="100%" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,-157,28" Foreground="Black" FontWeight="Bold" Height="31.922" Width="62.224" />
+                <TextBlock x:Name="HEALTH_DISPLAY"  Grid.Column="1" Grid.Row="3" Text="100%" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,-73,20" Foreground="Black" FontWeight="Bold" Height="31.922" Width="62.224" />
                 
                 </Grid>
  
@@ -213,31 +213,11 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
-                    <!--<Image Source="WaterIcon.png" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Height="100" Width="100"></Image>
+                    <Image Source="WaterBoard.png" Height="100" Width="300" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>
+                    <TextBlock x:Name="AMMUNITION_WATER_DISPLAY" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="5.5" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Text="50/50" FontSize="36" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-                    <Image Source="PaintIcon.png" Grid.Column="0" Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Center" Height="100" Width="100"></Image>-->
-
-                    <Image x:Name="WATER_RECT" Height="150" Width="350" Source="Water.png" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3" RenderTransformOrigin="0.195,0.5" >
-                        <Image.RenderTransform>
-                           <ScaleTransform/>
-                      </Image.RenderTransform>
-                    </Image>
-
-                    <Image Source="WaterBar.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>
-                    <Image Source="WaterDrop.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>
-             
-                
-                    <TextBlock x:Name="AMMUNITION_WATER_DISPLAY" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Text="50/50" FontSize="24" Foreground="Black" Margin="0,0,-70,-30" Height="31.923" Width="68.429" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-                    <Image x:Name="PAINT_RECT" Height="150" Width="350" Source="PaintAmmo\PurplePaint.png" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0" RenderTransformOrigin="0.21,0.5" >
-                    <Image.RenderTransform>
-                        <ScaleTransform/>
-                    </Image.RenderTransform>
-                    </Image>
-
-                    <Image Source="PaintBar.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0"/>
-                    <Image x:Name="PAINT_DROP" Source="PaintAmmo\PurplePaintDrop.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0"/>
-                    <TextBlock x:Name="AMMUNITION_PAINT_DISPLAY" Grid.Column="2" Grid.Row="0" TextWrapping="Wrap" Text="50/50" FontSize="24" Foreground="Black" Margin="0,0,-70,-30" Height="31.923" Width="68.429" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Image x:Name="PAINT_RECT" Source="PaintAmmo\PaintBoardPurple.png" Height="100" Width="300"  Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="0"/>
+                    <TextBlock x:Name="AMMUNITION_PAINT_DISPLAY" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="5.5" Grid.Column="2" Grid.Row="0" TextWrapping="Wrap" Text="50/50" FontSize="36" Foreground="White"  HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     
                 </Grid>
 

@@ -312,6 +312,12 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 				Input::PushInputLayer(EInputLayer::DEAD);
 				Input::PushInputLayer(EInputLayer::GUI);
 			}
+			else if(currentInputLayer == EInputLayer::DEBUG)
+			{
+				Input::PopInputLayer();
+				Input::PushInputLayer(EInputLayer::DEAD);
+				Input::PushInputLayer(EInputLayer::DEBUG);
+			}
 			else
 			{
 				Input::PushInputLayer(EInputLayer::DEAD);
@@ -324,6 +330,12 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 				Input::PopInputLayer();
 				Input::PushInputLayer(EInputLayer::GAME);
 				Input::PushInputLayer(EInputLayer::GUI);
+			}
+			else if(currentInputLayer == EInputLayer::DEBUG)
+			{
+				Input::PopInputLayer();
+				Input::PushInputLayer(EInputLayer::GAME);
+				Input::PushInputLayer(EInputLayer::DEBUG);
 			}
 			else
 			{

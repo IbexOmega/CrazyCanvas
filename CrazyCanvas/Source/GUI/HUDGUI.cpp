@@ -77,9 +77,7 @@ void HUDGUI::InitGUI()
 
 	InitScore();
 
-	m_pWaterAmmoRect = FrameworkElement::FindName<Image>("WATER_RECT");
-	m_pPaintAmmoRect = FrameworkElement::FindName<Image>("PAINT_RECT");
-	m_pPaintDropRect = FrameworkElement::FindName<Image>("PAINT_DROP");
+	m_pPaintAmmoImage = FrameworkElement::FindName<Image>("PAINT_RECT");
 	m_pHealthRect = FrameworkElement::FindName<Image>("HEALTH_RECT");
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
@@ -98,7 +96,6 @@ void HUDGUI::InitGUI()
 	{
 		const ImageSources& imageSources = TeamHelper::GetTeamImage(pPlayer->GetTeam());
 		Ptr<BitmapImage> bitmap = *new BitmapImage(Uri(imageSources.PaintAmmo.c_str()));
-		Ptr<BitmapImage> bitmapDrop = *new BitmapImage(Uri(imageSources.PaintAmmoDrop.c_str()));
 
 		{ // init CarryFlagIndicator and LookAtGrid colors
 
@@ -128,8 +125,7 @@ void HUDGUI::InitGUI()
 			m_pLookAtGrid->SetBackground(brush);
 		}
 
-		m_pPaintAmmoRect->SetSource(bitmap);
-		m_pPaintDropRect->SetSource(bitmapDrop);
+		m_pPaintAmmoImage->SetSource(bitmap)
 
 
 		std::string ammoString;
@@ -177,23 +173,6 @@ void HUDGUI::FixedTick(LambdaEngine::Timestamp delta)
 {
 	UpdateKillFeedTimer(delta);
 	UpdateScore();
-
-	if (m_IsReloading)
-	{
-		AnimateReload(float32(delta.AsSeconds()));
-	}
-}
-
-void HUDGUI::AnimateReload(const float32 timePassed)
-{
-	ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
-	ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
-
-	pWaterScale->SetScaleX(glm::clamp<float>(pWaterScale->GetScaleX() + m_WaterAmmoFactor * timePassed, 0.0f, 1.0f));
-	pPaintScale->SetScaleX(glm::clamp<float>(pPaintScale->GetScaleX() + m_PaintAmmoFactor * timePassed, 0.0f, 1.0f));
-
-	m_pWaterAmmoRect->SetRenderTransform(pWaterScale);
-	m_pPaintAmmoRect->SetRenderTransform(pPaintScale);
 }
 
 bool HUDGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -261,31 +240,23 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 	//Returns false if Out Of Ammo
 
 	std::string ammoString;
-	Ptr<ScaleTransform> scale = *new ScaleTransform();
-	float ammoScale = 0.0f;
 	auto ammo = WeaponTypeAmmo.find(ammoType);
 
 	if (ammo != WeaponTypeAmmo.end())
 	{
 		ammoString = std::to_string(ammo->second.first) + "/" + std::to_string(ammo->second.second);
-		ammoScale = (float)ammo->second.first / (float)ammo->second.second;
-		scale->SetCenterX(0.0);
-		scale->SetCenterY(0.0);
-		scale->SetScaleX(ammoScale);
 
 		if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 		{
 			m_GUIState.WaterAmmo = ammo->second.first;
 
 			m_pWaterAmmoText->SetText(ammoString.c_str());
-			m_pWaterAmmoRect->SetRenderTransform(scale);
 		}
 		else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 		{
 			m_GUIState.PaintAmmo = ammo->second.first;
 
 			m_pPaintAmmoText->SetText(ammoString.c_str());
-			m_pPaintAmmoRect->SetRenderTransform(scale);
 		}
 	}
 	else
@@ -302,70 +273,26 @@ void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>
 	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
 	if (pPlayer->IsSpectator())
 		return;
-
-	m_IsReloading = isReloading;
-
-	if (m_IsReloading)
+		
+	if (!isReloading)
 	{
-		for (auto& ammo : WeaponTypeAmmo)
+		auto paintAmmo = WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+		auto waterAmmo = WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+
+		if (paintAmmo != WeaponTypeAmmo.end() && waterAmmo != WeaponTypeAmmo.end())
 		{
-			float scale = (float)ammo.second.first / (float)ammo.second.second;
+			std::string waterAmmoString = std::to_string(waterAmmo->second.second) + "/" + std::to_string(waterAmmo->second.second);
+			std::string paintAmmoString = std::to_string(paintAmmo->second.second) + "/" + std::to_string(paintAmmo->second.second);
 
-			if (ammo.first == EAmmoType::AMMO_TYPE_WATER)
-				m_WaterAmmoFactor = (1.0f - scale) / m_ReloadAnimationTime;
-			else if (ammo.first == EAmmoType::AMMO_TYPE_PAINT)
-				m_PaintAmmoFactor = (1.0f - scale) / m_ReloadAnimationTime;
+			m_pWaterAmmoText->SetText(waterAmmoString.c_str());
+			m_pPaintAmmoText->SetText(paintAmmoString.c_str());
 		}
-	}
-	else
-	{
-		Ptr<ScaleTransform> scaleTransform = *new ScaleTransform();
-		std::string ammoString = std::to_string(25) + "/" + std::to_string(25);
-		scaleTransform->SetCenterX(0.0);
-		scaleTransform->SetCenterY(0.0);
-		scaleTransform->SetScaleX(1.0f);
-
-		m_pWaterAmmoText->SetText(ammoString.c_str());
-		m_pWaterAmmoRect->SetRenderTransform(scaleTransform);
-
-		m_pPaintAmmoText->SetText(ammoString.c_str());
-		m_pPaintAmmoRect->SetRenderTransform(scaleTransform);
 	}
 }
 
-void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo)
+void HUDGUI::AbortReload()
 {
-	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
-	if (pPlayer->IsSpectator())
-		return;
-
-	m_IsReloading = false;
-	m_ReloadAnimationTime = 2.0f;
-	Ptr<ScaleTransform> waterScaleTransform = *new ScaleTransform();
-	Ptr<ScaleTransform> paintScaleTransform = *new ScaleTransform();
-
 	CancelSmallPrompt();
-
-	for (auto& ammo : WeaponTypeAmmo)
-	{
-		float scale = (float)ammo.second.first / (float)ammo.second.second;
-		if (ammo.first == EAmmoType::AMMO_TYPE_WATER)
-		{
-			waterScaleTransform->SetCenterX(0.0);
-			waterScaleTransform->SetCenterY(0.0);
-			waterScaleTransform->SetScaleX(scale);
-
-			m_pWaterAmmoRect->SetRenderTransform(waterScaleTransform);
-		}
-		else if (ammo.first == EAmmoType::AMMO_TYPE_PAINT)
-		{
-			paintScaleTransform->SetCenterX(0.0);
-			paintScaleTransform->SetCenterY(0.0);
-			paintScaleTransform->SetScaleX(scale);
-
-			m_pPaintAmmoRect->SetRenderTransform(paintScaleTransform);
-		}
-	}
 }
 
 
@@ -388,7 +315,6 @@ void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::
 
 	float32 result = glm::dot(forwardDir, nor);
 	float32 rotation = 0.0f;
-
 
 	if (result > 0.99f)
 	{

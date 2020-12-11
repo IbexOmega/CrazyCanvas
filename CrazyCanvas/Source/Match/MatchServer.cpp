@@ -50,6 +50,8 @@
 
 #include "MeshPaint/MeshPaintHandler.h"
 
+#include "World/SessionSettings.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -680,7 +682,7 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 
 		{
 			std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
-			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 10.0f));
+			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, SessionSettings::GetSettingValue<float>(ESessionSetting::RESPAWN_TIME)));
 		}
 	}
 

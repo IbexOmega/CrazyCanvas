@@ -14,8 +14,8 @@ struct PacketPlayerActionResponse : Packet
 	glm::vec3	Velocity;
 	glm::quat	Rotation;
 
-	glm::i8vec3	DeltaAction		= glm::i8vec3(0);
-	bool		Walking			= false;
+	bool		Walking			: 1 = false;
+	bool		InAir			: 1 = false;
 
 	EAmmoType	FiredAmmo		= EAmmoType::AMMO_TYPE_NONE; // Default is that we fired no projectiles
 	glm::vec3	WeaponPosition;

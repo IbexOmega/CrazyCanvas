@@ -1,5 +1,6 @@
 #include "World/Player/PlayerActionSystem.h"
 #include "World/Player/PlayerSettings.h"
+#include "World/SessionSettings.h"
 
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Physics/Transform.h"
@@ -100,9 +101,8 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 	return false;
 }
 
-void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
+void PlayerActionSystem::ComputeVelocityInternal(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag, float acceleration, float maxVelocity)
 {
-	bool horizontalMovement = deltaAction.x != 0 || deltaAction.z != 0;
 	bool verticalMovement = deltaAction.y != 0;
 
 	if (isHoldingFlag)
@@ -117,33 +117,64 @@ void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i
 		return;
 	}
 
-	if (horizontalMovement)
+	glm::vec3 dir = glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
+	if (glm::length2(dir) > glm::epsilon<float>())
 	{
 		glm::quat rotationNoPitch = rotation;
 		rotationNoPitch.x = 0.0f;
 		rotationNoPitch.z = 0.0f;
 		rotationNoPitch = glm::normalize(rotationNoPitch);
 
-		glm::vec3 currentVelocity;
-		currentVelocity		= rotationNoPitch * glm::vec3(deltaAction.x, 0.0f, deltaAction.z);
-		currentVelocity.y	= 0.0f;
-		currentVelocity		= glm::normalize(currentVelocity);
-		currentVelocity		*= (PLAYER_WALK_MOVEMENT_SPEED * float32(walking)) + (PLAYER_RUN_MOVEMENT_SPEED * float32(!walking)) * m_Speed;
+		dir = glm::normalize(rotationNoPitch * dir);
+		float projVel = glm::dot(velocity, dir);
+		float accelVel = acceleration * dt;
 
-		velocity.x = currentVelocity.x;
-		velocity.z = currentVelocity.z;
-	}
-	else
-	{
-		float32 relativeVelocity = 1.0f / (1.0f + PLAYER_DRAG * dt);
-		velocity.x *= relativeVelocity;
-		velocity.z *= relativeVelocity;
+		if (projVel + accelVel > maxVelocity)
+		{
+			accelVel = maxVelocity - projVel;
+		}
+
+		velocity += dir * accelVel;
 	}
 
 	if (verticalMovement)
 	{
-		velocity.y = velocity.y * float32(1 - deltaAction.y) + PLAYER_JUMP_SPEED * float32(deltaAction.y);
+		const float jumpSpeed = SessionSettings::GetSettingValue<float>(ESessionSetting::JUMP_SPEED);
+		velocity.y = velocity.y * float32(1 - deltaAction.y) + jumpSpeed * float32(deltaAction.y);
 	}
+}
+
+void PlayerActionSystem::ComputeAirVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
+{
+	const float airAccel	= SessionSettings::GetSettingValue<float>(ESessionSetting::AIR_ACCELERATION);
+	const float maxVelo		= SessionSettings::GetSettingValue<float>(ESessionSetting::MAX_AIR_VELOCITY);
+	ComputeVelocityInternal(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, airAccel, maxVelo);
+}
+
+void PlayerActionSystem::ComputeGroundVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag)
+{
+	// Apply ground friction
+	float speed = glm::length(velocity);
+	const float friction = SessionSettings::GetSettingValue<float>(ESessionSetting::GROUND_FRICTION);
+	if (speed > glm::epsilon<float>())
+	{
+ 		float drop = speed * friction * dt;
+		velocity *= std::max(speed - drop, 0.f) / speed;
+
+		if (glm::length2(velocity) < glm::epsilon<float>())
+			velocity *= 0;
+	}
+	const float maxVelocity = walking ? SessionSettings::GetSettingValue<float>(ESessionSetting::MAX_WALK_VELOCITY) : SessionSettings::GetSettingValue<float>(ESessionSetting::MAX_RUN_VELOCITY);
+	const float groundAccel = SessionSettings::GetSettingValue<float>(ESessionSetting::GROUND_ACCELERATION);
+	ComputeVelocityInternal(rotation, deltaAction, walking, dt, velocity, isHoldingFlag, groundAccel, maxVelocity);
+}
+
+void PlayerActionSystem::ComputeVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag, bool inAir)
+{
+	if (inAir)
+		ComputeAirVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag);
+	else
+		ComputeGroundVelocity(rotation, deltaAction, walking, dt, velocity, isHoldingFlag);
 }
 
 void PlayerActionSystem::SetMouseEnabled(bool isEnabled)

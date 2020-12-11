@@ -44,6 +44,7 @@ public:
 	inline static uint16 PLAYER_STATE				= 0;
 	inline static uint16 PROJECTILE_HIT				= 0;
 	inline static uint16 RESET_PLAYER_TEXTURE		= 0;
+	inline static uint16 SESSION_SETTING_CHANGED	= 0; // When a session setting is changed that affects all players of the server
 
 public:
 	static IPacketReceivedEvent* GetPacketReceivedEventPointer(uint16 packetType);
