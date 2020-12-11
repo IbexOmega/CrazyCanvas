@@ -49,6 +49,8 @@
 #include "Rendering/Animation/AnimationGraph.h"
 #include "Rendering/EntityMaskManager.h"
 
+#include "Rendering/PipelineStateManager.h"
+
 #include "Math/Random.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -525,6 +527,26 @@ void SandboxState::Init()
 	cmdDebugLights.AddDescription("Debugging Directional Light'");
 	GameConsole::Get().BindCommand(cmdDebugLights, [&, this](GameConsole::CallbackInput& input)->void {
 		m_DirLightDebug = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand cmdWireframe;
+	cmdWireframe.Init("wireframe", false);
+	cmdWireframe.AddArg(Arg::EType::BOOL);
+	cmdWireframe.AddDescription("Activate/Deactivate wireframe mode\n");
+	GameConsole::Get().BindCommand(cmdWireframe, [&, this](GameConsole::CallbackInput& input)->void {
+		THashTable<uint64, ManagedGraphicsPipelineStateDesc>& graphicsPipelinesDescs = PipelineStateManager::GetGraphicsPipelineStateDescriptions();
+
+		for (auto& it : graphicsPipelinesDescs)
+		{
+			ManagedGraphicsPipelineStateDesc& pipelineStateDesc = it.second;
+			if (pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS" || pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS_MESH_PAINT")
+			{
+				pipelineStateDesc.RasterizerState.PolygonMode = input.Arguments.GetFront().Value.Boolean ? EPolygonMode::POLYGON_MODE_LINE : EPolygonMode::POLYGON_MODE_FILL;
+			}
+		}
+
+		PipelineStateRecompileEvent recompileEvent = {};
+		EventQueue::SendEvent(recompileEvent);
 		});
 
 	SingleplayerInitializer::Setup();

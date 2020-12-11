@@ -2,6 +2,7 @@
 #include "Defines.h"
 #include "Types.h"
 #include "SpinLock.h"
+#include "Containers/String.h"
 #include <set>
 #include <thread>
 #include <condition_variable>
@@ -23,16 +24,14 @@ namespace LambdaEngine
 		void Wait();
 		void Notify();
 
-		void SetName(const String& name);
-
 	private:
-		Thread(const std::function<void()>& func, const std::function<void()>& funcOnFinished);
+		Thread(const String& name, const std::function<void()>& func, const std::function<void()>& funcOnFinished);
 
 		void Run();
 
 	public:
 		static void Sleep(int32 milliseconds);
-		static Thread* Create(const std::function<void()>& func, const std::function<void()>& funcOnFinished);
+		static Thread* Create(const String& name, const std::function<void()>& func, const std::function<void()>& funcOnFinished);
 
 	private:
 		static void Init();
@@ -46,6 +45,7 @@ namespace LambdaEngine
 		std::condition_variable m_Condition;
 		std::mutex m_Mutex;
 		std::atomic_bool m_ShouldYeild;
+		String m_Name;
 
 	private:
 		static SpinLock* s_Lock;

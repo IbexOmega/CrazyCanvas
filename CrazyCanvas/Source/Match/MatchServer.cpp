@@ -201,16 +201,17 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 							const ChildComponent& children = pChildComponents->GetConstData(playerEntity);
 							Entity weapon = children.GetEntityWithTag("weapon");
 
-							const WeaponComponent& weaponComp = pWeaponComponents->GetConstData(weapon);
+							WeaponComponent weaponComp;
+							if (pWeaponComponents->GetConstIf(weapon, weaponComp))
+							{
+								auto waterAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+								if (waterAmmo != weaponComp.WeaponTypeAmmo.end())
+									ImGui::Text("Water Ammunition: %u/%u", waterAmmo->second.first, waterAmmo->second.second);
 
-							auto waterAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
-							if(waterAmmo != weaponComp.WeaponTypeAmmo.end())
-								ImGui::Text("Water Ammunition: %u/%u", waterAmmo->second.first, waterAmmo->second.second);
-
-							auto paintAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
-							if (paintAmmo != weaponComp.WeaponTypeAmmo.end())
-								ImGui::Text("Paint Ammunition: %u/%u", paintAmmo->second.first, paintAmmo->second.second);
-
+								auto paintAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+								if (paintAmmo != weaponComp.WeaponTypeAmmo.end())
+									ImGui::Text("Paint Ammunition: %u/%u", paintAmmo->second.first, paintAmmo->second.second);
+							}
 
 							if (ImGui::Button("Kill"))
 							{
