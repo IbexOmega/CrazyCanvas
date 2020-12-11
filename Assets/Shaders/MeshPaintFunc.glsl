@@ -9,6 +9,7 @@
 
 uint PackPaintInfo(in uint paintInfo)
 {
+    uint onlyTeamInfo = paintInfo & 0xFF; // Remove animated information.
 	uint client = (paintInfo >> 4) & 0x0F;
 	uint server = paintInfo & 0x0F;
 
