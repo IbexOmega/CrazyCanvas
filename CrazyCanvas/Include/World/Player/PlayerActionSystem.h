@@ -27,7 +27,7 @@ public:
 	static void SetMouseEnabled(bool isEnabled);
 
 private:
-	static void ComputeVelocityInternal(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag, float acceleration, float maxVelocity);
+	static void ComputeVelocityInternal(const glm::quat& rotation, const glm::i8vec3& deltaAction, float32 dt, glm::vec3& velocity, bool isHoldingFlag, float acceleration, float maxVelocity);
 	static void ComputeAirVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag);
 	static void ComputeGroundVelocity(const glm::quat& rotation, const glm::i8vec3& deltaAction, bool walking, float32 dt, glm::vec3& velocity, bool isHoldingFlag);
 
