@@ -66,7 +66,7 @@ void PlayerManagerClient::Init()
 				{
 					auto* pComponents = ECSCore::GetInstance()->GetComponentArray<FreeCameraComponent>();
 
-					if (pComponents->HasComponent(pPlayer->GetEntity()))
+					if (pComponents != nullptr && pComponents->HasComponent(pPlayer->GetEntity()))
 					{
 						FreeCameraComponent& cameraComponent = pComponents->GetData(pPlayer->GetEntity());
 						cameraComponent.SpeedFactor = s_SpectatorSpeed;
