@@ -24,6 +24,9 @@ namespace LambdaEngine
 	class GUITexture : public Noesis::Texture
 	{
 	public:
+		DECL_REMOVE_COPY(GUITexture);
+		DECL_REMOVE_MOVE(GUITexture);
+
 		GUITexture();
 		~GUITexture();
 

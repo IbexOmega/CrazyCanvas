@@ -36,6 +36,7 @@
 #include "Rendering/ParticleUpdater.h"
 #include "Rendering/ParticleCollider.h"
 #include "Rendering/LightProbeRenderer.h"
+#include "Rendering/AARenderer.h"
 #include "Rendering/RT/ASBuilder.h"
 #include "Rendering/BlitStage.h"
 
@@ -411,6 +412,11 @@ namespace LambdaEngine
 				m_pLightProbeRenderer = DBG_NEW LightProbeRenderer();
 				m_pLightProbeRenderer->Init();
 				renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
+
+				// Anit-Aliasing Renderer
+				m_pAARenderer = DBG_NEW AARenderer();
+				m_pAARenderer->Init();
+				renderGraphDesc.CustomRenderers.PushBack(m_pAARenderer);
 			}
 
 			//GUI Renderer
@@ -566,6 +572,7 @@ namespace LambdaEngine
 		SAFEDELETE(m_pLineRenderer);
 		SAFEDELETE(m_pLightRenderer);
 		SAFEDELETE(m_pLightProbeRenderer);
+		SAFEDELETE(m_pAARenderer);
 		SAFEDELETE(m_pParticleRenderer);
 		SAFEDELETE(m_pParticleUpdater);
 		SAFEDELETE(m_pParticleCollider);
@@ -850,6 +857,12 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(m_pParticleCollider);
 			// LightProbe Renderer
 			renderGraphDesc.CustomRenderers.PushBack(m_pLightProbeRenderer);
+			// AA Renderer
+			renderGraphDesc.CustomRenderers.PushBack(m_pAARenderer);
+			//Reflection Denoisepass
+			renderGraphDesc.CustomRenderers.PushBack(m_pReflectionsDenoisePass);
+			// Blit Stage
+			renderGraphDesc.CustomRenderers.PushBack(m_pBlitStage);
 
 			// AS Builder
 			if (m_RayTracingEnabled)
@@ -864,7 +877,14 @@ namespace LambdaEngine
 			renderGraphDesc.CustomRenderers.PushBack(pGUIRenderer);
 		}
 
-		// TODO: Add the game specific custom renderers!
+		// Other Custom Renderers constructed in game
+		for (auto* pCustomRenderer : m_GameSpecificCustomRenderers)
+		{
+			if (pCustomRenderer)
+			{
+				renderGraphDesc.CustomRenderers.PushBack(pCustomRenderer);
+			}
+		}
 
 		m_RequiredDrawArgs.clear();
 		if (!m_pRenderGraph->Recreate(&renderGraphDesc, m_RequiredDrawArgs))
@@ -1557,23 +1577,28 @@ bool RenderSystem::InitIntegrationLUT()
 		if (m_RayTracingEnabled)
 		{
 			RayTracedComponent rayTracedComponent = {};
-			ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent);
 
-			uint32 customIndex = materialIndex & 0xFF;
-			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
-
-			ASInstanceDesc asInstanceDesc =
+			if (ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent))
 			{
-				.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
-				.Transform		= transform,
-				.CustomIndex	= customIndex,
-				.HitMask		= rayTracedComponent.HitMask,
-				.Flags			= asFlags
-			};
+				uint32 customIndex = materialIndex & 0xFF;
+				FAccelerationStructureFlags asFlags = RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
-			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
+				ASInstanceDesc asInstanceDesc =
+				{
+					.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
+					.Transform		= transform,
+					.CustomIndex	= customIndex,
+					.HitMask		= rayTracedComponent.HitMask,
+					.Flags			= asFlags
+				};
 
-			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
+				uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
+				meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
+			}
+			else
+			{
+				meshAndInstancesIt->second.ASInstanceIndices.PushBack(UINT32_MAX);
+			}
 		}
 
 		Instance instance = {};
@@ -1644,50 +1669,54 @@ bool RenderSystem::InitIntegrationLUT()
 		{
 			//Extract Paint Texture Data (stored in CustomIndex) before removing the ASInstance
 			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceIndex];
-			const uint32 textureIndex = m_pASBuilder->GetInstance(asInstanceIndex).CustomIndex & 0xFF;
 
-			// Remove ASInstance
-			m_pASBuilder->RemoveInstance(asInstanceIndex);
-
-			//Swap Removed with Back
-			meshAndInstancesIt->second.ASInstanceIndices[instanceIndex] = meshAndInstancesIt->second.ASInstanceIndices.GetBack();
-			meshAndInstancesIt->second.ASInstanceIndices.PopBack();
-
-			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
-			if (auto meshPaintInstancesIt = m_PaintMaskASInstanceIndices.find(textureIndex); meshPaintInstancesIt != m_PaintMaskASInstanceIndices.end())
+			if (asInstanceIndex != UINT32_MAX)
 			{
-				if (auto removedMeshPaintInstanceIt = std::find(meshPaintInstancesIt->second.Begin(), meshPaintInstancesIt->second.End(), asInstanceIndex);
-					removedMeshPaintInstanceIt != meshPaintInstancesIt->second.End())
+				const uint32 textureIndex = m_pASBuilder->GetInstance(asInstanceIndex).CustomIndex & 0xFF;
+
+				// Remove ASInstance
+				m_pASBuilder->RemoveInstance(asInstanceIndex);
+
+				//Swap Removed with Back
+				meshAndInstancesIt->second.ASInstanceIndices[instanceIndex] = meshAndInstancesIt->second.ASInstanceIndices.GetBack();
+				meshAndInstancesIt->second.ASInstanceIndices.PopBack();
+
+				// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
+				if (auto meshPaintInstancesIt = m_PaintMaskASInstanceIndices.find(textureIndex); meshPaintInstancesIt != m_PaintMaskASInstanceIndices.end())
 				{
-					uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
-					m_PaintMaskTextures[textureIndex] = m_PaintMaskTextures.GetBack();
-					m_PaintMaskTextures.PopBack();
-					m_PaintMaskTextureViews[textureIndex] = m_PaintMaskTextureViews.GetBack();
-					m_PaintMaskTextureViews.PopBack();
-
-					meshPaintInstancesIt->second.Erase(removedMeshPaintInstanceIt);
-
-					TArray<uint32>& asInstancesToBeUpdated = m_PaintMaskASInstanceIndices[changedIndex];
-					for (uint32 asInstanceIndexToBeUpdated : asInstancesToBeUpdated)
+					if (auto removedMeshPaintInstanceIt = std::find(meshPaintInstancesIt->second.Begin(), meshPaintInstancesIt->second.End(), asInstanceIndex);
+						removedMeshPaintInstanceIt != meshPaintInstancesIt->second.End())
 					{
-						m_pASBuilder->UpdateInstance(
-							asInstanceIndexToBeUpdated,
-							[textureIndex](AccelerationStructureInstance& asInstance)
-							{
-								asInstance.CustomIndex &= 0xFFFF00;
-								asInstance.CustomIndex |= textureIndex;
-							});
+						uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
+						m_PaintMaskTextures[textureIndex] = m_PaintMaskTextures.GetBack();
+						m_PaintMaskTextures.PopBack();
+						m_PaintMaskTextureViews[textureIndex] = m_PaintMaskTextureViews.GetBack();
+						m_PaintMaskTextureViews.PopBack();
 
-						meshPaintInstancesIt->second.PushBack(asInstanceIndexToBeUpdated);
+						meshPaintInstancesIt->second.Erase(removedMeshPaintInstanceIt);
+
+						TArray<uint32>& asInstancesToBeUpdated = m_PaintMaskASInstanceIndices[changedIndex];
+						for (uint32 asInstanceIndexToBeUpdated : asInstancesToBeUpdated)
+						{
+							m_pASBuilder->UpdateInstance(
+								asInstanceIndexToBeUpdated,
+								[textureIndex](AccelerationStructureInstance& asInstance)
+								{
+									asInstance.CustomIndex &= 0xFFFF00;
+									asInstance.CustomIndex |= textureIndex;
+								});
+
+							meshPaintInstancesIt->second.PushBack(asInstanceIndexToBeUpdated);
+						}
+						asInstancesToBeUpdated.Clear();
+
+						if (meshPaintInstancesIt->second.IsEmpty())
+						{
+							m_PaintMaskASInstanceIndices.erase(meshPaintInstancesIt);
+						}
+
+						m_RayTracingPaintMaskTexturesResourceDirty = true;
 					}
-					asInstancesToBeUpdated.Clear();
-
-					if (meshPaintInstancesIt->second.IsEmpty())
-					{
-						m_PaintMaskASInstanceIndices.erase(meshPaintInstancesIt);
-					}
-
-					m_RayTracingPaintMaskTexturesResourceDirty = true;
 				}
 			}
 		}
@@ -1755,8 +1784,8 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
 	{
-		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
-			return;
+		//if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+		//	return;
 
 		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
 		transform = transform * additionalTransform;
@@ -1783,7 +1812,11 @@ bool RenderSystem::InitIntegrationLUT()
 		if (m_RayTracingEnabled)
 		{
 			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceKeyIt->second.InstanceIndex];
-			m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
+
+			if (asInstanceIndex != UINT32_MAX)
+			{
+				m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
+			}
 		}
 
 		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
@@ -2362,12 +2395,29 @@ bool RenderSystem::InitIntegrationLUT()
 		m_PerFrameData.CamData.PrevView			= m_PerFrameData.CamData.View;
 		m_PerFrameData.CamData.PrevProjection	= m_PerFrameData.CamData.Projection;
 		m_PerFrameData.CamData.View				= viewProjComp.View;
-		m_PerFrameData.CamData.Projection		= viewProjComp.Projection;
+		m_PerFrameData.CamData.ViewPortSize		= glm::vec2(camComp.Width, camComp.Height);
+
+		if (AARenderer::GetInstance()->GetAAMode() == EAAMode::AAMODE_TAA)
+		{
+			const glm::vec2 jitterDiff = (camComp.Jitter - camComp.PrevJitter) * 0.5f;
+			m_PerFrameData.CamData.JitterDiff = jitterDiff;
+			
+			glm::vec2 clipSpaceJitter = camComp.Jitter / m_PerFrameData.CamData.ViewPortSize;
+			clipSpaceJitter.y = -clipSpaceJitter.y;
+
+			const glm::mat4 offset = glm::translate(glm::vec3(clipSpaceJitter, 0.0f));
+			m_PerFrameData.CamData.Projection = offset * viewProjComp.Projection;
+		}
+		else
+		{
+			m_PerFrameData.CamData.JitterDiff = glm::vec2(0.0f);
+			m_PerFrameData.CamData.Projection = viewProjComp.Projection;
+		}
+
 		m_PerFrameData.CamData.ViewInv			= camComp.ViewInv;
-		m_PerFrameData.CamData.ProjectionInv	= camComp.ProjectionInv;
+		m_PerFrameData.CamData.ProjectionInv	= glm::inverse(m_PerFrameData.CamData.Projection);
 		m_PerFrameData.CamData.Position			= glm::vec4(position, 0.f);
 		m_PerFrameData.CamData.Up				= glm::vec4(GetUp(rotation), 0.f);
-		m_PerFrameData.CamData.Jitter			= camComp.Jitter;
 	}
 
 	void RenderSystem::DeleteDeviceResource(DeviceChild* pDeviceResource)

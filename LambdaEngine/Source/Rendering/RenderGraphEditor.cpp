@@ -109,7 +109,7 @@ namespace LambdaEngine
 			if (!m_GraphActive)
 			{
 				m_GraphActive = true;
-				Input::PushInputMode(EInputLayer::GUI);
+				Input::PushInputLayer(EInputLayer::GUI);
 			}
 
 			ImVec2 contentRegionMin = ImGui::GetWindowContentRegionMin();
@@ -221,7 +221,7 @@ namespace LambdaEngine
 		else if (m_GraphActive)
 		{
 			m_GraphActive = false;
-			Input::PopInputMode();
+			Input::PopInputLayer();
 		}
 		ImGui::End();
 
@@ -1049,6 +1049,22 @@ namespace LambdaEngine
 					{
 						pResource->MemoryType = MemoryTypeIndexToMemoryType(memoryTypeIndex);
 					}
+
+					ImGui::Text("Additional ShaderResource Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional ShaderResource Access", &pResource->TextureParams.ExtraShaderResourceAccess);
+
+					ImGui::Text("Additional RenderTarget Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional RenderTarget Access", &pResource->TextureParams.ExtraRenderTargetAccess);
+
+					ImGui::Text("Additional DepthStencil Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional DepthStencil Access", &pResource->TextureParams.ExtraDepthStencilAccess);
+
+					ImGui::Text("Additional Unordered Access:");
+					ImGui::SameLine();
+					ImGui::Checkbox("##Additional Unordered Access", &pResource->TextureParams.ExtraUnorderedAccess);
 				}
 				break;
 			}

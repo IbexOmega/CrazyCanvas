@@ -79,6 +79,7 @@ namespace LambdaEngine
 		TArray<LoadedMaterial*>*	pMaterials;
 		TArray<LoadedTexture*>*		pTextures;
 		bool						AnimationsOnly;
+		bool						ShouldTessellate;
 	};
 
 	// SceneLoadingContext is internally created from a SceneLoadRequest.
@@ -97,6 +98,7 @@ namespace LambdaEngine
 		TArray<LoadedTexture*>*					pTextures;
 		THashTable<String, LoadedTexture*>		LoadedTextures;
 		THashTable<uint32, uint32>				MaterialIndices;
+		bool									ShouldTessellate;
 	};
 
 	class LAMBDA_API ResourceLoader
@@ -134,11 +136,12 @@ namespace LambdaEngine
 		* @return A Mesh* if the mesh was loaded, otherwise nullptr will be returned
 		*/
 		static Mesh* LoadMeshFromFile(
-			const String& filepath,
-			TArray<LoadedMaterial*>* pMaterials,
-			TArray<LoadedTexture*>* pTextures,
-			TArray<Animation*>* pAnimations,
-			int32 assimpFlags);
+			const String& filepath, 
+			TArray<LoadedMaterial*>* pMaterials, 
+			TArray<LoadedTexture*>* pTextures, 
+			TArray<Animation*>* pAnimations, 
+			int32 assimpFlags, 
+			bool shouldTessellate);
 
 		/**
 		* Load a mesh from file

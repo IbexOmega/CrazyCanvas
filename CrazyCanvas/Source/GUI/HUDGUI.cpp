@@ -56,7 +56,6 @@ HUDGUI::HUDGUI() :
 
 	m_pScoreBoardGUI = FindName<ScoreBoardGUI>("SCORE_BOARD_GUI");
 	m_pScoreBoardGUI->InitGUI();
-
 }
 
 HUDGUI::~HUDGUI()
@@ -65,26 +64,8 @@ HUDGUI::~HUDGUI()
 
 void HUDGUI::FixedTick(LambdaEngine::Timestamp delta)
 {
-
 	UpdateKillFeedTimer(delta);
 	UpdateScore();
-
-	if (m_IsReloading)
-	{
-		AnimateReload(float32(delta.AsSeconds()));
-	}
-}
-
-void HUDGUI::AnimateReload(const float32 timePassed)
-{
-	Noesis::ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
-	Noesis::ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
-
-	pWaterScale->SetScaleX(glm::clamp<float>(pWaterScale->GetScaleX() + m_WaterAmmoFactor * timePassed, 0.0f, 1.0f));
-	pPaintScale->SetScaleX(glm::clamp<float>(pPaintScale->GetScaleX() + m_PaintAmmoFactor * timePassed, 0.0f, 1.0f));
-
-	m_pWaterAmmoRect->SetRenderTransform(pWaterScale);
-	m_pPaintAmmoRect->SetRenderTransform(pPaintScale);
 }
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -145,34 +126,24 @@ bool HUDGUI::UpdateScore()
 
 bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType)
 {
-	//Returns false if Out Of Ammo
-
 	std::string ammoString;
-	Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
-	float ammoScale = 0.0f;
 	auto ammo = WeaponTypeAmmo.find(ammoType);
 
 	if (ammo != WeaponTypeAmmo.end())
 	{
 		ammoString = std::to_string(ammo->second.first) + "/" + std::to_string(ammo->second.second);
-		ammoScale = (float)ammo->second.first / (float)ammo->second.second;
-		scale->SetCenterX(0.0);
-		scale->SetCenterY(0.0);
-		scale->SetScaleX(ammoScale);
 
 		if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 		{
 			m_GUIState.WaterAmmo = ammo->second.first;
 
 			m_pWaterAmmoText->SetText(ammoString.c_str());
-			m_pWaterAmmoRect->SetRenderTransform(scale);
 		}
 		else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 		{
 			m_GUIState.PaintAmmo = ammo->second.first;
 
 			m_pPaintAmmoText->SetText(ammoString.c_str());
-			m_pPaintAmmoRect->SetRenderTransform(scale);
 		}
 	}
 	else
@@ -186,65 +157,25 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading)
 {
-	m_IsReloading = isReloading;
-
-	if (m_IsReloading)
+	if (!isReloading)
 	{
-		for (auto& ammo : WeaponTypeAmmo)
+		auto paintAmmo = WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+		auto waterAmmo = WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+
+		if (paintAmmo != WeaponTypeAmmo.end() && waterAmmo != WeaponTypeAmmo.end())
 		{
-			float scale = (float)ammo.second.first / (float)ammo.second.second;
+			std::string waterAmmoString = std::to_string(waterAmmo->second.second) + "/" + std::to_string(waterAmmo->second.second);
+			std::string paintAmmoString = std::to_string(paintAmmo->second.second) + "/" + std::to_string(paintAmmo->second.second);
 
-			if (ammo.first == EAmmoType::AMMO_TYPE_WATER)
-				m_WaterAmmoFactor = (1.0f - scale) / m_ReloadAnimationTime;
-			else if (ammo.first == EAmmoType::AMMO_TYPE_PAINT)
-				m_PaintAmmoFactor = (1.0f - scale) / m_ReloadAnimationTime;
+			m_pWaterAmmoText->SetText(waterAmmoString.c_str());
+			m_pPaintAmmoText->SetText(paintAmmoString.c_str());
 		}
-	}
-	else
-	{
-		Noesis::Ptr<Noesis::ScaleTransform> scaleTransform = *new ScaleTransform();
-		std::string ammoString = std::to_string(25) + "/" + std::to_string(25);
-		scaleTransform->SetCenterX(0.0);
-		scaleTransform->SetCenterY(0.0);
-		scaleTransform->SetScaleX(1.0f);
-
-		m_pWaterAmmoText->SetText(ammoString.c_str());
-		m_pWaterAmmoRect->SetRenderTransform(scaleTransform);
-
-		m_pPaintAmmoText->SetText(ammoString.c_str());
-		m_pPaintAmmoRect->SetRenderTransform(scaleTransform);
 	}
 }
 
-void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo)
+void HUDGUI::AbortReload()
 {
-	m_IsReloading = false;
-	m_ReloadAnimationTime = 2.0f;
-	Noesis::Ptr<Noesis::ScaleTransform> waterScaleTransform = *new ScaleTransform();
-	Noesis::Ptr<Noesis::ScaleTransform> paintScaleTransform = *new ScaleTransform();
-
 	CancelSmallPrompt();
-
-	for (auto& ammo : WeaponTypeAmmo)
-	{
-		float scale = (float)ammo.second.first / (float)ammo.second.second;
-		if (ammo.first == EAmmoType::AMMO_TYPE_WATER)
-		{
-			waterScaleTransform->SetCenterX(0.0);
-			waterScaleTransform->SetCenterY(0.0);
-			waterScaleTransform->SetScaleX(scale);
-
-			m_pWaterAmmoRect->SetRenderTransform(waterScaleTransform);
-		}
-		else if (ammo.first == EAmmoType::AMMO_TYPE_PAINT)
-		{
-			paintScaleTransform->SetCenterX(0.0);
-			paintScaleTransform->SetCenterY(0.0);
-			paintScaleTransform->SetScaleX(scale);
-
-			m_pPaintAmmoRect->SetRenderTransform(paintScaleTransform);
-		}
-	}
 }
 
 
@@ -254,7 +185,7 @@ void HUDGUI::UpdateCountdown(uint8 countDownTime)
 	pCountdownGUI->UpdateCountdown(countDownTime);
 }
 
-void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal)
+void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal, bool isFriendly)
 {
 	Noesis::Ptr<Noesis::RotateTransform> rotateTransform = *new RotateTransform();
 
@@ -263,7 +194,6 @@ void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::
 
 	float32 result = glm::dot(forwardDir, nor);
 	float32 rotation = 0.0f;
-
 
 	if (result > 0.99f)
 	{
@@ -289,7 +219,7 @@ void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::
 	m_pHitIndicatorGrid->SetRenderTransform(rotateTransform);
 
 	DamageIndicatorGUI* pDamageIndicatorGUI = FindName<DamageIndicatorGUI>("DAMAGE_INDICATOR");
-	pDamageIndicatorGUI->DisplayIndicator();
+	pDamageIndicatorGUI->DisplayIndicator(isFriendly);
 }
 
 void HUDGUI::DisplayHitIndicator()
@@ -331,7 +261,15 @@ void HUDGUI::UpdateKillFeedTimer(LambdaEngine::Timestamp delta)
 
 void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, Entity entity, IndicatorTypeGUI indicatorType)
 {
-	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new Noesis::TranslateTransform();
+	Noesis::Ptr<Noesis::RotateTransform> rotation = *new RotateTransform();
+	Noesis::Ptr<Noesis::TransformGroup> transformGroup = *new Noesis::TransformGroup();
+
+	if (indicatorType == IndicatorTypeGUI::PING_INDICATOR)
+		rotation->SetAngle(45.0f);
+
+	transformGroup->GetChildren()->Add(rotation);
+	transformGroup->GetChildren()->Add(translation);
 
 	const glm::vec4 clipSpacePos = viewProj * glm::vec4(worldPos, 1.0f);
 
@@ -362,7 +300,9 @@ void HUDGUI::ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& wor
 		translation->SetX(glm::clamp(-windowSpacePos.x, (-m_WindowSize.x + 100) * 0.5f, (m_WindowSize.x - 100) * 0.5f));
 	}
 
-	TranslateIndicator(translation, entity);
+	TranslateIndicator(transformGroup, entity);
+
+
 }
 
 void HUDGUI::SetWindowSize(uint32 width, uint32 height)
@@ -407,7 +347,7 @@ void HUDGUI::DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, 
 	pGameOverGUI->SetMostFlagsStats((uint8)mostFlags.first, mostFlags.second->GetName());
 }
 
-void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex)
+void HUDGUI::DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, uint8 teamIndex)
 {
 	PromptGUI* pPromptGUI = nullptr;
 
@@ -452,9 +392,7 @@ void HUDGUI::InitGUI()
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
 	m_GUIState.Scores.PushBack(Match::GetScore(2));
 
-	m_pWaterAmmoRect	= FrameworkElement::FindName<Image>("WATER_RECT");
-	m_pPaintAmmoRect	= FrameworkElement::FindName<Image>("PAINT_RECT");
-	m_pPaintDropRect	= FrameworkElement::FindName<Image>("PAINT_DROP");
+	m_pPaintAmmoImage	= FrameworkElement::FindName<Image>("PAINT_RECT");
 	m_pHealthRect		= FrameworkElement::FindName<Image>("HEALTH_RECT");
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
@@ -473,23 +411,22 @@ void HUDGUI::InitGUI()
 	m_pCarryingFlagResetStoryBoard = FrameworkElement::FindResource<Storyboard>("CarryingFlagResetStoryBoard");
 
 
-	BitmapImage* pBitmap = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
-	BitmapImage* pBitmapDrop = new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmoDrop.c_str()));
+	Noesis::Ptr<BitmapImage> bitmap = *new BitmapImage(Uri(TeamHelper::GetTeamImage(PlayerManagerClient::GetPlayerLocal()->GetTeam()).PaintAmmo.c_str()));
 
 	{ // init CarryFlagIndicator and LookAtGrid colors
 
 		Ptr<Noesis::RadialGradientBrush> gradientBrush = *new Noesis::RadialGradientBrush();
 		const glm::vec3& teamGradientColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam() == 1 ? 2 : 1);
 		Noesis::Color gradientColor(teamGradientColor.r, teamGradientColor.g, teamGradientColor.b);
-		Noesis::GradientStopCollection* pGStops = new GradientStopCollection();
-		Noesis::GradientStop* pTeamGradientStopColor = new GradientStop();
-		Noesis::GradientStop* pTeamGradientStop = new GradientStop();
+		Ptr<Noesis::GradientStopCollection> gStops = *new GradientStopCollection();
+		Ptr<Noesis::GradientStop> teamGradientStopColor = *new GradientStop();
+		Ptr<Noesis::GradientStop> teamGradientStop = *new GradientStop();
 
-		pTeamGradientStopColor->SetColor(gradientColor);
-		pTeamGradientStopColor->SetOffset(1.0f);
-		pGStops->Add(pTeamGradientStopColor);
-		pGStops->Add(pTeamGradientStop);
-		gradientBrush->SetGradientStops(pGStops);
+		teamGradientStopColor->SetColor(gradientColor);
+		teamGradientStopColor->SetOffset(1.0f);
+		gStops->Add(teamGradientStopColor);
+		gStops->Add(teamGradientStop);
+		gradientBrush->SetGradientStops(gStops);
 
 		m_pCarryFlagBorder->SetBackground(gradientBrush);
 
@@ -505,8 +442,7 @@ void HUDGUI::InitGUI()
 
 	}
 
-	m_pPaintAmmoRect->SetSource(pBitmap);
-	m_pPaintDropRect->SetSource(pBitmapDrop);
+	m_pPaintAmmoImage->SetSource(bitmap);
 
 	InitScore();
 
@@ -565,9 +501,9 @@ void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, 
 
 	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
 
-	BitmapImage* pBitmapFlag = new BitmapImage(Uri("Roller.png"));
+	Noesis::Ptr<BitmapImage> bitmapFlag = *new BitmapImage(Uri("Roller.png"));
 
-	flagImage->SetSource(pBitmapFlag);
+	flagImage->SetSource(bitmapFlag);
 
 	translation->SetY(100.0f);
 	translation->SetX(100.0f);
@@ -620,13 +556,25 @@ void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
 
 	Noesis::Ptr<Noesis::Border> pingBorderIndicator = *new Noesis::Border();
 
-	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new Noesis::TranslateTransform();
+	Noesis::Ptr<Noesis::RotateTransform> rotation = *new Noesis::RotateTransform();
+
+	Noesis::Ptr<Noesis::TransformGroup> transformGroup = *new Noesis::TransformGroup();
+
+	transformGroup->GetChildren()->Add(rotation);
+	transformGroup->GetChildren()->Add(translation);
 
 	translation->SetY(100.0f);
 	translation->SetX(100.0f);
 
-	gridIndicator->SetRenderTransform(translation);
+	rotation->SetCenterX(0.0f);
+	rotation->SetCenterY(0.0f);
+
+	rotation->SetAngle(45.0f);
+
 	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+
+	gridIndicator->SetRenderTransform(transformGroup);
 
 	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
 	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
@@ -714,7 +662,7 @@ void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
 	m_ProjectedElements.erase(indicator->first);
 }
 
-void HUDGUI::TranslateIndicator(Noesis::Transform* pTranslation, Entity entity)
+void HUDGUI::TranslateIndicator(Noesis::TransformGroup* pTranslation, Entity entity)
 {
 	auto indicator = m_ProjectedElements.find(entity);
 	VALIDATE(indicator != m_ProjectedElements.end())

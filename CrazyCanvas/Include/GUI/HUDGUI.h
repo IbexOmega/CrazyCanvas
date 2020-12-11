@@ -24,6 +24,7 @@
 #include "NsGui/Collection.h"
 #include "NsGui/StackPanel.h"
 #include "NsGui/Rectangle.h"
+#include "NsGui/TransformGroup.h"
 #include "NsGui/Ellipse.h"
 #include "NsGui/ObservableCollection.h"
 #include "NsGui/Button.h"
@@ -32,6 +33,7 @@
 #include "Lobby/PlayerManagerBase.h"
 
 #include "GUI/EscapeMenuGUI.h"
+#include "GUI/SettingsGUI.h"
 #include "GUI/KillFeedGUI.h"
 #include "GUI/ScoreBoardGUI.h"
 
@@ -71,8 +73,6 @@ public:
 
 	void FixedTick(LambdaEngine::Timestamp delta);
 
-	void AnimateReload(const float32 timePassed);
-
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	bool UpdateHealth(int32 currentHealth);
@@ -80,15 +80,15 @@ public:
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
 
 	void Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading);
-	void AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo);
+	void AbortReload();
 
 	void UpdateCountdown(uint8 countDownTime);
 
-	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal);
+	void DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::vec3& collisionNormal, bool isFriendly);
 	void DisplayHitIndicator();
 	void DisplayCarryFlagIndicator(LambdaEngine::Entity flagEntity, bool isCarrying);
 	void DisplayGameOverGrid(uint8 winningTeamIndex, PlayerPair& mostKills, PlayerPair& mostDeaths, PlayerPair& mostFlags);
-	void DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, const uint8 teamIndex);
+	void DisplayPrompt(const LambdaEngine::String& promptMessage, bool isSmallPrompt, uint8 teamIndex);
 	void DisplaySpectateText(const LambdaEngine::String& name, bool isSpectating);
 	void CancelSmallPrompt();
 
@@ -112,7 +112,7 @@ private:
 
 	void InitScore();
 
-	void TranslateIndicator(Noesis::Transform* pTranslation, LambdaEngine::Entity entity);
+	void TranslateIndicator(Noesis::TransformGroup* pTranslation, LambdaEngine::Entity entity);
 	void SetIndicatorOpacity(float32 value, LambdaEngine::Entity entity);
 	void SetRenderStagesInactive();
 
@@ -122,19 +122,8 @@ private:
 	GameGUIState m_GUIState;
 
 	bool m_IsGameOver	= false;
-	bool m_IsReloading = false;
 
-	float m_WaterAmmoScale = 0.0f;
-	float m_PaintAmmoScale = 0.0f;
-
-	float m_WaterAmmoFactor = 0.0f;
-	float m_PaintAmmoFactor = 0.0f;
-
-	float32 m_ReloadAnimationTime = 2.0f;
-
-	Noesis::Image* m_pWaterAmmoRect				= nullptr;
-	Noesis::Image* m_pPaintAmmoRect				= nullptr;
-	Noesis::Image* m_pPaintDropRect				= nullptr;
+	Noesis::Image* m_pPaintAmmoImage			= nullptr;
 	Noesis::Image* m_pHealthRect				= nullptr;
 
 	Noesis::TextBlock* m_pWaterAmmoText			= nullptr;

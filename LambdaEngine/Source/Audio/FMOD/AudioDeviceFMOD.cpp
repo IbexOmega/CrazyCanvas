@@ -11,22 +11,31 @@
 
 #include "Threading/API/Thread.h"
 
+//#define FMOD_LOGS_ENABLED
+
 namespace LambdaEngine
 {
 	FMOD_RESULT DebugCallback(FMOD_DEBUG_FLAGS severity, const char* pFile, int line, const char* pFunc, const char* pMessage)
 	{
+		if (severity & FMOD_DEBUG_LEVEL_ERROR)
+		{
+			LOG_ERROR("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			return FMOD_OK;
+		}
+
+#ifdef FMOD_LOGS_ENABLED
 		if (severity & FMOD_DEBUG_LEVEL_WARNING)
 		{
 			LOG_WARNING("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			return FMOD_OK;
 		}
-		else if (severity & FMOD_DEBUG_LEVEL_ERROR)
-		{
-			LOG_ERROR("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
-		}
-		else if (!(severity & FMOD_DEBUG_LEVEL_LOG))
+
+		if (!(severity & FMOD_DEBUG_LEVEL_LOG))
 		{
 			LOG_DEBUG("[%s : %u : %s] - \"%s\"", pFile, line, pFunc, pMessage);
+			return FMOD_OK;
 		}
+#endif
 
 		return FMOD_OK;
 	}
@@ -50,6 +59,9 @@ namespace LambdaEngine
 			}
 
 			pSystem = nullptr;
+
+			m_GlobalMusicVolume = 0.f;
+			m_Music.Clear();
 		}
 	}
 
@@ -103,6 +115,9 @@ namespace LambdaEngine
 
 		LOG_DEBUG("Successfully initialized %s!", m_pName);
 
+		SetMasterVolume(pDesc->MasterVolume);
+		SetMusicVolume(pDesc->MusicVolume);
+
 		return true;
 	}
 
@@ -151,6 +166,7 @@ namespace LambdaEngine
 		}
 		else
 		{
+			m_Music.PushBack(pMusic);
 			return pMusic;
 		}
 	}
@@ -259,6 +275,25 @@ namespace LambdaEngine
 		FMOD_ChannelGroup_SetVolume(pChannelGroup, volume);
 	}
 
+	void AudioDeviceFMOD::SetMusicVolume(float volume)
+	{
+		m_GlobalMusicVolume = volume;
+		auto it = m_Music.Begin();
+		while (it != m_Music.End())
+		{
+			if (*it)
+			{
+				(*it)->SetVolume(m_GlobalMusicVolume);
+				it++;
+			}
+			else
+			{
+				// Delete invalid music from the array
+				it = m_Music.Erase(it);
+			}
+		}
+	}
+
 	float AudioDeviceFMOD::GetMasterVolume() const
 	{
 		FMOD_CHANNELGROUP* pChannelGroup;
@@ -267,5 +302,10 @@ namespace LambdaEngine
 		FMOD_ChannelGroup_GetVolume(pChannelGroup, &volume);
 
 		return volume;
+	}
+
+	float AudioDeviceFMOD::GetMusicVolume() const
+	{
+		return m_GlobalMusicVolume;
 	}
 };

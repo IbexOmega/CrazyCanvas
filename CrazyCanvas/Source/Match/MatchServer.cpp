@@ -48,6 +48,10 @@
 
 #include "Game/PlayerIndexHelper.h"
 
+#include "MeshPaint/MeshPaintHandler.h"
+
+#include "World/SessionSettings.h"
+
 #include <imgui.h>
 
 #define RENDER_MATCH_INFORMATION
@@ -197,16 +201,17 @@ void MatchServer::TickInternal(LambdaEngine::Timestamp deltaTime)
 							const ChildComponent& children = pChildComponents->GetConstData(playerEntity);
 							Entity weapon = children.GetEntityWithTag("weapon");
 
-							const WeaponComponent& weaponComp = pWeaponComponents->GetConstData(weapon);
+							WeaponComponent weaponComp;
+							if (pWeaponComponents->GetConstIf(weapon, weaponComp))
+							{
+								auto waterAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+								if (waterAmmo != weaponComp.WeaponTypeAmmo.end())
+									ImGui::Text("Water Ammunition: %u/%u", waterAmmo->second.first, waterAmmo->second.second);
 
-							auto waterAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
-							if(waterAmmo != weaponComp.WeaponTypeAmmo.end())
-								ImGui::Text("Water Ammunition: %u/%u", waterAmmo->second.first, waterAmmo->second.second);
-
-							auto paintAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
-							if (paintAmmo != weaponComp.WeaponTypeAmmo.end())
-								ImGui::Text("Paint Ammunition: %u/%u", paintAmmo->second.first, paintAmmo->second.second);
-
+								auto paintAmmo = weaponComp.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+								if (paintAmmo != weaponComp.WeaponTypeAmmo.end())
+									ImGui::Text("Paint Ammunition: %u/%u", paintAmmo->second.first, paintAmmo->second.second);
+							}
 
 							if (ImGui::Button("Kill"))
 							{
@@ -346,7 +351,10 @@ void MatchServer::SpawnPlayer(const Player& player)
 			packet.NetworkUID				= playerEntity;
 			packet.Player.WeaponNetworkUID	= childComp.GetEntityWithTag("weapon");
 			ServerHelper::SendBroadcast(packet);
+
+			MeshPaintHandler::ResetServer(playerEntity);
 		}
+		MeshPaintHandler::ResetClient();
 	}
 	else
 	{
@@ -670,7 +678,7 @@ void MatchServer::InternalKillPlayer(LambdaEngine::Entity entityToKill, LambdaEn
 
 		{
 			std::scoped_lock<SpinLock> lock2(m_PlayersToRespawnLock);
-			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, 10.0f));
+			m_PlayersToRespawn.EmplaceBack(std::make_pair(entityToKill, SessionSettings::GetSettingValue<float>(ESessionSetting::RESPAWN_TIME)));
 		}
 	}
 

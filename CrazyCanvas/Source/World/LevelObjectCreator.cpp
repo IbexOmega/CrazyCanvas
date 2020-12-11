@@ -196,6 +196,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateDirectionalLight(
 	using namespace LambdaEngine;
 
 	Entity entity = UINT32_MAX;
+	s_HasDirectionalLight = true;
 	/*
 	if (!MultiplayerUtils::IsServer())
 	{
@@ -382,6 +383,11 @@ ELevelObjectType LevelObjectCreator::CreateNoColliderObject(const LambdaEngine::
 		pECS->AddComponent<ScaleComponent>(entity, { true, pMesh->DefaultScale }),
 		pECS->AddComponent<RotationComponent>(entity, { true, pMesh->DefaultRotation }),
 		pECS->AddComponent<MeshComponent>(entity, meshComp);
+		pECS->AddComponent<RayTracedComponent>(entity,
+			RayTracedComponent
+			{
+				.HitMask = 0xFF
+			});
 
 		createdEntities.PushBack(entity);
 	}
@@ -402,6 +408,7 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 	}
 
 	// Modify material of mesh component to represent team color
+	uint8 teamColorIndex = TeamHelper::GetTeamColorIndex(teamComponent.TeamIndex);
 	glm::vec3 teamColor = TeamHelper::GetTeamColor(teamComponent.TeamIndex);
 
 	TArray<MeshComponent> meshComponents = levelObject.MeshComponents;
@@ -432,7 +439,7 @@ ELevelObjectType LevelObjectCreator::CreateTeamIndicator(const LambdaEngine::Lev
 		}
 
 		GUID_Lambda teamMaterialGUID = ResourceManager::LoadMaterialFromMemory(
-			"TeamIndicator Color Material " + materialName,
+			"Team Indicator Color Material " + materialName + " Color Index" + std::to_string(teamColorIndex),
 			loadDesc.AlbedoMapGUID		!= GUID_NONE ? loadDesc.AlbedoMapGUID  : GUID_TEXTURE_DEFAULT_COLOR_MAP,
 			loadDesc.NormalMapGUID		!= GUID_NONE ? loadDesc.NormalMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
 			loadDesc.AOMapGUID			!= GUID_NONE ? loadDesc.AOMapGUID : GUID_TEXTURE_DEFAULT_NORMAL_MAP,
@@ -564,6 +571,11 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+		pECS->AddComponent<RayTracedComponent>(entity,
+			RayTracedComponent
+			{
+				.HitMask = 0xFF
+			});
 	}
 
 	createdEntities.PushBack(entity);
@@ -888,15 +900,15 @@ bool LevelObjectCreator::CreateFlag(
 				.JointName = "mixamorig:Spine2",
 				.Transform = glm::mat4(1.0f),
 			});
+
+		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
+				.HitMask = 0xFF
+			});
 	}
 	else
 	{
 		EFlagColliderType flagPlayerColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_PLAYER;
 		EFlagColliderType flagDeliveryPointColliderType = EFlagColliderType::FLAG_COLLIDER_TYPE_DELIVERY_POINT;
-
-		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
-				.HitMask = 0xFF
-			});
 
 		//Only the server checks collision with the flag
 		const Mesh* pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID);
@@ -974,7 +986,6 @@ bool LevelObjectCreator::CreatePlayer(
 	pECS->AddComponent<PlayerRelatedComponent>(playerEntity, PlayerRelatedComponent());
 	EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerRelatedComponent::Type(), nullptr);
 	PlayerIndexHelper::AddPlayerEntity(playerEntity);
-
 
 	pECS->AddComponent<PositionComponent>(playerEntity,			PositionComponent{ .Position = pPlayerDesc->Position });
 	pECS->AddComponent<NetworkPositionComponent>(playerEntity,
@@ -1192,15 +1203,40 @@ bool LevelObjectCreator::CreatePlayer(
 
 		//Add Audio Instances
 		{
-			SoundInstance3DDesc soundInstanceDesc = {};
-			soundInstanceDesc.pName			= "Step";
-			soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
-			soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
-			soundInstanceDesc.Position		= pPlayerDesc->Position;
-			soundInstanceDesc.Volume		= 2.0f;
-
 			AudibleComponent audibleComponent = {};
-			audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Step";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_STEP_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 2.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Jump";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_JUMP_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 1.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
+
+			{
+				SoundInstance3DDesc soundInstanceDesc = {};
+				soundInstanceDesc.pName			= "Landing";
+				soundInstanceDesc.pSoundEffect	= ResourceManager::GetSoundEffect3D(ResourceCatalog::PLAYER_LANDING_SOUND_GUID);
+				soundInstanceDesc.Flags			= FSoundModeFlags::SOUND_MODE_NONE;
+				soundInstanceDesc.Position		= pPlayerDesc->Position;
+				soundInstanceDesc.Volume		= 2.0f;
+
+				audibleComponent.SoundInstances3D[soundInstanceDesc.pName] = AudioAPI::GetDevice()->Create3DSoundInstance(&soundInstanceDesc);
+			}
 
 			pECS->AddComponent<AudibleComponent>(playerEntity, audibleComponent);
 		}
@@ -1223,11 +1259,11 @@ bool LevelObjectCreator::CreatePlayer(
 		{
 			pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
 				.HitMask = 0x02
-			});
+				});
 
 			pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
 				.HitMask = 0x02
-			});
+				});
 
 			if (pPlayerDesc->pCameraDesc == nullptr)
 			{
@@ -1236,13 +1272,184 @@ bool LevelObjectCreator::CreatePlayer(
 				return false;
 			}
 
-			pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
-			EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
-
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
 			pECS->AddComponent<SpectateComponent>(playerEntity, { SpectateType::LOCAL_PLAYER });
+
+			auto firstPersonHandsEntity = pECS->CreateEntity();
+			{
+				pECS->AddComponent<StepParentComponent>(weaponEntity, { .Owner = firstPersonHandsEntity });
+
+				pECS->AddComponent<PositionComponent>(firstPersonHandsEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(firstPersonHandsEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(firstPersonHandsEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				pECS->AddComponent<WeaponArmsComponent>(firstPersonHandsEntity, WeaponArmsComponent());
+				pECS->AddComponent<WeaponLocalComponent>(firstPersonHandsEntity, WeaponLocalComponent());
+				EntityMaskManager::AddExtensionToEntity(firstPersonHandsEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(firstPersonHandsEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::ARMS_FIRST_PERSON_MATERIAL_GUID,
+					});
+				
+				AnimationComponent animationComponentWeapon = {};
+				animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID)->pSkeleton;
+
+				AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[1]));
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Shooting", ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[2]));
+
+				{
+					AnimationState* pAnimationState = DBG_NEW AnimationState("Idle & Shooting");
+					ClipNode* pIdle = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[1]);
+					ClipNode* pShooting = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[2], 1.0f, false);
+
+					pShooting->AddTrigger(ClipTrigger(0.95f, [](const ClipNode& clip, AnimationGraph& graph)
+						{
+							UNREFERENCED_VARIABLE(clip);
+							graph.TransitionToState("Idle");
+						}));
+						
+					BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pIdle, pShooting, BlendInfo(0.5f));
+					pAnimationState->SetOutputNode(pBlendNode);
+					pAnimationGraphWeapon->AddState(pAnimationState);
+				}
+
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Shooting", "Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Shooting", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle & Shooting", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Idle & Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle & Shooting", "Idle & Shooting"));
+				pAnimationGraphWeapon->TransitionToState("Idle");
+
+				animationComponentWeapon.pGraph = pAnimationGraphWeapon;
+
+				pECS->AddComponent<AnimationComponent>(firstPersonHandsEntity, animationComponentWeapon);
+
+				ParentComponent parentComp =
+				{
+					.Parent = playerEntity,
+					.Attached = false,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(firstPersonHandsEntity, parentComp);
+			}
+
+			{
+				auto firstPersonWeaponEntity = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(firstPersonWeaponEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(firstPersonWeaponEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(firstPersonWeaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				weaponLocalComponent.weaponEntity = weaponEntity;
+				pECS->AddComponent<WeaponLocalComponent>(firstPersonWeaponEntity, weaponLocalComponent);
+				EntityMaskManager::AddExtensionToEntity(firstPersonWeaponEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(firstPersonWeaponEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+					});
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonHandsEntity,
+					.Attached = true,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(firstPersonWeaponEntity, parentComponent);
+				
+				pECS->AddComponent<AnimationAttachedComponent>(firstPersonWeaponEntity, AnimationAttachedComponent
+					{
+						.JointName = "Gun",
+						.Transform = glm::mat4(1.0f),
+					});
+			}
+
+			// Liquid water
+			{
+				auto weaponLiquidEntity = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(weaponLiquidEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(weaponLiquidEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(weaponLiquidEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				WeaponLiquidComponent weaponLiquidComponent = {};
+				weaponLiquidComponent.isWater = true;
+				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, weaponLiquidComponent);
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				weaponLocalComponent.weaponEntity = weaponEntity;
+				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
+				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL,
+					});
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonHandsEntity,
+					.Attached = true,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(weaponLiquidEntity, parentComponent);
+				
+				pECS->AddComponent<AnimationAttachedComponent>(weaponLiquidEntity, AnimationAttachedComponent
+					{
+						.JointName = "Gun",
+						.Transform = glm::mat4(1.0f),
+					});
+			}
+
+			// Liquid paint
+			{
+				auto weaponLiquidEntity = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(weaponLiquidEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(weaponLiquidEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(weaponLiquidEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				WeaponLiquidComponent weaponLiquidComponent = {};
+				weaponLiquidComponent.isWater = false;
+				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, weaponLiquidComponent);
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
+				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+					});
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonHandsEntity,
+					.Attached = true,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(weaponLiquidEntity, parentComponent);
+
+				pECS->AddComponent<AnimationAttachedComponent>(weaponLiquidEntity, AnimationAttachedComponent
+					{
+						.JointName = "Gun",
+						.Transform = glm::mat4(1.0f),
+					});
+			}
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();
@@ -1283,17 +1490,20 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<StepParentComponent>(cameraEntity, StepParentComponent{ .Owner = playerEntity});
 
 			// Create Directional Light Component
-			DirectionalLightComponent directionalLightComponent =
+			if (s_HasDirectionalLight)
 			{
-				.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
-				.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
-				.FrustumWidth	= 25.0f,
-				.FrustumHeight	= 15.0f,
-				.FrustumZNear	= -60.0f,
-				.FrustumZFar	= 10.0f
-			};
+				DirectionalLightComponent directionalLightComponent =
+				{
+					.ColorIntensity = glm::vec4(1.0f, 1.0f, 1.0f, 10.0f),
+					.Rotation		= GetRotationQuaternion(glm::normalize(g_DefaultRight * 0.3f  + g_DefaultUp + g_DefaultForward * 0.5f)),
+					.FrustumWidth	= 25.0f,
+					.FrustumHeight	= 15.0f,
+					.FrustumZNear	= -60.0f,
+					.FrustumZFar	= 10.0f
+				};
 
-			pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
+				pECS->AddComponent<DirectionalLightComponent>(playerEntity, directionalLightComponent);
+			}
 		}
 	}
 	else

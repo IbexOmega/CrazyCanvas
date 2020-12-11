@@ -166,12 +166,17 @@ void HUDSystem::FixedTick(Timestamp delta)
 
 		if (!m_DamageTakenEventsToProcess.IsEmpty())
 		{
-			for (ProjectileHitEvent& event : m_DamageTakenEventsToProcess)
+			for (auto& pair : m_DamageTakenEventsToProcess)
 			{
 				const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
-				const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(event.CollisionInfo1.Entity);
+				const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(pair.first.CollisionInfo1.Entity);
 
-				m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), event.CollisionInfo1.Normal);
+				bool isFriendly = false;
+
+				if (pair.second == m_LocalTeamIndex)
+					isFriendly = true;
+
+				m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), pair.first.CollisionInfo1.Normal, isFriendly);
 			}
 
 			m_DamageTakenEventsToProcess.Clear();
@@ -297,7 +302,7 @@ bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& eve
 
 			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
 			{
-				m_HUDGUI->AbortReload(weaponComponent.WeaponTypeAmmo);
+				m_HUDGUI->AbortReload();
 			}
 		}
 	}
@@ -465,23 +470,27 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
 
 		ECSCore* pECS = ECSCore::GetInstance();
-		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+		const ComponentArray<PlayerLocalComponent>*	pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+		const ComponentArray<TeamComponent>*		pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		const ComponentArray<ProjectileComponent>*	pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
+
+		const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
 
 		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 		{
-			m_DeferredDamageTakenHitEvents.EmplaceBack(event);
+			if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
+			{
+				uint8 projectileTeamIndex = pTeamComponents->GetConstData(projectileComponents.Owner).TeamIndex;
+
+				m_DeferredDamageTakenHitEvents.EmplaceBack(std::make_pair(event, projectileTeamIndex));
+			}
 		}
 		else
 		{
-			const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-			const ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
-
 			if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
 			{
 				if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
 				{
-					const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
-
 					if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex && pPlayerLocalComponents->HasComponent(projectileComponents.Owner))
 					{
 						m_DeferredEnemyHitEvents.EmplaceBack(true);
@@ -503,7 +512,7 @@ bool HUDSystem::OnSpectatePlayerEvent(const SpectatePlayerEvent& event)
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
-	Input::PushInputMode(EInputLayer::GUI);
+	Input::PushInputLayer(EInputLayer::GUI);
 
 	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
 
@@ -515,9 +524,9 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 	{
 		const Player* pPlayer = &pair.second;
 
-		int16 kills = pPlayer->GetKills();
-		int16 deaths = pPlayer->GetDeaths();
-		int16 flags = pPlayer->GetFlagsCaptured();
+		int16 kills		= pPlayer->GetKills();
+		int16 deaths	= pPlayer->GetDeaths();
+		int16 flags		= pPlayer->GetFlagsCaptured();
 
 		if (kills > mostKills.first || (kills == mostKills.first && mostKills.second->GetUID() < pPlayer->GetUID()))
 			mostKills = std::make_pair(kills, pPlayer);
@@ -540,7 +549,7 @@ bool HUDSystem::OnWindowResized(const WindowResizedEvent& event)
 	return false;
 }
 
-void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex)
+void HUDSystem::PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, uint8 teamIndex)
 {
 	m_HUDGUI->DisplayPrompt(promtMessage, isSmallPrompt, teamIndex);
 }

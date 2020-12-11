@@ -30,9 +30,8 @@ public:
 	void DoAction(
 		float32 dt,
 		LambdaEngine::VelocityComponent& velocityComponent,
-		LambdaEngine::AudibleComponent& audibleComponent,
-		LambdaEngine::CharacterColliderComponent& characterColliderComponent,
 		const LambdaEngine::RotationComponent& rotationComponent,
+		bool inAir,
 		PlayerGameState* pGameState);
 
 protected:
@@ -48,4 +47,5 @@ private:
 	LambdaEngine::IDVector m_Entities;
 	LambdaEngine::IDVector m_FlagEntities;
 	PlayerActionSystem m_PlayerActionSystem;
+	bool m_InAir;
 };

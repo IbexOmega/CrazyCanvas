@@ -27,6 +27,7 @@
 #include "Networking/API/NetworkUtils.h"
 
 #include "World/LevelManager.h"
+#include "World/SessionSettings.h"
 
 #include "Teams/TeamHelper.h"
 
@@ -56,6 +57,7 @@
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
+#include "GUI/SettingsGUI.h"
 
 #include "Debug/Profiler.h"
 
@@ -135,6 +137,8 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 		LOG_ERROR("Team Helper Init Failed");
 	}
 
+	SessionSettings::Init();
+
 	PacketType::Init();
 	PacketTranscoderSystem::GetInstance().Init();
 
@@ -180,7 +184,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	if (MultiplayerUtils::IsServer())
 	{
 		PlayerManagerServer::Init();
-	}	
+	}
 	else
 	{
 		ServerManager::Init();
@@ -200,6 +204,7 @@ CrazyCanvas::~CrazyCanvas()
 	m_MeshPaintHandler.Release();
 	ChatManager::Release();
 	PlayerManagerBase::Release();
+	SessionSettings::Release();
 	PacketType::Release();
 
 	if(!LambdaEngine::MultiplayerUtils::IsServer())
@@ -247,6 +252,7 @@ bool CrazyCanvas::RegisterGUIComponents()
 	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
+	Noesis::RegisterComponent<SettingsGUI>();
 
 	return true;
 }

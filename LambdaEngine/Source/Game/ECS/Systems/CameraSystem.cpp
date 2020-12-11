@@ -71,7 +71,7 @@ namespace LambdaEngine
 		const ComponentArray<FreeCameraComponent>*			pFreeCameraComponents		= pECSCore->GetComponentArray<FreeCameraComponent>();
 		const ComponentArray<FPSControllerComponent>*		pFPSCameraComponents		= pECSCore->GetComponentArray<FPSControllerComponent>();
 		const ComponentArray<ParentComponent>*				pParentComponents			= pECSCore->GetComponentArray<ParentComponent>();
-		const ComponentArray<StepParentComponent>*		pStepParentComponents	= pECSCore->GetComponentArray<StepParentComponent>();
+		const ComponentArray<StepParentComponent>*			pStepParentComponents		= pECSCore->GetComponentArray<StepParentComponent>();
 		const ComponentArray<OffsetComponent>*				pOffsetComponents			= pECSCore->GetComponentArray<OffsetComponent>();
 		ComponentArray<PositionComponent>*					pPositionComponents			= pECSCore->GetComponentArray<PositionComponent>();
 		ComponentArray<RotationComponent>*					pRotationComponents			= pECSCore->GetComponentArray<RotationComponent>();
@@ -101,14 +101,20 @@ namespace LambdaEngine
 
 			if (parentComp.Attached)
 			{
-				const PositionComponent&	parentPositionComp	= pPositionComponents->GetConstData(parentComp.Parent);
-				const RotationComponent&	parentRotationComp	= pRotationComponents->GetConstData(stepParentComp.Owner);
-				const OffsetComponent&		cameraOffsetComp	= pOffsetComponents->GetConstData(entity);
-				PositionComponent&			cameraPositionComp	= pPositionComponents->GetData(entity);
-				RotationComponent&			cameraRotationComp	= pRotationComponents->GetData(entity);
-				
-				cameraPositionComp.Position		= parentPositionComp.Position + cameraOffsetComp.Offset;
-				cameraRotationComp.Quaternion	= parentRotationComp.Quaternion;
+				PositionComponent parentPositionComp;
+				if (pPositionComponents->GetConstIf(parentComp.Parent, parentPositionComp))
+				{
+					const OffsetComponent& cameraOffsetComp		= pOffsetComponents->GetConstData(entity);
+					PositionComponent& cameraPositionComp		= pPositionComponents->GetData(entity);
+					cameraPositionComp.Position					= parentPositionComp.Position + cameraOffsetComp.Offset;
+				}		
+
+				RotationComponent parentRotationComp;
+				if (pRotationComponents->GetConstIf(stepParentComp.Owner, parentRotationComp))
+				{
+					RotationComponent& cameraRotationComp	= pRotationComponents->GetData(entity);
+					cameraRotationComp.Quaternion			= parentRotationComp.Quaternion;
+				}
 			}
 		}
 

@@ -47,12 +47,12 @@ namespace LambdaEngine
 			m_Type = queueType;
 			if (!debugname.empty())
 			{
-				LOG_MESSAGE("Created commandpool \"%s\"", debugname.c_str());
+				LOG_VULKAN_MESSAGE("Created commandpool \"%s\"", debugname.c_str());
 				SetName(debugname);
 			}
 			else
 			{
-				LOG_MESSAGE("Created commandpool");
+				LOG_VULKAN_MESSAGE("Created commandpool");
 			}
 
 			return true;

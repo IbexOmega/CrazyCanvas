@@ -34,7 +34,8 @@
 using namespace LambdaEngine;
 
 PlayerLocalSystem::PlayerLocalSystem() :
-	m_PlayerActionSystem()
+	m_PlayerActionSystem(),
+	m_InAir(false)
 {
 
 }
@@ -91,7 +92,9 @@ void PlayerLocalSystem::SendGameState(const PlayerGameState& gameState, Entity e
 	PacketPlayerAction packet		= {};
 	packet.SimulationTick	= gameState.SimulationTick;
 	packet.Rotation			= gameState.Rotation;
-	packet.DeltaAction		= gameState.DeltaAction;
+	packet.DeltaActionX		= gameState.DeltaAction.x;
+	packet.DeltaActionY		= gameState.DeltaAction.y;
+	packet.DeltaActionZ		= gameState.DeltaAction.z;
 	packet.Walking			= gameState.Walking;
 	packet.HoldingFlag		= gameState.HoldingFlag;
 
@@ -113,9 +116,16 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 	mutableNetPosComponent.PositionLast = positionComponent.Position; //Lerpt from the current interpolated position (The rendered one)
 	mutableNetPosComponent.TimestampStart = EngineLoop::GetTimeSinceStart();
 
-	DoAction(dt, velocityComponent, audibleComponent, characterColliderComponent, rotationComponent, pGameState);
+	physx::PxControllerState playerControllerState;
+	characterColliderComponent.pController->getState(playerControllerState);
+	m_InAir = (playerControllerState.touchedShape == nullptr);
+
+	DoAction(dt, velocityComponent, rotationComponent, m_InAir, pGameState);
 
 	CharacterControllerHelper::TickCharacterController(dt, characterColliderComponent, networkPositionComponent, velocityComponent);
+	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, pGameState->Walking, m_InAir, characterColliderComponent.WasInAir);
+
+	characterColliderComponent.WasInAir = m_InAir;
 
 	pGameState->Position = networkPositionComponent.Position;
 	pGameState->Velocity = velocityComponent.Velocity;
@@ -124,15 +134,10 @@ void PlayerLocalSystem::TickLocalPlayerAction(float32 dt, Entity entityPlayer, P
 void PlayerLocalSystem::DoAction(
 	float32 dt,
 	LambdaEngine::VelocityComponent& velocityComponent,
-	LambdaEngine::AudibleComponent& audibleComponent,
-	LambdaEngine::CharacterColliderComponent& characterColliderComponent,
 	const LambdaEngine::RotationComponent& rotationComponent,
+	bool inAir,
 	PlayerGameState* pGameState)
 {
-	physx::PxControllerState playerControllerState;
-	characterColliderComponent.pController->getState(playerControllerState);
-	bool inAir = playerControllerState.touchedShape == nullptr;
-
 	glm::i8vec3 deltaAction =
 	{
 		int8(InputActionSystem::IsActive(EAction::ACTION_MOVE_RIGHT) - InputActionSystem::IsActive(EAction::ACTION_MOVE_LEFT)),			// X: Right
@@ -156,8 +161,7 @@ void PlayerLocalSystem::DoAction(
 		}
 	}
 
-	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag);
-	PlayerSoundHelper::HandleMovementSound(velocityComponent, audibleComponent, deltaAction, walking, inAir);
+	PlayerActionSystem::ComputeVelocity(rotationComponent.Quaternion, deltaAction, walking, dt, velocityComponent.Velocity, holdingFlag, inAir);
 
 	pGameState->DeltaAction		= deltaAction;
 	pGameState->Walking			= walking;
@@ -201,7 +205,7 @@ void PlayerLocalSystem::ReplayGameState(float32 dt, PlayerGameState& clientState
 	/*
 	* Returns the velocity based on key presses
 	*/
-	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaAction, clientState.Walking, dt, velocityComponent.Velocity, clientState.HoldingFlag);
+	PlayerActionSystem::ComputeVelocity(clientState.Rotation, clientState.DeltaAction, clientState.Walking, dt, velocityComponent.Velocity, clientState.HoldingFlag, m_InAir);
 
 	/*
 	* Sets the position of the PxController taken from the PositionComponent.
@@ -224,8 +228,9 @@ void PlayerLocalSystem::SurrenderGameState(const PacketPlayerActionResponse& ser
 	NetworkPositionComponent& netPosComponent = pECS->GetComponent<NetworkPositionComponent>(entityPlayer);
 	VelocityComponent& velocityComponent = pECS->GetComponent<VelocityComponent>(entityPlayer);
 
-	netPosComponent.Position = serverState.Position;
-	velocityComponent.Velocity = serverState.Velocity;
+	netPosComponent.Position	= serverState.Position;
+	velocityComponent.Velocity	= serverState.Velocity;
+	m_InAir						= serverState.InAir;
 }
 
 bool PlayerLocalSystem::CompareGamesStates(const PlayerGameState& clientState, const PacketPlayerActionResponse& serverState)

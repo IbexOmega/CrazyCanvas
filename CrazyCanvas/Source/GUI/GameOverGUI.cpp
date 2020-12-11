@@ -39,6 +39,8 @@ bool GameOverGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const
 
 void GameOverGUI::OnReturnToLobbyButtonClick(BaseComponent* pSender, const RoutedEventArgs& args)
 {
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
 	const PacketGameSettings& gameSettings = PlaySessionState::GetInstance()->GetGameSettings();
 	State* pLobbyState = DBG_NEW LobbyState(gameSettings, PlayerManagerClient::GetPlayerLocal());
 	StateManager::GetInstance()->EnqueueStateTransition(pLobbyState, STATE_TRANSITION::POP_AND_PUSH);

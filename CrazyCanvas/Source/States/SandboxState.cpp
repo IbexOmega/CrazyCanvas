@@ -49,6 +49,8 @@
 #include "Rendering/Animation/AnimationGraph.h"
 #include "Rendering/EntityMaskManager.h"
 
+#include "Rendering/PipelineStateManager.h"
+
 #include "Math/Random.h"
 
 #include "GUI/Core/GUIApplication.h"
@@ -129,10 +131,11 @@ void SandboxState::Init()
 		RenderSystem::GetInstance().SetPaintMaskColor(1, TeamHelper::GetTeamColor(1));
 	}
 
+	/*
 	// Load character
 	{
 		GUID_Lambda characterMeshGUID;
-		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID);
+		ResourceManager::LoadMeshFromFile("Player/Character.fbx", characterMeshGUID, false);
 
 		MaterialProperties materialProperties = {};
 		materialProperties.Albedo = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -165,14 +168,14 @@ void SandboxState::Init()
 	// Sphere grid
 	{
 		GUID_Lambda sphereMeshGUID;
-		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID);
+		ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID, false);
 		const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
 
 		uint32 gridRadius = 5;
 
 		for (uint32 y = 0; y < gridRadius; y++)
 		{
-			const float32 roughness = y / float32(gridRadius - 1);
+			const float32 roughness = y / float32(gridRadius - 1) + 0.01f;
 
 			for (uint32 x = 0; x < gridRadius; x++)
 			{
@@ -210,7 +213,7 @@ void SandboxState::Init()
 	{
 		TArray<GUID_Lambda> animations;
 		GUID_Lambda robotMeshGUID;
-		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", robotMeshGUID, animations);
+		ResourceManager::LoadMeshFromFile("Player/IdleRightUV.glb", robotMeshGUID, animations, false);
 		const uint32 robotAlbedoGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_albedo.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 		const uint32 robotNormalGUID	= ResourceManager::LoadTextureFromFile("../Meshes/Robot/Textures/robot_normal.png", EFormat::FORMAT_R8G8B8A8_UNORM, true, true);
 
@@ -416,7 +419,7 @@ void SandboxState::Init()
 
 			pECS->AddComponent<CharacterColliderComponent>(entity, characterColliderComponent);
 		}
-	}
+	}*/
 
 	// Emitter
 	{
@@ -458,7 +461,7 @@ void SandboxState::Init()
 	{
 		GUID_Lambda meshGUID;
 		TArray<GUID_Lambda> animations;
-		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations);
+		ResourceManager::LoadMeshFromFile("Robot/Standard Walk.fbx", meshGUID, animations, false);
 	}
 
 	if constexpr (IMGUI_ENABLED)
@@ -524,6 +527,26 @@ void SandboxState::Init()
 	cmdDebugLights.AddDescription("Debugging Directional Light'");
 	GameConsole::Get().BindCommand(cmdDebugLights, [&, this](GameConsole::CallbackInput& input)->void {
 		m_DirLightDebug = input.Arguments.GetFront().Value.Boolean;
+		});
+
+	ConsoleCommand cmdWireframe;
+	cmdWireframe.Init("wireframe", false);
+	cmdWireframe.AddArg(Arg::EType::BOOL);
+	cmdWireframe.AddDescription("Activate/Deactivate wireframe mode\n");
+	GameConsole::Get().BindCommand(cmdWireframe, [&, this](GameConsole::CallbackInput& input)->void {
+		THashTable<uint64, ManagedGraphicsPipelineStateDesc>& graphicsPipelinesDescs = PipelineStateManager::GetGraphicsPipelineStateDescriptions();
+
+		for (auto& it : graphicsPipelinesDescs)
+		{
+			ManagedGraphicsPipelineStateDesc& pipelineStateDesc = it.second;
+			if (pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS" || pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS_MESH_PAINT")
+			{
+				pipelineStateDesc.RasterizerState.PolygonMode = input.Arguments.GetFront().Value.Boolean ? EPolygonMode::POLYGON_MODE_LINE : EPolygonMode::POLYGON_MODE_FILL;
+			}
+		}
+
+		PipelineStateRecompileEvent recompileEvent = {};
+		EventQueue::SendEvent(recompileEvent);
 		});
 
 	SingleplayerInitializer::Setup();

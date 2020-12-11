@@ -108,10 +108,49 @@ void PlaySessionState::Init()
 		PlayerManagerClient::SetLocalPlayerStateLoading();
 		m_CamSystem.Init();
 	}
+	else
+	{
+		ConsoleCommand cmdWireframe;
+		cmdWireframe.Init("wireframe", false);
+		cmdWireframe.AddArg(Arg::EType::BOOL);
+		cmdWireframe.AddDescription("Activate/Deactivate wireframe mode\n");
+		GameConsole::Get().BindCommand(cmdWireframe, [&, this](GameConsole::CallbackInput& input)->void {
+			THashTable<uint64, ManagedGraphicsPipelineStateDesc>& graphicsPipelinesDescs = PipelineStateManager::GetGraphicsPipelineStateDescriptions();
+
+			for (auto& it : graphicsPipelinesDescs)
+			{
+				ManagedGraphicsPipelineStateDesc& pipelineStateDesc = it.second;
+				if (pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS" || pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS_MESH_PAINT")
+				{
+					pipelineStateDesc.RasterizerState.PolygonMode = input.Arguments.GetFront().Value.Boolean ? EPolygonMode::POLYGON_MODE_LINE : EPolygonMode::POLYGON_MODE_FILL;
+				}
+			}
+
+			PipelineStateRecompileEvent recompileEvent = {};
+			EventQueue::SendEvent(recompileEvent);
+			});
+	}
+  
+	ConsoleCommand cmdDebugWindow;
+	cmdDebugWindow.Init("show_debug_window", false);
+	cmdDebugWindow.AddArg(Arg::EType::BOOL);
+	cmdDebugWindow.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
+	GameConsole::Get().BindCommand(cmdDebugWindow, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DebugWindow = input.Arguments.GetFront().Value.Boolean;
+		});
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
-	Input::PushInputMode(EInputLayer::GAME);
+
+	const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
+	if (currentInputLayer == EInputLayer::DEBUG)
+	{
+		Input::PopInputLayer();
+		Input::PushInputLayer(EInputLayer::GAME);
+		Input::PushInputLayer(EInputLayer::DEBUG);
+	}
+	else
+		Input::PushInputLayer(EInputLayer::GAME);
 
 	EnablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
@@ -172,6 +211,12 @@ void PlaySessionState::Tick(Timestamp delta)
 		EventQueue::SendEvent(PipelineStateRecompileEvent());
 	}
 
+	if (m_DebugWindow)
+	{
+		Profiler::Tick(delta);
+		Profiler::Render();
+	}
+
 	m_MultiplayerClient.TickMainThreadInternal(delta);
 }
 
@@ -201,6 +246,8 @@ bool PlaySessionState::OnClientDisconnected(const ClientDisconnectedEvent& event
 	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
 
 	PlayerManagerClient::Reset();
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);

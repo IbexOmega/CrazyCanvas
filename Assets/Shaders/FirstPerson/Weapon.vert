@@ -9,8 +9,14 @@
 struct SWeaponData
 {
 	mat4 Model;
+	mat4 PlayerRotation;
 	vec3 PlayerPos;
 };
+
+layout(push_constant) uniform PushConstants
+{
+	mat4 DefaultTransform;
+} u_PC;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer				{ SPerFrameBuffer val; }	u_PerFrameBuffer;
 layout(binding = 4, set = BUFFER_SET_INDEX) uniform WeaponData					{ SWeaponData val; }		u_WeaponData;
@@ -33,6 +39,11 @@ layout(location = 11) out vec4 out_PaintInfo4;
 layout(location = 12) out float out_PaintDist;
 layout(location = 13) out vec3 out_LocalPosition;
 
+vec3 Rotate(vec3 v, mat4 rot)
+{
+	return (rot * vec4(v, 1.0f)).xyz;
+}
+
 void main()
 {
 	SVertex vertex					= b_Vertices.val[gl_VertexIndex];
@@ -40,18 +51,18 @@ void main()
 	SPerFrameBuffer perFrameBuffer	= u_PerFrameBuffer.val;
 	SWeaponData weaponData			= u_WeaponData.val;
 
-	vec3 position 			= vertex.Position.xyz;
-	vec4 worldPosition		= weaponData.Model * vec4(position, 1.0f);
-	vec4 prevWorldPosition	= instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
+	mat4 normalTransform    = instance.Transform * weaponData.PlayerRotation;
 
-	mat4 normalTransform    = instance.Transform;
+	vec3 position 			= vertex.Position.xyz;
+	vec4 worldPosition		= weaponData.Model * instance.Transform * u_PC.DefaultTransform * vec4(position, 1.0f);
+	vec4 prevWorldPosition	= instance.PrevTransform * vec4(vertex.Position.xyz, 1.0f);
 
 	vec3 normal				= normalize((normalTransform * vec4(vertex.Normal.xyz, 0.0f)).xyz);
 	vec3 tangent			= normalize((normalTransform * vec4(vertex.Tangent.xyz, 0.0f)).xyz);
 	vec3 bitangent			= normalize(cross(normal, tangent));
 
 	out_MaterialSlot		= instance.MaterialSlot;
-	out_WorldPosition		= weaponData.PlayerPos;
+	out_WorldPosition		= weaponData.PlayerPos + Rotate(position, weaponData.PlayerRotation).xyz;
 	out_Normal				= normal;
 	out_Tangent				= tangent;
 	out_Bitangent			= bitangent;
@@ -61,7 +72,7 @@ void main()
 	out_ViewDirection		= normalize(vec3(perFrameBuffer.View[0][2], perFrameBuffer.View[1][2], perFrameBuffer.View[2][2]));
 	out_PaintInfo4 			= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	out_PaintDist 			= vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
-	out_LocalPosition		= worldPosition.xyz;//vec3(vertex.Tangent.x, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
+	out_LocalPosition		= vec3(vertex.Tangent.w, vertex.TexCoord.z, vertex.TexCoord.w); // Original vertex position
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 

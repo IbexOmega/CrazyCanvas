@@ -344,7 +344,7 @@ namespace LambdaEngine
 		if (result == VK_SUCCESS)
 		{
 			m_UsedAllocations++;
-			LOG_DEBUG("Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+			LOG_VULKAN_INFO("Allocated %u bytes. Allocations %u/%u", sizeInBytes, m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 		}
 		else
 		{
@@ -361,7 +361,7 @@ namespace LambdaEngine
 		vkFreeMemory(Device, deviceMemory, nullptr);
 
 		m_UsedAllocations--;
-		LOG_DEBUG("Freed memoryblock. Allocations %u/%u", m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
+		LOG_VULKAN_INFO("Freed memoryblock. Allocations %u/%u", m_UsedAllocations, m_DeviceLimits.maxMemoryAllocationCount);
 	}
 
 	void GraphicsDeviceVK::DestroyRenderPass(VkRenderPass* pRenderPass) const
@@ -1203,9 +1203,13 @@ namespace LambdaEngine
 		}
 
 		// Query support for features
+		VkPhysicalDeviceImagelessFramebufferFeatures supportedImagelessFramebufferFeatures = {};
+		supportedImagelessFramebufferFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_IMAGELESS_FRAMEBUFFER_FEATURES;
+		supportedImagelessFramebufferFeatures.pNext = nullptr;
+
 		VkPhysicalDeviceMeshShaderFeaturesNV supportedMeshShaderFeatures = { };
 		supportedMeshShaderFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
-		supportedMeshShaderFeatures.pNext = nullptr;
+		supportedMeshShaderFeatures.pNext = &supportedImagelessFramebufferFeatures;
 
 		VkPhysicalDeviceRayTracingFeaturesKHR supportedRayTracingFeatures = { };
 		supportedRayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_FEATURES_KHR;
@@ -1249,6 +1253,7 @@ namespace LambdaEngine
 		enabledDeviceFeatures12.storageBuffer8BitAccess			= supportedDeviceFeatures12.storageBuffer8BitAccess;
 		enabledDeviceFeatures12.runtimeDescriptorArray			= supportedDeviceFeatures12.runtimeDescriptorArray;
 		enabledDeviceFeatures12.descriptorBindingPartiallyBound	= supportedDeviceFeatures12.descriptorBindingPartiallyBound;
+		enabledDeviceFeatures12.imagelessFramebuffer			= supportedDeviceFeatures12.imagelessFramebuffer;
 
 		VkPhysicalDeviceVulkan11Features enabledDeviceFeatures11 = {};
 		enabledDeviceFeatures11.sType	= VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
@@ -1265,6 +1270,8 @@ namespace LambdaEngine
 		enabledDeviceFeatures10.pipelineStatisticsQuery			= supportedDeviceFeatures10.pipelineStatisticsQuery;
 		enabledDeviceFeatures10.imageCubeArray					= supportedDeviceFeatures10.imageCubeArray;
 		enabledDeviceFeatures10.shaderInt16						= supportedDeviceFeatures10.shaderInt16;
+		enabledDeviceFeatures10.tessellationShader				= supportedDeviceFeatures10.tessellationShader;
+		enabledDeviceFeatures10.geometryShader					= supportedDeviceFeatures10.geometryShader;
 		enabledDeviceFeatures10.samplerAnisotropy				= supportedDeviceFeatures10.samplerAnisotropy;
 
 		VkPhysicalDeviceFeatures2 enabledDeviceFeatures2 = {};
@@ -1755,7 +1762,6 @@ namespace LambdaEngine
 		void* pUserData)
 	{
 		UNREFERENCED_VARIABLE(messageType);
-		UNREFERENCED_VARIABLE(pCallbackData);
 		UNREFERENCED_VARIABLE(pUserData);
 
 		if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT)

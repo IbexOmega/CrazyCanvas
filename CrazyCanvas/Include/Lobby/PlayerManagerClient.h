@@ -18,6 +18,7 @@ public:
 	static const Player* GetPlayerLocal();
 	static void RegisterLocalPlayer(const LambdaEngine::String& name, bool isHost);
 	static void SetLocalPlayerReady(bool ready);
+	static void SetLocalPlayerStateLobby();
 	static void SetLocalPlayerStateLoading();
 	static void SetLocalPlayerStateLoaded();
 
@@ -26,6 +27,8 @@ public:
 private:
 	static void Init();
 	static void Release();
+
+	static void ApplyStateChange(const Player* pPlayer);
 
 	static Player* GetPlayerLocalNoConst();
 

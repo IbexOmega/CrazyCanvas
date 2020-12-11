@@ -104,7 +104,7 @@ bool PingHandler::OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEvent)
 {
 	using namespace LambdaEngine;
 
-	if (InputActionSystem::IsActionBoundToKey(EAction::ACTION_GENERAL_PING, keyPressEvent.Key))
+	if (InputActionSystem::IsActionBoundToKey(EAction::ACTION_GENERAL_PING, keyPressEvent.Key) && !keyPressEvent.IsRepeat)
 	{
 		const Job pingJob =
 		{
@@ -146,19 +146,22 @@ bool PingHandler::OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEvent)
 				{
 					// The player was looking at static geometry whilst pressing the ping button.
 					const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
-					const Entity playerEntity = pLocalPlayer->GetEntity();
-
-					const glm::vec3 pingPos = { raycastHit.position.x, raycastHit.position.y, raycastHit.position.z };
-
-					const PacketPositionPing pingPacket =
+					if (!pLocalPlayer->IsDead())
 					{
-						.Position = pingPos,
-						.PlayerUID = pLocalPlayer->GetUID()
-					};
+						const Entity playerEntity = pLocalPlayer->GetEntity();
 
-					ClientHelper::Send(pingPacket);
+						const glm::vec3 pingPos = { raycastHit.position.x, raycastHit.position.y, raycastHit.position.z };
 
-					Ping(playerEntity, pingPos, camPos, pLocalPlayer->GetTeam());
+						const PacketPositionPing pingPacket =
+						{
+							.Position = pingPos,
+							.PlayerUID = pLocalPlayer->GetUID()
+						};
+
+						ClientHelper::Send(pingPacket);
+
+						Ping(playerEntity, pingPos, camPos, pLocalPlayer->GetTeam());
+					}
 				}
 			}
 		};

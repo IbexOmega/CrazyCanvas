@@ -239,7 +239,7 @@ namespace LambdaEngine
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+		accelerationStructureBuildInfo.flags						= 0;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -250,6 +250,16 @@ namespace LambdaEngine
 			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_TRACE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+			}
+			else
+			{
+				//Default is Fast Build (Normally what we want for TLAS)
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 			}
 		}
 
@@ -316,7 +326,7 @@ namespace LambdaEngine
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+		accelerationStructureBuildInfo.flags						= 0;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -327,6 +337,16 @@ namespace LambdaEngine
 			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+			}
+			else
+			{
+				//Default is Fast Trace (Normally what we want for BLAS)
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 			}
 		}
 
@@ -470,31 +490,28 @@ namespace LambdaEngine
 		VALIDATE(pSrc != nullptr);
 		VALIDATE(pDst != nullptr);
 
-		UNREFERENCED_VARIABLE(srcState);
-		UNREFERENCED_VARIABLE(dstState);
-		UNREFERENCED_VARIABLE(filter);
-
 		const TextureDesc& srcTextureDesc = pSrc->GetDesc();
 		const TextureDesc& dstTextureDesc = pDst->GetDesc();
 
 		VALIDATE(srcTextureDesc.ArrayCount == dstTextureDesc.ArrayCount);
 
-		const TextureVK*	pVkSrc	= reinterpret_cast<const TextureVK*>(pSrc);
-		const TextureVK*	pVkDst	= reinterpret_cast<const TextureVK*>(pDst);
+		const TextureVK* pVkSrc = reinterpret_cast<const TextureVK*>(pSrc);
+		const TextureVK* pVkDst = reinterpret_cast<const TextureVK*>(pDst);
 
 		VALIDATE(pVkSrc->GetAspectFlags() == pVkDst->GetAspectFlags());
 
-		VkImageLayout		vkSrcLayout = ConvertTextureState(srcState);
-		VkImageLayout		vkDstLayout = ConvertTextureState(dstState);
-		VkFilter			vkFilter	= ConvertFilter(filter);
+		VkImageLayout	vkSrcLayout	= ConvertTextureState(srcState);
+		VkImageLayout	vkDstLayout	= ConvertTextureState(dstState);
+		VkFilter		vkFilter	= ConvertFilter(filter);
 
 		VkImageSubresourceLayers srcSubresource = {};
-		
-		static VkImageBlit region = {};
+
+		VkImageBlit region = { };
 		region.srcSubresource.aspectMask		= pVkSrc->GetAspectFlags();
 		region.srcSubresource.mipLevel			= 0;
 		region.srcSubresource.baseArrayLayer	= 0;
 		region.srcSubresource.layerCount		= srcTextureDesc.ArrayCount;
+		region.srcOffsets[0]					= { 0, 0, 0 };
 		region.srcOffsets[1].x					= srcTextureDesc.Width;
 		region.srcOffsets[1].y					= srcTextureDesc.Height;
 		region.srcOffsets[1].z					= 1;
@@ -502,6 +519,7 @@ namespace LambdaEngine
 		region.dstSubresource.mipLevel			= 0;
 		region.dstSubresource.baseArrayLayer	= 0;
 		region.dstSubresource.layerCount		= dstTextureDesc.ArrayCount;
+		region.dstOffsets[0]					= { 0, 0, 0 };
 		region.dstOffsets[1].x					= dstTextureDesc.Width;
 		region.dstOffsets[1].y					= dstTextureDesc.Height;
 		region.dstOffsets[1].z					= 1;
@@ -527,10 +545,17 @@ namespace LambdaEngine
 			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
 			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
 
-			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+			vkCmdPipelineBarrier(
+				m_CmdBuffer, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 
+				0, 0, 
+				nullptr, 0, 
+				nullptr, 1, 
+				&imageBarrier);
 		}
 
-		if (dstState != ETextureState::TEXTURE_STATE_COPY_SRC)
+		if (dstState != ETextureState::TEXTURE_STATE_COPY_DST)
 		{
 			VkImageMemoryBarrier imageBarrier = { };
 			imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -548,10 +573,25 @@ namespace LambdaEngine
 			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
 			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
 
-			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+			vkCmdPipelineBarrier(
+				m_CmdBuffer, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 
+				0, 0, 
+				nullptr, 0, 
+				nullptr, 1, 
+				&imageBarrier);
 		}
 
-		vkCmdBlitImage(m_CmdBuffer, pVkSrc->GetImage(), VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, pVkDst->GetImage(), VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region, vkFilter);
+		vkCmdBlitImage(
+			m_CmdBuffer, 
+			pVkSrc->GetImage(), 
+			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 
+			pVkDst->GetImage(), 
+			VkImageLayout::VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+			1, 
+			&region, 
+			vkFilter);
 
 		if (srcState != ETextureState::TEXTURE_STATE_COPY_SRC)
 		{
@@ -571,10 +611,17 @@ namespace LambdaEngine
 			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
 			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
 
-			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+			vkCmdPipelineBarrier(
+				m_CmdBuffer, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 
+				0, 0, 
+				nullptr, 0, 
+				nullptr, 1, 
+				&imageBarrier);
 		}
 
-		if (dstState != ETextureState::TEXTURE_STATE_COPY_SRC)
+		if (dstState != ETextureState::TEXTURE_STATE_COPY_DST)
 		{
 			VkImageMemoryBarrier imageBarrier = { };
 			imageBarrier.sType								= VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -592,7 +639,14 @@ namespace LambdaEngine
 			imageBarrier.srcAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_READ_BIT;
 			imageBarrier.dstAccessMask						= VkAccessFlagBits::VK_ACCESS_MEMORY_WRITE_BIT;
 
-			vkCmdPipelineBarrier(m_CmdBuffer, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageBarrier);
+			vkCmdPipelineBarrier(
+				m_CmdBuffer, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TRANSFER_BIT, 
+				VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 
+				0, 0, 
+				nullptr, 0, 
+				nullptr, 1, 
+				&imageBarrier);
 		}
 	}
 

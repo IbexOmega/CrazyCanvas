@@ -16,7 +16,6 @@ layout(binding = 0, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 	SPointLight pointLights[];  
 } b_LightsBuffer;
 
-
 void main()
 {
     SVertex vertex                              = b_Vertices.val[gl_VertexIndex];

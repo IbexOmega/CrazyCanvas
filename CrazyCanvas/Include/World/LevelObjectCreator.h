@@ -207,6 +207,7 @@ private:
 	static bool FindTeamIndex(const LambdaEngine::String& objectName, uint8& teamIndex);
 
 private:
+	inline static bool s_HasDirectionalLight = false;
 	inline static LambdaEngine::TArray<LambdaEngine::LevelObjectOnLoadDesc> s_LevelObjectOnLoadDescriptions;
 	inline static LambdaEngine::THashTable<LambdaEngine::String, LevelObjectCreateByPrefixFunc> s_LevelObjectByPrefixCreateFunctions;
 	inline static LambdaEngine::THashTable<ELevelObjectType, LevelObjectCreateByTypeFunc> s_LevelObjectByTypeCreateFunctions;

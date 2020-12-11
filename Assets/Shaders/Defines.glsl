@@ -23,6 +23,8 @@
 
 #define MAX_UNIQUE_MATERIALS 32
 
+#define UINT32_MAX              0xffffffff
+
 const float INV_PI			= 1.0f / 3.14159265359f;
 const float FOUR_PI			= 12.5663706144f;
 const float TWO_PI			= 6.28318530718f;
@@ -101,21 +103,21 @@ struct SAreaLight
 
 struct SPointLight
 {
-    vec4    ColorIntensity;
-    vec3    Position;
+	vec4	ColorIntensity;
+	vec3	Position;
 	float	NearPlane;
 	float	FarPlane;
 	uint	TextureIndex;
 	vec2	padding0;
-    mat4    ProjView[6];
+	mat4	ProjView[6];
 };
 
 struct SLightsBuffer
 {
-    vec4        DirL_ColorIntensity;
-	vec3        DirL_Direction;
-    float		PointLightCount;
-    mat4        DirL_ProjView;
+	vec4	DirL_ColorIntensity;
+	vec3	DirL_Direction;
+	float	PointLightCount;
+	mat4	DirL_ProjView;
 };
 
 struct SPerFrameBuffer
@@ -130,6 +132,7 @@ struct SPerFrameBuffer
 	vec4 CameraRight;
 	vec4 CameraUp;
 	vec2 Jitter;
+	vec2 ViewPortSize;
 
 	uint FrameIndex;
 	uint RandomSeed;
@@ -198,7 +201,7 @@ struct SAtlasData
 	uint	AtlasIndex;
 };
 
-struct SUnwrapData
+struct SPaintData
 {
 	vec4 TargetPosition;
 	vec4 TargetDirectionXYZAngleW;
@@ -210,19 +213,19 @@ struct SUnwrapData
 
 struct SAccelerationStructureInstance
 {
-    mat3x4  Transform;
-    uint    HitMask_CustomProperties;
-    uint    SBTRecordOffset_Flags;
-    uint    AccelerationStructureHandleTop32;
-    uint    AccelerationStructureHandleBottom32;
+	mat3x4	Transform;
+	uint	HitMask_CustomProperties;
+	uint	SBTRecordOffset_Flags;
+	uint	AccelerationStructureHandleTop32;
+	uint	AccelerationStructureHandleBottom32;
 };
 
 struct SParticleIndexData
 {
-    uint    EmitterIndex;
-    uint    ASInstanceIndirectIndex;
-	uint    Padding0;
-	uint    Padding1;
+	uint EmitterIndex;
+	uint ASInstanceIndirectIndex;
+	uint Padding0;
+	uint Padding1;
 };
 
 #endif

@@ -46,7 +46,7 @@ public:
 	bool OnGameOver(const GameOverEvent& event);
 	bool OnWindowResized(const LambdaEngine::WindowResizedEvent& event);
 
-	void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, const uint8 teamIndex = UINT8_MAX);
+	void PromptMessage(const LambdaEngine::String& promtMessage, bool isSmallPrompt, uint8 teamIndex = UINT8_MAX);
 
 	void DisplayNamePlate(const LambdaEngine::String& name, bool isLookingAtTeamPlayer);
 
@@ -68,8 +68,8 @@ private:
 	Noesis::Ptr<Noesis::IView> m_View;
 
 	LambdaEngine::SpinLock m_DeferredEventsLock;
-	LambdaEngine::TArray<ProjectileHitEvent> m_DeferredDamageTakenHitEvents;
-	LambdaEngine::TArray<ProjectileHitEvent> m_DamageTakenEventsToProcess;
+	LambdaEngine::TArray<std::pair<ProjectileHitEvent, uint8>> m_DeferredDamageTakenHitEvents;
+	LambdaEngine::TArray<std::pair<ProjectileHitEvent, uint8>> m_DamageTakenEventsToProcess;
 
 	LambdaEngine::TArray<bool> m_DeferredEnemyHitEvents;
 	LambdaEngine::TArray<bool> m_EnemyHitEventsToProcess;

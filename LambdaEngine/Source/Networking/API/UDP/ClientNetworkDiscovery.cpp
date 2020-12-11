@@ -38,7 +38,7 @@ namespace LambdaEngine
 			m_NameOfGame = nameOfGame;
 			m_pHandler = pHandler;
 			m_SearchInterval = searchInterval;
-			if (StartThreads())
+			if (StartThreads("ClientNetworkDiscovery"))
 			{
 				LOG_WARNING("Connecting...");
 				return true;
@@ -177,7 +177,8 @@ namespace LambdaEngine
 		if (pPacket->GetType() == NetworkSegment::TYPE_NETWORK_DISCOVERY)
 		{
 			BinaryDecoder decoder(pPacket);
-			if (decoder.ReadString() == m_NameOfGame)
+			String str;
+			if(decoder.ReadString(str) && str == m_NameOfGame)
 			{
 				Timestamp ping = EngineLoop::GetTimeSinceStart() - m_TimeOfLastSearch;
 				std::scoped_lock<SpinLock> lock(m_LockReceivedPackets);
@@ -210,13 +211,20 @@ namespace LambdaEngine
 			m_BufferIndex = (m_BufferIndex + 1) % 2;
 		}
 
+		bool isLAN;
+		uint16 port;
+		uint64 serverUID;
+
 		for (Packet& packet : packets)
 		{
 			BinaryDecoder& decoder = packet.Decoder;
-			bool isLAN = decoder.ReadBool();
-			IPEndPoint endpoint(packet.Sender.GetAddress(), decoder.ReadUInt16());
-			uint64 serverUID = decoder.ReadUInt64();
-			m_pHandler->OnServerFound(decoder, endpoint, serverUID, packet.Ping, isLAN);
+
+			if (decoder.ReadBool(isLAN) && decoder.ReadUInt16(port) && decoder.ReadUInt64(serverUID))
+			{
+				IPEndPoint endpoint(packet.Sender.GetAddress(), port);
+				m_pHandler->OnServerFound(decoder, endpoint, serverUID, packet.Ping, isLAN);
+			}
+
 #ifdef LAMBDA_CONFIG_DEBUG
 			m_SegmentPool.FreeSegment(decoder.GetPacket(), "ClientNetworkDiscovery::HandleReceivedPacketsMainThread");
 #else

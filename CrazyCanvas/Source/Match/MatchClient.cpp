@@ -34,6 +34,8 @@
 
 #include "Teams/TeamHelper.h"
 
+#include "MeshPaint/MeshPaintHandler.h"
+
 using namespace LambdaEngine;
 
 MatchClient::MatchClient()
@@ -184,6 +186,12 @@ bool MatchClient::OnPacketCreateLevelObjectReceived(const PacketReceivedEvent<Pa
 				LOG_ERROR("[MatchClient]: Failed to create Player!");
 			}
 
+			for (Entity playerEntity : createdPlayerEntities)
+			{
+				MeshPaintHandler::ResetServer(playerEntity);
+			}
+			MeshPaintHandler::ResetClient();
+
 			break;
 		}
 		case ELevelObjectType::LEVEL_OBJECT_TYPE_FLAG:
@@ -270,7 +278,7 @@ bool MatchClient::OnPacketGameOverReceived(const PacketReceivedEvent<PacketGameO
 
 bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
-	EInputLayer currentInputLayer = Input::GetCurrentInputmode();
+	const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
 	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
 
 	if (event.pPlayer == pPlayerLocal)
@@ -279,23 +287,39 @@ bool MatchClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 		{
 			if (currentInputLayer == EInputLayer::GUI)
 			{
-				Input::PopInputMode();
-				Input::PushInputMode(EInputLayer::DEAD);
-				Input::PushInputMode(EInputLayer::GUI);
+				Input::PopInputLayer();
+				Input::PushInputLayer(EInputLayer::DEAD);
+				Input::PushInputLayer(EInputLayer::GUI);
+			}
+			else if(currentInputLayer == EInputLayer::DEBUG)
+			{
+				Input::PopInputLayer();
+				Input::PushInputLayer(EInputLayer::DEAD);
+				Input::PushInputLayer(EInputLayer::DEBUG);
 			}
 			else
-				Input::PushInputMode(EInputLayer::DEAD);
+			{
+				Input::PushInputLayer(EInputLayer::DEAD);
+			}
 		}
 		else
 		{
 			if (currentInputLayer == EInputLayer::GUI)
 			{
-				Input::PopInputMode();
-				Input::PushInputMode(EInputLayer::GAME);
-				Input::PushInputMode(EInputLayer::GUI);
+				Input::PopInputLayer();
+				Input::PushInputLayer(EInputLayer::GAME);
+				Input::PushInputLayer(EInputLayer::GUI);
+			}
+			else if(currentInputLayer == EInputLayer::DEBUG)
+			{
+				Input::PopInputLayer();
+				Input::PushInputLayer(EInputLayer::GAME);
+				Input::PushInputLayer(EInputLayer::DEBUG);
 			}
 			else
-				Input::PushInputMode(EInputLayer::GAME);
+			{
+				Input::PushInputLayer(EInputLayer::GAME);
+			}
 		}
 	}
 
@@ -321,7 +345,6 @@ bool MatchClient::OnWeaponFired(const WeaponFiredEvent& event)
 		LOG_ERROR("[MatchClient]: Failed to create projectile!");
 	}
 
-	LOG_INFO("CLIENT: Weapon fired");
 	return true;
 }
 
