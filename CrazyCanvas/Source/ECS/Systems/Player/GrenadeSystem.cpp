@@ -41,11 +41,14 @@ bool GrenadeSystem::Init()
 	if (!MultiplayerUtils::IsServer())
 	{
 		m_GrenadeMesh = GUID_NONE;
-		ResourceManager::LoadMeshFromFile("Grenade.glb", m_GrenadeMesh);
+		ResourceManager::LoadMeshAndMaterialFromFile("Grenade.glb", m_GrenadeMesh, m_GrenadeMaterial);
 		if (m_GrenadeMesh == GUID_NONE)
 		{
 			return false;
 		}
+
+		if (m_GrenadeMaterial == GUID_NONE)
+			m_GrenadeMaterial = GUID_MATERIAL_DEFAULT;
 
 		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &GrenadeSystem::OnKeyPress);
 	}
@@ -203,7 +206,7 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 		/* Entity */	 		grenade,
 		/* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent(grenade, PositionComponent{ .Position = position }),
-		/* Scale */				pECS->AddComponent(grenade, ScaleComponent({ .Scale = glm::vec3(0.2f) })),
+		/* Scale */				pECS->AddComponent(grenade, ScaleComponent({ .Scale = glm::vec3(1.5f) })),
 		/* Rotation */			pECS->AddComponent(grenade, RotationComponent({ .Quaternion = glm::identity<glm::quat>() })),
 		{
 			{
@@ -228,7 +231,7 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshComponent>(grenade, MeshComponent({ .MeshGUID = m_GrenadeMesh, .MaterialGUID = GUID_MATERIAL_DEFAULT }));
+		pECS->AddComponent<MeshComponent>(grenade, MeshComponent({ .MeshGUID = m_GrenadeMesh, .MaterialGUID = m_GrenadeMaterial }));
 		const Player* player = PlayerManagerClient::GetPlayerLocal();
 		if(player != nullptr && PlayerManagerClient::GetPlayerLocal()->GetTeam() != playerTeamComp.TeamIndex)
 			pECS->AddComponent<ProjectedGUIComponent>(grenade, ProjectedGUIComponent({ .GUIType = IndicatorTypeGUI::GRENADE_INDICATOR }));

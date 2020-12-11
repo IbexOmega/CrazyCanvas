@@ -62,6 +62,7 @@ private:
 	LambdaEngine::IDVector m_ForeignPlayers;
 
 	GUID_Lambda m_GrenadeMesh;
+	GUID_Lambda m_GrenadeMaterial;
 
 	glm::vec3 m_FibonacciSphere[NUM_ENVIRONMENT_SPHERE_POINTS];
 };
