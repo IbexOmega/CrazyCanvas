@@ -11,6 +11,7 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Input/API/InputActionSystem.h"
 #include "Lobby/PlayerManagerClient.h"
+#include "Math/Random.h"
 #include "Physics/CollisionGroups.h"
 #include "Resources/ResourceManager.h"
 #include "World/LevelObjectCreator.h"
@@ -20,6 +21,8 @@
 #include "Physics/PhysicsEvents.h"
 #include "Rendering/EntityMaskManager.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Teams/TeamHelper.h"
 #include "ECS/Components/GUI/ProjectedGUIComponent.h"
 
@@ -209,6 +212,10 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 
 	const float32 grenadeMass = GRENADE_MASS;
 
+	// Randomize a spin
+	constexpr const float32 angularSpeed = 3.0f;
+	const glm::vec3 angularVelocity = glm::normalize(glm::vec3(Random::Float32(), Random::Float32(), Random::Float32())) * angularSpeed;
+
 	const Entity grenade = pECS->CreateEntity();
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
@@ -231,6 +238,7 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 			},
 		},
 		/* Velocity */			pECS->AddComponent(grenade, VelocityComponent({ .Velocity = velocity })),
+		/* Angular Velocity */	angularVelocity,
 		/* Mass */				&grenadeMass
 	};
 
@@ -283,14 +291,15 @@ void GrenadeSystem::Explode(LambdaEngine::Entity grenade)
 			const glm::vec3& grenadePos = pECS->GetConstComponent<PositionComponent>(grenade).Position;
 			const uint8 grenadeTeam = pECS->GetConstComponent<TeamComponent>(grenade).TeamIndex;
 
+			Entity localPlayerEntity;
+			TArray<Entity> opponents;
+			FindPlayersWithinBlast(localPlayerEntity, opponents, grenadePos, grenadeTeam);
+
 			if (MultiplayerUtils::IsServer() || MultiplayerUtils::IsSingleplayer())
 			{
-				TArray<Entity> players;
-				FindPlayersWithinBlast(players, grenadePos, grenadeTeam);
-
-				if (!players.IsEmpty())
+				if (!opponents.IsEmpty())
 				{
-					RaycastToPlayers(players, grenade, grenadePos, grenadeTeam);
+					RaycastToPlayers(opponents, grenade, grenadePos, grenadeTeam);
 				}
 
 				RaycastToEnvironment(grenade, grenadePos, grenadeTeam);
@@ -312,7 +321,7 @@ void GrenadeSystem::Explode(LambdaEngine::Entity grenade)
 						.EmitterShape = EEmitterShape::SPHERE,
 						.SphereRadius = 0.05f,
 						.VelocityRandomness = 0.5f,
-						.Velocity = 10.0f,
+						.Velocity = 8.0f,
 						.Acceleration = 0.0f,
 						.Gravity = -9.0f,
 						.LifeTime = 1.2f,
@@ -326,6 +335,22 @@ void GrenadeSystem::Explode(LambdaEngine::Entity grenade)
 					}
 				);
 				pECS->AddComponent<DestructionComponent>(particleEntity, DestructionComponent{ .TimeLeft = 5.0f });
+
+				if (localPlayerEntity != UINT32_MAX)
+				{
+					const ChildComponent& childComponent = pECS->GetConstComponent<ChildComponent>(localPlayerEntity);
+					Entity cameraEntity = childComponent.GetEntityWithTag("camera");
+
+					if (cameraEntity != UINT32_MAX)
+					{
+						CameraComponent& cameraComponent = pECS->GetComponent<CameraComponent>(cameraEntity);
+
+						const PositionComponent& playerPositionComponent = pECS->GetComponent<PositionComponent>(localPlayerEntity);
+
+						cameraComponent.ScreenShakeTime			= 1.5f;
+						cameraComponent.ScreenShakeAmplitude	= glm::lerp(0.01f, 0.1f, 1.0f - glm::distance(playerPositionComponent.Position, grenadePos) / GRENADE_PLAYER_BLAST_RADIUS);
+					}
+				}
 			}
 
 			pECS->RemoveEntity(grenade);
@@ -335,13 +360,24 @@ void GrenadeSystem::Explode(LambdaEngine::Entity grenade)
 	ECSCore::GetInstance()->ScheduleJobASAP(explodeJob);
 }
 
-void GrenadeSystem::FindPlayersWithinBlast(LambdaEngine::TArray<LambdaEngine::Entity>& players, const glm::vec3& grenadePosition, uint8 grenadeTeam)
+void GrenadeSystem::FindPlayersWithinBlast(LambdaEngine::Entity& localPlayer, LambdaEngine::TArray<LambdaEngine::Entity>& opponents, const glm::vec3& grenadePosition, uint8 grenadeTeam)
 {
 	using namespace LambdaEngine;
 
-	players.Reserve(m_ForeignPlayers.Size());
+	opponents.Reserve(m_ForeignPlayers.Size());
 
 	ComponentArray<TeamComponent>* pTeamComponents = ECSCore::GetInstance()->GetComponentArray<TeamComponent>();
+
+	Entity localPlayerEntity = UINT32_MAX;
+
+	if (!MultiplayerUtils::IsServer())
+	{
+		const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
+		if (pLocalPlayer != nullptr)
+		{
+			localPlayerEntity = pLocalPlayer->GetEntity();
+		}
+	}
 
 	// Use a PhysX overlap query to see which players are within the blast radius
 	const OverlapQueryInfo overlapQueryInfo =
@@ -375,11 +411,21 @@ void GrenadeSystem::FindPlayersWithinBlast(LambdaEngine::TArray<LambdaEngine::En
 			const ActorUserData* pActorUserData = reinterpret_cast<const ActorUserData*>(overlap.actor->userData);
 			const Entity hitEntity = pActorUserData->Entity;
 
-			TeamComponent playerTeamComp;
-			PositionComponent playerPosComp;
-			if (pTeamComponents->GetConstIf(hitEntity, playerTeamComp) && playerTeamComp.TeamIndex != grenadeTeam)
+			if (hitEntity == UINT32_MAX)
+				continue;
+
+			if (hitEntity == localPlayerEntity)
 			{
-				players.PushBack(hitEntity);
+				localPlayer = localPlayerEntity;
+			}
+			else
+			{
+				TeamComponent playerTeamComp;
+				PositionComponent playerPosComp;
+				if (pTeamComponents->GetConstIf(hitEntity, playerTeamComp) && playerTeamComp.TeamIndex != grenadeTeam)
+				{
+					opponents.PushBack(hitEntity);
+				}
 			}
 		}
 	}

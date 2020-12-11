@@ -130,6 +130,7 @@ namespace LambdaEngine
 	struct DynamicCollisionCreateInfo : CollisionCreateInfo
 	{
 		const VelocityComponent& Velocity;	// Initial velocity
+		glm::vec3 AngularVelocity = glm::vec3(0.0f);
 		const float32* pMass = nullptr;		// Mass of the actor in kilograms. If nullptr, a default mass of 1.0 is used.
 	};
 
