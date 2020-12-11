@@ -132,7 +132,7 @@ namespace LambdaEngine
 							glm::cos(cameraComp.ScreenShakeAngle) * cameraComp.ScreenShakeTime,
 							glm::sin(cameraComp.ScreenShakeAngle) * cameraComp.ScreenShakeTime,
 							0.0f) * cameraComp.ScreenShakeAmplitude);
-				cameraComp.ScreenShakeTime -= deltaTime.AsSeconds();
+				cameraComp.ScreenShakeTime -= float32(deltaTime.AsSeconds());
 			}
 		}
 	}
