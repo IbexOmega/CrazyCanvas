@@ -2,6 +2,7 @@
 
 #include "Application/API/Events/EventQueue.h"
 #include "ECS/Components/Player/GrenadeComponent.h"
+#include "ECS/Components/Misc/DestructionComponent.h"
 #include "ECS/ECSCore.h"
 #include "Game/ECS/Components/Player/PlayerComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
@@ -18,6 +19,8 @@
 #include "Lobby/PlayerManagerBase.h"
 #include "Physics/PhysicsEvents.h"
 #include "Rendering/EntityMaskManager.h"
+#include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+#include "Teams/TeamHelper.h"
 
 GrenadeSystem::~GrenadeSystem()
 {
@@ -78,6 +81,8 @@ bool GrenadeSystem::Init()
 	}
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGrenadeThrown>>(this, &GrenadeSystem::OnPacketGrenadeThrownReceived);
+
+	GenerateFibonacciSphere(m_FibonacciSphere, NUM_ENVIRONMENT_SPHERE_POINTS);
 
 	return true;
 }
@@ -235,11 +240,11 @@ void GrenadeSystem::Explode(LambdaEngine::Entity grenade)
 		{
 			ECSCore* pECS = ECSCore::GetInstance();
 
-			if (MultiplayerUtils::IsServer())
-			{
-				const glm::vec3& grenadePos = pECS->GetConstComponent<PositionComponent>(grenade).Position;
-				const uint8 grenadeTeam = pECS->GetConstComponent<TeamComponent>(grenade).TeamIndex;
+			const glm::vec3& grenadePos = pECS->GetConstComponent<PositionComponent>(grenade).Position;
+			const uint8 grenadeTeam = pECS->GetConstComponent<TeamComponent>(grenade).TeamIndex;
 
+			if (MultiplayerUtils::IsServer() || MultiplayerUtils::IsSingleplayer())
+			{
 				TArray<Entity> players;
 				FindPlayersWithinBlast(players, grenadePos, grenadeTeam);
 
@@ -247,6 +252,40 @@ void GrenadeSystem::Explode(LambdaEngine::Entity grenade)
 				{
 					RaycastToPlayers(players, grenade, grenadePos, grenadeTeam);
 				}
+
+				RaycastToEnvironment(grenade, grenadePos, grenadeTeam);
+			}
+
+			if (!MultiplayerUtils::IsServer())
+			{
+				Entity particleEntity = pECS->CreateEntity();
+
+				pECS->AddComponent<PositionComponent>(particleEntity, PositionComponent{ .Position = grenadePos });
+				pECS->AddComponent<RotationComponent>(particleEntity, { true, GetRotationQuaternion(glm::normalize(glm::vec3(0, -1, 0))) });
+				pECS->AddComponent<ParticleEmitterComponent>(particleEntity,
+					ParticleEmitterComponent{
+						.Active = true,
+						.OneTime = true,
+						.Explosive = 1.0f,
+						.SpawnDelay = 0.0f,
+						.ParticleCount = 2048,
+						.EmitterShape = EEmitterShape::SPHERE,
+						.SphereRadius = 0.05f,
+						.VelocityRandomness = 0.5f,
+						.Velocity = 10.0f,
+						.Acceleration = 0.0f,
+						.Gravity = -9.0f,
+						.LifeTime = 1.2f,
+						.RadiusRandomness = 0.5f,
+						.BeginRadius = 0.2f,
+						.FrictionFactor = 0.0f,
+						.RandomStartIndex = true,
+						.AnimationCount = 1,
+						.FirstAnimationIndex = 6,
+						.Color = glm::vec4(TeamHelper::GetTeamColor(grenadeTeam), 1.0f)
+					}
+				);
+				pECS->AddComponent<DestructionComponent>(particleEntity, DestructionComponent{ .TimeLeft = 5.0f });
 			}
 
 			pECS->RemoveEntity(grenade);
@@ -270,7 +309,7 @@ void GrenadeSystem::FindPlayersWithinBlast(LambdaEngine::TArray<LambdaEngine::En
 		.GeometryType = EGeometryType::SPHERE,
 		.GeometryParams =
 		{
-			.Radius = GRENADE_BLAST_RADIUS
+			.Radius = GRENADE_PLAYER_BLAST_RADIUS
 		},
 		.Position = grenadePosition,
 		.Rotation = glm::identity<glm::quat>()
@@ -294,13 +333,13 @@ void GrenadeSystem::FindPlayersWithinBlast(LambdaEngine::TArray<LambdaEngine::En
 		{
 			const PxOverlapHit& overlap = pOverlaps[overlapNr];
 			const ActorUserData* pActorUserData = reinterpret_cast<const ActorUserData*>(overlap.actor->userData);
-			const Entity hitPlayer = pActorUserData->Entity;
+			const Entity hitEntity = pActorUserData->Entity;
 
 			TeamComponent playerTeamComp;
 			PositionComponent playerPosComp;
-			if (pTeamComponents->GetConstIf(hitPlayer, playerTeamComp) && playerTeamComp.TeamIndex != grenadeTeam)
+			if (pTeamComponents->GetConstIf(hitEntity, playerTeamComp) && playerTeamComp.TeamIndex != grenadeTeam)
 			{
-				players.PushBack(hitPlayer);
+				players.PushBack(hitEntity);
 			}
 		}
 	}
@@ -332,7 +371,7 @@ void GrenadeSystem::RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::En
 	RaycastInfo raycastInfo =
 	{
 		.Origin = grenadePosition,
-		.MaxDistance = GRENADE_BLAST_RADIUS,
+		.MaxDistance = GRENADE_PLAYER_BLAST_RADIUS,
 		.pFilterData = &queryFilterData
 	};
 
@@ -391,6 +430,62 @@ void GrenadeSystem::RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::En
 	}
 }
 
+void GrenadeSystem::RaycastToEnvironment(LambdaEngine::Entity grenadeEntity, const glm::vec3& grenadePosition, uint8 grenadeTeam)
+{
+	using namespace LambdaEngine;
+
+	const QueryFilterData queryFilterData =
+	{
+		.IncludedGroup = FCollisionGroup::COLLISION_GROUP_STATIC,
+	};
+
+	RaycastInfo raycastInfo =
+	{
+		.Origin = grenadePosition,
+		.MaxDistance = GRENADE_ENVIRONMENT_BLAST_RADIUS,
+		.pFilterData = &queryFilterData
+	};
+
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
+
+	for (uint32 i = 0; i < NUM_ENVIRONMENT_SPHERE_POINTS; i++)
+	{
+		raycastInfo.Direction = m_FibonacciSphere[i];
+
+		PxRaycastHit hit;
+		if (pPhysicsSystem->Raycast(raycastInfo, hit))
+		{
+			if (hit.actor->userData != nullptr)
+			{
+				const ActorUserData* pUserData = reinterpret_cast<const ActorUserData*>(hit.actor->userData);
+
+				const LambdaEngine::EntityCollisionInfo collisionInfo0 =
+				{
+					.Entity		= grenadeEntity,
+					.Position	= glm::vec3(hit.position.x, hit.position.y, hit.position.z),
+					.Direction	= raycastInfo.Direction,
+					.Normal		= glm::vec3(hit.normal.x, hit.normal.y, hit.normal.z)
+				};
+
+				const LambdaEngine::EntityCollisionInfo collisionInfo1 =
+				{
+					.Entity		= pUserData->Entity,
+					.Position	= glm::vec3(hit.position.x, hit.position.y, hit.position.z),
+					.Direction	= raycastInfo.Direction,
+					.Normal		= glm::vec3(hit.normal.x, hit.normal.y, hit.normal.z)
+				};
+
+				const EAmmoType ammoType	= EAmmoType::AMMO_TYPE_PAINT;
+				const ETeam team			= (ETeam)grenadeTeam;
+				const uint32 angle			= 0;
+
+				ProjectileHitEvent hitEvent(collisionInfo0, collisionInfo1, ammoType, team, angle);
+				EventQueue::SendEventImmediate(hitEvent);
+			}
+		}
+	}
+}
+
 bool GrenadeSystem::OnPacketGrenadeThrownReceived(const PacketReceivedEvent<PacketGrenadeThrown>& grenadeThrownEvent)
 {
 	using namespace LambdaEngine;
@@ -398,7 +493,7 @@ bool GrenadeSystem::OnPacketGrenadeThrownReceived(const PacketReceivedEvent<Pack
 	const Player* pThrowingPlayer = PlayerManagerBase::GetPlayer(grenadeThrownEvent.Packet.PlayerUID);
 	Entity throwingPlayer = pThrowingPlayer->GetEntity();
 
-	if (MultiplayerUtils::IsServer())
+	if (MultiplayerUtils::IsServer() || MultiplayerUtils::IsSingleplayer())
 	{
 		//Check if and spawn the grenade on the server
 		if (TryThrowGrenade(throwingPlayer, grenadeThrownEvent.Packet.Position, grenadeThrownEvent.Packet.Velocity))
