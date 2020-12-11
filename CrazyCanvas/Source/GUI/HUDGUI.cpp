@@ -655,6 +655,55 @@ void HUDGUI::CreateProjectedPingGUIElement(LambdaEngine::Entity entity)
 	}
 }
 
+void HUDGUI::CreateProjectedGrenadeGUIElement(LambdaEngine::Entity entity)
+{
+	Noesis::Ptr<Noesis::Grid> gridIndicator = *new Noesis::Grid();
+
+	Noesis::Ptr<Noesis::Image> flagImage = *new Noesis::Image();
+	Noesis::Ptr<Noesis::Ellipse> ellipseIndicator = *new Noesis::Ellipse();
+
+	Noesis::Ptr<Noesis::TranslateTransform> translation = *new TranslateTransform();
+
+	BitmapImage* pBitmapFlag = new BitmapImage(Uri("Grenade.png"));
+
+	flagImage->SetSource(pBitmapFlag);
+
+	translation->SetY(100.0f);
+	translation->SetX(100.0f);
+
+	gridIndicator->SetRenderTransform(translation);
+	gridIndicator->SetRenderTransformOrigin(Noesis::Point(0.5f, 0.5f));
+
+	Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
+	Ptr<Noesis::SolidColorBrush> strokeBrush = *new Noesis::SolidColorBrush();
+
+	strokeBrush->SetColor(Noesis::Color::Black());
+
+	flagImage->SetHeight(50);
+	flagImage->SetWidth(50);
+
+	gridIndicator->SetHeight(60);
+	gridIndicator->SetWidth(60);
+
+	ellipseIndicator->SetHeight(60);
+	ellipseIndicator->SetWidth(60);
+
+	ellipseIndicator->SetStroke(strokeBrush);
+	ellipseIndicator->SetStrokeThickness(2);
+
+	ellipseIndicator->SetFill(brush);
+
+	gridIndicator->GetChildren()->Add(ellipseIndicator);
+	gridIndicator->GetChildren()->Add(flagImage);
+
+	m_ProjectedElements[entity] = gridIndicator;
+
+	if (m_pHUDGrid->GetChildren()->Add(gridIndicator) == -1)
+	{
+		LOG_ERROR("Could not add Proj Element");
+	}
+}
+
 void HUDGUI::RemoveProjectedGUIElement(LambdaEngine::Entity entity)
 {
 	auto indicator = m_ProjectedElements.find(entity);

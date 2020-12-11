@@ -21,6 +21,7 @@
 #include "Rendering/EntityMaskManager.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Teams/TeamHelper.h"
+#include "ECS/Components/GUI/ProjectedGUIComponent.h"
 
 GrenadeSystem::~GrenadeSystem()
 {
@@ -191,7 +192,7 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 		/* Entity */	 		grenade,
 		/* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent(grenade, PositionComponent{ .Position = position }),
-		/* Scale */				pECS->AddComponent(grenade, ScaleComponent({ .Scale = glm::vec3(0.1f) })),
+		/* Scale */				pECS->AddComponent(grenade, ScaleComponent({ .Scale = glm::vec3(0.2f) })),
 		/* Rotation */			pECS->AddComponent(grenade, RotationComponent({ .Quaternion = glm::identity<glm::quat>() })),
 		{
 			{
@@ -217,6 +218,9 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 	if (!MultiplayerUtils::IsServer())
 	{
 		pECS->AddComponent<MeshComponent>(grenade, MeshComponent({ .MeshGUID = m_GrenadeMesh, .MaterialGUID = GUID_MATERIAL_DEFAULT }));
+		const Player* player = PlayerManagerClient::GetPlayerLocal();
+		if(player != nullptr && PlayerManagerClient::GetPlayerLocal()->GetTeam() != playerTeamComp.TeamIndex)
+			pECS->AddComponent<ProjectedGUIComponent>(grenade, ProjectedGUIComponent({ .GUIType = IndicatorTypeGUI::GRENADE_INDICATOR }));
 	}
 
 	EntityMaskManager::AddExtensionToEntity(grenade, ProjectileComponent::Type(), nullptr);
