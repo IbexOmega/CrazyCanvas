@@ -251,6 +251,17 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 	EntityMaskManager::AddExtensionToEntity(grenade, ProjectileComponent::Type(), nullptr);
 	EntityMaskManager::AddExtensionToEntity(grenade, GrenadeComponent::Type(), nullptr);
 
+	ComponentArray<GrenadeWielderComponent>* pGrenadeWielderComponents = pECS->GetComponentArray<GrenadeWielderComponent>();
+	if (pGrenadeWielderComponents)
+	{
+		if (pGrenadeWielderComponents->HasComponent(throwingPlayer))
+		{
+			GrenadeWielderComponent& grenadeWielderComponent = pGrenadeWielderComponents->GetData(throwingPlayer);
+			grenadeWielderComponent.ThrowCooldown = GRENADE_COOLDOWN;
+		}
+	}
+
+
 	return true;
 }
 
