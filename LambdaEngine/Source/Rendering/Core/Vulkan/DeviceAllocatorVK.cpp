@@ -104,6 +104,8 @@ namespace LambdaEngine
 				m_pHead->TotalSizeInBytes = sizeInBytes;
 				m_pHead->SizeInBytes = sizeInBytes;
 
+				m_SizeInBytes = sizeInBytes;
+
 #ifdef LAMBDA_DEBUG
 				AllBlocks.EmplaceBack(m_pHead);
 #endif
@@ -325,6 +327,16 @@ namespace LambdaEngine
 			m_pDevice->SetVulkanObjectName(debugName, reinterpret_cast<uint64>(m_DeviceMemory), VK_OBJECT_TYPE_DEVICE_MEMORY);
 		}
 
+		FORCEINLINE bool IsEmpty() const
+		{
+			if (m_pHead)
+			{
+				return m_pHead->IsFree && (m_pHead->TotalSizeInBytes == m_SizeInBytes);
+			}
+
+			return true;
+		}
+
 		FORCEINLINE uint32 GetMemoryIndex() const
 		{
 			return m_MemoryIndex;
@@ -432,6 +444,7 @@ namespace LambdaEngine
 		DeviceAllocatorVK* const m_pOwningAllocator;
 		const uint32 m_MemoryIndex;
 		const uint32 m_ID;
+		uint64 m_SizeInBytes = 0;
 
 		DeviceMemoryBlockVK* m_pHead = nullptr;
 		byte* m_pHostMemory = nullptr;
@@ -464,6 +477,8 @@ namespace LambdaEngine
 		{
 			SAFEDELETE(pMemoryPage);
 		}
+
+		m_Pages.Clear();
 	}
 
 	bool DeviceAllocatorVK::Init(const String& debugName, VkDeviceSize pageSize)
@@ -541,7 +556,24 @@ namespace LambdaEngine
 		DeviceMemoryPageVK* pPage = pBlock->pPage;
 
 		VALIDATE(pPage != nullptr);
-		return pPage->Free(pAllocation);
+		
+		// Remove an empty page
+		const bool result = pPage->Free(pAllocation);
+		if (pPage->IsEmpty())
+		{
+			for (auto it = m_Pages.Begin(); it != m_Pages.End(); it++)
+			{
+				if (*it == pPage)
+				{
+					m_Pages.Erase(it);
+					break;
+				}
+			}
+
+			SAFEDELETE(pPage);
+		}
+
+		return result;
 	}
 
 	void* DeviceAllocatorVK::Map(const AllocationVK* pAllocation)
