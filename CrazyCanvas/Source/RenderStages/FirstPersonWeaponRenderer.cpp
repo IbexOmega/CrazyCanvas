@@ -232,10 +232,10 @@ namespace LambdaEngine
 				glm::vec3 velocity = (s_PreviousPosition - positionComponent.Position) / dt;
 
 				glm::vec3 eulerAngles = glm::eulerAngles(rotationComponent.Quaternion);
-				glm::vec3 angularVelocity = eulerAngles - s_PreviousRotation;
+				glm::vec3 angularVelocity = (eulerAngles - s_PreviousRotation) / dt;
 
-				s_WaveAddX += glm::clamp((velocity.x + (angularVelocity.z * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
-				s_WaveAddZ += glm::clamp((velocity.z + (angularVelocity.x * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+				s_WaveAddX += 0.f;// glm::clamp((velocity.x * 0.6f + (angularVelocity.z * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+				s_WaveAddZ += 0.f;// glm::clamp((velocity.z * 0.6f + (angularVelocity.x * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
 
 				s_PreviousPosition = positionComponent.Position;
 				s_PreviousRotation = eulerAngles;
