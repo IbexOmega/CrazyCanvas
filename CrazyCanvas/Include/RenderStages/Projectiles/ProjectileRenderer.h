@@ -53,7 +53,6 @@ public:
 	bool Init() override final;
 	bool RenderGraphInit(const LambdaEngine::CustomRendererRenderGraphInitDesc* pPreInitDesc) override final;
 	bool RenderGraphPostInit() override final;
-	void Finalize();
 
 	void Update(LambdaEngine::Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex) override final;
 	void UpdateDrawArgsResource(const LambdaEngine::String& resourceName, const LambdaEngine::DrawArg* pDrawArgs, uint32 count) override final;
