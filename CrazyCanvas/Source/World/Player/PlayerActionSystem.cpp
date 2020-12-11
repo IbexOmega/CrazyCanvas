@@ -103,8 +103,6 @@ bool PlayerActionSystem::OnKeyPressed(const KeyPressedEvent& event)
 
 void PlayerActionSystem::ComputeVelocityInternal(const glm::quat& rotation, const glm::i8vec3& deltaAction, float32 dt, glm::vec3& velocity, bool isHoldingFlag, float acceleration, float maxVelocity)
 {
-	UNREFERENCED_VARIABLE(walking);
-
 	bool verticalMovement = deltaAction.y != 0;
 
 	if (isHoldingFlag)
