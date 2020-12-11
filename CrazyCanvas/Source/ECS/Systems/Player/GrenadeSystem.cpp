@@ -125,22 +125,33 @@ bool GrenadeSystem::OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEven
 
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		Entity throwingPlayer = pLocalPlayer->GetEntity();
+		const Entity throwingPlayer = pLocalPlayer->GetEntity();
 
 		PositionComponent playerPosComp;
 		RotationComponent playerRotComp;
 		if (pECS->GetConstComponentIf(throwingPlayer, playerPosComp) &&
 			pECS->GetConstComponentIf(throwingPlayer, playerRotComp))
 		{
-			const glm::vec3 position = playerPosComp.Position;
-			const glm::vec3 velocity = GetForward(playerRotComp.Quaternion) * GRENADE_INITIAL_SPEED;
+			const glm::vec3 playerPosition = playerPosComp.Position;
+			const glm::vec3 playerRight = GetRight(playerRotComp.Quaternion);
+			const glm::vec3 playerForward = GetForward(playerRotComp.Quaternion);
+			const glm::vec3 playerUp = GetUp(playerRotComp.Quaternion);
 
-			if (TryThrowGrenade(throwingPlayer, position, velocity))
+			const glm::vec3 grenadeVelocity = playerForward * GRENADE_INITIAL_SPEED;
+
+			// The offset from the player's feet to where the grenade is spawned
+			const glm::vec3 grenadePosOffset(0.17f, 1.35f, 0.6f);
+			const glm::vec3 grenadeStartPos = playerPosition +
+				grenadePosOffset.x * playerRight +
+				grenadePosOffset.y * g_DefaultUp +
+				grenadePosOffset.z * playerForward;
+
+			if (TryThrowGrenade(throwingPlayer, grenadeStartPos, grenadeVelocity))
 			{
-				PacketGrenadeThrown packetGrenadeThrown =
+				const PacketGrenadeThrown packetGrenadeThrown =
 				{
-					.Position = position,
-					.Velocity = velocity,
+					.Position = grenadeStartPos,
+					.Velocity = grenadeVelocity,
 					.PlayerUID = pLocalPlayer->GetUID()
 				};
 
