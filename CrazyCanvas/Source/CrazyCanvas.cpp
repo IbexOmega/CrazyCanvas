@@ -55,6 +55,7 @@
 #include "GUI/HUDGUI.h"
 #include "GUI/MainMenuGUI.h"
 #include "GUI/Core/GUIApplication.h"
+#include "GUI/SettingsGUI.h"
 
 #include "Debug/Profiler.h"
 
@@ -179,7 +180,7 @@ CrazyCanvas::CrazyCanvas(const argh::parser& flagParser)
 	if (MultiplayerUtils::IsServer())
 	{
 		PlayerManagerServer::Init();
-	}	
+	}
 	else
 	{
 		ServerManager::Init();
@@ -246,6 +247,7 @@ bool CrazyCanvas::RegisterGUIComponents()
 	Noesis::RegisterComponent<PromptGUI>();
 	Noesis::RegisterComponent<ScoreBoardGUI>();
 	Noesis::RegisterComponent<MainMenuGUI>();
+	Noesis::RegisterComponent<SettingsGUI>();
 
 	return true;
 }

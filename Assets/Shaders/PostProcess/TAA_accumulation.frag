@@ -267,10 +267,9 @@ void main()
 		float lum0 = CalculateLuminance(currentSample.rgb);
 		float lum1 = CalculateLuminance(historySample.rgb);
 	#endif
-
-		float unbiasedDiff		= abs(lum0 - lum1) / max(lum0, max(lum1, 0.1f));
-		float unbiasedWeight	= 1.0f - unbiasedDiff;
-		float unbiasedWeightSqr = unbiasedWeight * unbiasedWeight;
+		const float unbiasedDiff		= abs(lum0 - lum1) / max(lum0, max(lum1, 0.1f));
+		const float unbiasedWeight		= 1.0f - unbiasedDiff;
+		const float unbiasedWeightSqr 	= unbiasedWeight * unbiasedWeight;
 		weight				= mix(minFactor, maxFactor, unbiasedWeightSqr);
 		historySample.rgb	= clippedHistorySample;
 	}
@@ -292,7 +291,7 @@ void main()
 	currentSample = Resolve(mix(currentSample, historySample, weight));
 
 	// Maniplulate history
-#if 1
+#if 0
 	currentSample.a = currentSample.a * TAA_HISTORY_DECAY;
 #else
 	currentSample.a = weight;

@@ -1577,23 +1577,28 @@ bool RenderSystem::InitIntegrationLUT()
 		if (m_RayTracingEnabled)
 		{
 			RayTracedComponent rayTracedComponent = {};
-			ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent);
 
-			uint32 customIndex = materialIndex & 0xFF;
-			FAccelerationStructureFlags asFlags	= RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
-
-			ASInstanceDesc asInstanceDesc =
+			if (ECSCore::GetInstance()->GetComponentArray<RayTracedComponent>()->GetConstIf(entity, rayTracedComponent))
 			{
-				.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
-				.Transform		= transform,
-				.CustomIndex	= customIndex,
-				.HitMask		= rayTracedComponent.HitMask,
-				.Flags			= asFlags
-			};
+				uint32 customIndex = materialIndex & 0xFF;
+				FAccelerationStructureFlags asFlags = RAY_TRACING_INSTANCE_FLAG_FORCE_OPAQUE | RAY_TRACING_INSTANCE_FLAG_FRONT_CCW;
 
-			uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
+				ASInstanceDesc asInstanceDesc =
+				{
+					.BlasIndex		= meshAndInstancesIt->second.BLASIndex,
+					.Transform		= transform,
+					.CustomIndex	= customIndex,
+					.HitMask		= rayTracedComponent.HitMask,
+					.Flags			= asFlags
+				};
 
-			meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
+				uint32 asInstanceIndex = m_pASBuilder->AddInstance(asInstanceDesc);
+				meshAndInstancesIt->second.ASInstanceIndices.PushBack(asInstanceIndex);
+			}
+			else
+			{
+				meshAndInstancesIt->second.ASInstanceIndices.PushBack(UINT32_MAX);
+			}
 		}
 
 		Instance instance = {};
@@ -1664,50 +1669,54 @@ bool RenderSystem::InitIntegrationLUT()
 		{
 			//Extract Paint Texture Data (stored in CustomIndex) before removing the ASInstance
 			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceIndex];
-			const uint32 textureIndex = m_pASBuilder->GetInstance(asInstanceIndex).CustomIndex & 0xFF;
 
-			// Remove ASInstance
-			m_pASBuilder->RemoveInstance(asInstanceIndex);
-
-			//Swap Removed with Back
-			meshAndInstancesIt->second.ASInstanceIndices[instanceIndex] = meshAndInstancesIt->second.ASInstanceIndices.GetBack();
-			meshAndInstancesIt->second.ASInstanceIndices.PopBack();
-
-			// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
-			if (auto meshPaintInstancesIt = m_PaintMaskASInstanceIndices.find(textureIndex); meshPaintInstancesIt != m_PaintMaskASInstanceIndices.end())
+			if (asInstanceIndex != UINT32_MAX)
 			{
-				if (auto removedMeshPaintInstanceIt = std::find(meshPaintInstancesIt->second.Begin(), meshPaintInstancesIt->second.End(), asInstanceIndex);
-					removedMeshPaintInstanceIt != meshPaintInstancesIt->second.End())
+				const uint32 textureIndex = m_pASBuilder->GetInstance(asInstanceIndex).CustomIndex & 0xFF;
+
+				// Remove ASInstance
+				m_pASBuilder->RemoveInstance(asInstanceIndex);
+
+				//Swap Removed with Back
+				meshAndInstancesIt->second.ASInstanceIndices[instanceIndex] = meshAndInstancesIt->second.ASInstanceIndices.GetBack();
+				meshAndInstancesIt->second.ASInstanceIndices.PopBack();
+
+				// Remove and reorder the paint mask textures (if needed) and set new indicies for ASInstances
+				if (auto meshPaintInstancesIt = m_PaintMaskASInstanceIndices.find(textureIndex); meshPaintInstancesIt != m_PaintMaskASInstanceIndices.end())
 				{
-					uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
-					m_PaintMaskTextures[textureIndex] = m_PaintMaskTextures.GetBack();
-					m_PaintMaskTextures.PopBack();
-					m_PaintMaskTextureViews[textureIndex] = m_PaintMaskTextureViews.GetBack();
-					m_PaintMaskTextureViews.PopBack();
-
-					meshPaintInstancesIt->second.Erase(removedMeshPaintInstanceIt);
-
-					TArray<uint32>& asInstancesToBeUpdated = m_PaintMaskASInstanceIndices[changedIndex];
-					for (uint32 asInstanceIndexToBeUpdated : asInstancesToBeUpdated)
+					if (auto removedMeshPaintInstanceIt = std::find(meshPaintInstancesIt->second.Begin(), meshPaintInstancesIt->second.End(), asInstanceIndex);
+						removedMeshPaintInstanceIt != meshPaintInstancesIt->second.End())
 					{
-						m_pASBuilder->UpdateInstance(
-							asInstanceIndexToBeUpdated,
-							[textureIndex](AccelerationStructureInstance& asInstance)
-							{
-								asInstance.CustomIndex &= 0xFFFF00;
-								asInstance.CustomIndex |= textureIndex;
-							});
+						uint32 changedIndex = m_PaintMaskTextures.GetSize() - 1;
+						m_PaintMaskTextures[textureIndex] = m_PaintMaskTextures.GetBack();
+						m_PaintMaskTextures.PopBack();
+						m_PaintMaskTextureViews[textureIndex] = m_PaintMaskTextureViews.GetBack();
+						m_PaintMaskTextureViews.PopBack();
 
-						meshPaintInstancesIt->second.PushBack(asInstanceIndexToBeUpdated);
+						meshPaintInstancesIt->second.Erase(removedMeshPaintInstanceIt);
+
+						TArray<uint32>& asInstancesToBeUpdated = m_PaintMaskASInstanceIndices[changedIndex];
+						for (uint32 asInstanceIndexToBeUpdated : asInstancesToBeUpdated)
+						{
+							m_pASBuilder->UpdateInstance(
+								asInstanceIndexToBeUpdated,
+								[textureIndex](AccelerationStructureInstance& asInstance)
+								{
+									asInstance.CustomIndex &= 0xFFFF00;
+									asInstance.CustomIndex |= textureIndex;
+								});
+
+							meshPaintInstancesIt->second.PushBack(asInstanceIndexToBeUpdated);
+						}
+						asInstancesToBeUpdated.Clear();
+
+						if (meshPaintInstancesIt->second.IsEmpty())
+						{
+							m_PaintMaskASInstanceIndices.erase(meshPaintInstancesIt);
+						}
+
+						m_RayTracingPaintMaskTexturesResourceDirty = true;
 					}
-					asInstancesToBeUpdated.Clear();
-
-					if (meshPaintInstancesIt->second.IsEmpty())
-					{
-						m_PaintMaskASInstanceIndices.erase(meshPaintInstancesIt);
-					}
-
-					m_RayTracingPaintMaskTexturesResourceDirty = true;
 				}
 			}
 		}

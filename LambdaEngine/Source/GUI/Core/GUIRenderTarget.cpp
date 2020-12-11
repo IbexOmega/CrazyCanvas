@@ -15,7 +15,7 @@ namespace LambdaEngine
 		ZERO_MEMORY(m_ppRenderTargets, sizeof(m_ppRenderTargets));
 
 		m_GUIRenderTargetIndex = s_GUIRenderTargetIndex++;
-		//LOG_INFO("Created GUIRenderTarget with index %u", m_GUIRenderTargetIndex);
+		LOG_INFO("Created GUIRenderTarget with index %u", m_GUIRenderTargetIndex);
 	}
 
 	GUIRenderTarget::~GUIRenderTarget()
@@ -79,7 +79,7 @@ namespace LambdaEngine
 
 		m_Desc = *pDesc;
 
-		//LOG_INFO("Initialized GUIRenderTarget with index %u", m_GUIRenderTargetIndex);
+		LOG_INFO("Initialized GUIRenderTarget with index %u", m_GUIRenderTargetIndex);
 		return true;
 	}
 

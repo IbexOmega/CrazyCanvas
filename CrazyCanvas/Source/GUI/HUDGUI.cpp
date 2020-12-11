@@ -403,7 +403,7 @@ void HUDGUI::InitGUI()
 	m_pLookAtGrid = FrameworkElement::FindName<Grid>("LookAtGrid");
 	m_pCarryFlagBorder = FrameworkElement::FindName<Border>("CarryFlagBorder");
 	m_pCarryFlagIndicator = FrameworkElement::FindName<Grid>("CarryFlagGrid");
-	
+
 	m_pHUDGrid = FrameworkElement::FindName<Grid>("ROOT_CONTAINER");
 
 	m_pSpectatePlayerText = FrameworkElement::FindName<TextBlock>("SPECTATE_TEXT");
