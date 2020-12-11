@@ -226,9 +226,16 @@ void WeaponSystem::CalculateWeaponFireProperties(LambdaEngine::Entity weaponEnti
 	WeaponComponent& weaponComponent = pECS->GetComponent<WeaponComponent>(weaponEntity);
 
 	const Entity weaponOwner = weaponComponent.WeaponOwner;
+	PositionComponent playerPositionComponent;
+	RotationComponent playerRotationComponent;
+
+	if (!pECS->GetConstComponentIf<PositionComponent>(weaponOwner, playerPositionComponent) ||
+		!pECS->GetConstComponentIf<RotationComponent>(weaponOwner, playerRotationComponent))
+	{
+		return;
+	}
+
 	const OffsetComponent&		weaponOffsetComponent	= pECS->GetConstComponent<OffsetComponent>(weaponEntity);
-	const PositionComponent&	playerPositionComponent = pECS->GetConstComponent<PositionComponent>(weaponOwner);
-	const RotationComponent&	playerRotationComponent = pECS->GetConstComponent<RotationComponent>(weaponOwner);
 
 	const glm::vec3 playerForwardDirection	= GetForward(playerRotationComponent.Quaternion);
 

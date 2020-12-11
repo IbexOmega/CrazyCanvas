@@ -45,7 +45,7 @@ namespace LambdaEngine
 		if (!ThreadsAreRunning() && ThreadsHasTerminated())
 		{
 			GetPacketManager()->SetEndPoint(ipEndPoint);
-			if (StartThreads())
+			if (StartThreads("ClientBase"))
 			{
 				LOG_WARNING("Connecting...");
 				return true;
