@@ -338,17 +338,22 @@ void GrenadeSystem::Explode(LambdaEngine::Entity grenade)
 
 				if (localPlayerEntity != UINT32_MAX)
 				{
-					const ChildComponent& childComponent = pECS->GetConstComponent<ChildComponent>(localPlayerEntity);
-					Entity cameraEntity = childComponent.GetEntityWithTag("camera");
-
-					if (cameraEntity != UINT32_MAX)
+					ChildComponent childComponent;
+					if (pECS->GetConstComponentIf<ChildComponent>(localPlayerEntity, childComponent))
 					{
-						CameraComponent& cameraComponent = pECS->GetComponent<CameraComponent>(cameraEntity);
+						Entity cameraEntity = childComponent.GetEntityWithTag("camera");
+						if (cameraEntity != UINT32_MAX)
+						{
+							ComponentArray< CameraComponent>* pCameraComps = pECS->GetComponentArray<CameraComponent>();
+							if (pCameraComps->HasComponent(cameraEntity))
+							{
+								CameraComponent& cameraComponent = pCameraComps->GetData(cameraEntity);
+								const PositionComponent& playerPositionComponent = pECS->GetComponent<PositionComponent>(localPlayerEntity);
 
-						const PositionComponent& playerPositionComponent = pECS->GetComponent<PositionComponent>(localPlayerEntity);
-
-						cameraComponent.ScreenShakeTime			= 1.5f;
-						cameraComponent.ScreenShakeAmplitude	= glm::lerp(0.01f, 0.1f, 1.0f - glm::distance(playerPositionComponent.Position, grenadePos) / GRENADE_PLAYER_BLAST_RADIUS);
+								cameraComponent.ScreenShakeTime			= 1.5f;
+								cameraComponent.ScreenShakeAmplitude	= glm::lerp(0.01f, 0.1f, 1.0f - glm::distance(playerPositionComponent.Position, grenadePos) / GRENADE_PLAYER_BLAST_RADIUS);
+							}
+						}
 					}
 				}
 			}
