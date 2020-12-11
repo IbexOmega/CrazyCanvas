@@ -100,7 +100,7 @@ namespace LambdaEngine
 					cameraComp.NearPlane,
 					cameraComp.FarPlane);
 			}
-			RotationComponent& cameraRotationComp = pRotationComponents->GetData(entity);
+
 			if (parentComp.Attached)
 			{
 				PositionComponent parentPositionComp;
