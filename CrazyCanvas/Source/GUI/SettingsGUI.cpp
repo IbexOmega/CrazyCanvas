@@ -153,7 +153,7 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 		//Enabled
 		Noesis::CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<Noesis::CheckBox>("GlossyReflectionsCheckBox");
 		bool glossyEnabled = pGlossyReflectionsCheckbox->GetIsChecked().GetValue();
-		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, glossyEnabled);
+		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS, glossyEnabled);
 
 		//SPP
 		EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
