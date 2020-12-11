@@ -224,10 +224,6 @@ namespace LambdaEngine
 			}
 
 			m_MaxTessellationTriangleCount = innerTriCount + outerTriCount;
-			const uint64 tesselatedVertexCount = (m_MaxTessellationTriangleCount * m_MaxTrianglesPerSubTess) * 3U;
-
-			// Out Buffers
-			CreateOutBuffer(m_pCommandList, &m_pOutVertexBuffer, &m_pOutVertexSecondStagingBuffer, tesselatedVertexCount * sizeof(Vertex), "Tessellator Out Vertex Buffer");
 		}
 	}
 
@@ -283,6 +279,9 @@ namespace LambdaEngine
 				data = pMesh->Indices.GetData();
 				size = pMesh->Indices.GetSize() * sizeof(MeshIndexType);
 				CreateAndCopyInBuffer(m_pCommandList, &m_pInIndicesBuffer, &m_pInIndicesStagingBuffer, pMesh->Indices.GetData(), size, "Tessellator In Index Buffer", FBufferFlag::BUFFER_FLAG_INDEX_BUFFER);
+
+				// Out Buffers
+				CreateOutBuffer(m_pCommandList, &m_pOutVertexBuffer, &m_pOutVertexSecondStagingBuffer, tesselatedVertexCount * sizeof(Vertex), "Tessellator Out Vertex Buffer");
 
 				m_pCommandList->End();
 
@@ -376,7 +375,8 @@ namespace LambdaEngine
 			pMesh->Vertices.Resize(uniqueVertices);
 
 			// Remove the unused elements.
-			LOG_WARNING("Mesh Merged Vertex Change: %d -> %d", (uint32)PRE_MESH_VERTEX_COUNT, pMesh->Vertices.GetSize());
+			m_TotalVerticesAdded += pMesh->Vertices.GetSize() - (uint32)PRE_MESH_VERTEX_COUNT;
+			LOG_WARNING("Mesh Merged Vertex Change: %d -> %d, Total Vertices Added %d", (uint32)PRE_MESH_VERTEX_COUNT, pMesh->Vertices.GetSize(), m_TotalVerticesAdded);
 			LOG_WARNING("Done");
 
 			LOG_WARNING("Tessellation Complete");
