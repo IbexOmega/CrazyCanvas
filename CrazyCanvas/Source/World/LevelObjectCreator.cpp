@@ -283,12 +283,12 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 		.Shapes =
 		{
 			{
-				/* ShapeType */			EShapeType::SIMULATION,
-				/* GeometryType */		EGeometryType::MESH,
-				/* Geometry */			{ .pMesh = pMesh },
-				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
-				/* EntityID*/			entity
+				.ShapeType =		EShapeType::SIMULATION,
+				.GeometryType =		EGeometryType::MESH,
+				.GeometryParams =	{ .pMesh = pMesh },
+				.CollisionGroup =	FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask =	~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+				.EntityID =			entity
 			},
 		},
 	};
@@ -499,12 +499,12 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 			.Shapes =
 			{
 				{
-					/* ShapeType */			EShapeType::SIMULATION,
-					/* GeometryType */		EGeometryType::MESH,
-					/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
-					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
-					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
-					/* EntityID*/			entity
+					.ShapeType =		EShapeType::SIMULATION,
+					.GeometryType =		EGeometryType::MESH,
+					.GeometryParams =	{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+					.CollisionGroup =	FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask =	~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+					.EntityID =			entity
 				},
 			},
 		};
@@ -552,12 +552,12 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 			.Shapes =
 			{
 				{
-					/* ShapeType */			EShapeType::SIMULATION,
-					/* GeometryType */		EGeometryType::MESH,
-					/* Geometry */			{.pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
-					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
-					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
-					/* EntityID*/			entity
+					.ShapeType =		EShapeType::SIMULATION,
+					.GeometryType =		EGeometryType::MESH,
+					.GeometryParams =	{.pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+					.CollisionGroup =	FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask =	~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+					.EntityID =			entity
 				},
 			},
 		};
@@ -669,12 +669,12 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 		.Shapes =
 		{
 			{
-				/* Shape Type */		EShapeType::TRIGGER,
-				/* GeometryType */		EGeometryType::BOX,
-				/* Geometry */			{ .HalfExtents = boundingBox.Dimensions },
-				/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
-				/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-				/* EntityID*/			entity
+				.ShapeType =		EShapeType::TRIGGER,
+				.GeometryType =		EGeometryType::BOX,
+				.GeometryParams =	{ .HalfExtents = boundingBox.Dimensions },
+				.CollisionGroup =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+				.CollisionMask =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+				.EntityID =			entity
 			},
 		},
 	};
@@ -780,13 +780,13 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 			.Shapes =
 			{
 				{
-					/* Shape Type */		EShapeType::TRIGGER,
-					/* GeometryType */		EGeometryType::BOX,
-					/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
-					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
-					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-					/* EntityID*/			entity,
-					/* CallbackFunction*/	&ShowerSystemBase::PlayerShowerCollision
+					.ShapeType =		EShapeType::TRIGGER,
+					.GeometryType =		EGeometryType::BOX,
+					.GeometryParams =	{.HalfExtents = boundingBox.Dimensions },
+					.CollisionGroup =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
+					.CollisionMask =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					.EntityID =			entity,
+					.CallbackFunction = &ShowerSystemBase::PlayerShowerCollision
 				}
 			},
 		};
@@ -909,26 +909,26 @@ bool LevelObjectCreator::CreateFlag(
 			/* Rotation */			rotationComponent,
 			{
 				{	// Triggers Flag-Player Collisions
-					/* Shape Type */		EShapeType::TRIGGER,
-					/* GeometryType */		EGeometryType::BOX,
-					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
-					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-					/* EntityID*/			flagEntity,
-					/* CallbackFunction */	&FlagSystemBase::StaticOnPlayerFlagCollision,
-					/* UserData */			&flagPlayerColliderType,
-					/* UserDataSize */		sizeof(EFlagColliderType)
+					.ShapeType =		EShapeType::TRIGGER,
+					.GeometryType =		EGeometryType::BOX,
+					.GeometryParams =	{ .HalfExtents = pMesh->BoundingBox.Dimensions },
+					.CollisionGroup =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+					.CollisionMask =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					.EntityID =			flagEntity,
+					.CallbackFunction =	&FlagSystemBase::StaticOnPlayerFlagCollision,
+					.pUserData =		&flagPlayerColliderType,
+					.UserDataSize =		sizeof(EFlagColliderType)
 				},
 				{	// Triggers Flag-Delivery Point Collisions
-					/* Shape Type */		EShapeType::SIMULATION,
-					/* GeometryType */		EGeometryType::BOX,
-					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
-					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
-					/* EntityID*/			flagEntity,
-					/* CallbackFunction */& FlagSystemBase::StaticOnDeliveryPointFlagCollision,
-					/* UserData */			&flagDeliveryPointColliderType,
-					/* UserDataSize */		sizeof(EFlagColliderType)
+					.ShapeType =		EShapeType::SIMULATION,
+					.GeometryType =		EGeometryType::BOX,
+					.GeometryParams =	{ .HalfExtents = pMesh->BoundingBox.Dimensions },
+					.CollisionGroup =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+					.CollisionMask =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+					.EntityID =			flagEntity,
+					.CallbackFunction =	&FlagSystemBase::StaticOnDeliveryPointFlagCollision,
+					.pUserData =		&flagDeliveryPointColliderType,
+					.UserDataSize =		sizeof(EFlagColliderType)
 				},
 			},
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(flagEntity, { glm::vec3(0.0f) })
@@ -1377,15 +1377,15 @@ bool LevelObjectCreator::CreateProjectile(
 		/* Rotation */			rotationComponent,
 		{
 			{
-				/* Shape Type */		EShapeType::SIMULATION,
-				/* Geometry Type */		EGeometryType::SPHERE,
-				/* Geometry Params */	{ .Radius = 0.3f },
-				/* CollisionGroup */	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
-										(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
-				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
-										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* EntityID*/			desc.WeaponOwner,
-				/* CallbackFunction */	desc.Callback,
+				.ShapeType =		EShapeType::SIMULATION,
+				.GeometryType =		EGeometryType::SPHERE,
+				.GeometryParams =	{ .Radius = 0.3f },
+				.CollisionGroup =	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
+									(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
+				.CollisionMask =	(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+									(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				.EntityID =			desc.WeaponOwner,
+				.CallbackFunction =	desc.Callback,
 			},
 		},
 		/* Velocity */			velocityComponent

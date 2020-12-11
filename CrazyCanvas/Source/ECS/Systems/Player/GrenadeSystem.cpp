@@ -23,6 +23,7 @@
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Teams/TeamHelper.h"
+#include "ECS/Components/GUI/ProjectedGUIComponent.h"
 
 GrenadeSystem::~GrenadeSystem()
 {
@@ -33,6 +34,8 @@ GrenadeSystem::~GrenadeSystem()
 	}
 
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGrenadeThrown>>(this, &GrenadeSystem::OnPacketGrenadeThrownReceived);
+
+	PX_RELEASE(m_pGrenadeMaterialPX);
 }
 
 bool GrenadeSystem::Init()
@@ -42,11 +45,14 @@ bool GrenadeSystem::Init()
 	if (!MultiplayerUtils::IsServer())
 	{
 		m_GrenadeMesh = GUID_NONE;
-		ResourceManager::LoadMeshFromFile("Grenade.glb", m_GrenadeMesh);
+		ResourceManager::LoadMeshAndMaterialFromFile("Grenade.glb", m_GrenadeMesh, m_GrenadeMaterial);
 		if (m_GrenadeMesh == GUID_NONE)
 		{
 			return false;
 		}
+
+		if (m_GrenadeMaterial == GUID_NONE)
+			m_GrenadeMaterial = GUID_MATERIAL_DEFAULT;
 
 		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &GrenadeSystem::OnKeyPress);
 	}
@@ -83,6 +89,11 @@ bool GrenadeSystem::Init()
 	}
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGrenadeThrown>>(this, &GrenadeSystem::OnPacketGrenadeThrownReceived);
+	m_pGrenadeMaterialPX = PhysicsSystem::GetInstance()->CreateMaterial(
+		GRENADE_STATIC_FRICTION,
+		GRENADE_DYNAMIC_FRICTION,
+		GRENADE_RESTITUTION
+	);
 
 	GenerateFibonacciSphere(m_FibonacciSphere, NUM_ENVIRONMENT_SPHERE_POINTS);
 
@@ -132,22 +143,33 @@ bool GrenadeSystem::OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEven
 
 		ECSCore* pECS = ECSCore::GetInstance();
 
-		Entity throwingPlayer = pLocalPlayer->GetEntity();
+		const Entity throwingPlayer = pLocalPlayer->GetEntity();
 
 		PositionComponent playerPosComp;
 		RotationComponent playerRotComp;
 		if (pECS->GetConstComponentIf(throwingPlayer, playerPosComp) &&
 			pECS->GetConstComponentIf(throwingPlayer, playerRotComp))
 		{
-			const glm::vec3 position = playerPosComp.Position;
-			const glm::vec3 velocity = GetForward(playerRotComp.Quaternion) * GRENADE_INITIAL_SPEED;
+			const glm::vec3 playerPosition = playerPosComp.Position;
+			const glm::vec3 playerRight = GetRight(playerRotComp.Quaternion);
+			const glm::vec3 playerForward = GetForward(playerRotComp.Quaternion);
+			const glm::vec3 playerUp = GetUp(playerRotComp.Quaternion);
 
-			if (TryThrowGrenade(throwingPlayer, position, velocity))
+			const glm::vec3 grenadeVelocity = playerForward * GRENADE_INITIAL_SPEED;
+
+			// The offset from the player's feet to where the grenade is spawned
+			const glm::vec3 grenadePosOffset(0.17f, 1.35f, 0.6f);
+			const glm::vec3 grenadeStartPos = playerPosition +
+				grenadePosOffset.x * playerRight +
+				grenadePosOffset.y * g_DefaultUp +
+				grenadePosOffset.z * playerForward;
+
+			if (TryThrowGrenade(throwingPlayer, grenadeStartPos, grenadeVelocity))
 			{
-				PacketGrenadeThrown packetGrenadeThrown =
+				const PacketGrenadeThrown packetGrenadeThrown =
 				{
-					.Position = position,
-					.Velocity = velocity,
+					.Position = grenadeStartPos,
+					.Velocity = grenadeVelocity,
 					.PlayerUID = pLocalPlayer->GetUID()
 				};
 
@@ -187,27 +209,31 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 		return false;
 	}
 
+	const float32 grenadeMass = GRENADE_MASS;
+
 	const Entity grenade = pECS->CreateEntity();
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
 		/* Entity */	 		grenade,
 		/* Detection Method */	ECollisionDetection::CONTINUOUS,
 		/* Position */	 		pECS->AddComponent(grenade, PositionComponent{ .Position = position }),
-		/* Scale */				pECS->AddComponent(grenade, ScaleComponent({ .Scale = glm::vec3(0.1f) })),
+		/* Scale */				pECS->AddComponent(grenade, ScaleComponent({ .Scale = glm::vec3(1.5f) })),
 		/* Rotation */			pECS->AddComponent(grenade, RotationComponent({ .Quaternion = glm::identity<glm::quat>() })),
 		{
 			{
-				/* Shape Type */		EShapeType::SIMULATION,
-				/* Geometry Type */		EGeometryType::SPHERE,
-				/* Geometry Params */	{ .Radius = 0.15f },
-				/* CollisionGroup */	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
-										(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
-				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
-										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* EntityID*/			throwingPlayer,
+				.ShapeType =		EShapeType::SIMULATION,
+				.GeometryType =		EGeometryType::SPHERE,
+				.GeometryParams =	{ .Radius = 0.15f },
+				.pMaterial = 		m_pGrenadeMaterialPX,
+				.CollisionGroup =	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
+									(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
+				.CollisionMask =	(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+									(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				.EntityID =			throwingPlayer,
 			},
 		},
-		/* Velocity */			pECS->AddComponent(grenade, VelocityComponent({ .Velocity = velocity }))
+		/* Velocity */			pECS->AddComponent(grenade, VelocityComponent({ .Velocity = velocity })),
+		/* Mass */				&grenadeMass
 	};
 
 	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
@@ -218,11 +244,25 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 
 	if (!MultiplayerUtils::IsServer())
 	{
-		pECS->AddComponent<MeshComponent>(grenade, MeshComponent({ .MeshGUID = m_GrenadeMesh, .MaterialGUID = GUID_MATERIAL_DEFAULT }));
+		pECS->AddComponent<MeshComponent>(grenade, MeshComponent({ .MeshGUID = m_GrenadeMesh, .MaterialGUID = m_GrenadeMaterial }));
+		const Player* player = PlayerManagerClient::GetPlayerLocal();
+		if(player != nullptr && PlayerManagerClient::GetPlayerLocal()->GetTeam() != playerTeamComp.TeamIndex)
+			pECS->AddComponent<ProjectedGUIComponent>(grenade, ProjectedGUIComponent({ .GUIType = IndicatorTypeGUI::GRENADE_INDICATOR }));
 	}
 
 	EntityMaskManager::AddExtensionToEntity(grenade, ProjectileComponent::Type(), nullptr);
 	EntityMaskManager::AddExtensionToEntity(grenade, GrenadeComponent::Type(), nullptr);
+
+	ComponentArray<GrenadeWielderComponent>* pGrenadeWielderComponents = pECS->GetComponentArray<GrenadeWielderComponent>();
+	if (pGrenadeWielderComponents)
+	{
+		if (pGrenadeWielderComponents->HasComponent(throwingPlayer))
+		{
+			GrenadeWielderComponent& grenadeWielderComponent = pGrenadeWielderComponents->GetData(throwingPlayer);
+			grenadeWielderComponent.ThrowCooldown = GRENADE_COOLDOWN;
+		}
+	}
+
 
 	return true;
 }
