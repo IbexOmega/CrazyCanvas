@@ -201,44 +201,48 @@ namespace LambdaEngine
 			if (m_PlayerEntity != UINT32_MAX)
 			{
 				// Fetch the team index, which is used for coloring the liquid to the same color as the paint.
-				const TeamComponent& teamComponent = pECSCore->GetConstComponent<TeamComponent>(m_PlayerEntity);
-				s_LiquidPushConstantData.TeamIndex = teamComponent.TeamIndex;
+				TeamComponent teamComponent = {};
+				bool hasComponent = pECSCore->GetConstComponentIf<TeamComponent>(m_PlayerEntity, teamComponent);
+				if (hasComponent)
+				{
+					s_LiquidPushConstantData.TeamIndex = teamComponent.TeamIndex;
 
-				float dt = (float)delta.AsSeconds();
+					float dt = (float)delta.AsSeconds();
 
-				// Waves, Code from: https://www.patreon.com/posts/quick-game-art-18245226
-				static float s_Time = 0.f;
-				s_Time += dt;
+					// Waves, Code from: https://www.patreon.com/posts/quick-game-art-18245226
+					static float s_Time = 0.f;
+					s_Time += dt;
 
-				static float s_Recovery = 1.f;
-				static float s_WaveAddX = 0.f;
-				static float s_WaveAddZ = 0.f;
-				static float s_MaxWave = 0.003f;
+					static float s_Recovery = 1.f;
+					static float s_WaveAddX = 0.f;
+					static float s_WaveAddZ = 0.f;
+					static float s_MaxWave = 0.003f;
 
-				// Soften the wave over time.
-				s_WaveAddX = glm::mix(s_WaveAddX, 0.f, dt * s_Recovery);
-				s_WaveAddZ = glm::mix(s_WaveAddZ, 0.f, dt * s_Recovery);
+					// Soften the wave over time.
+					s_WaveAddX = glm::mix(s_WaveAddX, 0.f, dt * s_Recovery);
+					s_WaveAddZ = glm::mix(s_WaveAddZ, 0.f, dt * s_Recovery);
 
-				float pulse = dt * 2.f * glm::pi<float>();
-				s_LiquidPushConstantData.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
-				s_LiquidPushConstantData.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
+					float pulse = dt * 2.f * glm::pi<float>();
+					s_LiquidPushConstantData.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
+					s_LiquidPushConstantData.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
 
-				// Fetch the player position and rotation to be able to calculate its velocity and angular velocity.
-				static glm::vec3 s_PreviousPosition = glm::vec3(0.f);
-				static glm::vec3 s_PreviousRotation = glm::vec3(0.f);
-				const PositionComponent& positionComponent = pECSCore->GetConstComponent<PositionComponent>(m_PlayerEntity);
-				const RotationComponent& rotationComponent = pECSCore->GetConstComponent<RotationComponent>(m_PlayerEntity);
-				
-				glm::vec3 velocity = (s_PreviousPosition - positionComponent.Position) / dt;
+					// Fetch the player position and rotation to be able to calculate its velocity and angular velocity.
+					static glm::vec3 s_PreviousPosition = glm::vec3(0.f);
+					static glm::vec3 s_PreviousRotation = glm::vec3(0.f);
+					const PositionComponent& positionComponent = pECSCore->GetConstComponent<PositionComponent>(m_PlayerEntity);
+					const RotationComponent& rotationComponent = pECSCore->GetConstComponent<RotationComponent>(m_PlayerEntity);
 
-				glm::vec3 eulerAngles = glm::eulerAngles(rotationComponent.Quaternion);
-				glm::vec3 angularVelocity = eulerAngles - s_PreviousRotation;
+					glm::vec3 velocity = (s_PreviousPosition - positionComponent.Position) / dt;
 
-				s_WaveAddX += glm::clamp((velocity.x + (angularVelocity.z * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
-				s_WaveAddZ += glm::clamp((velocity.z + (angularVelocity.x * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+					glm::vec3 eulerAngles = glm::eulerAngles(rotationComponent.Quaternion);
+					glm::vec3 angularVelocity = (eulerAngles - s_PreviousRotation) / dt;
 
-				s_PreviousPosition = positionComponent.Position;
-				s_PreviousRotation = eulerAngles;
+					s_WaveAddX += 0.f;// glm::clamp((velocity.x * 0.6f + (angularVelocity.z * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+					s_WaveAddZ += 0.f;// glm::clamp((velocity.z * 0.6f + (angularVelocity.x * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+
+					s_PreviousPosition = positionComponent.Position;
+					s_PreviousRotation = eulerAngles;
+				}
 			}
 		}
 
@@ -734,41 +738,52 @@ namespace LambdaEngine
 
 	void FirstPersonWeaponRenderer::RenderCull(bool applyDefaultTransform, uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId)
 	{
-		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
-
 		const DrawArg& drawArg = m_pDrawArgs[drawArgIndex];
 		Entity entity = drawArg.EntityIDs[0];
-		glm::mat4 deafultTransform = applyDefaultTransform ? ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity).DefaultTransform : glm::mat4(1.f);
-		pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&deafultTransform, sizeof(glm::mat4), 0);
 
-		// Draw Weapon
-		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[drawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-		pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+		WeaponLocalComponent weaponLocalComponent = {};
+		bool hasComponent = ECSCore::GetInstance()->GetConstComponentIf<WeaponLocalComponent>(entity, weaponLocalComponent);
+		if (hasComponent)
+		{
+			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
+
+			glm::mat4 deafultTransform = applyDefaultTransform ? weaponLocalComponent.DefaultTransform : glm::mat4(1.f);
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&deafultTransform, sizeof(glm::mat4), 0);
+
+			// Draw Weapon
+			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[drawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+			pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+		}
 	}
 
 	void FirstPersonWeaponRenderer::RenderLiquid(bool isWater, CommandList* pCommandList)
 	{
-		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateIDNoCull));
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_LiquidPipelineLayout.Get(), 0); // BUFFER_SET_INDEX
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_LiquidPipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
-		
 		const DrawArg& drawArg = m_pDrawArgs[isWater ? m_LiquidWaterIndex : m_LiquidPaintIndex];
 		Entity entity = drawArg.EntityIDs[0];
-		WeaponLocalComponent localWeaponComponent = ECSCore::GetInstance()->GetConstComponent<WeaponLocalComponent>(entity);
-		s_LiquidPushConstantData.DefaultTransform = localWeaponComponent.DefaultTransform;
-		s_LiquidPushConstantData.IsWater = isWater ? 1.f : 0.f;
 
-		pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(), 
-			FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, 
-			(void*)&s_LiquidPushConstantData, sizeof(SPushConstantData), 0);
+		WeaponLocalComponent weaponLocalComponent = {};
+		bool hasComponent = ECSCore::GetInstance()->GetConstComponentIf<WeaponLocalComponent>(entity, weaponLocalComponent);
+		if (hasComponent)
+		{
+			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateIDNoCull));
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_LiquidPipelineLayout.Get(), 0); // BUFFER_SET_INDEX
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_LiquidPipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
 
-		// Draw Weapon liquid
-		pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
-		pCommandList->BindDescriptorSetGraphics(isWater ? m_LiquidWaterDrawArgsDescriptorSet : m_LiquidPaintDrawArgsDescriptorSet, m_LiquidPipelineLayout.Get(), 2); // Draw arg data
-		pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+			s_LiquidPushConstantData.DefaultTransform = weaponLocalComponent.DefaultTransform;
+			s_LiquidPushConstantData.IsWater = isWater ? 1.f : 0.f;
+
+			pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(),
+				FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER,
+				(void*)&s_LiquidPushConstantData, sizeof(SPushConstantData), 0);
+
+			// Draw Weapon liquid
+			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+			pCommandList->BindDescriptorSetGraphics(isWater ? m_LiquidWaterDrawArgsDescriptorSet : m_LiquidPaintDrawArgsDescriptorSet, m_LiquidPipelineLayout.Get(), 2); // Draw arg data
+			pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+		}
 	}
 
 	void FirstPersonWeaponRenderer::UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex)

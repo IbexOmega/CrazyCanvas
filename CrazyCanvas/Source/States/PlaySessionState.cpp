@@ -130,10 +130,27 @@ void PlaySessionState::Init()
 			EventQueue::SendEvent(recompileEvent);
 			});
 	}
+  
+	ConsoleCommand cmdDebugWindow;
+	cmdDebugWindow.Init("show_debug_window", false);
+	cmdDebugWindow.AddArg(Arg::EType::BOOL);
+	cmdDebugWindow.AddDescription("Activate/Deactivate debugging window.\n\t'show_debug_window true'");
+	GameConsole::Get().BindCommand(cmdDebugWindow, [&, this](GameConsole::CallbackInput& input)->void {
+		m_DebugWindow = input.Arguments.GetFront().Value.Boolean;
+		});
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
-	Input::PushInputLayer(EInputLayer::GAME);
+
+	const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
+	if (currentInputLayer == EInputLayer::DEBUG)
+	{
+		Input::PopInputLayer();
+		Input::PushInputLayer(EInputLayer::GAME);
+		Input::PushInputLayer(EInputLayer::DEBUG);
+	}
+	else
+		Input::PushInputLayer(EInputLayer::GAME);
 
 	EnablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();
@@ -192,6 +209,12 @@ void PlaySessionState::Tick(Timestamp delta)
 		m_UpdateShaders = false;
 		EventQueue::SendEvent(ShaderRecompileEvent());
 		EventQueue::SendEvent(PipelineStateRecompileEvent());
+	}
+
+	if (m_DebugWindow)
+	{
+		Profiler::Tick(delta);
+		Profiler::Render();
 	}
 
 	m_MultiplayerClient.TickMainThreadInternal(delta);
