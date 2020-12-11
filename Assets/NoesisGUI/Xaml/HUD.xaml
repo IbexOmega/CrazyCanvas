@@ -213,19 +213,6 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
-                    <!--<Image Source="WaterIcon.png" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center" Height="100" Width="100"></Image>
-
-                    <Image Source="PaintIcon.png" Grid.Column="0" Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Center" Height="100" Width="100"></Image>
-
-                    <Image x:Name="WATER_RECT" Height="150" Width="350" Source="Water.png" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3" RenderTransformOrigin="0.195,0.5" >
-                        <Image.RenderTransform>
-                           <ScaleTransform/>
-                      </Image.RenderTransform>
-                    </Image>
-
-                    <Image Source="WaterBar.png" Height="150" Width="350" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>-->
-
-
                     <Image Source="WaterBoard.png" Height="100" Width="300" Grid.Column="1" Grid.ColumnSpan="3" Grid.Row="3"/>
                     <TextBlock x:Name="AMMUNITION_WATER_DISPLAY" noesis:Text.Stroke="Black" noesis:Text.StrokeThickness="5.5" Grid.Column="2" Grid.Row="1" TextWrapping="Wrap" Text="50/50" FontSize="36" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 

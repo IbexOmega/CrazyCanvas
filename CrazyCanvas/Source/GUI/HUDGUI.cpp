@@ -64,26 +64,8 @@ HUDGUI::~HUDGUI()
 
 void HUDGUI::FixedTick(LambdaEngine::Timestamp delta)
 {
-
 	UpdateKillFeedTimer(delta);
 	UpdateScore();
-
-	if (m_IsReloading)
-	{
-		AnimateReload(float32(delta.AsSeconds()));
-	}
-}
-
-void HUDGUI::AnimateReload(const float32 timePassed)
-{
-	/*Noesis::ScaleTransform* pWaterScale = (ScaleTransform*)m_pWaterAmmoRect->GetRenderTransform();
-	Noesis::ScaleTransform* pPaintScale = (ScaleTransform*)m_pPaintAmmoRect->GetRenderTransform();
-
-	pWaterScale->SetScaleX(glm::clamp<float>(pWaterScale->GetScaleX() + m_WaterAmmoFactor * timePassed, 0.0f, 1.0f));
-	pPaintScale->SetScaleX(glm::clamp<float>(pPaintScale->GetScaleX() + m_PaintAmmoFactor * timePassed, 0.0f, 1.0f));
-
-	m_pWaterAmmoRect->SetRenderTransform(pWaterScale);
-	m_pPaintAmmoRect->SetRenderTransform(pPaintScale);*/
 }
 
 bool HUDGUI::ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler)
@@ -146,30 +128,22 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 {
 	std::string ammoString;
 	auto ammo = WeaponTypeAmmo.find(ammoType);
-	/*Noesis::Ptr<Noesis::ScaleTransform> scale = *new ScaleTransform();
-	float ammoScale = 0.0f;
-	*/
+
 	if (ammo != WeaponTypeAmmo.end())
 	{
 		ammoString = std::to_string(ammo->second.first) + "/" + std::to_string(ammo->second.second);
-		/*ammoScale = (float)ammo->second.first / (float)ammo->second.second;
-		scale->SetCenterX(0.0);
-		scale->SetCenterY(0.0);
-		scale->SetScaleX(ammoScale);*/
 
 		if (ammoType == EAmmoType::AMMO_TYPE_WATER)
 		{
 			m_GUIState.WaterAmmo = ammo->second.first;
 
 			m_pWaterAmmoText->SetText(ammoString.c_str());
-			//m_pWaterAmmoRect->SetRenderTransform(scale);
 		}
 		else if (ammoType == EAmmoType::AMMO_TYPE_PAINT)
 		{
 			m_GUIState.PaintAmmo = ammo->second.first;
 
 			m_pPaintAmmoText->SetText(ammoString.c_str());
-			//m_pPaintAmmoRect->SetRenderTransform(scale);
 		}
 	}
 	else
@@ -183,67 +157,25 @@ bool HUDGUI::UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int
 
 void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading)
 {
-	m_IsReloading = isReloading;
-
-	if (m_IsReloading)
+	if (!isReloading)
 	{
-		for (auto& ammo : WeaponTypeAmmo)
+		auto paintAmmo = WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+		auto waterAmmo = WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+
+		if (paintAmmo != WeaponTypeAmmo.end() && waterAmmo != WeaponTypeAmmo.end())
 		{
-			float scale = (float)ammo.second.first / (float)ammo.second.second;
+			std::string waterAmmoString = std::to_string(waterAmmo->second.second) + "/" + std::to_string(waterAmmo->second.second);
+			std::string paintAmmoString = std::to_string(paintAmmo->second.second) + "/" + std::to_string(paintAmmo->second.second);
 
-			if (ammo.first == EAmmoType::AMMO_TYPE_WATER)
-				m_WaterAmmoFactor = (1.0f - scale) / m_ReloadAnimationTime;
-			else if (ammo.first == EAmmoType::AMMO_TYPE_PAINT)
-				m_PaintAmmoFactor = (1.0f - scale) / m_ReloadAnimationTime;
+			m_pWaterAmmoText->SetText(waterAmmoString.c_str());
+			m_pPaintAmmoText->SetText(paintAmmoString.c_str());
 		}
-	}
-	else
-	{
-		std::string ammoString = std::to_string(25) + "/" + std::to_string(25);
-		/*Noesis::Ptr<Noesis::ScaleTransform> scaleTransform = *new ScaleTransform();
-		scaleTransform->SetCenterX(0.0);
-		scaleTransform->SetCenterY(0.0);
-		scaleTransform->SetScaleX(1.0f);*/
-
-		m_pWaterAmmoText->SetText(ammoString.c_str());
-		//m_pWaterAmmoRect->SetRenderTransform(scaleTransform);
-
-		m_pPaintAmmoText->SetText(ammoString.c_str());
-		//m_pPaintAmmoRect->SetRenderTransform(scaleTransform);
 	}
 }
 
 void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo)
 {
-	m_IsReloading = false;
-	m_ReloadAnimationTime = 2.0f;
 	CancelSmallPrompt();
-
-	/*
-	Noesis::Ptr<Noesis::ScaleTransform> waterScaleTransform = *new ScaleTransform();
-	Noesis::Ptr<Noesis::ScaleTransform> paintScaleTransform = *new ScaleTransform();
-
-
-	for (auto& ammo : WeaponTypeAmmo)
-	{
-		float scale = (float)ammo.second.first / (float)ammo.second.second;
-		if (ammo.first == EAmmoType::AMMO_TYPE_WATER)
-		{
-			waterScaleTransform->SetCenterX(0.0);
-			waterScaleTransform->SetCenterY(0.0);
-			waterScaleTransform->SetScaleX(scale);
-
-			m_pWaterAmmoRect->SetRenderTransform(waterScaleTransform);
-		}
-		else if (ammo.first == EAmmoType::AMMO_TYPE_PAINT)
-		{
-			paintScaleTransform->SetCenterX(0.0);
-			paintScaleTransform->SetCenterY(0.0);
-			paintScaleTransform->SetScaleX(scale);
-
-			m_pPaintAmmoRect->SetRenderTransform(paintScaleTransform);
-		}
-	}*/
 }
 
 
@@ -461,9 +393,7 @@ void HUDGUI::InitGUI()
 	m_GUIState.Scores.PushBack(Match::GetScore(1));
 	m_GUIState.Scores.PushBack(Match::GetScore(2));
 
-	m_pWaterAmmoRect	= FrameworkElement::FindName<Image>("WATER_RECT");
-	m_pPaintAmmoRect	= FrameworkElement::FindName<Image>("PAINT_RECT");
-	m_pPaintDropRect	= FrameworkElement::FindName<Image>("PAINT_DROP");
+	m_pPaintAmmoImage	= FrameworkElement::FindName<Image>("PAINT_RECT");
 	m_pHealthRect		= FrameworkElement::FindName<Image>("HEALTH_RECT");
 
 	m_pWaterAmmoText = FrameworkElement::FindName<TextBlock>("AMMUNITION_WATER_DISPLAY");
@@ -513,7 +443,7 @@ void HUDGUI::InitGUI()
 
 	}
 
-	m_pPaintAmmoRect->SetSource(bitmap);
+	m_pPaintAmmoImage->SetSource(bitmap);
 
 	InitScore();
 
