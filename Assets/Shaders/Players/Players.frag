@@ -90,8 +90,8 @@ void main()
 	// Only render team members and paint on enemy players
 	uint enemy = p_TeamIndex.Index;
 	bool isPainted = (shouldPaint > 0.5f) && (paintDescription.Interpolation > 0.001f);
-	/*if(enemy != 0 && !isPainted)
-		discard;*/
+	if(enemy != 0 && !isPainted)
+		discard;
 
 	// Get player albedo
 	vec3 storedAlbedo = pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
@@ -110,7 +110,7 @@ void main()
 	vec4 aoRoughMetalValid	= vec4(storedMaterial, 1.0f);
 	
 	float ao		= aoRoughMetalValid.r;
-	float roughness	= 1.0f-aoRoughMetalValid.g; // TODO fix need to invert
+	float roughness	= aoRoughMetalValid.g; // TODO fix need to invert
 	float metallic	= aoRoughMetalValid.b;
 	float depth 	= texture(u_GBufferDepthStencil, in_TexCoord).r;
 

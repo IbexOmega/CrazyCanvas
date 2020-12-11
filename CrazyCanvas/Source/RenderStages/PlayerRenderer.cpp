@@ -1,4 +1,5 @@
 #include "RenderStages/PlayerRenderer.h"
+#include "RenderStages/PlayerRenderer.h"
 #include "Rendering/Core/API/CommandAllocator.h"
 #include "Rendering/Core/API/DescriptorHeap.h"
 #include "Rendering/Core/API/DescriptorSet.h"
@@ -505,7 +506,7 @@ namespace LambdaEngine
 				// Map player not same team as viewer to 1. Shader will filter
 				for (PlayerData& player : m_PlayerData)
 				{
-					if (player.TeamId == m_Viewer.TeamId || m_Viewer.TeamId == 0)
+					if (player.TeamId == m_Viewer.TeamId || IsLocalPlayerSpectator())
 					{
 						player.TeamId = 0;
 					}
@@ -606,19 +607,19 @@ namespace LambdaEngine
 			bool drawingVisiblePlayer = player.DrawArgIndex != m_Viewer.DrawArgIndex;
 
 			// Skip drawing local player
-			if (drawingVisiblePlayer)
+			if (drawingVisiblePlayer || IsLocalPlayerSpectator())
 			{
 				bool isEnemy = (player.TeamId == 1);
 				bool isTeamMate = (player.TeamId == 0);
 
 				// Remove enemies if rendering teamates
 				if (!renderEnemy && isEnemy) {
-					//continue;
+					continue;
 				}
 
 				// Remove teammates if rendering enemies
 				if (renderEnemy && isTeamMate) {
-					//continue;
+					continue;
 				}
 
 				// Draw player
@@ -641,6 +642,11 @@ namespace LambdaEngine
 			}
 
 		}
+	}
+
+	bool PlayerRenderer::IsLocalPlayerSpectator() const
+	{
+		return m_Viewer.TeamId == 0;
 	}
 
 

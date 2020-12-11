@@ -76,6 +76,8 @@ namespace LambdaEngine
 		bool CreatePipelineState();
 		void RenderCull(bool renderEnemy, CommandList* pCommandList, uint64& pipelineId);
 
+		bool IsLocalPlayerSpectator() const;
+
 	private:
 		bool									m_Initilized = false;
 

@@ -125,7 +125,7 @@ void HUDGUI::InitGUI()
 			m_pLookAtGrid->SetBackground(brush);
 		}
 
-		m_pPaintAmmoImage->SetSource(bitmap)
+		m_pPaintAmmoImage->SetSource(bitmap);
 
 
 		std::string ammoString;
@@ -139,6 +139,7 @@ void HUDGUI::InitGUI()
 	{
 		FrameworkElement::FindName<Image>("AMMUNITION_GRID")->SetVisibility(Visibility::Visibility_Collapsed);
 		FrameworkElement::FindName<Image>("HEALTH_DISPLAY_GRID")->SetVisibility(Visibility::Visibility_Collapsed);
+		FrameworkElement::FindName<Image>("CROSS_HAIR")->SetVisibility(Visibility::Visibility_Collapsed);
 	}
 
 	FrameworkElement::FindName<Grid>("HUD_GRID")->SetVisibility(Visibility_Visible);
@@ -355,10 +356,6 @@ void HUDGUI::DisplayHitIndicator()
 
 void HUDGUI::DisplayCarryFlagIndicator(Entity flagEntity, bool isCarrying)
 {
-	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
-	if (pPlayer->IsSpectator())
-		return;
-
 	auto grid = m_ProjectedElements.find(flagEntity);
 
 	if (isCarrying)
