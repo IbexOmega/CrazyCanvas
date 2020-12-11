@@ -50,6 +50,7 @@ LobbyGUI::LobbyGUI(PacketGameSettings* pGameSettings) :
 	m_pSettingsClientStackPanel	= FrameworkElement::FindName<StackPanel>("SettingsHostStackPanel");
 	m_pChatInputTextBox			= FrameworkElement::FindName<TextBox>("ChatInputTextBox");
 	m_pPlayersLabel				= FrameworkElement::FindName<Label>("PlayersLabel");
+	m_pMapThumbbnailGrid		= FrameworkElement::FindName<Grid>("MapThumbnailGrid");
 
 	m_pChatInputTextBox->SetMaxLines(1);
 	m_pChatInputTextBox->SetMaxLength(128);
@@ -85,6 +86,7 @@ void LobbyGUI::InitGUI()
 	AddSettingComboBox(SETTING_CHANGE_TEAM,		"Allow Change Team",	{ "True", "False" }, 1);*/
 	AddSettingColorBox(SETTING_CHANGE_TEAM_1_COLOR, "Team 1 Color", pColors, NUM_TEAM_COLORS_AVAILABLE, 0);
 	AddSettingColorBox(SETTING_CHANGE_TEAM_2_COLOR, "Team 2 Color", pColors, NUM_TEAM_COLORS_AVAILABLE, 1);
+	AddImage("THUMBNAIL_IMAGE", m_MapImages[0]);
 
 	UpdateSettings(*m_pGameSettings);
 
@@ -645,6 +647,22 @@ void LobbyGUI::UpdateReadyButton()
 	}
 }
 
+void LobbyGUI::AddImage(const LambdaEngine::String& key, const LambdaEngine::String& uri)
+{
+	Ptr<Image> image = *new Image();
+	Ptr<BitmapImage> bitmapImage = *new BitmapImage(Uri(uri.c_str()));
+
+	image->SetHeight(288.0f);
+	image->SetWidth(512.0f);
+	image->SetSource(bitmapImage);
+	image->SetMargin(Thickness(0.0f, 0.0f, 0.0f, -350.0f));
+	image->SetName(key.c_str());
+
+	FrameworkElement::GetView()->GetContent()->RegisterName(key.c_str(), image);
+
+	m_pMapThumbbnailGrid->GetChildren()->Add(image);
+}
+
 void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const SelectionChangedEventArgs& args)
 {
 	if (!m_IsInitiated)
@@ -660,6 +678,17 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	if (setting == SETTING_MAP)
 	{
 		m_pGameSettings->MapID = (uint8)indexSelected;
+
+		if (m_MapImages[indexSelected].find(LevelManager::GetLevelNames()[indexSelected]))
+		{
+			Ptr<BitmapImage> bitmapImage = *new BitmapImage(Uri(m_MapImages[indexSelected].c_str()));
+			FrameworkElement::FindName<Image>("THUMBNAIL_IMAGE")->SetSource(bitmapImage);
+		}
+		else
+		{
+			Ptr<BitmapImage> bitmapImage = *new BitmapImage(Uri(m_MapImages.GetBack().c_str()));
+			FrameworkElement::FindName<Image>("THUMBNAIL_IMAGE")->SetSource(bitmapImage);
+		}
 	}
 	else if (setting == SETTING_GAME_MODE)
 	{
