@@ -73,7 +73,7 @@ bool ResourceCatalog::Init()
 
 	// First person weapon and hands
 	{
-		ARMS_FIRST_PERSON_IDLE_GUIDs = ResourceManager::LoadAnimationsFromFile("Gun/ArmsAnimation.glb");
+		ARMS_FIRST_PERSON_ANIMATION_GUIDs = ResourceManager::LoadAnimationsFromFile("Gun/ArmsAnimation.glb");
 
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/FirstPersonGun.glb", WEAPON_FIRST_PERSON_MESH_GUID, WEAPON_FIRST_PERSON_MATERIAL_GUID, false);
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/ArmsAnimation.glb", ARMS_FIRST_PERSON_MESH_GUID, ARMS_FIRST_PERSON_MATERIAL_GUID, false);

@@ -1270,9 +1270,6 @@ bool LevelObjectCreator::CreatePlayer(
 				return false;
 			}
 
-			//pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
-			//EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
-
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
@@ -1300,13 +1297,13 @@ bool LevelObjectCreator::CreatePlayer(
 				animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID)->pSkeleton;
 
 				AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
-				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[1]));
-				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Shooting", ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[2]));
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[1]));
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Shooting", ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[2]));
 
 				{
 					AnimationState* pAnimationState = DBG_NEW AnimationState("Idle & Shooting");
-					ClipNode* pIdle = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[1]);
-					ClipNode* pShooting = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_IDLE_GUIDs[2], 1.0f, false);
+					ClipNode* pIdle = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[1]);
+					ClipNode* pShooting = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[2], 1.0f, false);
 
 					pShooting->AddTrigger(ClipTrigger(0.95f, [](const ClipNode& clip, AnimationGraph& graph)
 						{
