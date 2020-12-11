@@ -200,8 +200,8 @@ namespace LambdaEngine
 		}
 
 		{
-			m_MaxInnerTessLevel = 24.0f;
-			m_MaxOuterTessLevel = 24.0f;
+			m_MaxInnerTessLevel = 18.0f;
+			m_MaxOuterTessLevel = 18.0f;
 			m_MaxTrianglesPerSubTess = 100;
 
 			// Calculate max tessellation primitiveCount
@@ -224,6 +224,10 @@ namespace LambdaEngine
 			}
 
 			m_MaxTessellationTriangleCount = innerTriCount + outerTriCount;
+			const uint64 tesselatedVertexCount = (m_MaxTessellationTriangleCount * m_MaxTrianglesPerSubTess) * 3U;
+
+			// Out Buffers
+			CreateOutBuffer(m_pCommandList, &m_pOutVertexBuffer, &m_pOutVertexSecondStagingBuffer, tesselatedVertexCount * sizeof(Vertex), "Tessellator Out Vertex Buffer");
 		}
 	}
 
@@ -279,9 +283,6 @@ namespace LambdaEngine
 				data = pMesh->Indices.GetData();
 				size = pMesh->Indices.GetSize() * sizeof(MeshIndexType);
 				CreateAndCopyInBuffer(m_pCommandList, &m_pInIndicesBuffer, &m_pInIndicesStagingBuffer, pMesh->Indices.GetData(), size, "Tessellator In Index Buffer", FBufferFlag::BUFFER_FLAG_INDEX_BUFFER);
-
-				// Out Buffers
-				CreateOutBuffer(m_pCommandList, &m_pOutVertexBuffer, &m_pOutVertexSecondStagingBuffer, tesselatedVertexCount * sizeof(Vertex), "Tessellator Out Vertex Buffer");
 
 				m_pCommandList->End();
 
@@ -379,7 +380,6 @@ namespace LambdaEngine
 			LOG_WARNING("Done");
 
 			LOG_WARNING("Tessellation Complete");
-
 		}
 	}
 

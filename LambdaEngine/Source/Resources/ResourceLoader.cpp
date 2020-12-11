@@ -2287,9 +2287,6 @@ namespace LambdaEngine
 			}
 		}
 
-		// Release MeshTessellation Buffers
-		MeshTessellator::GetInstance().ReleaseTessellationBuffers();
-
 		return true;
 	}
 
@@ -2326,6 +2323,11 @@ namespace LambdaEngine
 				if (nodeName.find("INCLUDEMESH") != String::npos)
 				{
 					loadNormally = true;
+				}
+
+				if (nodeName.find("NO_COLLIDER") != String::npos)
+				{
+					context.ShouldTessellate = false;
 				}
 
 				LevelObjectOnLoad levelObject =
