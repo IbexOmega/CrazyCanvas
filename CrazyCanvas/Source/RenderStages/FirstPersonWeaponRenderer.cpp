@@ -216,13 +216,14 @@ namespace LambdaEngine
 					static float s_Recovery = 1.f;
 					static float s_WaveAddX = 0.f;
 					static float s_WaveAddZ = 0.f;
-					static float s_MaxWave = 0.003f;
+					static float s_WaveSpeed = 0.5f;
+					static float s_MaxWave = 0.006f;
 
 					// Soften the wave over time.
 					s_WaveAddX = glm::mix(s_WaveAddX, 0.f, dt * s_Recovery);
 					s_WaveAddZ = glm::mix(s_WaveAddZ, 0.f, dt * s_Recovery);
 
-					float pulse = dt * 2.f * glm::pi<float>();
+					float pulse = 2.f * glm::pi<float>() * s_WaveSpeed;
 					s_LiquidPushConstantData.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
 					s_LiquidPushConstantData.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
 
@@ -235,10 +236,15 @@ namespace LambdaEngine
 					glm::vec3 velocity = (s_PreviousPosition - positionComponent.Position) / dt;
 
 					glm::vec3 eulerAngles = glm::eulerAngles(rotationComponent.Quaternion);
-					glm::vec3 angularVelocity = (eulerAngles - s_PreviousRotation) / dt;
+					glm::vec3 angularVelocity = eulerAngles - s_PreviousRotation;
 
-					s_WaveAddX += 0.f;// glm::clamp((velocity.x * 0.6f + (angularVelocity.z * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
-					s_WaveAddZ += 0.f;// glm::clamp((velocity.z * 0.6f + (angularVelocity.x * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+					glm::mat3 rot = glm::toMat3(rotationComponent.Quaternion);
+					glm::vec3 rotV = glm::normalize(rot* g_DefaultForward);
+					angularVelocity *= 100.f;
+					float maxVel = glm::max(angularVelocity.x, glm::max(angularVelocity.y, angularVelocity.z));
+					//LOG_WARNING("AngVel: (%f, %f, %f)", angularVelocity.x, angularVelocity.y, angularVelocity.z);
+					s_WaveAddX += glm::clamp((velocity.x * 0.2f + rotV.z* maxVel) * s_MaxWave, -s_MaxWave, s_MaxWave);
+					s_WaveAddZ += glm::clamp((velocity.z * 0.2f + rotV.x* maxVel) * s_MaxWave, -s_MaxWave, s_MaxWave);
 
 					s_PreviousPosition = positionComponent.Position;
 					s_PreviousRotation = eulerAngles;
@@ -283,16 +289,59 @@ namespace LambdaEngine
 			bool succeded = ECSCore::GetInstance()->GetConstComponentIf<WeaponComponent>(m_WeaponEntity, weaponComponent);
 			if (succeded)
 			{
+				static float maxTP = 0.f;
+				static float maxTW = 0.f;
+				static float newCTP = 0.0f;
+				static float currentTP = 0.0f;
+				static bool isReloadingP = false;
+				static bool isReloadingW = false;
+
+				float t = weaponComponent.ReloadClock / weaponComponent.ReloadTime;
+				if (t > 0.001f)
+				{
+					isReloadingP = true;
+					isReloadingW = true;
+					t = 1.f - t;
+				}
+
 				auto itWater = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
 				if (itWater != weaponComponent.WeaponTypeAmmo.end())
 				{
-					s_LiquidPushConstantData.WaterLevel = (float)itWater->second.first / (float)itWater->second.second;
-				}
+					float ct = (float)itWater->second.first / (float)itWater->second.second;
 
+					if (t > ct)
+						maxTW = t;
+
+					if (ct >= maxTW)
+					{
+						isReloadingW = false;
+						maxTW = 0.f;
+					}
+
+					s_LiquidPushConstantData.WaterLevel = isReloadingW ? glm::max(ct, maxTW) : ct;
+				}
+				
 				auto itPaint = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
 				if (itPaint != weaponComponent.WeaponTypeAmmo.end())
 				{
-					s_LiquidPushConstantData.PaintLevel = (float)itPaint->second.first / (float)itPaint->second.second;
+					float ct = (float)itPaint->second.first / (float)itPaint->second.second;
+
+					newCTP = (float)(itPaint->second.second - itPaint->second.first) / (float)itPaint->second.second;
+
+					if(isReloadingP)
+						currentTP = t;
+
+					if (t > ct)
+						maxTP = t;
+
+					if (ct >= maxTP)
+					{
+						isReloadingP = false;
+						maxTP = 0.f;
+						currentTP = 0.f;
+					}
+
+					s_LiquidPushConstantData.PaintLevel = isReloadingP ? glm::max(ct, ct + currentTP*newCTP) : ct;
 				}
 			}
 		}

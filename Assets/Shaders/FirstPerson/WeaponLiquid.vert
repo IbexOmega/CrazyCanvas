@@ -88,15 +88,17 @@ void main()
 
 	out_ClipPosition		= perFrameBuffer.Projection * perFrameBuffer.View * worldPosition;
 
-	vec3 worldPos = (weaponData.PlayerRotation * vec4(position - vec3(0.f, 0.f, -0.139f), 1.0f)).xyz;   
+	float xOffset = u_PC.IsWater*(0.035f) + (1.f - u_PC.IsWater)*(-0.035f);
+	vec3 worldPos = (weaponData.PlayerRotation * vec4(position - vec3(xOffset, 0.f, -0.139f), 1.0f)).xyz;   
 	// rotate it around XY
 	vec3 worldPosX = RotateAroundYInDegrees(vec4(worldPos,0),360).xyz;
 	// rotate around XZ
-	vec3 worldPosZ = vec3(worldPosX.y, worldPosX.z, worldPosX.x);		
+	vec3 worldPosZ = vec3(worldPosX.y, worldPosX.z, worldPosX.x);
+	float dampening = u_PC.IsWater*0.5f + (1.f-u_PC.IsWater)*0.2f;
 	// combine rotations with worldPos, based on sine wave
-	vec3 worldPosAdjusted = worldPos + (worldPosX  * u_PC.WaveX) + (worldPosZ* u_PC.WaveZ);
+	vec3 worldPosAdjusted = worldPos + (worldPosX  * u_PC.WaveX)*dampening + (worldPosZ* u_PC.WaveZ)*dampening;
 
-    out_Position.y = worldPosAdjusted.y;//position.y + (position.x - 0.239f)*u_PC.WaveX + position.z*u_PC.WaveZ;
+    out_Position.y = worldPosAdjusted.y;
 
 	gl_Position = out_ClipPosition;
 }
