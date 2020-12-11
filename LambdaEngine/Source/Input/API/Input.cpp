@@ -97,6 +97,8 @@ namespace LambdaEngine
 				s_MouseStates[inputMode][STATE_WRITE_INDEX].ScrollX = mouseEvent.DeltaX;
 				s_MouseStates[inputMode][STATE_WRITE_INDEX].ScrollY = mouseEvent.DeltaY;
 
+				s_HasScrolled = true;
+
 				return true;
 			}
 		}
@@ -152,6 +154,10 @@ namespace LambdaEngine
 		const EInputLayer currentInputLayout = GetCurrentInputLayer();
 		const uint8 inputLayer = ConvertInputLayerUINT8(currentInputLayout);
 		UpdateReadIndex(inputLayer);
+
+		UpdateMouseScrollButton();
+
+		s_HasScrolled = false;
 	}
 
 	void Input::Disable()

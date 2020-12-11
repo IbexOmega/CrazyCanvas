@@ -1257,11 +1257,11 @@ bool LevelObjectCreator::CreatePlayer(
 		{
 			pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
 				.HitMask = 0x02
-			});
+				});
 
 			pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
 				.HitMask = 0x02
-			});
+				});
 
 			if (pPlayerDesc->pCameraDesc == nullptr)
 			{
@@ -1270,13 +1270,204 @@ bool LevelObjectCreator::CreatePlayer(
 				return false;
 			}
 
-			pECS->AddComponent<WeaponLocalComponent>(weaponEntity, WeaponLocalComponent());
-			EntityMaskManager::AddExtensionToEntity(weaponEntity, WeaponLocalComponent::Type(), nullptr);
-
 			pECS->AddComponent<PlayerLocalComponent>(playerEntity, PlayerLocalComponent());
 			EntityMaskManager::AddExtensionToEntity(playerEntity, PlayerLocalComponent::Type(), nullptr);
 
 			pECS->AddComponent<SpectateComponent>(playerEntity, { SpectateType::LOCAL_PLAYER });
+
+			auto firstPersonHandsEntity = pECS->CreateEntity();
+			{
+				pECS->AddComponent<StepParentComponent>(weaponEntity, { .Owner = firstPersonHandsEntity });
+
+				pECS->AddComponent<PositionComponent>(firstPersonHandsEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(firstPersonHandsEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(firstPersonHandsEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				pECS->AddComponent<WeaponArmsComponent>(firstPersonHandsEntity, WeaponArmsComponent());
+				pECS->AddComponent<WeaponLocalComponent>(firstPersonHandsEntity, WeaponLocalComponent());
+				EntityMaskManager::AddExtensionToEntity(firstPersonHandsEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(firstPersonHandsEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::ARMS_FIRST_PERSON_MATERIAL_GUID,
+					});
+				
+				AnimationComponent animationComponentWeapon = {};
+				animationComponentWeapon.Pose.pSkeleton = ResourceManager::GetMesh(ResourceCatalog::ARMS_FIRST_PERSON_MESH_GUID)->pSkeleton;
+
+				AnimationGraph* pAnimationGraphWeapon = DBG_NEW AnimationGraph();
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Idle", ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[1]));
+				pAnimationGraphWeapon->AddState(DBG_NEW AnimationState("Shooting", ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[2]));
+
+				{
+					AnimationState* pAnimationState = DBG_NEW AnimationState("Idle & Shooting");
+					ClipNode* pIdle = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[1]);
+					ClipNode* pShooting = pAnimationState->CreateClipNode(ResourceCatalog::ARMS_FIRST_PERSON_ANIMATION_GUIDs[2], 1.0f, false);
+
+					pShooting->AddTrigger(ClipTrigger(0.95f, [](const ClipNode& clip, AnimationGraph& graph)
+						{
+							UNREFERENCED_VARIABLE(clip);
+							graph.TransitionToState("Idle");
+						}));
+						
+					BlendNode* pBlendNode = pAnimationState->CreateBlendNode(pIdle, pShooting, BlendInfo(0.5f));
+					pAnimationState->SetOutputNode(pBlendNode);
+					pAnimationGraphWeapon->AddState(pAnimationState);
+				}
+
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Shooting", "Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Shooting", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle & Shooting", "Idle"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle", "Idle & Shooting"));
+				pAnimationGraphWeapon->AddTransition(DBG_NEW Transition("Idle & Shooting", "Idle & Shooting"));
+				pAnimationGraphWeapon->TransitionToState("Idle");
+
+				animationComponentWeapon.pGraph = pAnimationGraphWeapon;
+
+				pECS->AddComponent<AnimationComponent>(firstPersonHandsEntity, animationComponentWeapon);
+
+				ParentComponent parentComp =
+				{
+					.Parent = playerEntity,
+					.Attached = false,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(firstPersonHandsEntity, parentComp);
+
+				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
+				pECS->AddComponent<RayTracedComponent>(firstPersonHandsEntity, RayTracedComponent{
+					.HitMask = 0x00
+				});
+			}
+
+			{
+				auto firstPersonWeaponEntity = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(firstPersonWeaponEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(firstPersonWeaponEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(firstPersonWeaponEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				weaponLocalComponent.weaponEntity = weaponEntity;
+				pECS->AddComponent<WeaponLocalComponent>(firstPersonWeaponEntity, weaponLocalComponent);
+				EntityMaskManager::AddExtensionToEntity(firstPersonWeaponEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(firstPersonWeaponEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+					});
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonHandsEntity,
+					.Attached = true,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(firstPersonWeaponEntity, parentComponent);
+				
+				pECS->AddComponent<AnimationAttachedComponent>(firstPersonWeaponEntity, AnimationAttachedComponent
+					{
+						.JointName = "Gun",
+						.Transform = glm::mat4(1.0f),
+					});
+
+				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
+				pECS->AddComponent<RayTracedComponent>(firstPersonWeaponEntity, RayTracedComponent{
+					.HitMask = 0x00
+					});
+			}
+
+			// Liquid water
+			{
+				auto weaponLiquidEntity = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(weaponLiquidEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(weaponLiquidEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(weaponLiquidEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				WeaponLiquidComponent weaponLiquidComponent = {};
+				weaponLiquidComponent.isWater = true;
+				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, weaponLiquidComponent);
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				weaponLocalComponent.weaponEntity = weaponEntity;
+				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
+				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::PROJECTILE_WATER_MATERIAL,
+					});
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonHandsEntity,
+					.Attached = true,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(weaponLiquidEntity, parentComponent);
+				
+				pECS->AddComponent<AnimationAttachedComponent>(weaponLiquidEntity, AnimationAttachedComponent
+					{
+						.JointName = "Gun",
+						.Transform = glm::mat4(1.0f),
+					});
+
+				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
+				pECS->AddComponent<RayTracedComponent>(weaponLiquidEntity, RayTracedComponent{
+					.HitMask = 0x00
+					});
+			}
+
+			// Liquid paint
+			{
+				auto weaponLiquidEntity = pECS->CreateEntity();
+				pECS->AddComponent<PositionComponent>(weaponLiquidEntity, PositionComponent{ .Position = glm::vec3(0.f, 0.0f, 0.0f) });
+				pECS->AddComponent<RotationComponent>(weaponLiquidEntity, RotationComponent{ .Quaternion = GetRotationQuaternion(g_DefaultForward) });
+				pECS->AddComponent<ScaleComponent>(weaponLiquidEntity, ScaleComponent{ .Scale = glm::vec3(1.0f) });
+
+				WeaponLiquidComponent weaponLiquidComponent = {};
+				weaponLiquidComponent.isWater = false;
+				pECS->AddComponent<WeaponLiquidComponent>(weaponLiquidEntity, weaponLiquidComponent);
+
+				WeaponLocalComponent weaponLocalComponent = {};
+				Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID);
+				weaponLocalComponent.DefaultTransform = glm::translate(pMesh->DefaultPosition) * glm::toMat4(pMesh->DefaultRotation) * glm::scale(pMesh->DefaultScale);
+				pECS->AddComponent<WeaponLocalComponent>(weaponLiquidEntity, weaponLocalComponent);
+				EntityMaskManager::AddExtensionToEntity(weaponLiquidEntity, WeaponLocalComponent::Type(), nullptr);
+
+				pECS->AddComponent<MeshComponent>(weaponLiquidEntity, MeshComponent
+					{
+						.MeshGUID = ResourceCatalog::WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID,
+						.MaterialGUID = ResourceCatalog::WEAPON_FIRST_PERSON_MATERIAL_GUID,
+					});
+
+				ParentComponent parentComponent =
+				{
+					.Parent = firstPersonHandsEntity,
+					.Attached = true,
+					.DeleteParentOnRemoval = false
+				};
+				pECS->AddComponent<ParentComponent>(weaponLiquidEntity, parentComponent);
+
+				pECS->AddComponent<AnimationAttachedComponent>(weaponLiquidEntity, AnimationAttachedComponent
+					{
+						.JointName = "Gun",
+						.Transform = glm::mat4(1.0f),
+					});
+
+				// Needed for it to work, otherwise it will crash in ASBuilder in UpdateInstanceTransform.
+				pECS->AddComponent<RayTracedComponent>(weaponLiquidEntity, RayTracedComponent{
+					.HitMask = 0x00
+					});
+			}
 
 			//Create Camera Entity
 			Entity cameraEntity = pECS->CreateEntity();

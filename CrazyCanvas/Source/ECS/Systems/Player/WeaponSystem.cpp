@@ -2,6 +2,7 @@
 #include "ECS/Systems/Player/WeaponSystemClient.h"
 #include "ECS/Systems/Player/WeaponSystemServer.h"
 #include "ECS/Components/Player/Player.h"
+
 #include "ECS/ECSCore.h"
 
 #include "Application/API/Events/EventQueue.h"
@@ -9,6 +10,7 @@
 #include "Game/ECS/Systems/Physics/PhysicsSystem.h"
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Game/ECS/Components/Physics/Transform.h"
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
 
 #include "Events/GameplayEvents.h"
 
@@ -129,6 +131,16 @@ void WeaponSystem::Fire(LambdaEngine::Entity weaponEntity, WeaponComponent& weap
 		angle);
 	firedEvent.Callback			= std::bind_front(&WeaponSystem::OnProjectileHit, this);
 	EventQueue::SendEventImmediate(firedEvent);
+
+
+	ECSCore* pECS = ECSCore::GetInstance();
+	StepParentComponent firstPersonWeaponComp;
+	if (pECS->GetComponentIf(weaponEntity, firstPersonWeaponComp))
+	{
+		Entity firstPersonWeapon = firstPersonWeaponComp.Owner;
+		pECS->GetComponent<AnimationComponent>(firstPersonWeapon).pGraph->GetState("Idle & Shooting")->Reset();
+		pECS->GetComponent<AnimationComponent>(firstPersonWeapon).pGraph->TransitionToState("Idle & Shooting");
+	}
 }
 
 void WeaponSystem::UpdateWeapon(WeaponComponent& weaponComponent, float32 dt)

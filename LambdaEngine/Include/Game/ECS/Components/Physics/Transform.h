@@ -11,7 +11,6 @@ namespace LambdaEngine
 	const glm::vec3 g_DefaultForward	= glm::vec3(0.0f, 0.0f, -1.0f);
 	const glm::vec3 g_DefaultRight		= glm::vec3(1.0f, 0.0f, 0.0f);
 	const glm::vec3 g_DefaultUp 		= glm::vec3(0.0f, 1.0f, 0.0f);
-
 	struct PositionComponent
 	{
 		DECL_COMPONENT_WITH_DIRTY_FLAG(PositionComponent);
