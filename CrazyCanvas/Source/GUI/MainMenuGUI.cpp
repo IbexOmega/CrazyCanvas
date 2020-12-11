@@ -205,9 +205,9 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 
 void MainMenuGUI::InitLevelSelect()
 {
-	TArray<LambdaEngine::String> levels = LevelManager::GetLevelNames();
+	TArray<LevelManager::LevelDesc> levels = LevelManager::GetLevelDesc();
 
-	for (auto level : levels)
+	for (auto& level : levels)
 	{
 		// Gets the levels that level manager has and add these to the level select grid with the correct name and index		// Grid
 		Ptr<Grid> grid = *new Grid();
@@ -219,13 +219,14 @@ void MainMenuGUI::InitLevelSelect()
 		columnDef->Add(col1);
 		columnDef->Add(col2);
 		grid->SetHeight(60.f);
+		grid->SetMargin(Thickness(0.f, 5.f, 0.f, 5.f));
 		grid->MouseEnter() += MakeDelegate(this, &MainMenuGUI::LevelSelectMouseEnter);
 		grid->MouseLeave() += MakeDelegate(this, &MainMenuGUI::LevelSelectMouseLeave);
 		grid->MouseLeftButtonDown() += MakeDelegate(this, &MainMenuGUI::LevelSelectMousePressed);
 
 		// Image
 		Ptr<Image> image = *new Image();
-		Ptr<BitmapImage> bitmap = *new BitmapImage(Uri("logo.png"));
+		Ptr<BitmapImage> bitmap = *new BitmapImage(Uri(level.Thumbnail.c_str()));
 		image->SetSource(bitmap);
 		image->SetHorizontalAlignment(HorizontalAlignment::HorizontalAlignment_Left);
 		grid->GetChildren()->Add(image);
@@ -233,7 +234,7 @@ void MainMenuGUI::InitLevelSelect()
 		// Label
 		Ptr<Label> label = *new Label();
 		label->SetStyle(FrameworkElement::FindResource<Style>("LevelSelectLabelStyle"));
-		label->SetContent(level.c_str());
+		label->SetContent(level.Name.c_str());
 		label->SetHorizontalAlignment(HorizontalAlignment::HorizontalAlignment_Left);
 		grid->GetChildren()->Add(label);
 
