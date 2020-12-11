@@ -1,15 +1,15 @@
-# Lambda Game Engine
+# Crazy Canvas
+![Logo](/Assets/NoesisGUI/Textures/logo.png)
 ![Benchmark](https://github.com/IbexOmega/CrazyCanvas/workflows/Benchmark/badge.svg?branch=master)
 
-Lambda Game Engine
+Crazy Canvas is a Capture the Flag First Person Shooter with a twist, all enemies are invisible. The players are all equipped with paint shooting guns which can color everything in the world and the enemy players. By watching reflective surfaces like mirrors you can see your opponents and take the shot. When an enemy is covered in enough paint they die.
 
-A game engine that supports Win32 and MacOS
+Crazy Canvas is designed from scratch during a 14 week period using a custom Vulkan engine (LambdaEngine) as a starting point.
 
-Tested on:
-* Windows 10
-* macOS 10.15
+### Download
+To get the latest installer of the game, go to (link is not provided yet).
 
-### How to contribute
+### Coding standard
 If you want to contribute, start by reading the [coding-style-document](CodeStandard.MD)
 
 ### Dependencies
