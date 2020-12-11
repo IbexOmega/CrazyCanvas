@@ -35,7 +35,7 @@ namespace LambdaEngine
 			m_NameOfGame = nameOfGame;
 			m_PortOfGameServer = portOfGameServer;
 			m_pHandler = pHandler;
-			if (StartThreads())
+			if (StartThreads("ServerNetworkDiscovery"))
 			{
 				LOG_WARNING("[ServerNetworkDiscovery]: Starting...");
 				return true;
