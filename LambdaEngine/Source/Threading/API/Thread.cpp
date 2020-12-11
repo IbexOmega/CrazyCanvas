@@ -71,7 +71,6 @@ namespace LambdaEngine
 			std::scoped_lock<SpinLock> lock(*s_Lock);
 			for (Thread* thread : *s_ThreadsToJoin)
 			{
-				thread->Notify();
 				thread->m_Thread.join();
 				if(thread->m_FuncOnFinished)
 					thread->m_FuncOnFinished();

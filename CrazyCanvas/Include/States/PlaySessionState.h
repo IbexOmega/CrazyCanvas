@@ -61,6 +61,7 @@ private:
 	bool m_Initiated;
 	bool m_MatchReadyReceived;
 	bool m_MatchLoaded;
+	bool m_DebugWindow = false;
 
 	PacketGameSettings m_GameSettings;
 
