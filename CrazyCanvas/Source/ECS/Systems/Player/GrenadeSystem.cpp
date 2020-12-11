@@ -128,8 +128,8 @@ void GrenadeSystem::Tick(LambdaEngine::Timestamp deltaTime)
 		for (Entity grenadeWielder : grenadeWielderEntities)
 		{
 			GrenadeWielderComponent& grenadeWielderComp = pGrenadeWielderComponents->GetData(grenadeWielder);
-			const uint32 offCooldown = grenadeWielderComp.ThrowCooldown <= 0.0f;
-			grenadeWielderComp.ThrowCooldown -= dt * offCooldown;
+			if(grenadeWielderComp.ThrowCooldown >= 0.0f)
+				grenadeWielderComp.ThrowCooldown -= dt;
 		}
 	}
 }
