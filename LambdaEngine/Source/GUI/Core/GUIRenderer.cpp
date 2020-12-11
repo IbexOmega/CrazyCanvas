@@ -824,7 +824,6 @@ namespace LambdaEngine
 			{
 				Texture* pDepthStencilTexture = m_pCurrentRenderTarget->GetDepthStencilTexture();
 				TextureView** ppTextureViews = m_pCurrentRenderTarget->GetRenderTargets();
-				TextureView** ppTextureViews = m_pCurrentRenderTarget->GetRenderTargets();
 
 				if (pDepthStencilTexture != nullptr && ppTextureViews[0] != nullptr && ppTextureViews[1] != nullptr)
 				{
