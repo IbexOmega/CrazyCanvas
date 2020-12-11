@@ -745,11 +745,15 @@ namespace LambdaEngine
 		const glm::quat rotation = collisionInfo.Rotation.Quaternion * additionalRotation;
 		const PxTransform transformPX = CreatePxTransform(position, rotation);
 
-		const glm::vec3& initialVelocity = collisionInfo.Velocity.Velocity;
-		const PxVec3 initialVelocityPX = { initialVelocity.x, initialVelocity.y, initialVelocity.z };
+		const glm::vec3& velocity = collisionInfo.Velocity.Velocity;
+		const PxVec3 velocityPX = { velocity.x, velocity.y, velocity.z };
+
+		const glm::vec3& angularVelocity = collisionInfo.AngularVelocity;
+		const PxVec3 angularVelocityPX(angularVelocity.x, angularVelocity.y, angularVelocity.z);
 
 		PxRigidDynamic* pActor = m_pPhysics->createRigidDynamic(transformPX);
-		pActor->setLinearVelocity(initialVelocityPX);
+		pActor->setLinearVelocity(velocityPX);
+		pActor->setAngularVelocity(angularVelocityPX);
 
 		if (collisionInfo.pMass)
 		{

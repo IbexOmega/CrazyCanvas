@@ -11,6 +11,7 @@
 #include "Game/Multiplayer/MultiplayerUtils.h"
 #include "Input/API/InputActionSystem.h"
 #include "Lobby/PlayerManagerClient.h"
+#include "Math/Random.h"
 #include "Physics/CollisionGroups.h"
 #include "Resources/ResourceManager.h"
 #include "World/LevelObjectCreator.h"
@@ -209,6 +210,10 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 
 	const float32 grenadeMass = GRENADE_MASS;
 
+	// Randomize a spin
+	constexpr const float32 angularSpeed = 3.0f;
+	const glm::vec3 angularVelocity = glm::normalize(glm::vec3(Random::Float32(), Random::Float32(), Random::Float32())) * angularSpeed;
+
 	const Entity grenade = pECS->CreateEntity();
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
@@ -231,6 +236,7 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 			},
 		},
 		/* Velocity */			pECS->AddComponent(grenade, VelocityComponent({ .Velocity = velocity })),
+		/* Angular Velocity */	angularVelocity,
 		/* Mass */				&grenadeMass
 	};
 
