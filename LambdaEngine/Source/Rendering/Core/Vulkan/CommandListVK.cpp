@@ -239,7 +239,7 @@ namespace LambdaEngine
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+		accelerationStructureBuildInfo.flags						= 0;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -250,6 +250,16 @@ namespace LambdaEngine
 			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_TRACE)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
+			}
+			else
+			{
+				//Default is Fast Build (Normally what we want for TLAS)
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
 			}
 		}
 
@@ -316,7 +326,7 @@ namespace LambdaEngine
 		VkAccelerationStructureBuildGeometryInfoKHR accelerationStructureBuildInfo = {};
 		accelerationStructureBuildInfo.sType						= VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 		accelerationStructureBuildInfo.type							= VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-		accelerationStructureBuildInfo.flags						= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+		accelerationStructureBuildInfo.flags						= 0;
 		accelerationStructureBuildInfo.geometryArrayOfPointers		= VK_FALSE;
 		accelerationStructureBuildInfo.geometryCount				= 1;
 		accelerationStructureBuildInfo.ppGeometries					= &pGeometryData;
@@ -327,6 +337,16 @@ namespace LambdaEngine
 			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE)
 			{
 				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+			}
+
+			if (pBuildDesc->Flags & FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD)
+			{
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_BUILD_BIT_KHR;
+			}
+			else
+			{
+				//Default is Fast Trace (Normally what we want for BLAS)
+				accelerationStructureBuildInfo.flags |= VK_BUILD_ACCELERATION_STRUCTURE_PREFER_FAST_TRACE_BIT_KHR;
 			}
 		}
 

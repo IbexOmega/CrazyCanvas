@@ -76,13 +76,13 @@ void LobbyState::Init()
 	
 	CommonApplication::Get()->SetMouseVisibility(true);
 	PlayerActionSystem::SetMouseEnabled(false);
-	Input::PushInputMode(EInputLayer::GUI);
+	Input::PushInputLayer(EInputLayer::GUI);
 
 	DisablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Play();
 
-	m_LobbyGUI = *new LobbyGUI(&m_GameSettings);
-	m_View = Noesis::GUI::CreateView(m_LobbyGUI);
+	m_LobbyGUI	= *new LobbyGUI(&m_GameSettings);
+	m_View		= Noesis::GUI::CreateView(m_LobbyGUI);
 	LambdaEngine::GUIApplication::SetView(m_View);
 
 	m_LobbyGUI->InitGUI();
@@ -132,6 +132,8 @@ bool LobbyState::OnPlayerStateUpdatedEvent(const PlayerStateUpdatedEvent& event)
 	{
 		if (pPlayer == PlayerManagerClient::GetPlayerLocal())
 		{
+			LambdaEngine::GUIApplication::SetView(nullptr);
+
 			State* pStartingState = DBG_NEW PlaySessionState(m_GameSettings);
 			StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 		}
@@ -182,6 +184,8 @@ bool LobbyState::OnClientDisconnected(const ClientDisconnectedEvent& event)
 	LOG_WARNING("PlaySessionState::OnClientDisconnected(Reason: %s)", reason.c_str());
 
 	PlayerManagerClient::Reset();
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	State* pMainMenuState = DBG_NEW MainMenuState();
 	StateManager::GetInstance()->EnqueueStateTransition(pMainMenuState, STATE_TRANSITION::POP_AND_PUSH);

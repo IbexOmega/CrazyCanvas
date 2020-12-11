@@ -475,9 +475,9 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
 
 		ECSCore* pECS = ECSCore::GetInstance();
-		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
-		const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-		const ComponentArray<ProjectileComponent>* pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
+		const ComponentArray<PlayerLocalComponent>*	pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
+		const ComponentArray<TeamComponent>*		pTeamComponents = pECS->GetComponentArray<TeamComponent>();
+		const ComponentArray<ProjectileComponent>*	pProjectileComponents = pECS->GetComponentArray<ProjectileComponent>();
 
 		const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
 
@@ -520,7 +520,7 @@ bool HUDSystem::OnSpectatePlayerEvent(const SpectatePlayerEvent& event)
 bool HUDSystem::OnGameOver(const GameOverEvent& event)
 {
 	//un-lock mouse
-	Input::PushInputMode(EInputLayer::GUI);
+	Input::PushInputLayer(EInputLayer::GUI);
 
 	const THashTable<uint64, Player>& playerMap = PlayerManagerBase::GetPlayers();
 
@@ -532,9 +532,9 @@ bool HUDSystem::OnGameOver(const GameOverEvent& event)
 	{
 		const Player* pPlayer = &pair.second;
 
-		int16 kills = pPlayer->GetKills();
-		int16 deaths = pPlayer->GetDeaths();
-		int16 flags = pPlayer->GetFlagsCaptured();
+		int16 kills		= pPlayer->GetKills();
+		int16 deaths	= pPlayer->GetDeaths();
+		int16 flags		= pPlayer->GetFlagsCaptured();
 
 		if (kills > mostKills.first || (kills == mostKills.first && mostKills.second->GetUID() < pPlayer->GetUID()))
 			mostKills = std::make_pair(kills, pPlayer);

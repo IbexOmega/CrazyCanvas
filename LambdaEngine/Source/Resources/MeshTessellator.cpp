@@ -251,9 +251,7 @@ namespace LambdaEngine
 		// Only tessellate on client
 		if (!MultiplayerUtils::IsServer())
 		{
-#ifdef LAMBDA_DEVELOPMENT
 			const uint64 PRE_MESH_VERTEX_COUNT = pMesh->Vertices.GetSize();
-#endif
 			const uint64 PRE_MESH_TRIANGLE_COUNT = pMesh->Indices.GetSize() / 3U;
 	
 			uint64 tesselatedVertexCount = (m_MaxTessellationTriangleCount * m_MaxTrianglesPerSubTess) * 3U;

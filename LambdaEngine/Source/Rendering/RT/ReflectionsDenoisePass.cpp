@@ -198,9 +198,6 @@ namespace LambdaEngine
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		UNREFERENCED_VARIABLE(ppSecondaryExecutionStage);
 
-		if (sleeping)
-			return;
-
 		m_ModFrameIndex = modFrameIndex;
 
 		//Release Device Resources
@@ -214,6 +211,9 @@ namespace LambdaEngine
 
 			deviceResourcesToRemove.Clear();
 		}
+
+		if (sleeping)
+			return;
 
 		m_ppCommandAllocators[m_ModFrameIndex]->Reset();
 		CommandList* pCommandList = m_ppCommandLists[m_ModFrameIndex];
@@ -239,6 +239,7 @@ namespace LambdaEngine
 
 		//Horizontal Gaussian Denoise Pass
 		{
+			pCommandList->SetConstantRange(m_pSpatioTemporalPassPipelineLayout, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, m_PushConstantData, sizeof(m_PushConstantData), 0);
 			pCommandList->BindDescriptorSetCompute(m_pHorizontalGaussianPassDescriptorSet, m_pGaussianPassPipelineLayout, 0);
 			pCommandList->BindComputePipeline(PipelineStateManager::GetPipelineState(m_HorizontalGaussianPassPipelineStateID));
 			pCommandList->Dispatch(m_DispatchWidth, m_DispatchHeight, 1);
@@ -255,6 +256,7 @@ namespace LambdaEngine
 
 		//Vertical Gaussian Denoise Pass
 		{
+			pCommandList->SetConstantRange(m_pSpatioTemporalPassPipelineLayout, FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER, m_PushConstantData, sizeof(m_PushConstantData), 0);
 			pCommandList->BindDescriptorSetCompute(m_pVerticalGaussianPassDescriptorSet, m_pGaussianPassPipelineLayout, 0);
 			pCommandList->BindComputePipeline(PipelineStateManager::GetPipelineState(m_VerticalGaussianPassPipelineStateID));
 			pCommandList->Dispatch(m_DispatchWidth, m_DispatchHeight, 1);
@@ -332,6 +334,11 @@ namespace LambdaEngine
 
 	bool ReflectionsDenoisePass::CreatePipelineLayouts()
 	{
+		ConstantRangeDesc constantRange = {};
+		constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
+		constantRange.SizeInBytes		= sizeof(m_PushConstantData);
+		constantRange.OffsetInBytes		= 0;
+
 		//Spatio-Temporal Denoise Pass
 		{
 			DescriptorSetLayoutDesc descriptorSetLayout = {};
@@ -416,11 +423,6 @@ namespace LambdaEngine
 				descriptorSetLayout.DescriptorBindings.PushBack(descriptorBindingDesc);
 			}
 
-			ConstantRangeDesc constantRange = {};
-			constantRange.ShaderStageFlags	= FShaderStageFlag::SHADER_STAGE_FLAG_COMPUTE_SHADER;
-			constantRange.SizeInBytes		= sizeof(m_PushConstantData);
-			constantRange.OffsetInBytes		= 0;
-
 			PipelineLayoutDesc pipelineLayoutDesc = { };
 			pipelineLayoutDesc.DebugName			= "Spatio-Temporal Reflections Denoise Pass";
 			pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayout };
@@ -476,6 +478,7 @@ namespace LambdaEngine
 			PipelineLayoutDesc pipelineLayoutDesc = { };
 			pipelineLayoutDesc.DebugName			= "Gaussian Denoise Pass";
 			pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayout };
+			pipelineLayoutDesc.ConstantRanges		= { constantRange };
 
 			m_pGaussianPassPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 		}

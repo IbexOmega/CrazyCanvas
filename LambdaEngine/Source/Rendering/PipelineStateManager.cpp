@@ -184,6 +184,11 @@ namespace LambdaEngine
 		}
 	}
 
+	THashTable<uint64, ManagedGraphicsPipelineStateDesc>& PipelineStateManager::GetGraphicsPipelineStateDescriptions()
+	{
+		return s_GraphicsPipelineStateDescriptions;
+	}
+
 	void PipelineStateManager::ReleasePipelineState(uint64 id)
 	{
 		auto it = s_PipelineStates.find(id);
