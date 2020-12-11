@@ -17,6 +17,7 @@ void SessionSettings::Init()
 	cmdResetSettings.AddDescription("Set server ground acceleration.\n\t'session_settings_reset'");
 	GameConsole::Get().BindCommand(cmdResetSettings, [](GameConsole::CallbackInput& input)->void
 	{
+		UNREFERENCED_VARIABLE(input);
 		if(PlayerManagerClient::GetPlayerLocal()->IsHost())
 			SessionSettings::SendPacketSessionSettings(ESessionSetting::RESET, true);
 	});
