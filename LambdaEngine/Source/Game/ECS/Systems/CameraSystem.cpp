@@ -74,7 +74,6 @@ namespace LambdaEngine
 	{
 		UNREFERENCED_VARIABLE(deltaTime);
 
-
 		ECSCore* pECSCore = ECSCore::GetInstance();
 
 		ComponentArray<CameraComponent>*					pCameraComponents			= pECSCore->GetComponentArray<CameraComponent>();
@@ -135,7 +134,7 @@ namespace LambdaEngine
 							glm::cos(cameraComp.ScreenShakeAngle) * cameraComp.ScreenShakeTime,
 							glm::sin(cameraComp.ScreenShakeAngle) * cameraComp.ScreenShakeTime,
 							0.0f) * cameraComp.ScreenShakeAmplitude);
-				cameraComp.ScreenShakeTime -= dt;
+				cameraComp.ScreenShakeTime -= deltaTime.AsSeconds();
 			}
 		}
 	}
