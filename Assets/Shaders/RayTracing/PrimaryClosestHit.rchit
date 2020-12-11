@@ -41,12 +41,16 @@ layout(location = 0) rayPayloadInEXT SPrimaryPayload s_PrimaryPayload;
 
 hitAttributeEXT vec3 attribs;
 
+bool IsAnimated(SVertex v)
+{
+	uint wData = floatBitsToUint(v.Position.w);
+	bool isAnimated = (wData & 0x100) != 0;
+	return isAnimated;
+}
+
 vec3 ExtractOriginalPosition(SVertex v)
 {
-	vec3 pos = vec3(v.Tangent.w, v.TexCoord.z, v.TexCoord.w);
-	if(floatBitsToUint(pos.x) == UINT32_MAX || floatBitsToUint(pos.y) == UINT32_MAX || floatBitsToUint(pos.z) == UINT32_MAX)
-		pos = v.Position.xyz;
-	return pos;
+	return vec3(v.Tangent.w, v.TexCoord.z, v.TexCoord.w);
 }
 
 SRayHitDescription CalculateHitData()
@@ -68,15 +72,17 @@ SRayHitDescription CalculateHitData()
 	vec3 B = cross(N, T);
 	mat3 TBN = mat3(T, B, N);
 
+	vec2 texCoord = (v0.TexCoord.xy * barycentricCoords.x + v1.TexCoord.xy * barycentricCoords.y + v2.TexCoord.xy * barycentricCoords.z);
+	float paintDist = (v0.Normal.w * barycentricCoords.x + v1.Normal.w * barycentricCoords.y + v2.Normal.w * barycentricCoords.z);
+
 	vec3 originalPosV0 = ExtractOriginalPosition(v0);
 	vec3 originalPosV1 = ExtractOriginalPosition(v1);
 	vec3 originalPosV2 = ExtractOriginalPosition(v2);
 
-	vec3 noisePosition = (originalPosV0 * barycentricCoords.x + originalPosV1 * barycentricCoords.y + originalPosV2 * barycentricCoords.z);
-	vec2 texCoord = (v0.TexCoord.xy * barycentricCoords.x + v1.TexCoord.xy * barycentricCoords.y + v2.TexCoord.xy * barycentricCoords.z);
-	float paintDist = (v0.Normal.w * barycentricCoords.x + v1.Normal.w * barycentricCoords.y + v2.Normal.w * barycentricCoords.z);
-
 	vec3 position = gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;
+	vec3 noisePosition = position;
+	if(IsAnimated(v0) || IsAnimated(v1) || IsAnimated(v2))
+		noisePosition = (originalPosV0 * barycentricCoords.x + originalPosV1 * barycentricCoords.y + originalPosV2 * barycentricCoords.z);
 
 	vec4 paintInfo4V0 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v0.Position.w)));
 	vec4 paintInfo4V1 = PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(v1.Position.w)));

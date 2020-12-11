@@ -1649,9 +1649,9 @@ namespace LambdaEngine
 			// Store data for mesh painting.
 			vertex.PositionXYZPaintBitsW.w = glm::uintBitsToFloat(0);
 			vertex.NormalXYZPaintDistW.w = 1.0f;
-			vertex.TangentXYZOriginalPosW.w = glm::uintBitsToFloat(UINT32_MAX);
-			vertex.TexCoordXYOriginalPosZW.z = glm::uintBitsToFloat(UINT32_MAX);
-			vertex.TexCoordXYOriginalPosZW.w = glm::uintBitsToFloat(UINT32_MAX);
+			vertex.TangentXYZOriginalPosW.w = 0.f;
+			vertex.TexCoordXYOriginalPosZW.z = 0.f;
+			vertex.TexCoordXYOriginalPosZW.w = 0.f;
 
 			pMesh->Vertices[vertexIdx] = vertex;
 		}
