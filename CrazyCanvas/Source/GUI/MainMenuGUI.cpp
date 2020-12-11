@@ -266,7 +266,7 @@ void MainMenuGUI::LevelSelectMousePressed(Noesis::BaseComponent* pSender, const 
 
 	Noesis::Grid* grid = static_cast<Noesis::Grid*>(pSender);
 	Noesis::StackPanel* pnl = FrameworkElement::FindName<Noesis::StackPanel>("LevelSelectStackPanel");
-	uint32 index = pnl->GetChildren()->IndexOf(grid);
+	uint8 index = (uint8)(pnl->GetChildren()->IndexOf(grid));
 
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
