@@ -752,7 +752,7 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 				.SpawnDelay = 0.05f,
 				.ParticleCount = 512,
 				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 45.f,
+				.ConeAngle = 45.f,
 				.VelocityRandomness = 0.5f,
 				.Velocity = 2.0,
 				.Acceleration = 0.0,
@@ -1410,7 +1410,7 @@ bool LevelObjectCreator::CreateProjectile(
 				.SpawnDelay = 0.05f,
 				.ParticleCount = 64,
 				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 90.f,
+				.ConeAngle = 90.f,
 				.VelocityRandomness = 0.5f,
 				.Velocity = 1.0,
 				.Acceleration = 0.0,
@@ -1436,7 +1436,7 @@ bool LevelObjectCreator::CreateProjectile(
 			emitterComponent.Explosive = 1.0f;
 			emitterComponent.SpawnDelay = 0.1f;
 			emitterComponent.Velocity = 6.0f;
-			emitterComponent.Angle = 45.0f;
+			emitterComponent.ConeAngle = 45.0f;
 
 			const Entity particleEntity = pECS->CreateEntity();
 			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + projectileOffset });

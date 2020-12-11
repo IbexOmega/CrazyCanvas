@@ -18,6 +18,8 @@ namespace physx
 
 class GrenadeSystem : LambdaEngine::System
 {
+	static constexpr const uint32 NUM_ENVIRONMENT_SPHERE_POINTS = 32;
+
 public:
 	GrenadeSystem() = default;
 	~GrenadeSystem();
@@ -47,6 +49,10 @@ private:
 	*/
 	void RaycastToPlayers(const LambdaEngine::TArray<LambdaEngine::Entity>& players, LambdaEngine::Entity grenadeEntity, const glm::vec3& grenadePosition, uint8 grenadeTeam);
 
+	/**
+	 * Sends raycasts from the grenade to the environment and spawns hit points on the environment.
+	*/
+	void RaycastToEnvironment(LambdaEngine::Entity grenadeEntity, const glm::vec3& grenadePosition, uint8 grenadeTeam);
 
 private:
 	bool OnPacketGrenadeThrownReceived(const PacketReceivedEvent<PacketGrenadeThrown>& grenadeThrownEvent);
@@ -56,4 +62,6 @@ private:
 	LambdaEngine::IDVector m_ForeignPlayers;
 
 	GUID_Lambda m_GrenadeMesh;
+
+	glm::vec3 m_FibonacciSphere[NUM_ENVIRONMENT_SPHERE_POINTS];
 };

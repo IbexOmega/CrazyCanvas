@@ -6,6 +6,7 @@
 
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
+#include "ECS/Components/Misc/DestructionComponent.h"
 
 #include "Application/API/Events/EventQueue.h"
 
@@ -128,7 +129,6 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 
 		pECS->AddComponent<PositionComponent>(entity, positionComponent);
 		pECS->AddComponent<RotationComponent>(entity, { true, GetRotationQuaternion(glm::normalize(glm::vec3(0, -1, 0))) });
-
 		pECS->AddComponent<ParticleEmitterComponent>(entity,
 			ParticleEmitterComponent{
 				.Active = true,
@@ -137,7 +137,7 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 				.SpawnDelay = 0.05f,
 				.ParticleCount = 512,
 				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 45.f,
+				.ConeAngle = 45.f,
 				.VelocityRandomness = 0.5f,
 				.Velocity = 7.0,
 				.Acceleration = 0.0,
@@ -152,7 +152,10 @@ bool HealthSystemClient::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& eve
 				.Color = glm::vec4(TeamHelper::GetTeamColor(teamComponent.TeamIndex), 1.f)
 			}
 		);
+		//These entities were never deleted, ffs....
+		pECS->AddComponent<DestructionComponent>(entity, DestructionComponent{ .TimeLeft = 5.0f });
 
+		//This does nothing....
 		MeshPaintHandler::AddHitPoint(
 			positionComponent.Position,
 			glm::vec3(0.0f, -1.0f, 0.0f),

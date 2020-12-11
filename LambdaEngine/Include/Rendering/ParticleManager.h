@@ -33,7 +33,11 @@ namespace LambdaEngine
 		float			SpawnDelay; // This will be used if not explosive.
 		glm::vec3		Position;
 		glm::quat		Rotation;
-		float			Angle = 90.f;
+		union
+		{
+			float ConeAngle; //Set for Cone
+			float SphereRadius; //Set for Sphere
+		};
 		float			Velocity;
 		float			VelocityRandomness;
 		float			Gravity;
@@ -150,6 +154,7 @@ namespace LambdaEngine
 		void ReplaceRemovedEmitterWithLast(uint32 removeIndex);
 
 		bool CreateConeParticleEmitter(EmitterID emitterID);
+		bool CreateSphereParticleEmitter(EmitterID emitterID);
 		bool CreateTubeParticleEmitter(EmitterID emitterID);
 		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** ppStagingBuffers, Buffer** ppBuffer, FBufferFlags flags, const String& name);
 

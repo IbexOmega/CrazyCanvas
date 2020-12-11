@@ -346,27 +346,6 @@ namespace LambdaEngine
 		const glm::quat& rotation = overlapInfo.Rotation;
 		const GeometryParameters& geometryParams = overlapInfo.GeometryParams;
 
-		// There's no default constructor for PxGeometry, so a sphere is used as a default
-		PxGeometry queryGeometry = PxSphereGeometry(geometryParams.Radius);
-		PxTransform transform = PxTransform(position.x, position.y, position.z, PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
-
-		switch (overlapInfo.GeometryType)
-		{
-			case EGeometryType::BOX:
-				queryGeometry = PxBoxGeometry(PxVec3(geometryParams.HalfExtents.x, geometryParams.HalfExtents.y, geometryParams.HalfExtents.z));
-				break;
-			case EGeometryType::CAPSULE:
-				queryGeometry = PxCapsuleGeometry(geometryParams.Radius, geometryParams.HalfHeight);
-				break;
-			case EGeometryType::PLANE:
-				transform = CreatePlaneTransform(position, rotation);
-				queryGeometry = PxPlaneGeometry();
-				break;
-			case EGeometryType::MESH:
-				queryGeometry = CreateTriangleMeshGeometry(geometryParams.pMesh, glm::vec3(1.0f));
-				break;
-		}
-
 		QueryFilterData filterData = {};
 		if (pFilterData)
 		{
@@ -379,7 +358,39 @@ namespace LambdaEngine
 		filterDataPX.data.word1 = filterData.ExcludedGroup;
 		filterDataPX.data.word2 = filterData.ExcludedEntity;
 
-		return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+		// There's no default constructor for PxGeometry, so a sphere is used as a default
+		
+		PxTransform transform = PxTransform(position.x, position.y, position.z, PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
+
+		switch (overlapInfo.GeometryType)
+		{
+			case EGeometryType::BOX:
+			{
+				PxBoxGeometry queryGeometry(PxVec3(geometryParams.HalfExtents.x, geometryParams.HalfExtents.y, geometryParams.HalfExtents.z));
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+			case EGeometryType::CAPSULE:
+			{
+				PxCapsuleGeometry queryGeometry(geometryParams.Radius, geometryParams.HalfHeight);
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+			case EGeometryType::PLANE:
+			{
+				transform = CreatePlaneTransform(position, rotation);
+				PxPlaneGeometry queryGeometry;
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+			case EGeometryType::MESH:
+			{
+				PxTriangleMeshGeometry queryGeometry = CreateTriangleMeshGeometry(geometryParams.pMesh, glm::vec3(1.0f));
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+			default:
+			{
+				PxSphereGeometry queryGeometry(geometryParams.Radius);
+				return m_pScene->overlap(queryGeometry, transform, overlaps, filterDataPX, &m_RaycastQueryFilterCallback);
+			}
+		}
 	}
 
 	void PhysicsSystem::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pPairs, PxU32 nbPairs)
