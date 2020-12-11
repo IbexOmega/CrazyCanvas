@@ -173,7 +173,7 @@ void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>
 	}
 }
 
-void HUDGUI::AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo)
+void HUDGUI::AbortReload()
 {
 	CancelSmallPrompt();
 }
@@ -194,7 +194,6 @@ void HUDGUI::DisplayDamageTakenIndicator(const glm::vec3& direction, const glm::
 
 	float32 result = glm::dot(forwardDir, nor);
 	float32 rotation = 0.0f;
-
 
 	if (result > 0.99f)
 	{
