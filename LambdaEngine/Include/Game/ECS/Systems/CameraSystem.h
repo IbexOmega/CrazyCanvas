@@ -7,6 +7,8 @@
 #include "Game/ECS/Components/Physics/Transform.h"
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
 
+#include "Application/API/Events/KeyEvents.h"
+
 namespace LambdaEngine
 {
 	class LAMBDA_API CameraSystem : public System
@@ -14,7 +16,7 @@ namespace LambdaEngine
 	public:
 		DECL_REMOVE_COPY(CameraSystem);
 		DECL_REMOVE_MOVE(CameraSystem);
-		~CameraSystem() = default;
+		~CameraSystem();
 
 		bool Init();
 
@@ -31,11 +33,12 @@ namespace LambdaEngine
 	private:
 		CameraSystem() = default;
 
+		bool OnKeyPressed(const KeyPressedEvent& event);
 		// MoveFreeCamera translates and rotates a free camera
 		void MoveFreeCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotationComp, const FreeCameraComponent& freeCamComp);
 		// MoveFPSCamera translates and rotates an FPS camera
 		void MoveFPSCamera(float32 dt, VelocityComponent& velocityComp, RotationComponent& rotationComp, const FPSControllerComponent& FPSComp);
-		void RotateCamera(float32 dt, float32 mouseSpeedFactor, const glm::vec3& forward, glm::quat& rotation);
+		void RotateCamera(float32 dt, const glm::vec3& forward, glm::quat& rotation);
 		void RenderFrustum(Entity entity, const PositionComponent& positionComp, const RotationComponent& rotationComp);
 
 	private:

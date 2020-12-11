@@ -7,19 +7,6 @@
 
 namespace LambdaEngine
 {
-	struct FreeCameraComponent
-	{
-		DECL_COMPONENT(FreeCameraComponent);
-		float SpeedFactor		= 1.4f;
-		float MouseSpeedFactor	= 0.35f;
-	};
-
-	struct FPSControllerComponent : FreeCameraComponent
-	{
-		DECL_COMPONENT(FPSControllerComponent);
-		float SprintSpeedFactor	= 1.6f;
-	};
-
 	struct CameraComponent
 	{
 		DECL_COMPONENT(CameraComponent);
@@ -36,6 +23,18 @@ namespace LambdaEngine
 		float ScreenShakeTime		= 0.0f;
 		float ScreenShakeAmplitude	= 0.0f;
 		float ScreenShakeAngle		= 0.0f;
+	};
+
+	struct FreeCameraComponent
+	{
+		DECL_COMPONENT(FreeCameraComponent);
+		float SpeedFactor = 3.0f;
+	};
+
+	struct FPSControllerComponent : FreeCameraComponent
+	{
+		DECL_COMPONENT(FPSControllerComponent);
+		float SprintSpeedFactor = 1.6f;
 	};
 
 	struct ViewProjectionMatricesComponent

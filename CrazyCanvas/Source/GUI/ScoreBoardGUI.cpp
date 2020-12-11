@@ -53,41 +53,48 @@ void ScoreBoardGUI::InitGUI()
 	FrameworkElement::FindName<Noesis::Label>("TEAM_2_LABEL")->SetForeground(pteamBrush2);
 }
 
-
-void ScoreBoardGUI::UpdatePlayerAliveStatus(uint64 UID, bool isAlive)
+void ScoreBoardGUI::UpdatePlayerAliveStatus(const Player& player)
 {
-	if (!m_PlayerGrids.contains(UID))
+	if (player.IsSpectator())
+		return;
+
+	auto iterator = m_PlayerGrids.find(player.GetUID());
+
+	if (iterator == m_PlayerGrids.end())
 	{
-		LOG_WARNING("[HUDGUI]: Player with UID: &lu not found!", UID);
+		LOG_WARNING("[HUDGUI]: Player with UID: &lu not found!", player.GetUID());
 		return;
 	}
-	Grid* pGrid = m_PlayerGrids[UID];
+	Grid* pGrid = iterator->second;
 
 	Label* nameLabel = static_cast<Label*>(pGrid->GetChildren()->Get(0));
 
 	LOG_ERROR("[HUDGUI]: Name: %s", nameLabel->GetContent()->ToString().Str());
 
 	SolidColorBrush* pBrush = static_cast<SolidColorBrush*>(nameLabel->GetForeground());
-	if (isAlive)
+	if (player.IsDead())
 	{
-		pBrush->SetColor(Color::White());
+		pBrush->SetColor(Color::LightGray());
 		nameLabel->SetForeground(pBrush);
 	}
 	else
 	{
-		pBrush->SetColor(Color::LightGray());
+		pBrush->SetColor(Color::White());
 		nameLabel->SetForeground(pBrush);
 	}
 }
 
 void ScoreBoardGUI::UpdateAllPlayerProperties(const Player& player)
 {
-	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_NAME, player.GetName());
-	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_KILLS, std::to_string(player.GetKills()));
-	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_DEATHS, std::to_string(player.GetDeaths()));
-	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_FLAGS_CAPTURED, std::to_string(player.GetFlagsCaptured()));
-	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_FLAGS_DEFENDED, std::to_string(player.GetFlagsDefended()));
-	UpdatePlayerProperty(player.GetUID(), EPlayerProperty::PLAYER_PROPERTY_PING, std::to_string(player.GetPing()));
+	if (player.IsSpectator())
+		return;
+
+	UpdatePlayerProperty(player, EPlayerProperty::PLAYER_PROPERTY_NAME, player.GetName());
+	UpdatePlayerProperty(player, EPlayerProperty::PLAYER_PROPERTY_KILLS, std::to_string(player.GetKills()));
+	UpdatePlayerProperty(player, EPlayerProperty::PLAYER_PROPERTY_DEATHS, std::to_string(player.GetDeaths()));
+	UpdatePlayerProperty(player, EPlayerProperty::PLAYER_PROPERTY_FLAGS_CAPTURED, std::to_string(player.GetFlagsCaptured()));
+	UpdatePlayerProperty(player, EPlayerProperty::PLAYER_PROPERTY_FLAGS_DEFENDED, std::to_string(player.GetFlagsDefended()));
+	UpdatePlayerProperty(player, EPlayerProperty::PLAYER_PROPERTY_PING, std::to_string(player.GetPing()));
 }
 
 void ScoreBoardGUI::AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine::String& content, uint32 column)
@@ -105,8 +112,11 @@ void ScoreBoardGUI::AddStatsLabel(Noesis::Grid* pParentGrid, const LambdaEngine:
 	pParentGrid->SetColumn(pLabel, column);
 }
 
-void ScoreBoardGUI::UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value)
+void ScoreBoardGUI::UpdatePlayerProperty(const Player& player, EPlayerProperty property, const LambdaEngine::String& value)
 {
+	if (player.IsSpectator())
+		return;
+
 	uint8 index = 0;
 	switch (property)
 	{
@@ -116,15 +126,17 @@ void ScoreBoardGUI::UpdatePlayerProperty(uint64 playerUID, EPlayerProperty prope
 	case EPlayerProperty::PLAYER_PROPERTY_FLAGS_CAPTURED:	index = 3; break;
 	case EPlayerProperty::PLAYER_PROPERTY_FLAGS_DEFENDED:	index = 4; break;
 	case EPlayerProperty::PLAYER_PROPERTY_PING:				index = 5; break;
-	default: LOG_WARNING("[HUDGUI]: Enum not supported"); return;
+	default: LOG_WARNING("Enum not supported"); return;
 	}
 
-	if (!m_PlayerGrids.contains(playerUID))
+	auto iterator = m_PlayerGrids.find(player.GetUID());
+
+	if (iterator == m_PlayerGrids.end())
 	{
-		LOG_WARNING("[HUDGUI]: Player with UID: &lu not found!", playerUID);
+		LOG_WARNING("Player with UID: &lu not found!", player.GetUID());
 		return;
 	}
-	Grid* pGrid = m_PlayerGrids[playerUID];
+	Grid* pGrid = iterator->second;
 
 	Label* pLabel = static_cast<Label*>(pGrid->GetChildren()->Get(index));
 	pLabel->SetContent(value.c_str());
@@ -132,17 +144,22 @@ void ScoreBoardGUI::UpdatePlayerProperty(uint64 playerUID, EPlayerProperty prope
 
 void ScoreBoardGUI::RemovePlayer(const Player& player)
 {
-	if (!m_PlayerGrids.contains(player.GetUID()))
+	if (player.IsSpectator())
+		return;
+
+	auto iterator = m_PlayerGrids.find(player.GetUID());
+
+	if (iterator == m_PlayerGrids.end())
 	{
-		LOG_WARNING("[HUDGUI]: Tried to delete \"%s\", but could not find player UID.\n\tUID: %lu",
+		LOG_WARNING("Tried to delete \"%s\", but could not find player UID.\n\tUID: %lu",
 			player.GetName().c_str(), player.GetUID());
 		return;
 	}
-	Grid* pGrid = m_PlayerGrids[player.GetUID()];
+	Grid* pGrid = iterator->second;
 
 	if (!pGrid)
 	{
-		LOG_WARNING("[HUDGUI]: Tried to delete \"%s\", but could not find grid.\n\tUID: %lu",
+		LOG_WARNING("Tried to delete \"%s\", but could not find grid.\n\tUID: %lu",
 			player.GetName().c_str(), player.GetUID());
 		return;
 	}
@@ -159,17 +176,20 @@ void ScoreBoardGUI::RemovePlayer(const Player& player)
 	}
 	else
 	{
-		LOG_WARNING("[HUDGUI]: Tried to remove player with unknown team. Playername: %s, team: %d", player.GetName().c_str(), player.GetTeam());
+		LOG_WARNING("Tried to remove player with unknown team. Playername: %s, team: %d", player.GetName().c_str(), player.GetTeam());
 	}
 
 }
 
-void ScoreBoardGUI::AddPlayer(const Player& newPlayer)
+void ScoreBoardGUI::AddPlayer(const Player& player)
 {
-	Ptr<Grid> pGrid = *new Grid();
-	m_PlayerGrids[newPlayer.GetUID()] = pGrid;
+	if (player.IsSpectator())
+		return;
 
-	pGrid->SetName(std::to_string(newPlayer.GetUID()).c_str());
+	Ptr<Grid> pGrid = *new Grid();
+	m_PlayerGrids[player.GetUID()] = pGrid;
+
+	pGrid->SetName(std::to_string(player.GetUID()).c_str());
 	FrameworkElement::GetView()->GetContent()->RegisterName(pGrid->GetName(), pGrid);
 
 	ColumnDefinitionCollection* pColumnCollection = pGrid->GetColumnDefinitions();
@@ -187,7 +207,7 @@ void ScoreBoardGUI::AddPlayer(const Player& newPlayer)
 	Ptr<SolidColorBrush> pWhiteBrush = *new SolidColorBrush();
 	pWhiteBrush->SetColor(Color::White());
 
-	pNameLabel->SetContent(newPlayer.GetName().c_str());
+	pNameLabel->SetContent(player.GetName().c_str());
 	pNameLabel->SetForeground(pWhiteBrush);
 	pNameLabel->SetFontSize(28.f);
 	pNameLabel->SetVerticalAlignment(VerticalAlignment::VerticalAlignment_Bottom);
@@ -195,27 +215,27 @@ void ScoreBoardGUI::AddPlayer(const Player& newPlayer)
 	pGrid->GetChildren()->Add(pNameLabel);
 	pGrid->SetColumn(pNameLabel, column++);
 
-	AddStatsLabel(pGrid, std::to_string(newPlayer.GetKills()), column++);
-	AddStatsLabel(pGrid, std::to_string(newPlayer.GetDeaths()), column++);
-	AddStatsLabel(pGrid, std::to_string(newPlayer.GetFlagsCaptured()), column++);
-	AddStatsLabel(pGrid, std::to_string(newPlayer.GetFlagsDefended()), column++);
-	AddStatsLabel(pGrid, std::to_string(newPlayer.GetPing()), column++);
+	AddStatsLabel(pGrid, std::to_string(player.GetKills()), column++);
+	AddStatsLabel(pGrid, std::to_string(player.GetDeaths()), column++);
+	AddStatsLabel(pGrid, std::to_string(player.GetFlagsCaptured()), column++);
+	AddStatsLabel(pGrid, std::to_string(player.GetFlagsDefended()), column++);
+	AddStatsLabel(pGrid, std::to_string(player.GetPing()), column++);
 
-	if (newPlayer.GetTeam() == 1)
+	if (player.GetTeam() == 1)
 	{
 		m_pTeam1StackPanel->GetChildren()->Add(pGrid);
 	}
-	else if (newPlayer.GetTeam() == 2)
+	else if (player.GetTeam() == 2)
 	{
 		m_pTeam2StackPanel->GetChildren()->Add(pGrid);
 	}
 	else
 	{
-		LOG_WARNING("[HUDGUI]: Unknown team on player \"%s\".\n\tUID: %lu\n\tTeam: %d",
-			newPlayer.GetName().c_str(), newPlayer.GetUID(), newPlayer.GetTeam());
+		LOG_WARNING("Unknown team on player \"%s\".\n\tUID: %lu\n\tTeam: %d",
+			player.GetName().c_str(), player.GetUID(), player.GetTeam());
 	}
 
-	if (PlayerManagerClient::GetPlayerLocal()->GetUID() == newPlayer.GetUID())
+	if (PlayerManagerClient::GetPlayerLocal()->GetUID() == player.GetUID())
 	{
 		Ptr<Image> localPlayerIcon = *new Image();
 		Ptr<BitmapImage> srcImage = *new BitmapImage();

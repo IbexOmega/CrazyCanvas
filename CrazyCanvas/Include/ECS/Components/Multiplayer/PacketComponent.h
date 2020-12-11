@@ -24,7 +24,7 @@ private:
 	virtual void* AddPacketReceivedBegin() = 0;
 	virtual void AddPacketReceivedEnd() = 0;
 	virtual void ClearPacketsReceived() = 0;
-	virtual void WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) = 0;
+	virtual bool WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) = 0;
 	virtual uint16 GetPacketsToSendCount() = 0;
 	virtual uint16 GetPacketType() = 0;
 };
@@ -94,12 +94,13 @@ private:
 		m_PacketsReceived.Clear();
 	}
 
-	virtual void WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) override final
+	virtual bool WriteSegment(LambdaEngine::NetworkSegment* pSegment, int32 networkUID) override final
 	{
 		T& packet = m_PacketsToSend.front();
 		packet.NetworkUID = networkUID;
-		pSegment->Write<T>(&packet);
+		bool result = pSegment->Write<T>(&packet);
 		m_PacketsToSend.pop();
+		return result;
 	}
 
 	virtual uint16 GetPacketsToSendCount() override final

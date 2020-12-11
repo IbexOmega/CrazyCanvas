@@ -10,10 +10,10 @@ namespace LambdaEngine
 {
 	struct ViewerData
 	{
-		uint32 TeamId;
-		uint32 EntityId;
-		uint32 DrawArgIndex;
-		glm::vec3 Positon;
+		uint32 TeamId		= 0;
+		uint32 EntityId		= 0;
+		uint32 DrawArgIndex = 0;
+		glm::vec3 Position;
 	};
 
 	struct WeaponData
@@ -23,14 +23,10 @@ namespace LambdaEngine
 		uint32 InstanceIndex;
 	};
 
-	struct PlayerData
+	struct PlayerData : public ViewerData
 	{
-		uint32		DrawArgIndex;
-		uint32		EntityId;
-		uint32		TeamId;
 		bool		HasWeapon = false;
 		WeaponData	Weapon;
-		glm::vec3	Position;
 		float32		Distance2ToViewer;
 	};
 
@@ -79,6 +75,8 @@ namespace LambdaEngine
 		bool CreateRenderPass(RenderPassAttachmentDesc* pColorAttachmentDesc, RenderPassAttachmentDesc* pDepthStencilAttachmentDesc);
 		bool CreatePipelineState();
 		void RenderCull(bool renderEnemy, CommandList* pCommandList, uint64& pipelineId);
+
+		bool IsLocalPlayerSpectator() const;
 
 	private:
 		bool									m_Initilized = false;

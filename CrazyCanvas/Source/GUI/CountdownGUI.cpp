@@ -15,10 +15,17 @@ CountdownGUI::CountdownGUI()
 
 	Noesis::Ptr<Noesis::SolidColorBrush> brush = *new Noesis::SolidColorBrush();
 
-	const glm::vec3& promptColor = TeamHelper::GetTeamColor(PlayerManagerClient::GetPlayerLocal()->GetTeam());
-	Noesis::Color color(promptColor.r, promptColor.g, promptColor.b);
+	const Player* pPlayerLocal = PlayerManagerClient::GetPlayerLocal();
 
-	brush->SetColor(color);
+	if (pPlayerLocal->IsSpectator())
+	{
+		brush->SetColor(Noesis::Color::White());
+	}
+	else
+	{
+		const glm::vec3& promptColor = TeamHelper::GetTeamColor(pPlayerLocal->GetTeam());
+		brush->SetColor(Noesis::Color(promptColor.r, promptColor.g, promptColor.b));
+	}
 
 	m_pCountdownTextblock->SetForeground(brush);
 }

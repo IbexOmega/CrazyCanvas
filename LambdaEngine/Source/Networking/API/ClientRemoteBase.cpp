@@ -226,6 +226,15 @@ namespace LambdaEngine
 		return pSegment;
 	}
 
+	void ClientRemoteBase::ReturnPacket(NetworkSegment* pPacket)
+	{
+#ifdef LAMBDA_CONFIG_DEBUG
+		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket, "ClientRemoteBase::ReturnPacket");
+#else
+		GetPacketManager()->GetSegmentPool()->FreeSegment(pPacket);
+#endif
+	}
+
 	EClientState ClientRemoteBase::GetState() const
 	{
 		return m_State;

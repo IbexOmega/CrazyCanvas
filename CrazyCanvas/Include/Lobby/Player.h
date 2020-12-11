@@ -34,13 +34,12 @@ class Player
 	friend class PlayerManagerServer;
 
 public:
-	Player(const Player& other);
-
 	const LambdaEngine::String& GetName() const;
 	LambdaEngine::Entity GetEntity() const;
 	bool IsHost() const;
 	bool IsDead() const;
 	bool IsReady() const;
+	bool IsSpectator() const;
 	uint16 GetPing() const;
 	EGameState GetState() const;
 	uint8 GetTeam() const;
@@ -53,8 +52,6 @@ public:
 	bool operator==(const Player& other) const;
 	bool operator!=(const Player& other) const;
 	bool operator<(const Player& other) const;
-
-	Player& operator=(const Player& other);
 
 private:
 	Player();
@@ -81,6 +78,7 @@ private:
 	bool m_IsHost;
 	bool m_IsDead;
 	bool m_IsReady;
+	bool m_IsSpectator;
 	uint16 m_Ping;
 	EGameState m_State;
 	uint8 m_Team;

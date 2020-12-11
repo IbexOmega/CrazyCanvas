@@ -36,11 +36,11 @@ namespace LambdaEngine
 		virtual bool IsConnected() override;
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
+		virtual void ReturnPacket(NetworkSegment* pPacket) override;
 		virtual EClientState GetState() const override;
 		virtual NetworkStatistics* GetStatistics() override;
 		virtual IClientRemoteHandler* GetHandler() override;
 		bool Connect(const IPEndPoint& ipEndPoint);
-		void ReturnPacket(NetworkSegment* pPacket);
 		virtual bool SendUnreliable(NetworkSegment* packet) override;
 		virtual bool SendReliable(NetworkSegment* packet, IPacketListener* listener = nullptr) override;
 		virtual uint64 GetUID() const override;
