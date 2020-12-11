@@ -1784,8 +1784,8 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
 	{
-		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
-			return;
+		//if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+		//	return;
 
 		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
 		transform = transform * additionalTransform;

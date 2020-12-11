@@ -64,12 +64,22 @@ bool ResourceCatalog::Init()
 	//Weapon
 	{
 		ResourceManager::LoadMeshAndMaterialFromFile("Gun/Gun.glb", WEAPON_MESH_GUID, WEAPON_MATERIAL_GUID, false);
-		ResourceManager::LoadMeshFromFile("Gun/GunFirstPerson.glb", WEAPON_FIRST_PERSON_MESH_GUID, false);
 
 		// Soundeffects
 		WEAPON_SOUND_GUNFIRE_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/Shootsound.mp3");
 		WEAPON_SOUND_GUNFIRE_3D_GUID = ResourceManager::LoadSoundEffect3DFromFile("Weapon/Shootsound.mp3");
 		WEAPON_SOUND_OUTOFAMMO_2D_GUID = ResourceManager::LoadSoundEffect2DFromFile("Weapon/WaterSound.mp3");
+	}
+
+	// First person weapon and hands
+	{
+		ARMS_FIRST_PERSON_IDLE_GUIDs = ResourceManager::LoadAnimationsFromFile("Gun/ArmsAnimation.glb");
+
+		ResourceManager::LoadMeshAndMaterialFromFile("Gun/FirstPersonGun.glb", WEAPON_FIRST_PERSON_MESH_GUID, WEAPON_FIRST_PERSON_MATERIAL_GUID, false);
+		ResourceManager::LoadMeshAndMaterialFromFile("Gun/ArmsAnimation.glb", ARMS_FIRST_PERSON_MESH_GUID, ARMS_FIRST_PERSON_MATERIAL_GUID, false);
+
+		ResourceManager::LoadMeshFromFile("Gun/WeaponLiquidWater.glb", WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID, false);
+		ResourceManager::LoadMeshFromFile("Gun/WeaponLiquidPaint.glb", WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID, false);
 	}
 
 	// General Sound Effects
