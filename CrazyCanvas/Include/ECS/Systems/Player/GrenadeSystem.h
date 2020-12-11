@@ -13,6 +13,7 @@ namespace LambdaEngine
 
 namespace physx
 {
+	class PxMaterial;
 	class PxShape;
 }
 
@@ -64,4 +65,5 @@ private:
 	GUID_Lambda m_GrenadeMesh;
 
 	glm::vec3 m_FibonacciSphere[NUM_ENVIRONMENT_SPHERE_POINTS];
+	physx::PxMaterial* m_pGrenadeMaterialPX = nullptr;
 };

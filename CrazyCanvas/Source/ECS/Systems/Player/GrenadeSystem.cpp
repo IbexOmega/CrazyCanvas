@@ -32,6 +32,8 @@ GrenadeSystem::~GrenadeSystem()
 	}
 
 	EventQueue::UnregisterEventHandler<PacketReceivedEvent<PacketGrenadeThrown>>(this, &GrenadeSystem::OnPacketGrenadeThrownReceived);
+
+	PX_RELEASE(m_pGrenadeMaterialPX);
 }
 
 bool GrenadeSystem::Init()
@@ -82,6 +84,11 @@ bool GrenadeSystem::Init()
 	}
 
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketGrenadeThrown>>(this, &GrenadeSystem::OnPacketGrenadeThrownReceived);
+	m_pGrenadeMaterialPX = PhysicsSystem::GetInstance()->CreateMaterial(
+		GRENADE_STATIC_FRICTION,
+		GRENADE_DYNAMIC_FRICTION,
+		GRENADE_RESTITUTION
+	);
 
 	GenerateFibonacciSphere(m_FibonacciSphere, NUM_ENVIRONMENT_SPHERE_POINTS);
 
@@ -197,6 +204,8 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 		return false;
 	}
 
+	const float32 grenadeMass = GRENADE_MASS;
+
 	const Entity grenade = pECS->CreateEntity();
 	const DynamicCollisionCreateInfo collisionInfo =
 	{
@@ -207,17 +216,19 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 		/* Rotation */			pECS->AddComponent(grenade, RotationComponent({ .Quaternion = glm::identity<glm::quat>() })),
 		{
 			{
-				/* Shape Type */		EShapeType::SIMULATION,
-				/* Geometry Type */		EGeometryType::SPHERE,
-				/* Geometry Params */	{ .Radius = 0.15f },
-				/* CollisionGroup */	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
-										(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
-				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
-										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* EntityID*/			throwingPlayer,
+				.ShapeType =		EShapeType::SIMULATION,
+				.GeometryType =		EGeometryType::SPHERE,
+				.GeometryParams =	{ .Radius = 0.15f },
+				.pMaterial = 		m_pGrenadeMaterialPX,
+				.CollisionGroup =	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
+									(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
+				.CollisionMask =	(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+									(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				.EntityID =			throwingPlayer,
 			},
 		},
-		/* Velocity */			pECS->AddComponent(grenade, VelocityComponent({ .Velocity = velocity }))
+		/* Velocity */			pECS->AddComponent(grenade, VelocityComponent({ .Velocity = velocity })),
+		/* Mass */				&grenadeMass
 	};
 
 	const DynamicCollisionComponent projectileCollisionComp = PhysicsSystem::GetInstance()->CreateDynamicActor(collisionInfo);
