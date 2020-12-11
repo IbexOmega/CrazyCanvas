@@ -32,8 +32,14 @@ float32 PlayerActionSystem::m_Speed = 1.0f;
 
 PlayerActionSystem::PlayerActionSystem()
 {
-	if(!PlayerManagerClient::GetPlayerLocal()->IsSpectator())
-		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer)
+	{
+		if (!pPlayer->IsSpectator())
+		{
+			EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
+		}
+	}
 }
 
 PlayerActionSystem::~PlayerActionSystem()
