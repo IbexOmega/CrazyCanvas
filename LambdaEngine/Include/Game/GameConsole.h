@@ -25,7 +25,6 @@ namespace LambdaEngine
 		DECL_REMOVE_MOVE(GameConsole);
 
 		bool Init();
-		static bool Release();
 
 		void Tick();
 
@@ -35,6 +34,8 @@ namespace LambdaEngine
 		void PushInfo(const std::string& msg);
 		void PushMsg(const std::string& line, glm::vec4 color);
 
+	public:
+		static bool Release();
 		static GameConsole& Get();
 
 	private:

@@ -2370,7 +2370,13 @@ namespace LambdaEngine
 					LoadVertices(pMesh, pMeshAI);
 					LoadIndices(pMesh, pMeshAI);
 
-					if (context.ShouldTessellate && pMeshAI->mNumBones == 0)
+					bool tessellateMesh = context.ShouldTessellate;
+					if (nodeName.find("NO_COLLIDER") != String::npos)
+					{
+						tessellateMesh = false;
+					}
+
+					if (tessellateMesh && pMeshAI->mNumBones == 0)
 					{
 						MeshTessellator::GetInstance().Tessellate(pMesh);
 					}
