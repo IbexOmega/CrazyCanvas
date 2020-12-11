@@ -46,7 +46,7 @@ public:
 	inline static GUID_Lambda WEAPON_FIRST_PERSON_LIQUID_WATER_MESH_GUID = GUID_NONE;
 	inline static GUID_Lambda WEAPON_FIRST_PERSON_LIQUID_PAINT_MESH_GUID = GUID_NONE;
 	inline static GUID_Lambda ARMS_FIRST_PERSON_MESH_GUID = GUID_NONE;
-	inline static LambdaEngine::TArray<GUID_Lambda>  ARMS_FIRST_PERSON_IDLE_GUIDs;
+	inline static LambdaEngine::TArray<GUID_Lambda>  ARMS_FIRST_PERSON_ANIMATION_GUIDs;
 	inline static GUID_Lambda ARMS_FIRST_PERSON_MATERIAL_GUID = GUID_NONE;
 
 	// Weapon Sounds

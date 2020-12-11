@@ -65,6 +65,8 @@ namespace LambdaEngine
 		*/
 		uint32 m_MaxTrianglesPerSubTess = 0;
 
+		uint32 m_TotalVerticesAdded = 0;
+
 		CommandAllocator* m_pCommandAllocator;
 		CommandList* m_pCommandList;
 

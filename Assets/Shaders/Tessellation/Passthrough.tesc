@@ -23,7 +23,7 @@ layout(location = 3) out vec4 out_TexCoord[3];
 
 void CalculateTessLevels(inout float inner, inout float  outer[3])
 {
-    const float MAX_AREA = 30.0;
+    const float MAX_AREA = 60.0;
     const float MIN_AREA = 0.5;
     mat4 scaleMatrix = b_CalculationData.ScaleMatrix;
     
@@ -36,7 +36,7 @@ void CalculateTessLevels(inout float inner, inout float  outer[3])
 
     float maxEdgeLength = max(max(length(e0), length(e1)), length(e2));
     float minEdgeLength = min(min(length(e0), length(e1)), length(e2));
-    float diff = smoothstep(0.0f, 1.0f, minEdgeLength / maxEdgeLength);
+    float diff = min(minEdgeLength / maxEdgeLength, 1.0f);
 
     // Naive
     vec3 crossVec = cross(e0, e1);
