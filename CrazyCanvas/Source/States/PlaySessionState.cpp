@@ -133,7 +133,16 @@ void PlaySessionState::Init()
 
 	CommonApplication::Get()->SetMouseVisibility(false);
 	PlayerActionSystem::SetMouseEnabled(true);
-	Input::PushInputLayer(EInputLayer::GAME);
+
+	const EInputLayer currentInputLayer = Input::GetCurrentInputLayer();
+	if (currentInputLayer == EInputLayer::DEBUG)
+	{
+		Input::PopInputLayer();
+		Input::PushInputLayer(EInputLayer::GAME);
+		Input::PushInputLayer(EInputLayer::DEBUG);
+	}
+	else
+		Input::PushInputLayer(EInputLayer::GAME);
 
 	EnablePlaySessionsRenderstages();
 	ResourceManager::GetMusic(ResourceCatalog::MAIN_MENU_MUSIC_GUID)->Pause();

@@ -58,7 +58,6 @@ namespace LambdaEngine
 	void NetworkDiscovery::DisableClient()
 	{
 		std::scoped_lock<SpinLock> lock(s_LockClientsToDelete);
-		std::scoped_lock<SpinLock> lock2(s_Lock);
 		if (s_pClient)
 		{
 			s_ClientsToDelete.insert(s_pClient);

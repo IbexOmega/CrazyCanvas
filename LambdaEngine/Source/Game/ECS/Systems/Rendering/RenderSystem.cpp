@@ -1812,7 +1812,11 @@ bool RenderSystem::InitIntegrationLUT()
 		if (m_RayTracingEnabled)
 		{
 			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceKeyIt->second.InstanceIndex];
-			m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
+
+			if (asInstanceIndex != UINT32_MAX)
+			{
+				m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
+			}
 		}
 
 		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
