@@ -26,6 +26,7 @@ MultiplayerBase::~MultiplayerBase()
 void MultiplayerBase::InitInternal()
 {
 	m_PlayerAnimationSystem.Init();
+	m_GrenadeSystem.Init();
 
 	WeaponSystem::Init();
 	HealthSystem::Init();

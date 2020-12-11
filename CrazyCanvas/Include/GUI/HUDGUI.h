@@ -98,6 +98,7 @@ public:
 	void ProjectGUIIndicator(const glm::mat4& viewProj, const glm::vec3& worldPos, LambdaEngine::Entity entity, IndicatorTypeGUI indicatorType);
 	void CreateProjectedFlagGUIElement(LambdaEngine::Entity entity, uint8 localTeamIndex, uint8 teamIndex = UINT8_MAX);
 	void CreateProjectedPingGUIElement(LambdaEngine::Entity entity);
+	void CreateProjectedGrenadeGUIElement(LambdaEngine::Entity entity);
 	void RemoveProjectedGUIElement(LambdaEngine::Entity entity);
 
 	void SetWindowSize(uint32 width, uint32 height);
