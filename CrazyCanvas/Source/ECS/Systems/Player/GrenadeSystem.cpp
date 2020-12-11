@@ -46,7 +46,7 @@ bool GrenadeSystem::Init()
 	if (!MultiplayerUtils::IsServer())
 	{
 		m_GrenadeMesh = GUID_NONE;
-		ResourceManager::LoadMeshAndMaterialFromFile("Grenade.glb", m_GrenadeMesh, m_GrenadeMaterial);
+		ResourceManager::LoadMeshAndMaterialFromFile("Grenade.glb", m_GrenadeMesh, m_GrenadeMaterial, false);
 		if (m_GrenadeMesh == GUID_NONE)
 		{
 			return false;
