@@ -168,15 +168,17 @@ namespace LambdaEngine
 	*/
 	enum EMouseButton : uint8
 	{
-		MOUSE_BUTTON_UNKNOWN    = 0,
+		MOUSE_BUTTON_UNKNOWN		= 0,
 
-		MOUSE_BUTTON_LEFT       = 1,
-		MOUSE_BUTTON_RIGHT      = 2,
-		MOUSE_BUTTON_MIDDLE     = 3,
-		MOUSE_BUTTON_BACK       = 4,
-		MOUSE_BUTTON_FORWARD    = 5,
+		MOUSE_BUTTON_LEFT			= 1,
+		MOUSE_BUTTON_RIGHT			= 2,
+		MOUSE_BUTTON_MIDDLE			= 3,
+		MOUSE_BUTTON_BACK			= 4,
+		MOUSE_BUTTON_FORWARD		= 5,
+		MOUSE_BUTTON_SCROLL_UP		= 6,
+		MOUSE_BUTTON_SCROLL_DOWN	= 7,
 
-		MOUSE_BUTTON_LAST   = MOUSE_BUTTON_BACK,
+		MOUSE_BUTTON_LAST   = MOUSE_BUTTON_SCROLL_DOWN,
 		MOUSE_BUTTON_COUNT  = MOUSE_BUTTON_LAST + 1
 	};
 
@@ -449,11 +451,13 @@ namespace LambdaEngine
 	{
 		switch (Button)
 		{
-		case MOUSE_BUTTON_LEFT:		return "MOUSE_LEFT";
-		case MOUSE_BUTTON_RIGHT:	return "MOUSE_RIGHT";
-		case MOUSE_BUTTON_MIDDLE:	return "MOUSE_MIDDLE";
-		case MOUSE_BUTTON_BACK:		return "MOUSE_BACK";
-		case MOUSE_BUTTON_FORWARD:	return "MOUSE_FORWARD";
+		case MOUSE_BUTTON_LEFT:			return "MOUSE_LEFT";
+		case MOUSE_BUTTON_RIGHT:		return "MOUSE_RIGHT";
+		case MOUSE_BUTTON_MIDDLE:		return "MOUSE_MIDDLE";
+		case MOUSE_BUTTON_BACK:			return "MOUSE_BACK";
+		case MOUSE_BUTTON_FORWARD:		return "MOUSE_FORWARD";
+		case MOUSE_BUTTON_SCROLL_UP:	return "MOUSE_SCROLL_UP";
+		case MOUSE_BUTTON_SCROLL_DOWN:	return "MOUSE_SCROLL_DOWN";
 		default:					return "UNKNOWN";
 		}
 	}
@@ -466,6 +470,8 @@ namespace LambdaEngine
 			{"MOUSE_MIDDLE", EMouseButton::MOUSE_BUTTON_MIDDLE},
 			{"MOUSE_BACK", EMouseButton::MOUSE_BUTTON_BACK},
 			{"MOUSE_FORWARD", EMouseButton::MOUSE_BUTTON_FORWARD},
+			{"MOUSE_SCROLL_UP", EMouseButton::MOUSE_BUTTON_SCROLL_UP},
+			{"MOUSE_SCROLL_DOWN", EMouseButton::MOUSE_BUTTON_SCROLL_DOWN},
 		};
 
 		auto itr = mouseButtonMap.find(str);
