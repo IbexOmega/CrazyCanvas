@@ -63,6 +63,7 @@ bool LevelManager::Init()
 
 				LevelDesc levelDesc = {};
 				levelDesc.Name = level.HasMember("name") ? level["name"].GetString() : "No Name " + l;
+				levelDesc.Thumbnail = level.HasMember("thumbnail") ? level["thumbnail"].GetString() : "logo.png";
 
 				byteRepresentation.resize(levelDesc.Name.length());
 				memcpy(byteRepresentation.data(), levelDesc.Name.data(), levelDesc.Name.length());
