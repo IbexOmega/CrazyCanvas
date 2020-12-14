@@ -19,7 +19,9 @@ namespace LambdaEngine
 	void RuntimeStats::SetFrameTime(float frameTime)
 	{
 		m_AverageFrametime = m_AverageFrametime + (frameTime - m_AverageFrametime) / m_FrameCount;
-		m_AverageRAMUsage = m_AverageRAMUsage + (GetCurrentMemoryStats().CurrentWorkingSetSize - m_AverageRAMUsage) / m_FrameCount;
+
+		const int64 averageRAMUsage = (int64)m_AverageRAMUsage;
+		m_AverageRAMUsage = m_AverageRAMUsage + int64(((int64)GetCurrentMemoryStats().CurrentWorkingSetSize - averageRAMUsage) / (int64)m_FrameCount);
 
 		m_FrameCount += 1;
 	}
