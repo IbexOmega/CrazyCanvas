@@ -62,10 +62,11 @@ layout(binding = 14,	set = TEXTURE_SET_INDEX) uniform sampler2DArray u_BlueNoise
 layout(binding = 15,	set = TEXTURE_SET_INDEX, rgba8) restrict uniform image2D	u_Reflections;
 layout(binding = 16,	set = TEXTURE_SET_INDEX, rgba16f) restrict uniform image2D	u_BRDF_PDF;
 
-layout(push_constant) uniform ReflectionSettings
+layout(push_constant) uniform RayTracingSettings
 {
 	int GlossyEnabled;
 	int SPP;
-} pc_ReflectionSettings;
+	int ShadowsSetting;
+} pc_RayTracingSettings;
 
 #include "../MeshPaintHelper.glsl"

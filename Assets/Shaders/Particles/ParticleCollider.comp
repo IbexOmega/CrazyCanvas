@@ -81,7 +81,7 @@ void main()
 
 		// Initializes a ray query object but does not start traversal
 		rayQueryEXT rayQuery;
-		rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFC, origin, tMin,
+		rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0x02, origin, tMin,
 							direction, tMax);
 		
 		// Start traversal: return false if traversal is complete

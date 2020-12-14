@@ -4,6 +4,13 @@
 
 namespace LambdaEngine
 {
+	enum FRayTracingHitMask : uint8
+	{
+		OCCLUDER			= FLAG(0),
+		PARTICLE_COLLIDABLE = FLAG(1),
+		ALL					= UINT8_MAX
+	};
+
 	struct RayTracedComponent
 	{
 		DECL_COMPONENT(RayTracedComponent);

@@ -24,6 +24,7 @@ layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
 layout(location = 8) out vec4 out_PaintInfo4;
 layout(location = 9) out float out_PaintDist;
+layout(location = 10) out vec3 out_VertexColor; // Used for meshlet debugging, added here toi avoid warnings
 
 void main()
 {
@@ -52,4 +53,6 @@ void main()
 	out_PaintDist 			= vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
 
 	gl_Position = out_ClipPosition;
+
+	out_VertexColor = vec3(0.0f);
 }
