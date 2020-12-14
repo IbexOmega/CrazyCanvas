@@ -1442,7 +1442,7 @@
                 "geometry_shader": "",
                 "hull_shader": "",
                 "domain_shader": "",
-                "pixel_shader": "/Shading\\Shading.frag"
+                "pixel_shader": "/Shading\\ShadingRQ.frag"
             },
             "resource_states": [
                 {
@@ -1646,7 +1646,7 @@
             "y_dim_var": 1.0,
             "z_dim_var": 1.0,
             "shaders": {
-                "raygen_shader": "/RayTracing\\Raygen.rgen",
+                "raygen_shader": "/RayTracing\\RaygenRQ.rgen",
                 "miss_shaders": [
                     "/RayTracing\\PrimaryMiss.rmiss"
                 ],

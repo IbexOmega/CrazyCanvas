@@ -106,6 +106,7 @@ void SandboxState::Init()
 	m_DebuggingWindow	= EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_DEBUGGING);
 
 	ECSCore* pECS = ECSCore::GetInstance();
+	PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
 
 	// Load Match
 	{
@@ -129,6 +130,69 @@ void SandboxState::Init()
 	{
 		TeamHelper::SetTeamColor(1, 3);
 		RenderSystem::GetInstance().SetPaintMaskColor(1, TeamHelper::GetTeamColor(1));
+	}
+
+	GUID_Lambda sphereMeshGUID;
+	ResourceManager::LoadMeshFromFile("sphere.obj", sphereMeshGUID, false);
+	const float32 sphereRadius = PhysicsSystem::CalculateSphereRadius(ResourceManager::GetMesh(sphereMeshGUID));
+
+	uint32 gridRadius = 8;
+
+	for (uint32 y = 0; y < gridRadius; y++)
+	{
+		const float32 roughness = y / float32(gridRadius - 1);
+
+		for (uint32 x = 0; x < gridRadius; x++)
+		{
+			const float32 metallic = x / float32(gridRadius - 1);
+
+			MaterialProperties materialProperties;
+			materialProperties.Albedo		= glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			materialProperties.Roughness	= roughness;
+			materialProperties.Metallic		= metallic;
+
+			MeshComponent sphereMeshComp = {};
+			sphereMeshComp.MeshGUID		= sphereMeshGUID;
+			sphereMeshComp.MaterialGUID	= ResourceManager::LoadMaterialFromMemory(
+				"Default r: " + std::to_string(roughness) + " m: " + std::to_string(metallic),
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_NORMAL_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				GUID_TEXTURE_DEFAULT_COLOR_MAP,
+				materialProperties);
+
+			glm::vec3 position(-float32(gridRadius) * 0.5f + x - 5.0f, 4.0f + y, 15.0f);
+			glm::vec3 scale(1.0f);
+
+			Entity entity = pECS->CreateEntity();
+			pECS->AddComponent<MeshComponent>(entity, sphereMeshComp);
+			const CollisionCreateInfo collisionCreateInfo =
+			{
+				.Entity			= entity,
+				.Position		= pECS->AddComponent<PositionComponent>(entity, { true, position }),
+				.Scale			= pECS->AddComponent<ScaleComponent>(entity, { true, scale }),
+				.Rotation		= pECS->AddComponent<RotationComponent>(entity, { true, glm::identity<glm::quat>() }),
+				.Shapes =
+				{
+					{
+						.ShapeType		= EShapeType::SIMULATION,
+						.GeometryType	= EGeometryType::SPHERE,
+						.GeometryParams	= { .Radius = sphereRadius },
+						.CollisionGroup	= FCollisionGroup::COLLISION_GROUP_STATIC,
+						.CollisionMask	= ~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+						.EntityID		= entity,
+					},
+				},
+			};
+
+			const StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
+			pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
+
+			glm::mat4 transform = glm::translate(glm::identity<glm::mat4>(), position);
+			transform *= glm::toMat4(glm::identity<glm::quat>());
+			transform = glm::scale(transform, scale);
+		}
 	}
 
 	// Snow Emitter
