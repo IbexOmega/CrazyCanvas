@@ -23,6 +23,7 @@
 #include "Game/ECS/Components/Rendering/ParticleEmitter.h"
 #include "Game/ECS/Components/Rendering/CameraComponent.h"
 #include "Game/ECS/Components/Misc/InheritanceComponent.h"
+#include "Game/ECS/Components/Rendering/RayTracedComponent.h"
 #include "Teams/TeamHelper.h"
 #include "ECS/Components/GUI/ProjectedGUIComponent.h"
 
@@ -251,6 +252,8 @@ bool GrenadeSystem::ThrowGrenade(LambdaEngine::Entity throwingPlayer, const glm:
 	if (!MultiplayerUtils::IsServer())
 	{
 		pECS->AddComponent<MeshComponent>(grenade, MeshComponent({ .MeshGUID = m_GrenadeMesh, .MaterialGUID = m_GrenadeMaterial }));
+		pECS->AddComponent<RayTracedComponent>(grenade, RayTracedComponent{ .HitMask = FRayTracingHitMask::ALL });
+
 		const Player* player = PlayerManagerClient::GetPlayerLocal();
 		if(player != nullptr && PlayerManagerClient::GetPlayerLocal()->GetTeam() != playerTeamComp.TeamIndex)
 			pECS->AddComponent<ProjectedGUIComponent>(grenade, ProjectedGUIComponent({ .GUIType = IndicatorTypeGUI::GRENADE_INDICATOR }));

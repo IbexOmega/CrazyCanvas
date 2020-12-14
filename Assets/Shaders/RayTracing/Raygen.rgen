@@ -58,8 +58,9 @@ vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 alb
 
 		SLightsBuffer lightBuffer = b_LightsBuffer.val;
 
-		bool rayTraceShadows = pc_RayTracingSettings.ShadowsEnabled == 1 && b > 1;
-
+		bool rayTraceDirectionalShadows = (pc_RayTracingSettings.ShadowsEnabled >= 1 && b <= 1);
+		bool rayTracePointShadows = (pc_RayTracingSettings.ShadowsEnabled >= 2 && b <= 1);
+	
 		// Directional Light
 		{
 			vec3 w_iw		= normalize(lightBuffer.DirL_Direction);
@@ -68,7 +69,7 @@ vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 alb
 			float n_dot_i 	= max(dot(w_nw, w_iw), 0.0f);
 
 			vec4 p_l 				= lightBuffer.DirL_ProjView * vec4(p_w, 1.0f);
-			float shadow 			= rayTraceShadows ? DirShadowDepthTest(p_l, w_nw, w_iw, u_DirLShadowMap) : SampleLight(p_w, w_nw, w_iw, d, 1000.0f);
+			float shadow 			= rayTraceDirectionalShadows ? SampleLight(p_w, w_nw, w_iw, d, 1000.0f) : DirShadowDepthTest(p_l, w_nw, w_iw, u_DirLShadowMap);
 			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * (1.0f - shadow);
 
@@ -101,7 +102,7 @@ vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 alb
 			
 			float n_dot_i = max(dot(w_nw, w_iw), 0.0f);
 
-			float shadow 			= rayTraceShadows ? PointShadowDepthTest(p_w, light.Position, d, w_nw, u_PointLShadowMap[light.TextureIndex], light.FarPlane) : SampleLight(p_w, w_nw, w_iw, d, d_l);
+			float shadow 			= rayTracePointShadows ? SampleLight(p_w, w_nw, w_iw, d, d_l) : PointShadowDepthTest(p_w, light.Position, d, w_nw, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			float attenuation		= max(1.0f / (d_l * d_l), 0.001f);
 			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - shadow);
@@ -278,8 +279,9 @@ void main()
 
 		uint b = 0;
 		
-		for (; b < MAX_BOUNCES; b++)
+		for (; b < MAX_BOUNCES;)
 		{
+			b++;
 			shadeOutput = true;
 			
 			//Setup Ray Tracing Parameters

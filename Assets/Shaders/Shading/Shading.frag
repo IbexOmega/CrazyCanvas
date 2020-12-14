@@ -102,7 +102,7 @@ void main()
 			vec3 H = normalize(V + L);
 
 			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(positions.WorldPos, 1.0f);
-			inShadowDirLight 		= pc_RayTracingSettings.ShadowsEnabled == 1 ? SampleLight(positions.WorldPos, N, L, viewDistance, 1000.0f) : DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
+			inShadowDirLight 		= pc_RayTracingSettings.ShadowsEnabled >= 1 ? SampleLight(positions.WorldPos, N, L, viewDistance, 1000.0f) : DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * (1.0f - inShadowDirLight);
 
@@ -134,7 +134,7 @@ void main()
 			L = normalize(L);
 			vec3 H = normalize(V + L);
 			
-			float inShadow 			= pc_RayTracingSettings.ShadowsEnabled == 1 ? SampleLight(positions.WorldPos, N, L, viewDistance, distance) : PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
+			float inShadow 			= pc_RayTracingSettings.ShadowsEnabled >= 2 ? SampleLight(positions.WorldPos, N, L, viewDistance, distance) : PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			float attenuation		= 1.0f / (distance * distance);
 			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - inShadow);

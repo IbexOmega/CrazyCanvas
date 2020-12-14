@@ -148,9 +148,9 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	EngineConfig::SetStringProperty(EConfigOption::CONFIG_OPTION_AA, AAOption);
 	SetAA(pAAComboBox, AAOption);
 
-	// Glossy
+	// Ray Tracing Settings
 	{
-		//Enabled
+		//Glossy Enabled
 		Noesis::CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<Noesis::CheckBox>("GlossyReflectionsCheckBox");
 		bool glossyEnabled = pGlossyReflectionsCheckbox->GetIsChecked().GetValue();
 		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS, glossyEnabled);
@@ -158,7 +158,12 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 		//SPP
 		EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
 
-		ChangeRayTracingSettings(glossyEnabled, m_NewReflectionsSPP, true);
+		//Ray Traced Shadows
+		Noesis::ComboBox* pRayTracedShadowsComboBox = FrameworkElement::FindName<Noesis::ComboBox>("RayTracedShadowsComboBox");
+		LambdaEngine::String rayTracedShadowsOption = static_cast<Noesis::TextBlock*>(pRayTracedShadowsComboBox->GetSelectedItem())->GetText();
+		EngineConfig::SetStringProperty(EConfigOption::CONFIG_OPTION_RAY_TRACED_SHADOWS, rayTracedShadowsOption);
+
+		ChangeRayTracingSettings(glossyEnabled, m_NewReflectionsSPP, rayTracedShadowsOption);
 	}
 
 	EngineConfig::WriteToFile();
@@ -180,8 +185,7 @@ void SettingsGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, co
 	ChangeRayTracingSettings(
 		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
 		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP),
-		true);
-
+		EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RAY_TRACED_SHADOWS));
 
 	OnButtonBackClick(pSender, args);
 }
@@ -239,7 +243,23 @@ void SettingsGUI::OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, 
 	ChangeRayTracingSettings(
 		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
 		m_NewReflectionsSPP,
-		true);
+		EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RAY_TRACED_SHADOWS));
+}
+
+void SettingsGUI::SetRayTracedShadowSetting(Noesis::ComboBox* pComboBox, const LambdaEngine::String& shadowSetting)
+{
+	if (shadowSetting == "DISABLED")
+	{
+		pComboBox->SetSelectedIndex(0);
+	}
+	else if (shadowSetting == "DIRECTIONAL")
+	{
+		pComboBox->SetSelectedIndex(1);
+	}
+	else if (shadowSetting == "FULL")
+	{
+		pComboBox->SetSelectedIndex(2);
+	}
 }
 
 void SettingsGUI::SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption)
@@ -302,15 +322,6 @@ void SettingsGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, co
 
 	SetDefaultSettings();
 
-	//FOV
-	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
-
-	//Glossy
-	ChangeRayTracingSettings(
-		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
-		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP),
-		true);
-
 	OnButtonBackClick(pSender, args);
 }
 
@@ -348,6 +359,12 @@ void SettingsGUI::SetDefaultSettings()
 	//Set initial SPP
 	Noesis::Slider* pReflectionsSPPSlider = FrameworkElement::FindName<Noesis::Slider>("ReflectionsSPPSlider");
 	pReflectionsSPPSlider->SetValue(float32(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP)));
+
+	//Set initial Ray Traced Shadows Setting
+	Noesis::ComboBox* pRayTracedShadowsSetting = FrameworkElement::FindName<Noesis::ComboBox>("RayTracedShadowsComboBox");
+	LambdaEngine::String rayTracedShadowSetting = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RAY_TRACED_SHADOWS);
+	NS_ASSERT(pRayTracedShadowsSetting);
+	SetRayTracedShadowSetting(pRayTracedShadowsSetting, rayTracedShadowSetting);
 
 	SetDefaultKeyBindings();
 
