@@ -46,12 +46,18 @@ private:
 	void OnSettingsClosed(Noesis::BaseComponent* pSender, const Noesis::DependencyPropertyChangedEventArgs& args);
 
 private:
+	void InitLevelSelect();
+	void LevelSelectMouseEnter(Noesis::BaseComponent* pSender, const Noesis::MouseEventArgs& args);
+	void LevelSelectMouseLeave(Noesis::BaseComponent* pSender, const Noesis::MouseEventArgs& args);
+	void LevelSelectMousePressed(Noesis::BaseComponent* pSender, const Noesis::MouseButtonEventArgs& args);
+
 	bool 	m_ListenToCallbacks			= false;
 
 	int32	m_NewReflectionsSPP			= 0;
 
 	Noesis::Grid*	m_pStartGrid		= nullptr;
 	Noesis::Grid*	m_pPlayGrid			= nullptr;
+	Noesis::Grid*	m_pLevelSelectGrid	= nullptr;
 
 	SettingsGUI* m_pSettingsGUI = nullptr;
 

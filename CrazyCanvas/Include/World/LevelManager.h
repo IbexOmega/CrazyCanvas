@@ -22,9 +22,11 @@ class LevelManager
 		glm::vec3				Translation		= glm::vec3(0.0f);
 	};
 
+public:
 	struct LevelDesc
 	{
 		LambdaEngine::String				Name = "";
+		LambdaEngine::String				Thumbnail = "";
 		LambdaEngine::TArray<ModuleDesc>	LevelModuleDescriptions;
 		LambdaEngine::SHA256Hash			Hash;
 	};
@@ -48,6 +50,7 @@ public:
 
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::SHA256Hash>& GetLevelHashes() { return s_LevelHashes; }
 	FORCEINLINE static const LambdaEngine::TArray<LambdaEngine::String>& GetLevelNames() { return s_LevelNames; }
+	FORCEINLINE static const LambdaEngine::TArray<LevelDesc>& GetLevelDesc() { return s_LevelDescriptions; }
 
 private:
 	static inline LambdaEngine::TArray<LambdaEngine::SHA256Hash> s_LevelHashes;
