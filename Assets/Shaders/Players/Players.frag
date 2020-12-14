@@ -49,6 +49,9 @@ layout(binding = 3, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferDepthSte
 layout(binding = 4, set = TEXTURE_SET_INDEX) uniform sampler2D u_DirLShadowMap;
 layout(binding = 5, set = TEXTURE_SET_INDEX) uniform samplerCube u_PointLShadowMap[];
 
+layout(binding = 6, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalSpecularProbe;
+layout(binding = 7, set = TEXTURE_SET_INDEX) uniform samplerCube 	u_GlobalDiffuseProbe;
+layout(binding = 8, set = TEXTURE_SET_INDEX) uniform sampler2D 		u_IntegrationLUT;
 
 layout(location = 0) out vec4 out_Color;
 
@@ -182,16 +185,37 @@ void main()
 		Lo += (kD * storedAlbedo / PI + specular) * incomingRadiance * NdotL;
 	}
 
-	vec3 colorHDR = 0.03f * ao * storedAlbedo + Lo;
+	vec3 colorHDR;
+	{
+		float dotNV = max(dot(N, V), 0.0f);
+		vec3 F_IBL	= FresnelRoughness(F0, dotNV, roughness);
+		vec3 Ks_IBL	= F_IBL;
+		vec3 Kd_IBL	= vec3(1.0f) - Ks_IBL;
+		Kd_IBL		*= (1.0f - metallic);
+	
+		vec3 R				= reflect(-V, N);
+		vec3 irradiance		= texture(u_GlobalDiffuseProbe, R).rgb;
+		vec3 IBL_Diffuse	= irradiance * storedAlbedo;
+	
+		const float numberOfMips = 7.0;
+		vec3 prefiltered		= textureLod(u_GlobalSpecularProbe, R, roughness * float(numberOfMips)).rgb;
+		vec2 integrationBRDF	= textureLod(u_IntegrationLUT, vec2(dotNV, roughness), 0).rg;
+		vec3 IBL_Specular		= prefiltered * (F_IBL * integrationBRDF.x + integrationBRDF.y);
 
-	// Reinhard Tone-Mapping
+		vec3 ambient	= (Kd_IBL * IBL_Diffuse + IBL_Specular) * ao;
+		colorHDR		= ambient + Lo;
+	}
+
+	float luminance = CalculateLuminance(colorHDR);
+
+	//Reinhard Tone-Mapping
 	vec3 colorLDR = colorHDR / (colorHDR + vec3(1.0f));
 
-	// Gamma Correction
+	//Gamma Correction
 	vec3 finalColor = pow(colorLDR, vec3(1.0f / GAMMA));
 
 	// Transparent team players
 	float alpha = isPainted ? 1.0f : 0.55f;
-	
+
 	out_Color = vec4(finalColor, alpha);
 }

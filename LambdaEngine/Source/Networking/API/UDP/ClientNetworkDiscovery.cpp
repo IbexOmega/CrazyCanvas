@@ -38,7 +38,7 @@ namespace LambdaEngine
 			m_NameOfGame = nameOfGame;
 			m_pHandler = pHandler;
 			m_SearchInterval = searchInterval;
-			if (StartThreads())
+			if (StartThreads("ClientNetworkDiscovery"))
 			{
 				LOG_WARNING("Connecting...");
 				return true;

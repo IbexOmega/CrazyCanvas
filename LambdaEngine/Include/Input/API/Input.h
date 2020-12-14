@@ -111,6 +111,28 @@ namespace LambdaEngine
 			s_MouseStates[inputMode][STATE_READ_INDEX]		= s_MouseStates[inputMode][STATE_WRITE_INDEX];
 		}
 
+		FORCEINLINE static void UpdateMouseScrollButton()
+		{
+			uint8 inputMode = ConvertInputLayerUINT8(s_InputLayerStack.top());
+
+			if (IsInputEnabled())
+			{
+				MouseState& mouseState = s_MouseStates[inputMode][STATE_WRITE_INDEX];
+
+				if (s_HasScrolled)
+				{
+					EMouseButton mouseButton = mouseState.ScrollY > 0 ? EMouseButton::MOUSE_BUTTON_SCROLL_UP : EMouseButton::MOUSE_BUTTON_SCROLL_DOWN;
+					s_MouseStates[inputMode][STATE_WRITE_INDEX].ButtonStates[mouseButton] = true;
+				}
+				else
+				{
+					mouseState.ScrollX = mouseState.ScrollY = 0;
+					s_MouseStates[inputMode][STATE_WRITE_INDEX].ButtonStates[EMouseButton::MOUSE_BUTTON_SCROLL_UP] = false;
+					s_MouseStates[inputMode][STATE_WRITE_INDEX].ButtonStates[EMouseButton::MOUSE_BUTTON_SCROLL_DOWN] = false;
+				}
+			}
+		}
+
 		FORCEINLINE static const KeyboardState& GetKeyboardState(EInputLayer inputMode)
 		{
 			return s_KeyboardStates[ConvertInputLayerUINT8(inputMode)][STATE_READ_INDEX];
@@ -126,6 +148,8 @@ namespace LambdaEngine
 		static uint8 ConvertInputLayerUINT8(EInputLayer inputMode);
 
 	private:
+		inline static bool s_HasScrolled = false;
+
 		// Input states are double buffered. The first one is read from, the second is written to.
 		static KeyboardState	s_KeyboardStates[4][2];
 		static MouseState		s_MouseStates[4][2];
