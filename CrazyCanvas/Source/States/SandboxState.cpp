@@ -132,29 +132,29 @@ void SandboxState::Init()
 	}
 
 	// Snow Emitter
-	{
-		Entity entity = pECS->CreateEntity();
-		pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 30.0f, 0.0f } });
-		pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
-		pECS->AddComponent<ParticleEmitterComponent>(entity,
-			ParticleEmitterComponent{
-				.SpawnDelay = 0.0007f,
-				.ParticleCount = 25000,
-				.EmitterShape = EEmitterShape::PLANE,
-				.PlaneDimension = 50.0f,
-				.VelocityRandomness = 0.7f,
-				.Velocity = 5.0f,
-				.Acceleration = 0.0f,
-				.LifeTime = 7.0f,
-				.RadiusRandomness = 0.5f,
-				.BeginRadius = 0.3f,
-				.FrictionFactor = 1.0f,
-				.AnimationCount = 1,
-				.FirstAnimationIndex = 6,
-				.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)
-			}
-		);
-	}
+	//{
+	//	Entity entity = pECS->CreateEntity();
+	//	pECS->AddComponent<PositionComponent>(entity, { true, {0.0f, 30.0f, 0.0f } });
+	//	pECS->AddComponent<RotationComponent>(entity, { true, glm::rotate<float>(glm::identity<glm::quat>(), 0.f, g_DefaultUp) });
+	//	pECS->AddComponent<ParticleEmitterComponent>(entity,
+	//		ParticleEmitterComponent{
+	//			.SpawnDelay = 0.0007f,
+	//			.ParticleCount = 25000,
+	//			.EmitterShape = EEmitterShape::PLANE,
+	//			.PlaneDimension = 50.0f,
+	//			.VelocityRandomness = 0.7f,
+	//			.Velocity = 5.0f,
+	//			.Acceleration = 0.0f,
+	//			.LifeTime = 7.0f,
+	//			.RadiusRandomness = 0.5f,
+	//			.BeginRadius = 0.3f,
+	//			.FrictionFactor = 1.0f,
+	//			.AnimationCount = 1,
+	//			.FirstAnimationIndex = 6,
+	//			.Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)
+	//		}
+	//	);
+	//}
 
 
 
