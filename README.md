@@ -85,14 +85,23 @@ To get the latest installer of the game, go to (link is not provided yet).
   
 ## Developers
 Christoffer Andersson
+
 Henry Bergström
+
 Daniel Cheh
+
 Alexander Dahlin
+
 Herman Hansson Söderlund
+
 Theo Holmqvist Berlin
+
 Adrian Nordin
+
 Simon Nylén
+
 Tim Mellander
+
 Jonathan Åleskog
 
 ## Coding standard
