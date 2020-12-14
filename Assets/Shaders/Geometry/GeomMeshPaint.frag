@@ -25,6 +25,7 @@ layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in vec4		in_PaintInfo4;
 layout(location = 9) in float 		in_PaintDist;
+layout(location = 10) in vec3		in_VertexColor;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 {
@@ -46,6 +47,8 @@ layout(location = 2) out vec3 out_Compact_Normal;
 layout(location = 3) out vec4 out_Velocity_fWidth_Normal;
 layout(location = 4) out vec2 out_Geometric_Normal;
 
+layout (constant_id = 0) const int DEBUG_COLORS = 0;
+
 void main()
 {
 	vec3 normal		= normalize(in_Normal);
@@ -66,8 +69,15 @@ void main()
 	SPaintDescription paintDescription = InterpolatePaint(TBN, in_WorldPosition, tangent, bitangent, packedPaintInfo, dist);
 
 	//0
-	vec3 storedAlbedo	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
-	out_Albedo			= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
+	if (DEBUG_COLORS == 0)
+	{
+		vec3 storedAlbedo	= pow(materialParameters.Albedo.rgb * sampledAlbedo, vec3(GAMMA));
+		out_Albedo			= mix(storedAlbedo, paintDescription.Albedo, paintDescription.Interpolation);
+	}
+	else
+	{
+		out_Albedo = mix(in_VertexColor, paintDescription.Albedo, paintDescription.Interpolation);
+	}
 
 	//1
 	vec3 storedMaterial			= vec3(

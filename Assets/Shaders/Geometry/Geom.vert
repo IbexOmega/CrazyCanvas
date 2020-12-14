@@ -22,6 +22,7 @@ layout(location = 5) out vec2 out_TexCoord;
 layout(location = 6) out vec4 out_ClipPosition;
 layout(location = 7) out vec4 out_PrevClipPosition;
 layout(location = 8) out flat uint out_ExtensionIndex;
+layout(location = 9) out vec3 out_VertexColor; // Used for meshlet debugging, added here toi avoid warnings
 
 void main()
 {
@@ -48,4 +49,6 @@ void main()
 	out_PrevClipPosition	= perFrameBuffer.PrevProjection * perFrameBuffer.PrevView * prevWorldPosition;
     out_ExtensionIndex		= instance.ExtensionGroupIndex * instance.TexturesPerExtensionGroup;
 	gl_Position = out_ClipPosition;
+	
+	out_VertexColor = vec3(0.0f);
 }

@@ -16,6 +16,7 @@ layout(location = 5) in vec2		in_TexCoord;
 layout(location = 6) in vec4		in_ClipPosition;
 layout(location = 7) in vec4		in_PrevClipPosition;
 layout(location = 8) in flat uint	in_ExtensionIndex;
+layout(location = 9) in vec3		in_VertexColor;
 
 layout(binding = 0, set = BUFFER_SET_INDEX) uniform PerFrameBuffer
 {
@@ -37,6 +38,8 @@ layout(location = 2) out vec3 out_Compact_Normal;
 layout(location = 3) out vec4 out_Velocity_fWidth_Normal;
 layout(location = 4) out vec2 out_Geometric_Normal;
 
+layout (constant_id = 0) const int DEBUG_COLORS = 0;
+
 void main()
 {
 	vec3 normal		= normalize(in_Normal);
@@ -53,8 +56,16 @@ void main()
 	SMaterialParameters materialParameters = b_MaterialParameters.val[in_MaterialSlot];
 
 	//0
-	vec3 storedAlbedo	= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
-	out_Albedo			= vec4(storedAlbedo, sampledAlbedo.a);
+	if (DEBUG_COLORS == 0)
+	{
+		vec3 storedAlbedo	= pow(materialParameters.Albedo.rgb * sampledAlbedo.rgb, vec3(GAMMA));
+		out_Albedo			= vec4(storedAlbedo, sampledAlbedo.a);
+	}
+	else
+	{
+		out_Albedo = vec4(in_VertexColor, sampledAlbedo.a);
+	}
+
 
 	//1
 	vec3 storedMaterial			= vec3(

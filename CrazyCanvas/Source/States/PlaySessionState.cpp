@@ -116,7 +116,8 @@ void PlaySessionState::Init()
 		cmdWireframe.Init("wireframe", false);
 		cmdWireframe.AddArg(Arg::EType::BOOL);
 		cmdWireframe.AddDescription("Activate/Deactivate wireframe mode\n");
-		GameConsole::Get().BindCommand(cmdWireframe, [&, this](GameConsole::CallbackInput& input)->void {
+		GameConsole::Get().BindCommand(cmdWireframe, [&, this](GameConsole::CallbackInput& input)->void 
+		{
 			THashTable<uint64, ManagedGraphicsPipelineStateDesc>& graphicsPipelinesDescs = PipelineStateManager::GetGraphicsPipelineStateDescriptions();
 
 			for (auto& it : graphicsPipelinesDescs)
@@ -130,6 +131,51 @@ void PlaySessionState::Init()
 
 			PipelineStateRecompileEvent recompileEvent = {};
 			EventQueue::SendEvent(recompileEvent);
+		});
+
+		ConsoleCommand cmdMeshletDbg;
+		cmdMeshletDbg.Init("meshlet_debug", false);
+		cmdMeshletDbg.AddArg(Arg::EType::BOOL);
+		cmdMeshletDbg.AddDescription("Activate/Deactivate meshlet debug\n");
+		GameConsole::Get().BindCommand(cmdMeshletDbg, [&, this](GameConsole::CallbackInput& input)->void
+			{
+				THashTable<uint64, ManagedGraphicsPipelineStateDesc>& graphicsPipelinesDescs = PipelineStateManager::GetGraphicsPipelineStateDescriptions();
+
+				for (auto& it : graphicsPipelinesDescs)
+				{
+					ManagedGraphicsPipelineStateDesc& pipelineStateDesc = it.second;
+					if (pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS" || pipelineStateDesc.DebugName == "DEFERRED_GEOMETRY_PASS_MESH_PAINT")
+					{
+						if (pipelineStateDesc.MeshShader.ShaderGUID != GUID_NONE)
+						{
+							ShaderConstant constant;
+							constant.Integer = input.Arguments.GetFront().Value.Boolean ? 1 : 0;
+
+							// Mesh shader
+							if (pipelineStateDesc.MeshShader.ShaderConstants.GetSize() < 1)
+							{
+								pipelineStateDesc.MeshShader.ShaderConstants.EmplaceBack(constant);
+							}
+							else
+							{
+								pipelineStateDesc.MeshShader.ShaderConstants[0] = constant;
+							}
+
+							// Pixel shader
+							if (pipelineStateDesc.PixelShader.ShaderConstants.GetSize() < 1)
+							{
+								pipelineStateDesc.PixelShader.ShaderConstants.EmplaceBack(constant);
+							}
+							else
+							{
+								pipelineStateDesc.PixelShader.ShaderConstants[0] = constant;
+							}
+						}
+					}
+				}
+
+				PipelineStateRecompileEvent recompileEvent = {};
+				EventQueue::SendEvent(recompileEvent);
 			});
 	}
   
