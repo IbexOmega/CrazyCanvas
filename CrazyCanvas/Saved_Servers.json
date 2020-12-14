@@ -1,8 +1,12 @@
 {
     "SERVERS": [
-      {
-        "Name": "Lets Game Test!",
-        "Address": "81.226.167.248:4444"
-      }
+        {
+            "Name": "Lets Game Test!",
+            "Address": "81.226.167.248:4444"
+        },
+        {
+            "Name": "",
+            "Address": "81.231.140.113:4444"
+        }
     ]
 }
