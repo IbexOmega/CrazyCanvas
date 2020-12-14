@@ -165,6 +165,14 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 
 	m_pLevelSelectGrid->SetVisibility(Noesis::Visibility_Visible);
 	m_ContextStack.push(m_pLevelSelectGrid);
+
+	// LambdaEngine::GUIApplication::SetView(nullptr);
+
+	// PacketGameSettings settings;
+	// settings.MapID		= 0;
+	// settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
+	// State* pStartingState = DBG_NEW PlaySessionState(settings, true);
+	// StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedEventArgs& args)

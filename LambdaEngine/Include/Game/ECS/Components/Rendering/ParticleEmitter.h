@@ -17,6 +17,7 @@ namespace LambdaEngine
 		CONE = 0,
 		SPHERE = 1,
 		TUBE = 2,
+		PLANE = 3
 	};
 
 	struct ParticleEmitterComponent
@@ -60,6 +61,11 @@ namespace LambdaEngine
 			*	Used for sphere radius
 			*/
 			float SphereRadius;
+
+			/*
+			*	Used for plane dimension
+			*/
+			float PlaneDimension;
 		};
 		/*
 		* Randomness factor for particle velocity, should be between 0.0 - 1.0
