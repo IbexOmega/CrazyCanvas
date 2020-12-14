@@ -15,6 +15,11 @@
 
 #include "Events/PlayerEvents.h"
 
+#include "Game/GameConsole.h"
+
+#include "ECS/ECSCore.h"
+#include "Game/ECS/Components/Rendering/CameraComponent.h"
+
 using namespace LambdaEngine;
 
 void PlayerManagerClient::Init()
@@ -30,6 +35,48 @@ void PlayerManagerClient::Init()
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerAliveChanged>>(&PlayerManagerClient::OnPacketPlayerAliveChangedReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerPing>>(&PlayerManagerClient::OnPacketPlayerPingReceived);
 	EventQueue::RegisterEventHandler<PacketReceivedEvent<PacketPlayerHost>>(&PlayerManagerClient::OnPacketPlayerHostReceived);
+
+	ConsoleCommand spectateCmd;
+	spectateCmd.Init("spectate_mode", false);
+	spectateCmd.AddArg(Arg::EType::BOOL);
+	spectateCmd.AddDescription("Activate/Deactivate the client as a spectator.\n\t'spectate_mode true'");
+	GameConsole::Get().BindCommand(spectateCmd, [&](GameConsole::CallbackInput& input)->void
+	{
+		s_IsSpectator = input.Arguments.GetFront().Value.Boolean;
+	});
+
+	ConsoleCommand spectateSpeedCmd;
+	spectateSpeedCmd.Init("spectate_speed", false);
+	spectateSpeedCmd.AddArg(Arg::EType::FLOAT);
+	spectateSpeedCmd.AddDescription("Sets the movement speed of the spectator.\n\t'spectate_speed 3.0'");
+	GameConsole::Get().BindCommand(spectateSpeedCmd, [&](GameConsole::CallbackInput& input)->void
+	{
+		s_SpectatorSpeed = input.Arguments.GetFront().Value.Float32;
+		
+		const Job pingJob =
+		{
+			.Components =
+			{
+				{ RW, FreeCameraComponent::Type() }
+			},
+			.Function = []()
+			{
+				const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+				if (pPlayer)
+				{
+					auto* pComponents = ECSCore::GetInstance()->GetComponentArray<FreeCameraComponent>();
+
+					if (pComponents != nullptr && pComponents->HasComponent(pPlayer->GetEntity()))
+					{
+						FreeCameraComponent& cameraComponent = pComponents->GetData(pPlayer->GetEntity());
+						cameraComponent.SpeedFactor = s_SpectatorSpeed;
+					}
+				}
+			}
+		};
+
+		ECSCore::GetInstance()->ScheduleJobASAP(pingJob);
+	});
 }
 
 void PlayerManagerClient::Release()
@@ -50,6 +97,11 @@ void PlayerManagerClient::Release()
 void PlayerManagerClient::Reset()
 {
 	PlayerManagerBase::Reset();
+}
+
+float PlayerManagerClient::GetSpectatorSpeed()
+{
+	return s_SpectatorSpeed;
 }
 
 const Player* PlayerManagerClient::GetPlayerLocal()
@@ -73,7 +125,8 @@ void PlayerManagerClient::RegisterLocalPlayer(const String& name, bool isHost)
 
 	PacketJoin packet;
 	strcpy(packet.Name, name.c_str());
-	packet.UID = pClient->GetUID();
+	packet.UID			= pClient->GetUID();
+	packet.IsSpectator	= s_IsSpectator;
 
 	Player* pPlayer = HandlePlayerJoined(packet.UID, packet);
 	pPlayer->m_IsHost = isHost;

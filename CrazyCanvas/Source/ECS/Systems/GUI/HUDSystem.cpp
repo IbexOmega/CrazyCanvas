@@ -19,6 +19,7 @@
 
 #include "Lobby/PlayerManagerClient.h"
 
+#include "Game/GameConsole.h"
 
 using namespace LambdaEngine;
 
@@ -83,7 +84,8 @@ void HUDSystem::Init()
 			.pSubscriber = &m_CameraEntities,
 			.ComponentAccesses =
 			{
-				{ R, CameraComponent::Type() }
+				{ R, CameraComponent::Type() },
+				{ R, ViewProjectionMatricesComponent::Type() }
 			}
 		}
 	};
@@ -128,10 +130,21 @@ void HUDSystem::Init()
 	GUIApplication::SetView(m_View);
 
 	m_LocalTeamIndex = PlayerManagerClient::GetPlayerLocal()->GetTeam();
+
+
+	ConsoleCommand hideHUDCmd;
+	hideHUDCmd.Init("hide_hud", false);
+	hideHUDCmd.AddArg(Arg::EType::BOOL);
+	hideHUDCmd.AddDescription("Hides/Shows the the HUD.\n\t'hide_hud true'");
+	GameConsole::Get().BindCommand(hideHUDCmd, [&](GameConsole::CallbackInput& input)->void
+	{
+		m_HUDGUI->ShowHUD(!input.Arguments.GetFront().Value.Boolean);
+	});
 }
 
 void HUDSystem::Tick(LambdaEngine::Timestamp deltaTime)
 {
+
 }
 
 void HUDSystem::FixedTick(Timestamp delta)
@@ -148,64 +161,64 @@ void HUDSystem::FixedTick(Timestamp delta)
 		const HealthComponent& healthComponent = pHealthComponents->GetConstData(player);
 
 		m_HUDGUI->UpdateHealth(healthComponent.CurrentHealth);
+	}
 
+	{
+		std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
+		if (!m_DeferredDamageTakenHitEvents.IsEmpty())
 		{
-			std::scoped_lock<SpinLock> lock(m_DeferredEventsLock);
-			if (!m_DeferredDamageTakenHitEvents.IsEmpty())
-			{
-				m_DamageTakenEventsToProcess = m_DeferredDamageTakenHitEvents;
-				m_DeferredDamageTakenHitEvents.Clear();
-			}
-
-			if (!m_DeferredEnemyHitEvents.IsEmpty())
-			{
-				m_EnemyHitEventsToProcess = m_DeferredEnemyHitEvents;
-				m_DeferredEnemyHitEvents.Clear();
-			}
+			m_DamageTakenEventsToProcess = m_DeferredDamageTakenHitEvents;
+			m_DeferredDamageTakenHitEvents.Clear();
 		}
 
-		if (!m_DamageTakenEventsToProcess.IsEmpty())
+		if (!m_DeferredEnemyHitEvents.IsEmpty())
 		{
-			for (auto& pair : m_DamageTakenEventsToProcess)
-			{
-				const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
-				const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(pair.first.CollisionInfo1.Entity);
+			m_EnemyHitEventsToProcess = m_DeferredEnemyHitEvents;
+			m_DeferredEnemyHitEvents.Clear();
+		}
+	}
 
-				bool isFriendly = false;
+	if (!m_DamageTakenEventsToProcess.IsEmpty())
+	{
+		for (auto& pair : m_DamageTakenEventsToProcess)
+		{
+			const ComponentArray<RotationComponent>* pPlayerRotationComp = pECS->GetComponentArray<RotationComponent>();
+			const RotationComponent& playerRotationComp = pPlayerRotationComp->GetConstData(pair.first.CollisionInfo1.Entity);
 
-				if (pair.second == m_LocalTeamIndex)
-					isFriendly = true;
+			bool isFriendly = false;
 
-				m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), pair.first.CollisionInfo1.Normal, isFriendly);
-			}
+			if (pair.second == m_LocalTeamIndex)
+				isFriendly = true;
 
-			m_DamageTakenEventsToProcess.Clear();
+			m_HUDGUI->DisplayDamageTakenIndicator(GetForward(glm::normalize(playerRotationComp.Quaternion)), pair.first.CollisionInfo1.Normal, isFriendly);
 		}
 
-		if (!m_EnemyHitEventsToProcess.IsEmpty())
-		{
-			for (uint32 i = 0; i < m_EnemyHitEventsToProcess.GetSize(); i++)
-			{
-				m_HUDGUI->DisplayHitIndicator();
-			}
+		m_DamageTakenEventsToProcess.Clear();
+	}
 
-			m_EnemyHitEventsToProcess.Clear();
+	if (!m_EnemyHitEventsToProcess.IsEmpty())
+	{
+		for (uint32 i = 0; i < m_EnemyHitEventsToProcess.GetSize(); i++)
+		{
+			m_HUDGUI->DisplayHitIndicator();
 		}
 
-		const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
-		for (Entity camera : m_CameraEntities)
+		m_EnemyHitEventsToProcess.Clear();
+	}
+
+	const ComponentArray<ProjectedGUIComponent>* pProjectedGUIComponents = pECS->GetComponentArray<ProjectedGUIComponent>();
+	for (Entity camera : m_CameraEntities)
+	{
+		const ViewProjectionMatricesComponent& viewProjMat = pViewProjMats->GetConstData(camera);
+
+		for (Entity entity : m_ProjectedGUIEntities)
 		{
-			const ViewProjectionMatricesComponent& viewProjMat = pViewProjMats->GetConstData(camera);
+			const PositionComponent& worldPosition = pPositionComponents->GetConstData(entity);
 
-			for (Entity entity : m_ProjectedGUIEntities)
-			{
-				const PositionComponent& worldPosition = pPositionComponents->GetConstData(entity);
+			const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
 
-				const glm::mat4 viewProj = viewProjMat.Projection * viewProjMat.View;
-
-				const IndicatorTypeGUI indicatorType = pProjectedGUIComponents->GetConstData(entity).GUIType;
-				m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity, indicatorType);
-			}
+			const IndicatorTypeGUI indicatorType = pProjectedGUIComponents->GetConstData(entity).GUIType;
+			m_HUDGUI->ProjectGUIIndicator(viewProj, worldPosition.Position, entity, indicatorType);
 		}
 	}
 
@@ -232,15 +245,18 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity weapon : m_WeaponEntities)
+		if (pPlayerLocalComponents)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(weapon);
-
-			if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			for (Entity weapon : m_WeaponEntities)
 			{
-				m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(weapon);
+
+				if (weaponComponent.WeaponOwner == event.WeaponOwnerEntity && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+				{
+					m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
+				}
 			}
-		}
+		}	
 	}
 	return false;
 }
@@ -253,13 +269,16 @@ bool HUDSystem::OnWeaponReloadFinished(const WeaponReloadFinishedEvent& event)
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity playerWeapon : m_WeaponEntities)
+		if (pPlayerLocalComponents)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
-
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			for (Entity playerWeapon : m_WeaponEntities)
 			{
-				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+				{
+					m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, false);
+				}
 			}
 		}
 	}
@@ -274,14 +293,17 @@ bool HUDSystem::OnWeaponReloadStartedEvent(const WeaponReloadStartedEvent& event
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity playerWeapon : m_WeaponEntities)
+		if (pPlayerLocalComponents)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
-
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			for (Entity playerWeapon : m_WeaponEntities)
 			{
-				m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
-				PromptMessage("Reloading", true);
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+				{
+					m_HUDGUI->Reload(weaponComponent.WeaponTypeAmmo, true);
+					PromptMessage("Reloading", true);
+				}
 			}
 		}
 	}
@@ -296,13 +318,16 @@ bool HUDSystem::OnWeaponReloadCanceledEvent(const WeaponReloadCanceledEvent& eve
 		const ComponentArray<WeaponComponent>* pWeaponComponents = pECS->GetComponentArray<WeaponComponent>();
 		const ComponentArray<PlayerLocalComponent>* pPlayerLocalComponents = pECS->GetComponentArray<PlayerLocalComponent>();
 
-		for (Entity playerWeapon : m_WeaponEntities)
+		if (pPlayerLocalComponents)
 		{
-			const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
-
-			if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+			for (Entity playerWeapon : m_WeaponEntities)
 			{
-				m_HUDGUI->AbortReload();
+				const WeaponComponent& weaponComponent = pWeaponComponents->GetConstData(playerWeapon);
+
+				if (event.WeaponOwnerEntity == weaponComponent.WeaponOwner && pPlayerLocalComponents->HasComponent(event.WeaponOwnerEntity))
+				{
+					m_HUDGUI->AbortReload();
+				}
 			}
 		}
 	}
@@ -352,7 +377,7 @@ bool HUDSystem::OnPlayerScoreUpdated(const PlayerScoreUpdatedEvent& event)
 bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 {
 	m_HUDGUI->GetScoreBoard()->UpdatePlayerProperty(
-		event.pPlayer->GetUID(),
+		*event.pPlayer,
 		EPlayerProperty::PLAYER_PROPERTY_PING,
 		std::to_string(event.pPlayer->GetPing()));
 	return false;
@@ -361,8 +386,7 @@ bool HUDSystem::OnPlayerPingUpdated(const PlayerPingUpdatedEvent& event)
 bool HUDSystem::OnPlayerAliveUpdated(const PlayerAliveUpdatedEvent& event)
 {
 	const Player* pPlayer = event.pPlayer;
-	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(pPlayer->GetUID(), !pPlayer->IsDead());
-
+	m_HUDGUI->GetScoreBoard()->UpdatePlayerAliveStatus(*pPlayer);
 
 	if (pPlayer->IsDead())
 	{
@@ -476,24 +500,27 @@ bool HUDSystem::OnProjectileHit(const ProjectileHitEvent& event)
 
 		const ProjectileComponent& projectileComponents = pProjectileComponents->GetConstData(event.CollisionInfo0.Entity);
 
-		if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
+		if (pPlayerLocalComponents)
 		{
-			if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
-			{
-				uint8 projectileTeamIndex = pTeamComponents->GetConstData(projectileComponents.Owner).TeamIndex;
-
-				m_DeferredDamageTakenHitEvents.EmplaceBack(std::make_pair(event, projectileTeamIndex));
-			}
-		}
-		else
-		{
-			if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
+			if (pPlayerLocalComponents->HasComponent(event.CollisionInfo1.Entity))
 			{
 				if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
 				{
-					if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex && pPlayerLocalComponents->HasComponent(projectileComponents.Owner))
+					uint8 projectileTeamIndex = pTeamComponents->GetConstData(projectileComponents.Owner).TeamIndex;
+
+					m_DeferredDamageTakenHitEvents.EmplaceBack(std::make_pair(event, projectileTeamIndex));
+				}
+			}
+			else
+			{
+				if (m_ForeignPlayerEntities.HasElement(event.CollisionInfo1.Entity))
+				{
+					if (pProjectileComponents->HasComponent(event.CollisionInfo0.Entity))
 					{
-						m_DeferredEnemyHitEvents.EmplaceBack(true);
+						if (pTeamComponents->GetConstData(event.CollisionInfo1.Entity).TeamIndex != m_LocalTeamIndex && pPlayerLocalComponents->HasComponent(projectileComponents.Owner))
+						{
+							m_DeferredEnemyHitEvents.EmplaceBack(true);
+						}
 					}
 				}
 			}

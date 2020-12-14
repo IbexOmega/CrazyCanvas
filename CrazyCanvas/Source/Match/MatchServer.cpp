@@ -250,7 +250,11 @@ void MatchServer::BeginLoading()
 
 	for (auto& pair : players)
 	{
-		SpawnPlayer(pair.second);
+		const Player& player = pair.second;
+		if (!player.IsSpectator())
+		{
+			SpawnPlayer(player);
+		}
 	}
 
 	if (m_pLevel != nullptr)

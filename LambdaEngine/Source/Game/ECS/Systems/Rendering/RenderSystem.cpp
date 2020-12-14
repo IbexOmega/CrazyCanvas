@@ -1221,7 +1221,7 @@ bool RenderSystem::InitIntegrationLUT()
 		uint32 teamIndex = 0;
 		const ECSCore* pECSCore = ECSCore::GetInstance();
 		const ComponentArray<TeamComponent>* pTeamComponents = pECSCore->GetComponentArray<TeamComponent>();
-		if (pTeamComponents->HasComponent(entity))
+		if (pTeamComponents != nullptr && pTeamComponents->HasComponent(entity))
 		{
 			teamIndex = static_cast<uint32>(pTeamComponents->GetConstData(entity).TeamIndex);
 		}

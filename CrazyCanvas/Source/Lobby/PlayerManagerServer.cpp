@@ -94,7 +94,10 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 	for (auto& pair : s_Players)
 	{
 		if (pair.second.IsHost())
+		{
 			hostPlayer = &pair.second;
+			break;
+		}
 	}
 
 	for (auto& pair : s_Players)
@@ -510,5 +513,8 @@ void PlayerManagerServer::AutoSelectTeam(Player* pPlayer)
 	TArray<const Player*> pPlayersTeam2;
 	GetPlayersOfTeam(pPlayersTeam1, 1);
 	GetPlayersOfTeam(pPlayersTeam2, 2);
-	pPlayer->m_Team = pPlayersTeam1.GetSize() > pPlayersTeam2.GetSize() ? 2 : 1;
+	if (pPlayer->IsSpectator())
+		pPlayer->m_Team = 0;
+	else
+		pPlayer->m_Team = pPlayersTeam1.GetSize() > pPlayersTeam2.GetSize() ? 2 : 1;
 }

@@ -65,9 +65,9 @@ SRayHitDescription CalculateHitData()
 	v2TexCoord = v2TexCoord * factor + factor*vec2(float(tx), float(ty));
 
 	vec2 texCoord = (v0TexCoord * barycentricCoords.x + v1TexCoord * barycentricCoords.y + v2TexCoord * barycentricCoords.z);
-	vec3 shadingNormal		= vec3(1.0, 0.0, 0.0);
+	vec3 shadingNormal		= texture(u_TextureAtlases[emitter.AtlasIndex], texCoord).rgb;
 
-	vec3 albedo = emitter.Color.rgb * texture(u_TextureAtlases[emitter.AtlasIndex], texCoord).rgb;
+	vec3 albedo = emitter.Color.rgb;
 
 	SRayHitDescription hitDescription;
 	hitDescription.Position			= gl_WorldRayOriginEXT + normalize(gl_WorldRayDirectionEXT) * gl_HitTEXT;

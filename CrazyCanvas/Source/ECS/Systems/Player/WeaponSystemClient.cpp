@@ -51,13 +51,18 @@ void WeaponSystemClient::Tick(LambdaEngine::Timestamp deltaTime)
 		RotationComponent&					weaponRotationComponent		= pRotationComponents->GetData(weaponEntity);
 		ScaleComponent&						weaponScaleComponent		= pScaleComponent->GetData(weaponEntity);
 
-		const PositionComponent&			playerPositionComponent		= pPositionComponents->GetConstData(weaponComponent.WeaponOwner);
-		const RotationComponent&			playerRotationComponent		= pRotationComponents->GetConstData(weaponComponent.WeaponOwner);
-		const ScaleComponent&				playerScaleComponent		= pScaleComponent->GetConstData(weaponComponent.WeaponOwner);
+		PositionComponent playerPositionComponent;
+		RotationComponent playerRotationComponent;
+		ScaleComponent playerScaleComponent;
 
-		weaponPositionComponent.Position	= playerPositionComponent.Position;
-		weaponRotationComponent.Quaternion	= playerRotationComponent.Quaternion;
-		weaponScaleComponent.Scale			= playerScaleComponent.Scale;
+		if (pPositionComponents->GetConstIf(weaponComponent.WeaponOwner, playerPositionComponent) && 
+			pRotationComponents->GetConstIf(weaponComponent.WeaponOwner, playerRotationComponent) &&
+			pScaleComponent->GetConstIf(weaponComponent.WeaponOwner, playerScaleComponent))
+		{
+			weaponPositionComponent.Position	= playerPositionComponent.Position;
+			weaponRotationComponent.Quaternion	= playerRotationComponent.Quaternion;
+			weaponScaleComponent.Scale			= playerScaleComponent.Scale;
+		}
 	}
 }
 

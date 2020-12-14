@@ -22,6 +22,8 @@
 
 #include "Match/Match.h"
 
+#include "Lobby/PlayerManagerClient.h"
+
 using namespace LambdaEngine;
 
 
@@ -30,7 +32,14 @@ float32 PlayerActionSystem::m_Speed = 1.0f;
 
 PlayerActionSystem::PlayerActionSystem()
 {
-	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
+	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
+	if (pPlayer)
+	{
+		if (!pPlayer->IsSpectator())
+		{
+			EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
+		}
+	}
 }
 
 PlayerActionSystem::~PlayerActionSystem()

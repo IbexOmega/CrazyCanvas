@@ -52,11 +52,11 @@ public:
 
 	void DisplayScoreboardMenu(bool visible);
 
-	void AddPlayer(const Player& newPlayer);
+	void AddPlayer(const Player& player);
 	void RemovePlayer(const Player& player);
-	void UpdatePlayerProperty(uint64 playerUID, EPlayerProperty property, const LambdaEngine::String& value);
+	void UpdatePlayerProperty(const Player& player, EPlayerProperty property, const LambdaEngine::String& value);
 	void UpdateAllPlayerProperties(const Player& player);
-	void UpdatePlayerAliveStatus(uint64 UID, bool isAlive);
+	void UpdatePlayerAliveStatus(const Player& player);
 
 private:
 

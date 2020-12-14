@@ -36,6 +36,7 @@ namespace LambdaEngine
 		virtual bool SendReliable(NetworkSegment* pPacket, IPacketListener* pListener = nullptr) override;
 		virtual const IPEndPoint& GetEndPoint() const override;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) override;
+		virtual void ReturnPacket(NetworkSegment* pPacket) override;
 		virtual EClientState GetState() const override;
 		virtual NetworkStatistics* GetStatistics() override;
 		virtual IClientRemoteHandler* GetHandler() override;

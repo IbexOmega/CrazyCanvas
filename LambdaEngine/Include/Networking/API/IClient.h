@@ -39,6 +39,7 @@ namespace LambdaEngine
 		virtual bool SendReliable(NetworkSegment* pPacket, IPacketListener* pListener = nullptr) = 0;
 		virtual const IPEndPoint& GetEndPoint() const = 0;
 		virtual NetworkSegment* GetFreePacket(uint16 packetType) = 0;
+		virtual void ReturnPacket(NetworkSegment* pPacket) = 0;
 		virtual EClientState GetState() const = 0;
 		virtual NetworkStatistics* GetStatistics() = 0;
 		virtual PacketManagerBase* GetPacketManager() = 0;
