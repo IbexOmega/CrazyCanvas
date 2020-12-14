@@ -78,6 +78,7 @@ private:
 	void SendGameSettings() const;
 	void UpdatePlayersLabel();
 	void UpdateReadyButton();
+	void AddImage(const LambdaEngine::String& key, const LambdaEngine::String& uri);
 
 private:
 	NS_IMPLEMENT_INLINE_REFLECTION_(LobbyGUI, Noesis::Grid);
@@ -93,11 +94,19 @@ private:
 	Noesis::Label*			m_pPlayersLabel				= nullptr;
 	Noesis::Label*			m_pTeam1Label				= nullptr;
 	Noesis::Label*			m_pTeam2Label				= nullptr;
+	Noesis::Grid*			m_pMapThumbbnailGrid		= nullptr;
 
 	PacketGameSettings* m_pGameSettings;
 	bool m_IsInitiated;
 
 	SettingsGUI* m_pSettingsGUI = nullptr;
+
+	LambdaEngine::TArray<LambdaEngine::String> m_MapImages =
+	{
+		"Thumbnails/Fun Factory.png",
+		"Thumbnails/The Mines.png",
+		"logo.png"					// Needs to be last
+	};
 
 private:
 	static constexpr const char* SETTING_SERVER_NAME			= "SERVER_NAME";
