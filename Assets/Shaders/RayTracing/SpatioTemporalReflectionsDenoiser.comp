@@ -18,11 +18,12 @@ layout(binding = 5, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferVelocity
 layout(binding = 6, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferGeometricNormal;
 layout(binding = 7, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferPrevGeometricNormal;
 
-layout(push_constant) uniform ReflectionSettings
+layout(push_constant) uniform RayTracingSettings
 {
 	int GlossyEnabled;
 	int SPP;
-} pc_ReflectionSettings;
+	int ShadowsEnabled;
+} pc_RayTracingSettings;
 
 float ValidSample(ivec2 iImageDim, ivec2 reprojCoord, vec3 normal, vec3 prevNormal, float fwidthNormal)
 {
@@ -62,7 +63,7 @@ void main()
     float historyLength = validSample;
     
 #if SPATIAL_BRDF_DENOISING_ENABLED || TEMPORAL_REUSE_ENABLED
-    if (pc_ReflectionSettings.GlossyEnabled == 1)
+    if (pc_RayTracingSettings.GlossyEnabled == 1)
     {
         //Sample GBuffer
         vec4 velocityfWidthNormalSample  = texelFetch(u_GBufferVelocityfWidthNormal, p, 0);

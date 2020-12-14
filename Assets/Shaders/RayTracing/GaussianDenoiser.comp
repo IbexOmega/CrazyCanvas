@@ -18,11 +18,12 @@ layout (constant_id = 2) const float VERTICAL_BLUR_DIRECTION = 0.0f;
 
 #include "../Blur.glsl"
 
-layout(push_constant) uniform ReflectionSettings
+layout(push_constant) uniform RayTracingSettings
 {
 	int GlossyEnabled;
 	int SPP;
-} pc_ReflectionSettings;
+	int ShadowsEnabled;
+} pc_RayTracingSettings;
 
 void main()
 {
@@ -40,7 +41,7 @@ void main()
     vec3 filteredColor;
 
 #if GAUSSIAN_FILTER_DENOISING_ENABLED
-    if (pc_ReflectionSettings.GlossyEnabled == 1)
+    if (pc_RayTracingSettings.GlossyEnabled == 1)
     { 
         const vec2 blurDirection = mix(vec2(1.0f, 0.0f), vec2(0.0f, 1.0f), VERTICAL_BLUR_DIRECTION);
 

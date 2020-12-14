@@ -158,7 +158,7 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 		//SPP
 		EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
 
-		ChangeGlossySettings(glossyEnabled, m_NewReflectionsSPP);
+		ChangeRayTracingSettings(glossyEnabled, m_NewReflectionsSPP, true);
 	}
 
 	EngineConfig::WriteToFile();
@@ -177,9 +177,10 @@ void SettingsGUI::OnButtonCancelSettingsClick(Noesis::BaseComponent* pSender, co
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
 
 	//Glossy
-	ChangeGlossySettings(
+	ChangeRayTracingSettings(
 		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
-		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
+		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP),
+		true);
 
 
 	OnButtonBackClick(pSender, args);
@@ -235,9 +236,10 @@ void SettingsGUI::OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, 
 
 	m_NewReflectionsSPP = int32(pReflectionsSPPSlider->GetValue());
 
-	ChangeGlossySettings(
+	ChangeRayTracingSettings(
 		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
-		m_NewReflectionsSPP);
+		m_NewReflectionsSPP,
+		true);
 }
 
 void SettingsGUI::SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption)
@@ -304,9 +306,10 @@ void SettingsGUI::OnButtonCancelControlsClick(Noesis::BaseComponent* pSender, co
 	CameraSystem::GetInstance().SetMainFOV(EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV));
 
 	//Glossy
-	ChangeGlossySettings(
+	ChangeRayTracingSettings(
 		EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS),
-		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP));
+		EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP),
+		true);
 
 	OnButtonBackClick(pSender, args);
 }

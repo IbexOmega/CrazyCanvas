@@ -270,7 +270,7 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 		pECS->AddComponent<RayTracedComponent>(entity,
 			RayTracedComponent
 			{
-				.HitMask = 0xFF
+				.HitMask = FRayTracingHitMask::ALL
 			});
 	}
 
@@ -385,7 +385,7 @@ ELevelObjectType LevelObjectCreator::CreateNoColliderObject(const LambdaEngine::
 		pECS->AddComponent<RayTracedComponent>(entity,
 			RayTracedComponent
 			{
-				.HitMask = 0xFF
+				.HitMask = uint8(~FRayTracingHitMask::OCCLUDER)
 			});
 
 		createdEntities.PushBack(entity);
@@ -491,7 +491,7 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 			pECS->AddComponent<MeshComponent>(entity, meshComponent);
 			pECS->AddComponent<MeshPaintComponent>(entity, MeshPaint::CreateComponent(entity));
 			pECS->AddComponent<RayTracedComponent>(entity, RayTracedComponent{
-					.HitMask = 0xFF
+					.HitMask = FRayTracingHitMask::ALL
 				});
 		}
 
@@ -570,11 +570,6 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 
 		StaticCollisionComponent staticCollisionComponent = pPhysicsSystem->CreateStaticActor(collisionCreateInfo);
 		pECS->AddComponent<StaticCollisionComponent>(entity, staticCollisionComponent);
-		pECS->AddComponent<RayTracedComponent>(entity,
-			RayTracedComponent
-			{
-				.HitMask = 0xFF
-			});
 	}
 
 	createdEntities.PushBack(entity);
@@ -901,7 +896,7 @@ bool LevelObjectCreator::CreateFlag(
 			});
 
 		pECS->AddComponent<RayTracedComponent>(flagEntity, RayTracedComponent{
-				.HitMask = 0xFF
+				.HitMask = FRayTracingHitMask::ALL
 			});
 	}
 	else
@@ -1058,7 +1053,8 @@ bool LevelObjectCreator::CreatePlayer(
 	int32 weaponNetworkUID;
 	if (!MultiplayerUtils::IsServer())
 	{
-		playerMaterialGUID = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam() ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamPlayerMaterialGUID(pPlayer->GetTeam());
+		bool friendly = PlayerManagerClient::GetPlayerLocal()->GetTeam() == pPlayer->GetTeam();
+		playerMaterialGUID = friendly ? TeamHelper::GetMyTeamPlayerMaterialGUID() : TeamHelper::GetTeamPlayerMaterialGUID(pPlayer->GetTeam());
 
 		pECS->AddComponent<MeshComponent>(weaponEntity, MeshComponent
 			{
@@ -1244,11 +1240,11 @@ bool LevelObjectCreator::CreatePlayer(
 			pECS->AddComponent<PlayerForeignComponent>(playerEntity, PlayerForeignComponent());
 
 			pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
-				.HitMask = 0xFF
+				.HitMask = FRayTracingHitMask::PARTICLE_COLLIDABLE | (friendly ? FRayTracingHitMask::OCCLUDER : 0u)
 			});
 
 			pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
-				.HitMask = 0xFF
+				.HitMask = FRayTracingHitMask::PARTICLE_COLLIDABLE | (friendly ? FRayTracingHitMask::OCCLUDER : 0u)
 			});
 
 			pECS->AddComponent<SpectateComponent>(playerEntity, { SpectateType::PLAYER });
@@ -1256,11 +1252,11 @@ bool LevelObjectCreator::CreatePlayer(
 		else
 		{
 			pECS->AddComponent<RayTracedComponent>(playerEntity, RayTracedComponent{
-				.HitMask = 0x02
+				.HitMask = FRayTracingHitMask::OCCLUDER
 				});
 
 			pECS->AddComponent<RayTracedComponent>(weaponEntity, RayTracedComponent{
-				.HitMask = 0x02
+				.HitMask = FRayTracingHitMask::OCCLUDER
 				});
 
 			if (pPlayerDesc->pCameraDesc == nullptr)
@@ -1655,7 +1651,7 @@ bool LevelObjectCreator::CreateProjectile(
 		}
 
 		pECS->AddComponent<RayTracedComponent>(projectileEntity, RayTracedComponent{
-				.HitMask = 0x02
+				.HitMask = FRayTracingHitMask::OCCLUDER
 			});
 	}
 
