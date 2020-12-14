@@ -25,6 +25,8 @@
 #include "Rendering/AARenderer.h"
 #include "Rendering/RenderGraph.h"
 
+#include "World/LevelManager.h"
+
 using namespace Noesis;
 using namespace LambdaEngine;
 
@@ -33,12 +35,15 @@ MainMenuGUI::MainMenuGUI()
 	GUI::LoadComponent(this, "MainMenu.xaml");
 
 	// Main Grids
-	m_pStartGrid		= FrameworkElement::FindName<Grid>("StartGrid");
-	m_pPlayGrid			= FrameworkElement::FindName<Grid>("PlayGrid");
+	m_pStartGrid				= FrameworkElement::FindName<Grid>("StartGrid");
+	m_pPlayGrid					= FrameworkElement::FindName<Grid>("PlayGrid");
+	m_pLevelSelectGrid			= FrameworkElement::FindName<Grid>("LevelSelectGrid");
 	m_ContextStack.push(m_pStartGrid);
 
 	m_pSettingsGUI = FindName<SettingsGUI>("SETTINGS_GUI");
 	m_pSettingsGUI->InitGUI();
+
+	InitLevelSelect();
 }
 
 MainMenuGUI::~MainMenuGUI()
@@ -155,13 +160,19 @@ void MainMenuGUI::OnButtonSandboxClick(BaseComponent* pSender, const RoutedEvent
 	if (Input::GetCurrentInputLayer() == EInputLayer::DEBUG)
 		return;
 
-	LambdaEngine::GUIApplication::SetView(nullptr);
+	Noesis::FrameworkElement* pPrevElement = m_ContextStack.top();
+	pPrevElement->SetVisibility(Noesis::Visibility_Collapsed);
 
-	PacketGameSettings settings;
-	settings.MapID		= 0;
-	settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
-	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
-	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
+	m_pLevelSelectGrid->SetVisibility(Noesis::Visibility_Visible);
+	m_ContextStack.push(m_pLevelSelectGrid);
+
+	// LambdaEngine::GUIApplication::SetView(nullptr);
+
+	// PacketGameSettings settings;
+	// settings.MapID		= 0;
+	// settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
+	// State* pStartingState = DBG_NEW PlaySessionState(settings, true);
+	// StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }
 
 void MainMenuGUI::OnButtonMultiplayerClick(BaseComponent* pSender, const RoutedEventArgs& args)
@@ -189,5 +200,79 @@ void MainMenuGUI::OnButtonBenchmarkClick(Noesis::BaseComponent* pSender, const N
 	LambdaEngine::GUIApplication::SetView(nullptr);
 
 	State* pStartingState = DBG_NEW BenchmarkState();
+	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
+}
+
+void MainMenuGUI::InitLevelSelect()
+{
+	TArray<LevelManager::LevelDesc> levels = LevelManager::GetLevelDesc();
+
+	for (auto& level : levels)
+	{
+		// Gets the levels that level manager has and add these to the level select grid with the correct name and index		// Grid
+		Ptr<Grid> grid = *new Grid();
+		ColumnDefinitionCollection* columnDef = grid->GetColumnDefinitions();
+		Ptr<ColumnDefinition> col1 = *new ColumnDefinition();
+		Ptr<ColumnDefinition> col2 = *new ColumnDefinition();
+		col1->SetWidth(GridLength(1.f, GridUnitType::GridUnitType_Star));
+		col2->SetWidth(GridLength(1.f, GridUnitType::GridUnitType_Auto));
+		columnDef->Add(col1);
+		columnDef->Add(col2);
+		grid->SetHeight(60.f);
+		grid->SetMargin(Thickness(0.f, 5.f, 0.f, 5.f));
+		grid->MouseEnter() += MakeDelegate(this, &MainMenuGUI::LevelSelectMouseEnter);
+		grid->MouseLeave() += MakeDelegate(this, &MainMenuGUI::LevelSelectMouseLeave);
+		grid->MouseLeftButtonDown() += MakeDelegate(this, &MainMenuGUI::LevelSelectMousePressed);
+
+		// Image
+		Ptr<Image> image = *new Image();
+		Ptr<BitmapImage> bitmap = *new BitmapImage(Uri(level.Thumbnail.c_str()));
+		image->SetSource(bitmap);
+		image->SetHorizontalAlignment(HorizontalAlignment::HorizontalAlignment_Left);
+		grid->GetChildren()->Add(image);
+
+		// Label
+		Ptr<Label> label = *new Label();
+		label->SetStyle(FrameworkElement::FindResource<Style>("LevelSelectLabelStyle"));
+		label->SetContent(level.Name.c_str());
+		label->SetHorizontalAlignment(HorizontalAlignment::HorizontalAlignment_Left);
+		grid->GetChildren()->Add(label);
+
+		FrameworkElement::FindName<Noesis::StackPanel>("LevelSelectStackPanel")->GetChildren()->Add(grid);
+	}
+}
+
+void MainMenuGUI::LevelSelectMouseEnter(Noesis::BaseComponent* pSender, const Noesis::MouseEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(args);
+
+	Grid* grid = static_cast<Grid*>(pSender);
+	Ptr<SolidColorBrush> brush = *new SolidColorBrush();
+	brush->SetColor(Color(0.1f, 0.1f, 0.1f));
+	grid->SetBackground(brush);
+}
+
+void MainMenuGUI::LevelSelectMouseLeave(Noesis::BaseComponent* pSender, const Noesis::MouseEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(args);
+
+	Grid* grid = static_cast<Grid*>(pSender);
+	grid->SetBackground(static_cast<Grid*>(FrameworkElement::GetRoot())->GetBackground());
+}
+
+void MainMenuGUI::LevelSelectMousePressed(Noesis::BaseComponent* pSender, const Noesis::MouseButtonEventArgs& args)
+{
+	UNREFERENCED_VARIABLE(args);
+
+	Noesis::Grid* grid = static_cast<Noesis::Grid*>(pSender);
+	Noesis::StackPanel* pnl = FrameworkElement::FindName<Noesis::StackPanel>("LevelSelectStackPanel");
+	uint8 index = (uint8)(pnl->GetChildren()->IndexOf(grid));
+
+	LambdaEngine::GUIApplication::SetView(nullptr);
+
+	PacketGameSettings settings;
+	settings.MapID		= index;
+	settings.GameMode	= EGameMode::CTF_TEAM_FLAG;
+	State* pStartingState = DBG_NEW PlaySessionState(settings, true);
 	StateManager::GetInstance()->EnqueueStateTransition(pStartingState, STATE_TRANSITION::POP_AND_PUSH);
 }

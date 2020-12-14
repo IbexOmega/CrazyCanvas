@@ -63,17 +63,23 @@ void NameplateSystem::FixedTick(LambdaEngine::Timestamp deltaTime)
 	const PositionComponent& positionComp = pECS->GetConstComponent<PositionComponent>(localPlayerCamera);
 	const RotationComponent& rotationComp = pECS->GetConstComponent<RotationComponent>(localPlayerCamera);
 
-	const glm::vec3 rayDir = GetForward(rotationComp.Quaternion);
-	physx::PxRaycastHit raycastHit;
-
-	const RaycastFilterData raycastFilterData =
+	const QueryFilterData raycastFilterData =
 	{
 		.IncludedGroup = (uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER | (uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
 		.ExcludedGroup = FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
 		.ExcludedEntity = pLocalPlayer->GetEntity()
 	};
 
-	if (PhysicsSystem::GetInstance()->Raycast(positionComp.Position, rayDir, MAX_NAMEPLATE_DISTANCE, raycastHit, &raycastFilterData))
+	const RaycastInfo raycastInfo =
+	{
+		.Origin = positionComp.Position,
+		.Direction = GetForward(rotationComp.Quaternion),
+		.MaxDistance = MAX_NAMEPLATE_DISTANCE,
+		.pFilterData = &raycastFilterData
+	};
+
+	physx::PxRaycastHit raycastHit;
+	if (PhysicsSystem::GetInstance()->Raycast(raycastInfo, raycastHit))
 	{
 		// The ray hit something, find out if the hit actor belongs to a teammate
 		const ActorUserData* pHitActorUserData = reinterpret_cast<const ActorUserData*>(raycastHit.actor->userData);

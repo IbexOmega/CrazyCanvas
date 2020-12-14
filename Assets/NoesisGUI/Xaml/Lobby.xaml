@@ -166,6 +166,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="1*" />
                         <RowDefinition Height="8*" />
+                        <RowDefinition Height="1*" />
                     </Grid.RowDefinitions>
 
                     <Label Grid.Row="0" Content="Lobby Settings" FontSize="64" Foreground="White" />
@@ -192,6 +193,10 @@
                                 <TextBlock Text="Test Map" />
                             </ComboBox>-->
                         </StackPanel>
+
+                        <Grid x:Name="MapThumbnailGrid" Grid.ColumnSpan="2" Grid.Row="2">
+                            
+                        </Grid>
                     </Grid>
                 </Grid>
 

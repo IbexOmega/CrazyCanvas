@@ -29,8 +29,9 @@
 #include "ECS/ECSCore.h"
 #include "ECS/Systems/Match/FlagSystemBase.h"
 #include "ECS/Systems/Match/ShowerSystemBase.h"
-#include "ECS/Systems/Player/WeaponSystem.h"
+#include "ECS/Components/Player/GrenadeComponent.h"
 #include "ECS/Systems/Player/HealthSystemServer.h"
+#include "ECS/Systems/Player/WeaponSystem.h"
 #include "ECS/Components/Match/FlagComponent.h"
 #include "ECS/Components/Match/ShowerComponent.h"
 #include "ECS/Components/Multiplayer/PacketComponent.h"
@@ -283,12 +284,12 @@ LambdaEngine::Entity LevelObjectCreator::CreateStaticGeometry(const LambdaEngine
 		.Shapes =
 		{
 			{
-				/* ShapeType */			EShapeType::SIMULATION,
-				/* GeometryType */		EGeometryType::MESH,
-				/* Geometry */			{ .pMesh = pMesh },
-				/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
-				/* EntityID*/			entity
+				.ShapeType =		EShapeType::SIMULATION,
+				.GeometryType =		EGeometryType::MESH,
+				.GeometryParams =	{ .pMesh = pMesh },
+				.CollisionGroup =	FCollisionGroup::COLLISION_GROUP_STATIC,
+				.CollisionMask =	~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+				.EntityID =			entity
 			},
 		},
 	};
@@ -505,12 +506,12 @@ ELevelObjectType LevelObjectCreator::CreatePlayerSpawn(
 			.Shapes =
 			{
 				{
-					/* ShapeType */			EShapeType::SIMULATION,
-					/* GeometryType */		EGeometryType::MESH,
-					/* Geometry */			{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
-					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
-					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
-					/* EntityID*/			entity
+					.ShapeType =		EShapeType::SIMULATION,
+					.GeometryType =		EGeometryType::MESH,
+					.GeometryParams =	{ .pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+					.CollisionGroup =	FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask =	~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+					.EntityID =			entity
 				},
 			},
 		};
@@ -558,12 +559,12 @@ ELevelObjectType LevelObjectCreator::CreatePlayerJail(const LambdaEngine::LevelO
 			.Shapes =
 			{
 				{
-					/* ShapeType */			EShapeType::SIMULATION,
-					/* GeometryType */		EGeometryType::MESH,
-					/* Geometry */			{.pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
-					/* CollisionGroup */	FCollisionGroup::COLLISION_GROUP_STATIC,
-					/* CollisionMask */		~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
-					/* EntityID*/			entity
+					.ShapeType =		EShapeType::SIMULATION,
+					.GeometryType =		EGeometryType::MESH,
+					.GeometryParams =	{.pMesh = ResourceManager::GetMesh(meshComponent.MeshGUID) },
+					.CollisionGroup =	FCollisionGroup::COLLISION_GROUP_STATIC,
+					.CollisionMask =	~FCollisionGroup::COLLISION_GROUP_STATIC, // Collide with any non-static object
+					.EntityID =			entity
 				},
 			},
 		};
@@ -675,12 +676,12 @@ ELevelObjectType LevelObjectCreator::CreateFlagDeliveryPoint(
 		.Shapes =
 		{
 			{
-				/* Shape Type */		EShapeType::TRIGGER,
-				/* GeometryType */		EGeometryType::BOX,
-				/* Geometry */			{ .HalfExtents = boundingBox.Dimensions },
-				/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
-				/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-				/* EntityID*/			entity
+				.ShapeType =		EShapeType::TRIGGER,
+				.GeometryType =		EGeometryType::BOX,
+				.GeometryParams =	{ .HalfExtents = boundingBox.Dimensions },
+				.CollisionGroup =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+				.CollisionMask =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+				.EntityID =			entity
 			},
 		},
 	};
@@ -758,7 +759,7 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 				.SpawnDelay = 0.05f,
 				.ParticleCount = 512,
 				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 45.f,
+				.ConeAngle = 45.f,
 				.VelocityRandomness = 0.5f,
 				.Velocity = 2.0,
 				.Acceleration = 0.0,
@@ -786,13 +787,13 @@ ELevelObjectType LevelObjectCreator::CreateShowerPoint(
 			.Shapes =
 			{
 				{
-					/* Shape Type */		EShapeType::TRIGGER,
-					/* GeometryType */		EGeometryType::BOX,
-					/* Geometry */			{.HalfExtents = boundingBox.Dimensions },
-					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
-					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-					/* EntityID*/			entity,
-					/* CallbackFunction*/	&ShowerSystemBase::PlayerShowerCollision
+					.ShapeType =		EShapeType::TRIGGER,
+					.GeometryType =		EGeometryType::BOX,
+					.GeometryParams =	{.HalfExtents = boundingBox.Dimensions },
+					.CollisionGroup =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_SHOWER,
+					.CollisionMask =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					.EntityID =			entity,
+					.CallbackFunction = &ShowerSystemBase::PlayerShowerCollision
 				}
 			},
 		};
@@ -915,26 +916,26 @@ bool LevelObjectCreator::CreateFlag(
 			/* Rotation */			rotationComponent,
 			{
 				{	// Triggers Flag-Player Collisions
-					/* Shape Type */		EShapeType::TRIGGER,
-					/* GeometryType */		EGeometryType::BOX,
-					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
-					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
-					/* EntityID*/			flagEntity,
-					/* CallbackFunction */	&FlagSystemBase::StaticOnPlayerFlagCollision,
-					/* UserData */			&flagPlayerColliderType,
-					/* UserDataSize */		sizeof(EFlagColliderType)
+					.ShapeType =		EShapeType::TRIGGER,
+					.GeometryType =		EGeometryType::BOX,
+					.GeometryParams =	{ .HalfExtents = pMesh->BoundingBox.Dimensions },
+					.CollisionGroup =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+					.CollisionMask =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER,
+					.EntityID =			flagEntity,
+					.CallbackFunction =	&FlagSystemBase::StaticOnPlayerFlagCollision,
+					.pUserData =		&flagPlayerColliderType,
+					.UserDataSize =		sizeof(EFlagColliderType)
 				},
 				{	// Triggers Flag-Delivery Point Collisions
-					/* Shape Type */		EShapeType::SIMULATION,
-					/* GeometryType */		EGeometryType::BOX,
-					/* Geometry */			{ .HalfExtents = pMesh->BoundingBox.Dimensions },
-					/* CollisionGroup */	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
-					/* CollisionMask */		FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
-					/* EntityID*/			flagEntity,
-					/* CallbackFunction */& FlagSystemBase::StaticOnDeliveryPointFlagCollision,
-					/* UserData */			&flagDeliveryPointColliderType,
-					/* UserDataSize */		sizeof(EFlagColliderType)
+					.ShapeType =		EShapeType::SIMULATION,
+					.GeometryType =		EGeometryType::BOX,
+					.GeometryParams =	{ .HalfExtents = pMesh->BoundingBox.Dimensions },
+					.CollisionGroup =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG,
+					.CollisionMask =	FCrazyCanvasCollisionGroup::COLLISION_GROUP_FLAG_DELIVERY_POINT,
+					.EntityID =			flagEntity,
+					.CallbackFunction =	&FlagSystemBase::StaticOnDeliveryPointFlagCollision,
+					.pUserData =		&flagDeliveryPointColliderType,
+					.UserDataSize =		sizeof(EFlagColliderType)
 				},
 			},
 			/* Velocity */			pECS->AddComponent<VelocityComponent>(flagEntity, { glm::vec3(0.0f) })
@@ -1019,6 +1020,7 @@ bool LevelObjectCreator::CreatePlayer(
 		PLAYER_CAPSULE_RADIUS);
 
 	pECS->AddComponent<CharacterColliderComponent>(playerEntity, characterColliderComponent);
+	pECS->AddComponent(playerEntity, GrenadeWielderComponent({ .ThrowCooldown = 0.0f }));
 
 	Entity weaponEntity = pECS->CreateEntity();
 	childEntities.PushBack(std::make_tuple("weapon", true, weaponEntity));
@@ -1581,15 +1583,15 @@ bool LevelObjectCreator::CreateProjectile(
 		/* Rotation */			rotationComponent,
 		{
 			{
-				/* Shape Type */		EShapeType::SIMULATION,
-				/* Geometry Type */		EGeometryType::SPHERE,
-				/* Geometry Params */	{ .Radius = 0.3f },
-				/* CollisionGroup */	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
-										(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
-				/* CollisionMask */		(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
-										(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
-				/* EntityID*/			desc.WeaponOwner,
-				/* CallbackFunction */	desc.Callback,
+				.ShapeType =		EShapeType::SIMULATION,
+				.GeometryType =		EGeometryType::SPHERE,
+				.GeometryParams =	{ .Radius = 0.3f },
+				.CollisionGroup =	(uint32)FCollisionGroup::COLLISION_GROUP_DYNAMIC |
+									(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PROJECTILE,
+				.CollisionMask =	(uint32)FCrazyCanvasCollisionGroup::COLLISION_GROUP_PLAYER |
+									(uint32)FCollisionGroup::COLLISION_GROUP_STATIC,
+				.EntityID =			desc.WeaponOwner,
+				.CallbackFunction =	desc.Callback,
 			},
 		},
 		/* Velocity */			velocityComponent
@@ -1614,7 +1616,7 @@ bool LevelObjectCreator::CreateProjectile(
 				.SpawnDelay = 0.05f,
 				.ParticleCount = 64,
 				.EmitterShape = EEmitterShape::CONE,
-				.Angle = 90.f,
+				.ConeAngle = 90.f,
 				.VelocityRandomness = 0.5f,
 				.Velocity = 1.0,
 				.Acceleration = 0.0,
@@ -1640,7 +1642,7 @@ bool LevelObjectCreator::CreateProjectile(
 			emitterComponent.Explosive = 1.0f;
 			emitterComponent.SpawnDelay = 0.1f;
 			emitterComponent.Velocity = 6.0f;
-			emitterComponent.Angle = 45.0f;
+			emitterComponent.ConeAngle = 45.0f;
 
 			const Entity particleEntity = pECS->CreateEntity();
 			pECS->AddComponent<PositionComponent>(particleEntity, { true, desc.FirePosition + projectileOffset });

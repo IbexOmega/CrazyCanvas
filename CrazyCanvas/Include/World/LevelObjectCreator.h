@@ -16,6 +16,9 @@
 
 #include "Lobby/Player.h"
 
+#define PLAYER_CAPSULE_HEIGHT 1.6f
+#define PLAYER_CAPSULE_RADIUS 0.325f
+
 namespace LambdaEngine
 {
 	class IClient;
@@ -105,9 +108,6 @@ class LevelObjectCreator
 		const void* pData,
 		LambdaEngine::TArray<LambdaEngine::Entity>&,
 		LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>&);
-
-	static constexpr const float PLAYER_CAPSULE_HEIGHT = 1.6f;
-	static constexpr const float PLAYER_CAPSULE_RADIUS = 0.325f;
 
 public:
 	DECL_STATIC_CLASS(LevelObjectCreator);
