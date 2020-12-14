@@ -17,13 +17,6 @@
 #include "Resources/ResourceCatalog.h"
 #include "Resources/ResourceManager.h"
 
-#define CREATE_PING_COMPONENT_ACCESSES 		\
-	{ RW, PositionComponent::Type() },		\
-	{ RW, TeamComponent::Type() },			\
-	{ RW, ProjectedGUIComponent::Type() },	\
-	{ RW, DestructionComponent::Type() },	\
-	{ RW, ParentComponent::Type() }			\
-
 PingHandler::~PingHandler()
 {
 	using namespace LambdaEngine;
@@ -135,14 +128,21 @@ bool PingHandler::OnKeyPress(const LambdaEngine::KeyPressedEvent& keyPressEvent)
 				const glm::vec3& camPos = pECS->GetConstComponent<PositionComponent>(camEntity).Position;
 				const glm::vec3 camDir = GetForward(pECS->GetConstComponent<RotationComponent>(camEntity).Quaternion);
 
-				const RaycastFilterData rayFilterData =
+				const QueryFilterData rayFilterData =
 				{
 					.IncludedGroup = FCollisionGroup::COLLISION_GROUP_STATIC
 				};
 
+				const RaycastInfo raycastInfo =
+				{
+					.Origin = camPos,
+					.Direction = camDir,
+					.MaxDistance = MAX_PING_DISTANCE,
+					.pFilterData = &rayFilterData
+				};
+
 				PxRaycastHit raycastHit;
-				PhysicsSystem* pPhysicsSystem = PhysicsSystem::GetInstance();
-				if (pPhysicsSystem->Raycast(camPos, camDir, MAX_PING_DISTANCE, raycastHit, &rayFilterData))
+				if (PhysicsSystem::GetInstance()->Raycast(raycastInfo, raycastHit))
 				{
 					// The player was looking at static geometry whilst pressing the ping button.
 					const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();

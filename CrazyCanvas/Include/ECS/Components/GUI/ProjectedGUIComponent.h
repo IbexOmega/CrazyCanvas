@@ -4,7 +4,8 @@
 enum class IndicatorTypeGUI
 {
 	FLAG_INDICATOR,
-	PING_INDICATOR
+	PING_INDICATOR,
+	GRENADE_INDICATOR
 };
 
 struct ProjectedGUIComponent

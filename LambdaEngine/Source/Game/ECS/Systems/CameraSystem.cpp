@@ -87,6 +87,8 @@ namespace LambdaEngine
 			const StepParentComponent&	stepParentComp		= pStepParentComponents->GetConstData(entity);
 			CameraComponent&			cameraComp			= pCameraComponents->GetData(entity);
 
+			RotationComponent& cameraRotationComp = pRotationComponents->GetData(entity);
+
 			if (cameraComp.FOV != m_MainFOV)
 			{
 				ViewProjectionMatricesComponent& viewProjectionComponent = pViewProjectionComponent->GetData(entity);
@@ -112,9 +114,20 @@ namespace LambdaEngine
 				RotationComponent parentRotationComp;
 				if (pRotationComponents->GetConstIf(stepParentComp.Owner, parentRotationComp))
 				{
-					RotationComponent& cameraRotationComp	= pRotationComponents->GetData(entity);
 					cameraRotationComp.Quaternion			= parentRotationComp.Quaternion;
 				}
+			}
+
+			if (cameraComp.ScreenShakeTime > 0.0f)
+			{
+				cameraComp.ScreenShakeAngle += glm::half_pi<float32>();
+				cameraRotationComp.Quaternion *=
+					glm::quat(
+						glm::vec3(
+							glm::cos(cameraComp.ScreenShakeAngle) * cameraComp.ScreenShakeTime,
+							glm::sin(cameraComp.ScreenShakeAngle) * cameraComp.ScreenShakeTime,
+							0.0f) * cameraComp.ScreenShakeAmplitude);
+				cameraComp.ScreenShakeTime -= dt;
 			}
 		}
 

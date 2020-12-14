@@ -310,7 +310,8 @@ namespace LambdaEngine
 		emitterInstance.OneTime = emitterComp.OneTime;
 		emitterInstance.Explosive = emitterComp.Explosive;
 		emitterInstance.SpawnDelay = emitterComp.SpawnDelay;
-		emitterInstance.Angle = emitterComp.Angle;
+
+		emitterInstance.ConeAngle = emitterComp.ConeAngle;
 
 		emitterInstance.Velocity = emitterComp.Velocity;
 		emitterInstance.VelocityRandomness = emitterComp.VelocityRandomness;
@@ -376,7 +377,7 @@ namespace LambdaEngine
 		const glm::vec3 forward = g_DefaultForward;
 		const glm::vec3 up = g_DefaultUp;
 		const glm::vec3 right = g_DefaultRight;
-		const float		halfAngle = emitterInstance.Angle * 0.5f;
+		const float		halfAngle = emitterInstance.ConeAngle * 0.5f;
 
 		// Add particle instances to TLAS
 		uint32 particlesToAdd = emitterInstance.ParticleChunk.Size;
@@ -433,6 +434,86 @@ namespace LambdaEngine
 				.CustomIndex = particleIndex,
 				.HitMask = 0x01,
 				.Flags = RAY_TRACING_INSTANCE_FLAG_CULLING_DISABLED,
+			};
+			ASInstanceDescs.PushBack(instanceDesc);
+		}
+
+		// Add TLAS instances
+		m_pASBuilder->AddInstances(ASInstanceDescs, ASInstanceIndices);
+	
+		for (uint32 i = 0; i < particlesToAdd; i++)
+		{
+			if (particleOffset + i < particleCount)
+			{
+				m_ParticleIndexData[particleOffset + i].EmitterIndex = emitterID;
+				m_ParticleIndexData[particleOffset + i].ASInstanceIndirectIndex = ASInstanceIndices[i];
+			}
+			else
+			{
+				SParticleIndexData particleIndexData = {};
+				particleIndexData.EmitterIndex = emitterID;
+				particleIndexData.ASInstanceIndirectIndex = ASInstanceIndices[i];
+				m_ParticleIndexData.PushBack(particleIndexData);
+			}
+		}
+
+		return true;
+	}
+
+	bool ParticleManager::CreateSphereParticleEmitter(EmitterID emitterID)
+	{
+		auto& emitterInstance = m_Emitters[emitterID];
+
+		// Add particle instances to TLAS
+		uint32 particlesToAdd = emitterInstance.ParticleChunk.Size;
+		const uint32 particleOffset = emitterInstance.ParticleChunk.Offset;
+		const uint32 particleCount = m_Particles.GetSize();
+
+		TArray<ASInstanceDesc> ASInstanceDescs;
+		TArray<uint32> ASInstanceIndices;
+		ASInstanceDescs.Reserve(particlesToAdd);
+		ASInstanceIndices.Reserve(particlesToAdd);
+
+		for (uint32 i = 0; i < particlesToAdd; i++)
+		{
+			SParticle particle;
+			glm::vec3 spherePoint = GenerateFibonacciSpherePoint(i, particlesToAdd);
+
+			particle.StartPosition = spherePoint * emitterInstance.SphereRadius;
+			particle.Transform = glm::translate(emitterInstance.Position);
+			particle.Velocity = spherePoint * (emitterInstance.Velocity * (1.0f - emitterInstance.VelocityRandomness) + emitterInstance.Velocity * Random::Float32(0.f, emitterInstance.VelocityRandomness));
+			particle.StartVelocity = particle.Velocity;
+			particle.BeginRadius = (emitterInstance.BeginRadius * (1.0f - emitterInstance.RadiusRandomness) + emitterInstance.BeginRadius * Random::Float32(0.f, emitterInstance.RadiusRandomness));
+			particle.EndRadius = emitterInstance.EndRadius;
+			particle.Acceleration = spherePoint * (emitterInstance.Acceleration * (1.0f - emitterInstance.AccelerationRandomness) + emitterInstance.Acceleration * Random::Float32(0.f, emitterInstance.AccelerationRandomness));
+			particle.StartAcceleration = particle.Acceleration;
+			particle.TileIndex = emitterInstance.RandomStartIndex ? (emitterInstance.FirstAnimationIndex + (i % emitterInstance.AnimationCount)) : emitterInstance.FirstAnimationIndex;
+			particle.WasCreated = true;
+			particle.FrictionFactor = emitterInstance.FrictionFactor;
+			particle.ShouldStop = 0.f;
+
+			particle.CurrentLife = emitterInstance.LifeTime + floor((1.f - emitterInstance.Explosive) * i) * emitterInstance.SpawnDelay;
+
+			uint32 particleIndex = UINT32_MAX;
+			if (particleOffset + i < particleCount)
+			{
+				particleIndex = particleOffset + i;
+				m_Particles[particleOffset + i] = particle;
+			}
+			else
+			{
+				particleIndex = m_Particles.GetSize();
+				m_Particles.PushBack(particle);
+			}
+
+			// Create ASInstanceDescs for RT
+			ASInstanceDesc instanceDesc =
+			{
+				.BlasIndex = m_BLASIndex,
+				.Transform = particle.Transform,
+				.CustomIndex = particleIndex,
+				.HitMask = 0x01,
+				.Flags = RAY_TRACING_INSTANCE_FLAG_FRONT_CCW,
 			};
 			ASInstanceDescs.PushBack(instanceDesc);
 		}
@@ -640,6 +721,10 @@ namespace LambdaEngine
 			if (emitterComp.EmitterShape == EEmitterShape::CONE)
 			{
 				CreateConeParticleEmitter(emitterID);
+			}
+			else if (emitterComp.EmitterShape == EEmitterShape::SPHERE)
+			{
+				CreateSphereParticleEmitter(emitterID);
 			}
 			else if (emitterComp.EmitterShape == EEmitterShape::TUBE)
 			{
