@@ -89,7 +89,7 @@ void BenchmarkState::Init()
 
 	// Create camera with a track
 	{
-		const TArray<glm::vec3> cameraTrack = 
+		const TArray<glm::vec3> cameraTrack =
 		{
 			{-2.0f, 3.0f,  1.0f},
 			{ 7.8f, 3.0f,  0.8f},
@@ -102,7 +102,7 @@ void BenchmarkState::Init()
 			{ 0.0f, 4.1f, -3.9f}
 		};
 
-		const CameraDesc cameraDesc = 
+		const CameraDesc cameraDesc =
 		{
 			.FOVDegrees	= EngineConfig::GetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV),
 			.Width		= (float32)window->GetWidth(),
@@ -395,10 +395,16 @@ void BenchmarkState::PrintBenchmarkResults()
 
 	writer.String("AverageFPS");
 	writer.Double(1.0f / RuntimeStats::GetAverageFrametime());
+
 	writer.String("PeakRAM");
 	writer.Double(RuntimeStats::GetPeakMemoryUsage() / MB);
+
+	writer.String("AverageRAM");
+	writer.Double(RuntimeStats::GetAverageMemoryUsage() / MB);
+
 	writer.String("PeakVRAM");
 	writer.Double(pGPUProfiler->GetPeakDeviceMemory() / MB);
+
 	writer.String("AverageVRAM");
 	writer.Double(pGPUProfiler->GetAverageDeviceMemory() / MB);
 
