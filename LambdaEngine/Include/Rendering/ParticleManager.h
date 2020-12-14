@@ -37,6 +37,7 @@ namespace LambdaEngine
 		{
 			float ConeAngle; //Set for Cone
 			float SphereRadius; //Set for Sphere
+			float PlaneDimensions; //Set for Plane
 		};
 		float			Velocity;
 		float			VelocityRandomness;
@@ -156,6 +157,7 @@ namespace LambdaEngine
 		bool CreateConeParticleEmitter(EmitterID emitterID);
 		bool CreateSphereParticleEmitter(EmitterID emitterID);
 		bool CreateTubeParticleEmitter(EmitterID emitterID);
+		bool CreatePlaneParticleEmitter(EmitterID emitterID);
 		bool CopyDataToBuffer(CommandList* pCommandList, void* data, uint32* pOffsets, uint32* pSize, uint32 regionCount, size_t elementSize, Buffer** ppStagingBuffers, Buffer** ppBuffer, FBufferFlags flags, const String& name);
 
 		bool ActivateEmitterInstance(EmitterID emitterID, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ParticleEmitterComponent& emitterComp);
