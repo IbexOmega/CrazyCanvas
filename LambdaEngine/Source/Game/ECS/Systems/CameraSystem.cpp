@@ -249,6 +249,8 @@ namespace LambdaEngine
 
 	void CameraSystem::RotateCamera(float32 dt, const glm::vec3& forward, glm::quat& rotation)
 	{
+		UNREFERENCED_VARIABLE(dt);
+
 		float addedPitch = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_UP) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_DOWN));
 		float addedYaw = float(InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_LEFT) - InputActionSystem::IsActive(EAction::ACTION_CAM_ROT_RIGHT));
 

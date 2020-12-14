@@ -1540,7 +1540,7 @@ bool LevelObjectCreator::CreatePlayer(
 	return true;
 }
 
-bool LevelObjectCreator::CreatePlayerSpectator(const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>& createdChildEntities)
+bool LevelObjectCreator::CreatePlayerSpectator(const void* pData, LambdaEngine::TArray<LambdaEngine::Entity>& createdEntities, LambdaEngine::TArray<LambdaEngine::TArray<std::tuple<LambdaEngine::String, bool, LambdaEngine::Entity>>>&)
 {
 	using namespace LambdaEngine;
 
