@@ -301,7 +301,20 @@ void LobbyGUI::UpdateSettings(const PacketGameSettings& packet)
 
 	Label* pSettingMap = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_MAP) + "_client").c_str());
 	if (pSettingMap)
+	{
 		pSettingMap->SetContent(LevelManager::GetLevelNames()[packet.MapID].c_str());
+
+		if (packet.MapID < m_MapImages.GetSize())
+		{
+			Ptr<BitmapImage> bitmapImage = *new BitmapImage(Uri(m_MapImages[packet.MapID].c_str()));
+			FrameworkElement::FindName<Image>("THUMBNAIL_IMAGE")->SetSource(bitmapImage);
+		}
+		else
+		{
+			Ptr<BitmapImage> bitmapImage = *new BitmapImage(Uri(m_MapImages.GetBack().c_str()));
+			FrameworkElement::FindName<Image>("THUMBNAIL_IMAGE")->SetSource(bitmapImage);
+		}
+	}
 
 	Label* pSettingGameMode = FrameworkElement::FindName<Label>((LambdaEngine::String(SETTING_GAME_MODE) + "_client").c_str());
 	if (pSettingGameMode)
@@ -680,7 +693,7 @@ void LobbyGUI::OnComboBoxSelectionChanged(BaseComponent* pSender, const Selectio
 	{
 		m_pGameSettings->MapID = (uint8)indexSelected;
 
-		if (m_MapImages[indexSelected].find(LevelManager::GetLevelNames()[indexSelected]))
+		if (indexSelected < m_MapImages.GetSize())
 		{
 			Ptr<BitmapImage> bitmapImage = *new BitmapImage(Uri(m_MapImages[indexSelected].c_str()));
 			FrameworkElement::FindName<Image>("THUMBNAIL_IMAGE")->SetSource(bitmapImage);

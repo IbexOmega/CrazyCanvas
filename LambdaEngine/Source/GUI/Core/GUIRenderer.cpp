@@ -822,9 +822,10 @@ namespace LambdaEngine
 		{
 			if (m_pCurrentRenderTarget && m_pCurrentRenderTarget->GetRenderPass())
 			{
+				Texture* pDepthStencilTexture = m_pCurrentRenderTarget->GetDepthStencilTexture();
 				TextureView** ppTextureViews = m_pCurrentRenderTarget->GetRenderTargets();
 
-				if (ppTextureViews[0] != nullptr && ppTextureViews[1] != nullptr)
+				if (pDepthStencilTexture != nullptr && ppTextureViews[0] != nullptr && ppTextureViews[1] != nullptr)
 				{
 					BeginRenderPassDesc beginRenderPass = {};
 					beginRenderPass.pRenderPass			= m_pCurrentRenderTarget->GetRenderPass();
