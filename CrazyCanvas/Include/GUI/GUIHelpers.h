@@ -97,7 +97,7 @@ FORCEINLINE void EnablePlaySessionsRenderstages()
 		rs.SetRenderStageSleeping("RAY_TRACING",					false);
 }
 
-FORCEINLINE void ChangeGlossySettings(bool glossyEnabled, int32 spp)
+FORCEINLINE void ChangeRayTracingSettings(bool glossyEnabled, int32 spp, const LambdaEngine::String& shadowSetting)
 {
 	using namespace LambdaEngine;
 	RenderSystem& rs = RenderSystem::GetInstance();
@@ -107,10 +107,24 @@ FORCEINLINE void ChangeGlossySettings(bool glossyEnabled, int32 spp)
 	{
 		int32 GlossyEnabled;
 		int32 SPP;
+		int32 ShadowsSetting;
 	} rayTracingPushConstant;
 
 	rayTracingPushConstant.GlossyEnabled	= int32(glossyEnabled);
 	rayTracingPushConstant.SPP				= spp;
+
+	if (shadowSetting == "DISABLED")
+	{
+		rayTracingPushConstant.ShadowsSetting = 0;
+	}
+	else if (shadowSetting == "DIRECTIONAL")
+	{
+		rayTracingPushConstant.ShadowsSetting = 1;
+	}
+	else if (shadowSetting == "FULL")
+	{
+		rayTracingPushConstant.ShadowsSetting = 2;
+	}
 
 	PushConstantsUpdate pushContantUpdate = {};
 	pushContantUpdate.pData				= &rayTracingPushConstant;

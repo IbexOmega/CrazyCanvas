@@ -34,6 +34,7 @@ private:
 	void OnMusicVolumeSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 	void OnFOVSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
 	void OnReflectionsSPPSliderChanged(Noesis::BaseComponent* pSender, const Noesis::RoutedPropertyChangedEventArgs<float>& args);
+	void SetRayTracedShadowSetting(Noesis::ComboBox* pComboBox, const LambdaEngine::String& shadowSetting);
 	void SetAA(Noesis::ComboBox* pComboBox, const LambdaEngine::String& AAOption);
 
 	// Controls
