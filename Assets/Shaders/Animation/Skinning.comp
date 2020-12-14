@@ -74,7 +74,9 @@ void main()
 	b_SkinnedVertices.Val[gl_GlobalInvocationID.x] = b_OriginalVertices.Val[gl_GlobalInvocationID.x];
 #else
 	SVertex skinnedVertex = b_SkinnedVertices.Val[gl_GlobalInvocationID.x];
-	vertex.Position.w = skinnedVertex.Position.w;
+	uint wData = floatBitsToUint(skinnedVertex.Position.w);
+	wData = wData | 0x100; // Tell this vertex that it is on an animated mesh.
+	vertex.Position.w = uintBitsToFloat(wData);
 	vertex.Normal.w = skinnedVertex.Normal.w;
 
 	// Store the vertex's original position to use when applying paint on the players.
