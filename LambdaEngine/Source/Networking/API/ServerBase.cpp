@@ -33,7 +33,7 @@ namespace LambdaEngine
 		if (!ThreadsAreRunning() && ThreadsHasTerminated())
 		{
 			m_IPEndPoint = ipEndPoint;
-			if (StartThreads())
+			if (StartThreads("ServerBase"))
 			{
 				LOG_WARNING("[ServerBase]: Starting...");
 				return true;

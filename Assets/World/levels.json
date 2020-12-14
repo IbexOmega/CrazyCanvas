@@ -1,7 +1,8 @@
 {
     "levels": [
 		{
-			"name": "Fun Factory",
+            "name": "Fun Factory",
+            "thumbnail": "Thumbnails/Fun Factory.png",
 			"modules": [
 				{
 					"filename": "CanvasMap.glb",
@@ -15,6 +16,7 @@
         },
         {
             "name": "The Mines",
+            "thumbnail": "Thumbnails/The Mines.png",
             "modules": [
                 {
                     "filename": "TheMines.glb",
@@ -31,6 +33,19 @@
             "modules": [
                 {
                     "filename": "SimpleGeometry.glb",
+                    "translation": {
+                        "x": 0.0,
+                        "y": 0.0,
+                        "z": 0.0
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Bunny Hop",
+            "modules": [
+                {
+                    "filename": "BunnyHop.glb",
                     "translation": {
                         "x": 0.0,
                         "y": 0.0,

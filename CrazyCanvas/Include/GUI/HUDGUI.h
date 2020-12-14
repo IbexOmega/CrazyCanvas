@@ -73,8 +73,6 @@ public:
 
 	void FixedTick(LambdaEngine::Timestamp delta);
 
-	void AnimateReload(const float32 timePassed);
-
 	bool ConnectEvent(Noesis::BaseComponent* pSource, const char* pEvent, const char* pHandler) override;
 
 	bool UpdateHealth(int32 currentHealth);
@@ -82,7 +80,7 @@ public:
 	bool UpdateAmmo(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, EAmmoType ammoType);
 
 	void Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo, bool isReloading);
-	void AbortReload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>& WeaponTypeAmmo);
+	void AbortReload();
 
 	void UpdateCountdown(uint8 countDownTime);
 
@@ -123,19 +121,8 @@ private:
 	GameGUIState m_GUIState;
 
 	bool m_IsGameOver	= false;
-	bool m_IsReloading = false;
 
-	float m_WaterAmmoScale = 0.0f;
-	float m_PaintAmmoScale = 0.0f;
-
-	float m_WaterAmmoFactor = 0.0f;
-	float m_PaintAmmoFactor = 0.0f;
-
-	float32 m_ReloadAnimationTime = 2.0f;
-
-	Noesis::Image* m_pWaterAmmoRect				= nullptr;
-	Noesis::Image* m_pPaintAmmoRect				= nullptr;
-	Noesis::Image* m_pPaintDropRect				= nullptr;
+	Noesis::Image* m_pPaintAmmoImage			= nullptr;
 	Noesis::Image* m_pHealthRect				= nullptr;
 
 	Noesis::TextBlock* m_pWaterAmmoText			= nullptr;

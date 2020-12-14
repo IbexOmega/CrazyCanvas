@@ -547,6 +547,7 @@ bool LobbyGUI::ConnectEvent(BaseComponent* pSource, const char* pEvent, const ch
 	NS_CONNECT_EVENT(Button, Click, OnButtonLeaveClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonSendMessageClick);
 	NS_CONNECT_EVENT(Button, Click, OnButtonSettingsClick);
+	NS_CONNECT_EVENT(Button, IsEnabledChanged, OnReadyButtonEnabledChange);
 
 	return false;
 }
