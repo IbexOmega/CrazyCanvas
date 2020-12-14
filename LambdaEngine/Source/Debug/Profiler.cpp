@@ -2,6 +2,7 @@
 #include "Debug/Profiler.h"
 #include "Debug/CPUProfiler.h"
 #include "Debug/GPUProfiler.h"
+#include "Rendering/ImGuiRenderer.h"
 
 #include <imgui.h>
 
@@ -38,11 +39,13 @@ namespace LambdaEngine
 
 	void Profiler::Render()
 	{
-		ImGui::Begin("Profiling data");
+		ImGuiRenderer::Get().DrawUI([] {
+			ImGui::Begin("Profiling data");
 
-		GetCPUProfiler()->Render();
-		GetGPUProfiler()->Render();
+			Profiler::GetCPUProfiler()->Render();
+			Profiler::GetGPUProfiler()->Render();
 
-		ImGui::End();
+			ImGui::End();
+			});
 	}
 }

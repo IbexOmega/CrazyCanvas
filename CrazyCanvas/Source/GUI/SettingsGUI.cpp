@@ -29,6 +29,7 @@ SettingsGUI::~SettingsGUI()
 {
 	EventQueue::UnregisterEventHandler<KeyPressedEvent>(this, &SettingsGUI::KeyboardCallback);
 	EventQueue::UnregisterEventHandler<MouseButtonClickedEvent>(this, &SettingsGUI::MouseButtonCallback);
+	EventQueue::UnregisterEventHandler<MouseScrolledEvent>(this, &SettingsGUI::MouseScrollCallback);
 }
 
 void SettingsGUI::InitGUI()
@@ -39,7 +40,7 @@ void SettingsGUI::InitGUI()
 
 	EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &SettingsGUI::KeyboardCallback);
 	EventQueue::RegisterEventHandler<MouseButtonClickedEvent>(this, &SettingsGUI::MouseButtonCallback);
-
+	EventQueue::RegisterEventHandler<MouseScrolledEvent>(this, &SettingsGUI::MouseScrollCallback);
 	SetDefaultSettings();
 }
 
@@ -130,6 +131,14 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MASTER, volume);
 	AudioAPI::GetDevice()->SetMasterVolume(volume);
 
+	// Music Volume
+	Noesis::Slider* pMusicVolumeSlider = FrameworkElement::FindName<Noesis::Slider>("MusicVolumeSlider");
+	volume = pMusicVolumeSlider->GetValue();
+	maxVolume = pMusicVolumeSlider->GetMaximum();
+	volume /= maxVolume;
+	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_VOLUME_MUSIC, volume);
+	AudioAPI::GetDevice()->SetMusicVolume(volume);
+
 	//FOV
 	EngineConfig::SetFloatProperty(EConfigOption::CONFIG_OPTION_CAMERA_FOV, CameraSystem::GetInstance().GetMainFOV());
 
@@ -144,7 +153,7 @@ void SettingsGUI::OnButtonApplySettingsClick(Noesis::BaseComponent* pSender, con
 		//Enabled
 		Noesis::CheckBox* pGlossyReflectionsCheckbox = FrameworkElement::FindName<Noesis::CheckBox>("GlossyReflectionsCheckBox");
 		bool glossyEnabled = pGlossyReflectionsCheckbox->GetIsChecked().GetValue();
-		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER, glossyEnabled);
+		EngineConfig::SetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS, glossyEnabled);
 
 		//SPP
 		EngineConfig::SetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP, m_NewReflectionsSPP);
@@ -421,6 +430,26 @@ bool SettingsGUI::MouseButtonCallback(const LambdaEngine::MouseButtonClickedEven
 	if (m_ListenToCallbacks)
 	{
 		LambdaEngine::String mouseButtonStr = ButtonToString(event.Button);
+
+		m_pSetKeyButton->SetContent(mouseButtonStr.c_str());
+		m_KeysToSet[m_pSetKeyButton->GetName()] = mouseButtonStr;
+
+		m_ListenToCallbacks = false;
+		m_pSetKeyButton = nullptr;
+
+		return true;
+	}
+
+	return false;
+}
+
+bool SettingsGUI::MouseScrollCallback(const LambdaEngine::MouseScrolledEvent& event)
+{
+	if (m_ListenToCallbacks)
+	{
+		EMouseButton mouseButton = event.DeltaY > 0 ? EMouseButton::MOUSE_BUTTON_SCROLL_UP : EMouseButton::MOUSE_BUTTON_SCROLL_DOWN;
+
+		LambdaEngine::String mouseButtonStr = ButtonToString(mouseButton);
 
 		m_pSetKeyButton->SetContent(mouseButtonStr.c_str());
 		m_KeysToSet[m_pSetKeyButton->GetName()] = mouseButtonStr;

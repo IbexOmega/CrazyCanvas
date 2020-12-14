@@ -26,8 +26,13 @@
 
 #include "Resources/ResourceCatalog.h"
 
+#include "Game/ECS/Components/Misc/InheritanceComponent.h"
+#include "Game/ECS/Components/Team/TeamComponent.h"
+
 namespace LambdaEngine
 {
+	FirstPersonWeaponRenderer::SPushConstantData FirstPersonWeaponRenderer::s_LiquidPushConstantData;
+
 	FirstPersonWeaponRenderer* FirstPersonWeaponRenderer::s_pInstance = nullptr;
 
 	FirstPersonWeaponRenderer::FirstPersonWeaponRenderer()
@@ -58,29 +63,34 @@ namespace LambdaEngine
 	{
 		m_BackBufferCount = BACK_BUFFER_COUNT;
 		m_UsingMeshShader = EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_MESH_SHADER);
-		m_Entity = MAXUINT32;
 
 		if (!CreateBuffers())
 		{
-			LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to create buffers");
+			LOG_ERROR("Failed to create buffers");
 			return false;
 		}
 
 		if (!CreatePipelineLayout())
 		{
-			LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to create PipelineLayout");
+			LOG_ERROR("Failed to create PipelineLayout");
+			return false;
+		}
+
+		if (!CreatePipelineLayoutLiquid())
+		{
+			LOG_ERROR("Failed to create Liquid PipelineLayout");
 			return false;
 		}
 
 		if (!CreateDescriptorSets())
 		{
-			LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to create DescriptorSet");
+			LOG_ERROR("Failed to create DescriptorSet");
 			return false;
 		}
 
 		if (!CreateShaders())
 		{
-			LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to create Shaders");
+			LOG_ERROR("Failed to create Shaders");
 			return false;
 		}
 
@@ -97,25 +107,25 @@ namespace LambdaEngine
 			CommandList* pCommandList = m_pRenderGraph->AcquireGraphicsCopyCommandList();
 			if (!PrepareResources(pCommandList))
 			{
-				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to create resources");
+				LOG_ERROR("Failed to create resources");
 				return false;
 			}
 
 			if (!CreateCommandLists())
 			{
-				LOG_ERROR("[FirstPersonWeapoRenderer]: Failed to create render command lists");
+				LOG_ERROR("Failed to create render command lists");
 				return false;
 			}
 
 			if (!CreateRenderPass(pPreInitDesc->pColorAttachmentDesc))
 			{
-				LOG_ERROR("[FirstPersonWeapoRenderer]: Failed to create RenderPass");
+				LOG_ERROR("Failed to create RenderPass");
 				return false;
 			}
 
 			if (!CreatePipelineState())
 			{
-				LOG_ERROR("[FirstPersonWeapoRenderer]: Failed to create PipelineState");
+				LOG_ERROR("Failed to create PipelineState");
 				return false;
 			}
 
@@ -138,7 +148,7 @@ namespace LambdaEngine
 			stagingBufferDesc.SizeInBytes = sizeof(FrameBuffer);
 	
 			m_FrameCopyBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-			succeded = m_FrameCopyBuffer != nullptr;
+			succeded = succeded && m_FrameCopyBuffer != nullptr;
 
 			BufferDesc bufferDesc = {};
 			bufferDesc.DebugName = "FirstPersonWeapon Renderer Data Buffer";
@@ -147,51 +157,7 @@ namespace LambdaEngine
 			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
 
 			m_FrameBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_FrameBuffer != nullptr;
-		}
-
-		Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
-		// Weapon Vertex Buffer
-		{
-
-			BufferDesc stagingBufferDesc = {};
-			stagingBufferDesc.DebugName = "FirstPersonWeapon Renderer Vertex Copy Buffer";
-			stagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			stagingBufferDesc.SizeInBytes = sizeof(Vertex) * pMesh->Vertices.GetSize();
-
-			m_VertexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-			succeded = m_VertexStagingBuffer != nullptr;
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName = "FirstPersonWeapon Vertex Data Buffer";
-			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_UNORDERED_ACCESS_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
-
-			m_VertexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_VertexBuffer != nullptr;
-		}
-
-		// Weapon Index Buffer
-		{
-			BufferDesc stagingBufferDesc = {};
-			stagingBufferDesc.DebugName = "FirstPersonWeapon Renderer Index Copy Buffer";
-			stagingBufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_CPU_VISIBLE;
-			stagingBufferDesc.Flags = FBufferFlag::BUFFER_FLAG_COPY_SRC;
-			stagingBufferDesc.SizeInBytes = sizeof(MeshIndexType) * pMesh->Indices.GetSize();
-
-			m_IndexStagingBuffer = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-			succeded = m_IndexStagingBuffer != nullptr;
-
-			BufferDesc bufferDesc = {};
-			bufferDesc.DebugName = "FirstPersonWeapon Index Data Buffer";
-			bufferDesc.MemoryType = EMemoryType::MEMORY_TYPE_GPU;
-			bufferDesc.Flags = FBufferFlag::BUFFER_FLAG_INDEX_BUFFER | FBufferFlag::BUFFER_FLAG_COPY_DST;
-			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
-
-			m_IndexBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_IndexBuffer != nullptr;
+			succeded = succeded && m_FrameBuffer != nullptr;
 		}
 
 		// Weapon Data Buffer
@@ -206,7 +172,7 @@ namespace LambdaEngine
 			for (uint32 b = 0; b < m_WeaponStagingBuffers.GetSize(); b++)
 			{
 				m_WeaponStagingBuffers[b] = RenderAPI::GetDevice()->CreateBuffer(&stagingBufferDesc);
-				succeded = m_WeaponStagingBuffers[b] != nullptr;
+				succeded = succeded && m_WeaponStagingBuffers[b] != nullptr;
 			}
 
 			BufferDesc bufferDesc = {};
@@ -216,7 +182,7 @@ namespace LambdaEngine
 			bufferDesc.SizeInBytes = stagingBufferDesc.SizeInBytes;
 
 			m_WeaponBuffer = RenderAPI::GetDevice()->CreateBuffer(&bufferDesc);
-			succeded = m_WeaponBuffer != nullptr;
+			succeded = succeded && m_WeaponBuffer != nullptr;
 		}
 
 		return succeded;
@@ -224,9 +190,62 @@ namespace LambdaEngine
 
 	void FirstPersonWeaponRenderer::Update(Timestamp delta, uint32 modFrameIndex, uint32 backBufferIndex)
 	{
-		UNREFERENCED_VARIABLE(delta);
+		using namespace LambdaEngine;
+
 		UNREFERENCED_VARIABLE(backBufferIndex);
 		m_DescriptorCache.HandleUnavailableDescriptors(modFrameIndex);
+
+		// Fetch data from the player
+		{
+			ECSCore* pECSCore = ECSCore::GetInstance();
+			if (m_PlayerEntity != UINT32_MAX)
+			{
+				// Fetch the team index, which is used for coloring the liquid to the same color as the paint.
+				TeamComponent teamComponent = {};
+				bool hasComponent = pECSCore->GetConstComponentIf<TeamComponent>(m_PlayerEntity, teamComponent);
+				if (hasComponent)
+				{
+					s_LiquidPushConstantData.TeamIndex = teamComponent.TeamIndex;
+
+					float dt = (float)delta.AsSeconds();
+
+					// Waves, Code from: https://www.patreon.com/posts/quick-game-art-18245226
+					static float s_Time = 0.f;
+					s_Time += dt;
+
+					static float s_Recovery = 1.f;
+					static float s_WaveAddX = 0.f;
+					static float s_WaveAddZ = 0.f;
+					static float s_MaxWave = 0.003f;
+
+					// Soften the wave over time.
+					s_WaveAddX = glm::mix(s_WaveAddX, 0.f, dt * s_Recovery);
+					s_WaveAddZ = glm::mix(s_WaveAddZ, 0.f, dt * s_Recovery);
+
+					float pulse = dt * 2.f * glm::pi<float>();
+					s_LiquidPushConstantData.WaveX = s_WaveAddX * glm::sin(pulse * s_Time);
+					s_LiquidPushConstantData.WaveZ = s_WaveAddZ * glm::sin(pulse * s_Time);
+
+					// Fetch the player position and rotation to be able to calculate its velocity and angular velocity.
+					static glm::vec3 s_PreviousPosition = glm::vec3(0.f);
+					static glm::vec3 s_PreviousRotation = glm::vec3(0.f);
+					const PositionComponent& positionComponent = pECSCore->GetConstComponent<PositionComponent>(m_PlayerEntity);
+					const RotationComponent& rotationComponent = pECSCore->GetConstComponent<RotationComponent>(m_PlayerEntity);
+
+					glm::vec3 velocity = (s_PreviousPosition - positionComponent.Position) / dt;
+
+					glm::vec3 eulerAngles = glm::eulerAngles(rotationComponent.Quaternion);
+					glm::vec3 angularVelocity = (eulerAngles - s_PreviousRotation) / dt;
+
+					s_WaveAddX += 0.f;// glm::clamp((velocity.x * 0.6f + (angularVelocity.z * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+					s_WaveAddZ += 0.f;// glm::clamp((velocity.z * 0.6f + (angularVelocity.x * 0.2f)) * s_MaxWave, -s_MaxWave, s_MaxWave);
+
+					s_PreviousPosition = positionComponent.Position;
+					s_PreviousRotation = eulerAngles;
+				}
+			}
+		}
+
 
 		// Update descriptor of weapon buffer set
 		if (!m_InitilizedWeaponBuffer) 
@@ -255,6 +274,27 @@ namespace LambdaEngine
 			}
 
 			m_InitilizedWeaponBuffer = true;
+		}
+
+		// Update ammo
+		if(m_WeaponEntity != UINT32_MAX)
+		{
+			WeaponComponent weaponComponent = {};
+			bool succeded = ECSCore::GetInstance()->GetConstComponentIf<WeaponComponent>(m_WeaponEntity, weaponComponent);
+			if (succeded)
+			{
+				auto itWater = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_WATER);
+				if (itWater != weaponComponent.WeaponTypeAmmo.end())
+				{
+					s_LiquidPushConstantData.WaterLevel = (float)itWater->second.first / (float)itWater->second.second;
+				}
+
+				auto itPaint = weaponComponent.WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
+				if (itPaint != weaponComponent.WeaponTypeAmmo.end())
+				{
+					s_LiquidPushConstantData.PaintLevel = (float)itPaint->second.first / (float)itPaint->second.second;
+				}
+			}
 		}
 	}
 
@@ -321,6 +361,54 @@ namespace LambdaEngine
 			else
 			{
 				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] SCENE_COMBINED_MATERIAL_MAPS", setIndex);
+			}
+		}
+		else if (resourceName == "GLOBAL_SPECULAR_PROBE")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 4;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] GLOBAL_SPECULAR_PROBE", setIndex);
+			}
+		}
+		else if (resourceName == "GLOBAL_DIFFUSE_PROBE")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 5;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] GLOBAL_DIFFUSE_PROBE", setIndex);
+			}
+		}
+		else if (resourceName == "INTEGRATION_LUT")
+		{
+			constexpr DescriptorSetIndex setIndex = 1U;
+
+			m_DescriptorSet1 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 1", m_PipelineLayout.Get(), setIndex, m_DescriptorHeap.Get());
+			if (m_DescriptorSet1 != nullptr)
+			{
+				Sampler* pSampler = Sampler::GetLinearSampler();
+				uint32 bindingIndex = 6;
+				m_DescriptorSet1->WriteTextureDescriptors(ppPerImageTextureViews, &pSampler, ETextureState::TEXTURE_STATE_SHADER_READ_ONLY, bindingIndex, imageCount, EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER, false);
+			}
+			else
+			{
+				LOG_ERROR("[FirstPersonWeaponRenderer]: Failed to update DescriptorSet[%d] INTEGRATION_LUT", setIndex);
 			}
 		}
 	}
@@ -415,8 +503,10 @@ namespace LambdaEngine
 				m_DirtyUniformBuffers = true;
 
 				ECSCore* pECSCore = ECSCore::GetInstance();
+				const ComponentArray<WeaponLiquidComponent>* pWeaponLiquidComponents = pECSCore->GetComponentArray<WeaponLiquidComponent>();
+				const ComponentArray<WeaponArmsComponent>* pArmsComponents = pECSCore->GetComponentArray<WeaponArmsComponent>();
 				const ComponentArray<WeaponLocalComponent>* pWeaponLocalComponents = pECSCore->GetComponentArray<WeaponLocalComponent>();
-				const ComponentArray<PositionComponent>* pPositionComponents = pECSCore->GetComponentArray<PositionComponent>();
+				const ComponentArray<ParentComponent>* pParentComponents = pECSCore->GetComponentArray<ParentComponent>();
 
 				for (uint32 d = 0; d < m_DrawCount; d++)
 				{
@@ -426,41 +516,73 @@ namespace LambdaEngine
 					{
 						for (uint32 i = 0; i < m_pDrawArgs[d].EntityIDs.GetSize(); i++)
 						{
-							m_Entity = m_pDrawArgs[d].EntityIDs[i];
-							if (pWeaponLocalComponents->HasComponent(m_Entity)) {
-							
-								m_WorldPos = pPositionComponents->GetConstData(m_Entity).Position;
-
-								// Set Vertex and Instance buffer for rendering
-								Buffer* ppBuffers[2] = { m_VertexBuffer.Get(), m_pDrawArgs[d].pInstanceBuffer };
-								uint64 pOffsets[2] = { 0, 0 };
-								uint64 pSizes[2] = { m_VertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
-
-								m_DescriptorSetList2[d]->WriteBufferDescriptors(
-									ppBuffers,
-									pOffsets,
-									pSizes,
-									0,
-									2,
-									EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
-								);
-
-								// Set Frame Buffer
-								const Buffer* ppBuffers2 = { m_FrameBuffer.Get() };
-								const uint64 pOffsets2 = { 0 };
-								uint64 pSizesInBytes2 = { sizeof(FrameBuffer) };
-								DescriptorSetIndex setIndex0 = 0;
-								m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex0, m_DescriptorHeap.Get());
-								if (m_DescriptorSet0 != nullptr)
+							Entity entity = m_pDrawArgs[d].EntityIDs[i];
+							if (pWeaponLocalComponents->HasComponent(entity)) {
+								
+								if (pWeaponLiquidComponents->HasComponent(entity))
 								{
-									m_DescriptorSet0->WriteBufferDescriptors(
-										&ppBuffers2,
-										&pOffsets2,
-										&pSizesInBytes2,
-										setIndex0,
-										1,
-										EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER
+									const WeaponLiquidComponent& weaponLiquidComponent = pWeaponLiquidComponents->GetConstData(entity);
+									if (weaponLiquidComponent.isWater)
+									{
+										m_LiquidWaterDrawArgsDescriptorSet = m_pDrawArgs[d].pDescriptorSet;
+										m_LiquidWaterEntity = entity;
+										m_LiquidWaterIndex = d;
+
+										m_WeaponEntity = pWeaponLocalComponents->GetConstData(entity).weaponEntity;
+									}
+									else
+									{
+										m_LiquidPaintDrawArgsDescriptorSet = m_pDrawArgs[d].pDescriptorSet;
+										m_LiquidPaintEntity = entity;
+										m_LiquidPaintIndex = d;
+									}
+								}
+								else
+								{
+									if (pArmsComponents->HasComponent(entity))
+									{
+										if (pParentComponents->HasComponent(entity))
+										{
+											m_PlayerEntity = pParentComponents->GetConstData(entity).Parent;
+										}
+										m_ArmsIndex = d;
+									}
+									else
+									{
+										m_WeaponIndex = d;
+									}
+
+									// Set Vertex and Instance buffer for rendering
+									Buffer* ppBuffers[2] = { m_pDrawArgs[d].pVertexBuffer, m_pDrawArgs[d].pInstanceBuffer };
+									uint64 pOffsets[2] = { 0, 0 };
+									uint64 pSizes[2] = { m_pDrawArgs[d].pVertexBuffer->GetDesc().SizeInBytes, m_pDrawArgs[d].pInstanceBuffer->GetDesc().SizeInBytes };
+
+									m_DescriptorSetList2[d]->WriteBufferDescriptors(
+										ppBuffers,
+										pOffsets,
+										pSizes,
+										0,
+										2,
+										EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER
 									);
+
+									// Set Frame Buffer
+									const Buffer* ppBuffers2 = { m_FrameBuffer.Get() };
+									const uint64 pOffsets2 = { 0 };
+									uint64 pSizesInBytes2 = { sizeof(FrameBuffer) };
+									DescriptorSetIndex setIndex0 = 0;
+									m_DescriptorSet0 = m_DescriptorCache.GetDescriptorSet("FirstPersonWeapon Renderer Buffer Descriptor Set 0", m_PipelineLayout.Get(), setIndex0, m_DescriptorHeap.Get());
+									if (m_DescriptorSet0 != nullptr)
+									{
+										m_DescriptorSet0->WriteBufferDescriptors(
+											&ppBuffers2,
+											&pOffsets2,
+											&pSizesInBytes2,
+											setIndex0,
+											1,
+											EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER
+										);
+									}
 								}
 							}
 							else
@@ -536,8 +658,8 @@ namespace LambdaEngine
 		constexpr uint32 SAMPLES = 16;
 		const uint64 sampleIndex = tick % SAMPLES;
 
-		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, float32(width) / float32(height), 0.1f, 100.0f);
-		glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, -1.0), glm::vec3(0.0f), g_DefaultUp);
+		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, float32(width) / float32(height), 0.01f, 10.0f);
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 0.1), glm::vec3(0.0f), g_DefaultUp);
 
 		// Generate jitter
 		if (AARenderer::GetInstance()->GetAAMode() == EAAMode::AAMODE_TAA)
@@ -590,8 +712,12 @@ namespace LambdaEngine
 
 			if (m_DrawCount > 0)
 			{
-				RenderCull(pCommandList, m_PipelineStateIDFrontCull);
-				RenderCull(pCommandList, m_PipelineStateIDBackCull);
+				RenderCull(false, m_ArmsIndex, pCommandList, m_PipelineStateIDBackCull);
+				RenderLiquid(true, pCommandList); // Render water
+				RenderLiquid(false, pCommandList); // Render paint
+
+				RenderCull(true, m_WeaponIndex, pCommandList, m_PipelineStateIDFrontCull);
+				RenderCull(true, m_WeaponIndex, pCommandList, m_PipelineStateIDBackCull);
 			}
 		}
 
@@ -600,29 +726,78 @@ namespace LambdaEngine
 		(*ppFirstExecutionStage) = pCommandList;
 	}
 
-	void FirstPersonWeaponRenderer::RenderCull(CommandList* pCommandList, uint64& pipelineId)
+	void FirstPersonWeaponRenderer::SetWaterLevel(float waterLevel)
 	{
-		pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
+		s_LiquidPushConstantData.WaterLevel = waterLevel;
+	}
 
-		// Draw Weapon
-		const DrawArg& drawArg = m_pDrawArgs[0];
-		pCommandList->BindIndexBuffer(m_IndexBuffer.Get(), 0, EIndexType::INDEX_TYPE_UINT32);
-		pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[0].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
-		pCommandList->DrawIndexInstanced(m_IndicesCount, drawArg.InstanceCount, 0, 0, 0);
+	void FirstPersonWeaponRenderer::SetPaintLevel(float waterLevel)
+	{
+		s_LiquidPushConstantData.PaintLevel = waterLevel;
+	}
+
+	void FirstPersonWeaponRenderer::RenderCull(bool applyDefaultTransform, uint32 drawArgIndex, CommandList* pCommandList, uint64& pipelineId)
+	{
+		const DrawArg& drawArg = m_pDrawArgs[drawArgIndex];
+		Entity entity = drawArg.EntityIDs[0];
+
+		WeaponLocalComponent weaponLocalComponent = {};
+		bool hasComponent = ECSCore::GetInstance()->GetConstComponentIf<WeaponLocalComponent>(entity, weaponLocalComponent);
+		if (hasComponent)
+		{
+			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(pipelineId));
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_PipelineLayout.Get(), 0); // BUFFER_SET_INDEX
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_PipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
+
+			glm::mat4 deafultTransform = applyDefaultTransform ? weaponLocalComponent.DefaultTransform : glm::mat4(1.f);
+			pCommandList->SetConstantRange(m_PipelineLayout.Get(), FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, (void*)&deafultTransform, sizeof(glm::mat4), 0);
+
+			// Draw Weapon
+			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSetList2[drawArgIndex].Get(), m_PipelineLayout.Get(), 2); // Mesh data (Vertices and instance buffers)
+			pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+		}
+	}
+
+	void FirstPersonWeaponRenderer::RenderLiquid(bool isWater, CommandList* pCommandList)
+	{
+		const DrawArg& drawArg = m_pDrawArgs[isWater ? m_LiquidWaterIndex : m_LiquidPaintIndex];
+		Entity entity = drawArg.EntityIDs[0];
+
+		WeaponLocalComponent weaponLocalComponent = {};
+		bool hasComponent = ECSCore::GetInstance()->GetConstComponentIf<WeaponLocalComponent>(entity, weaponLocalComponent);
+		if (hasComponent)
+		{
+			pCommandList->BindGraphicsPipeline(PipelineStateManager::GetPipelineState(m_PipelineStateIDNoCull));
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSet0.Get(), m_LiquidPipelineLayout.Get(), 0); // BUFFER_SET_INDEX
+			pCommandList->BindDescriptorSetGraphics(m_DescriptorSet1.Get(), m_LiquidPipelineLayout.Get(), 1); // TEXTURE_SET_INDEX
+
+			s_LiquidPushConstantData.DefaultTransform = weaponLocalComponent.DefaultTransform;
+			s_LiquidPushConstantData.IsWater = isWater ? 1.f : 0.f;
+
+			pCommandList->SetConstantRange(m_LiquidPipelineLayout.Get(),
+				FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER,
+				(void*)&s_LiquidPushConstantData, sizeof(SPushConstantData), 0);
+
+			// Draw Weapon liquid
+			pCommandList->BindIndexBuffer(drawArg.pIndexBuffer, 0, EIndexType::INDEX_TYPE_UINT32);
+			pCommandList->BindDescriptorSetGraphics(isWater ? m_LiquidWaterDrawArgsDescriptorSet : m_LiquidPaintDrawArgsDescriptorSet, m_LiquidPipelineLayout.Get(), 2); // Draw arg data
+			pCommandList->DrawIndexInstanced(drawArg.IndexCount, drawArg.InstanceCount, 0, 0, 0);
+		}
 	}
 
 	void FirstPersonWeaponRenderer::UpdateWeaponBuffer(CommandList* pCommandList, uint32 modFrameIndex)
 	{
 		const ComponentArray<PositionComponent>* pPositionComponents = ECSCore::GetInstance()->GetComponentArray<PositionComponent>();
+		const ComponentArray<RotationComponent>* pRotationComponents = ECSCore::GetInstance()->GetComponentArray<RotationComponent>();
 		
-		if (m_Entity != MAXUINT32 && pPositionComponents->HasComponent(m_Entity)) {
+		if (m_PlayerEntity != MAXUINT32 && pPositionComponents->HasComponent(m_PlayerEntity)) {
 			SWeaponBuffer data = {};
 
-			data.Model = glm::translate(glm::vec3(-0.3f, -0.45f, -0.5f));
-			data.Model = glm::scale(data.Model, glm::vec3(1.2f, 1.2f, 1.2f));
-			data.PlayerPos = pPositionComponents->GetConstData(m_Entity).Position;
+			data.Model = glm::translate(glm::vec3(0.0f, -0.385f, 0.1f));
+			data.Model = glm::scale(data.Model, glm::vec3(1.0f, 1.0f, 1.0f));
+			data.PlayerPos = pPositionComponents->GetConstData(m_PlayerEntity).Position;
+			data.PlayerRotation = glm::toMat4(pRotationComponents->GetConstData(m_PlayerEntity).Quaternion);
 
 			Buffer* pStagingBuffer = m_WeaponStagingBuffers[modFrameIndex].Get();
 			byte* pMapping = reinterpret_cast<byte*>(pStagingBuffer->Map());
@@ -634,26 +809,34 @@ namespace LambdaEngine
 
 	bool FirstPersonWeaponRenderer::PrepareResources(CommandList* pCommandList)
 	{
-		Mesh* pMesh = ResourceManager::GetMesh(ResourceCatalog::WEAPON_FIRST_PERSON_MESH_GUID);
+		// Copy Per FrameBuffer
+		TSharedRef<Window> window = CommonApplication::Get()->GetMainWindow();
+		float32 windowWidth = float32(window->GetWidth());
+		float32 windowHeight = float32(window->GetHeight());
 
-		// Copy vertices
-		const TArray<Vertex>& vertices = pMesh->Vertices;
-		const uint32 verticesSize = sizeof(Vertex) * vertices.GetSize();
+		glm::mat4 projection = glm::perspective(glm::pi<float>() * 0.5f, windowWidth / windowHeight, 0.001f, 10.0f);
+		glm::mat4 view = glm::lookAt(glm::vec3(0.0, 0.0, 0.1), glm::vec3(0.0f), g_DefaultUp);
 
-		byte* pMapping = reinterpret_cast<byte*>(m_VertexStagingBuffer->Map());
-		memcpy(pMapping, vertices.GetData(), verticesSize);
-		m_VertexStagingBuffer->Unmap();
-		pCommandList->CopyBuffer(m_VertexStagingBuffer.Get(), 0, m_VertexBuffer.Get(), 0, verticesSize);
-	
-		// Copy indices
-		const TArray<MeshIndexType>& indices = pMesh->Indices;
-		m_IndicesCount = indices.GetSize();
-		const uint32 indicesSize = sizeof(MeshIndexType) * m_IndicesCount;
+		// Weapon Transformations
+		FrameBuffer fb = {
+			.Projection = projection,
+			.View = view,
+			.PrevProjection = glm::mat4(1.0f),
+			.PrevView = glm::mat4(1.0f),
+			.ViewInv = glm::mat4(1.0f),
+			.ProjectionInv = glm::mat4(1.0f),
+			.CameraPosition = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
+			.CameraRight = glm::vec4(g_DefaultRight, 1.0f),
+			.CameraUp = glm::vec4(g_DefaultUp, 1.0f),
+			.JitterDiff = glm::vec2(0, 0),
+			.FrameIndex = 0,
+			.RandomSeed = 0,
+		};
 
-		pMapping = reinterpret_cast<byte*>(m_IndexStagingBuffer->Map());
-		memcpy(pMapping, indices.GetData(), indicesSize);
-		m_IndexStagingBuffer->Unmap();
-		pCommandList->CopyBuffer(m_IndexStagingBuffer.Get(), 0, m_IndexBuffer.Get(), 0, indicesSize);
+		byte* pMapping = reinterpret_cast<byte*>(m_FrameCopyBuffer->Map());
+		memcpy(pMapping, &fb, sizeof(fb));
+		m_FrameCopyBuffer->Unmap();
+		pCommandList->CopyBuffer(m_FrameCopyBuffer.Get(), 0, m_FrameBuffer.Get(), 0, sizeof(FrameBuffer));
 
 		return true;
 	}
@@ -758,26 +941,211 @@ namespace LambdaEngine
 		depthStencilDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
 		depthStencilDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
 
+		// u_GlobalSpecularProbe
+		DescriptorBindingDesc globalSpecularProbeDesc = {};
+		globalSpecularProbeDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		globalSpecularProbeDesc.DescriptorCount = 1;
+		globalSpecularProbeDesc.Binding = 4;
+		globalSpecularProbeDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_GlobalDiffuseProbe
+		DescriptorBindingDesc globalDiffuseProbeDesc = {};
+		globalDiffuseProbeDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		globalDiffuseProbeDesc.DescriptorCount = 1;
+		globalDiffuseProbeDesc.Binding = 5;
+		globalDiffuseProbeDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_IntegrationLUT
+		DescriptorBindingDesc integrationLUTDesc = {};
+		integrationLUTDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		integrationLUTDesc.DescriptorCount = 1;
+		integrationLUTDesc.Binding = 6;
+		integrationLUTDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
 		// maps to SET = 0 (BUFFER_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
 		descriptorSetLayoutDesc0.DescriptorBindings = { frameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc, weaponDataDesc };
 
 		// maps to SET = 1 (TEXTURE_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
-		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc };
+		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc, 
+			globalSpecularProbeDesc, globalDiffuseProbeDesc, integrationLUTDesc };
 
 		// maps to SET = 2 (DRAW_SET_INDEX)
 		DescriptorSetLayoutDesc descriptorSetLayoutDesc2 = {};
 		descriptorSetLayoutDesc2.DescriptorBindings = { verticesBindingDesc, instanceBindingDesc, meshletBindingDesc, uniqueIndicesDesc, primitiveIndicesDesc };
 
+		ConstantRangeDesc constantRangeDesc = {};
+		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+		constantRangeDesc.OffsetInBytes = 0;
+		constantRangeDesc.SizeInBytes = sizeof(glm::mat4);
+
 		PipelineLayoutDesc pipelineLayoutDesc = { };
 		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout";
 		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, descriptorSetLayoutDesc2 };
-		pipelineLayoutDesc.ConstantRanges = { };
+		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
 
 		m_PipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
 
 		return m_PipelineLayout != nullptr;
+	}
+
+	bool FirstPersonWeaponRenderer::CreatePipelineLayoutLiquid()
+	{
+		/* Uniform buffers */
+		DescriptorBindingDesc frameBufferDesc = {};
+		frameBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		frameBufferDesc.DescriptorCount = 1;
+		frameBufferDesc.Binding = 0;
+		frameBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+		DescriptorBindingDesc weaponDataDesc = {};
+		weaponDataDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_CONSTANT_BUFFER;
+		weaponDataDesc.DescriptorCount = 1;
+		weaponDataDesc.Binding = 4;
+		weaponDataDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER;
+
+		/* PIXEL SHADER */
+		// MaterialParameters
+		DescriptorBindingDesc materialParametersBufferDesc = {};
+		materialParametersBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		materialParametersBufferDesc.DescriptorCount = 1;
+		materialParametersBufferDesc.Binding = 1;
+		materialParametersBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		DescriptorBindingDesc paintMaskColorsBufferDesc = {};
+		paintMaskColorsBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		paintMaskColorsBufferDesc.DescriptorCount = 1;
+		paintMaskColorsBufferDesc.Binding = 2;
+		paintMaskColorsBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_AlbedoMaps
+		DescriptorBindingDesc albedoMapsDesc = {};
+		albedoMapsDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		albedoMapsDesc.DescriptorCount = 6000;
+		albedoMapsDesc.Binding = 0;
+		albedoMapsDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		albedoMapsDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// NormalMapsDesc
+		DescriptorBindingDesc normalMapsDesc = {};
+		normalMapsDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		normalMapsDesc.DescriptorCount = 6000;
+		normalMapsDesc.Binding = 1;
+		normalMapsDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		normalMapsDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// CombinedMaterialMaps
+		DescriptorBindingDesc combinedMaterialMapsDesc = {};
+		combinedMaterialMapsDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		combinedMaterialMapsDesc.DescriptorCount = 6000;
+		combinedMaterialMapsDesc.Binding = 2;
+		combinedMaterialMapsDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		combinedMaterialMapsDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// LightBuffer
+		DescriptorBindingDesc lightBufferDesc = {};
+		lightBufferDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+		lightBufferDesc.DescriptorCount = 6000;
+		lightBufferDesc.Binding = 3;
+		lightBufferDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		lightBufferDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// u_DepthStencil
+		DescriptorBindingDesc depthStencilDesc = {};
+		depthStencilDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		depthStencilDesc.DescriptorCount = 6000;
+		depthStencilDesc.Binding = 3;
+		depthStencilDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		depthStencilDesc.Flags = FDescriptorSetLayoutBindingFlag::DESCRIPTOR_SET_LAYOUT_BINDING_FLAG_PARTIALLY_BOUND;
+
+		// u_GlobalSpecularProbe
+		DescriptorBindingDesc globalSpecularProbeDesc = {};
+		globalSpecularProbeDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		globalSpecularProbeDesc.DescriptorCount = 1;
+		globalSpecularProbeDesc.Binding = 4;
+		globalSpecularProbeDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_GlobalDiffuseProbe
+		DescriptorBindingDesc globalDiffuseProbeDesc = {};
+		globalDiffuseProbeDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		globalDiffuseProbeDesc.DescriptorCount = 1;
+		globalDiffuseProbeDesc.Binding = 5;
+		globalDiffuseProbeDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// u_IntegrationLUT
+		DescriptorBindingDesc integrationLUTDesc = {};
+		integrationLUTDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER;
+		integrationLUTDesc.DescriptorCount = 1;
+		integrationLUTDesc.Binding = 6;
+		integrationLUTDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+
+		// maps to SET = 0 (BUFFER_SET_INDEX)
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc0 = {};
+		descriptorSetLayoutDesc0.DescriptorBindings = { frameBufferDesc, materialParametersBufferDesc, paintMaskColorsBufferDesc, lightBufferDesc, weaponDataDesc };
+
+		// maps to SET = 1 (TEXTURE_SET_INDEX)
+		DescriptorSetLayoutDesc descriptorSetLayoutDesc1 = {};
+		descriptorSetLayoutDesc1.DescriptorBindings = { albedoMapsDesc, normalMapsDesc, combinedMaterialMapsDesc, depthStencilDesc,
+			globalSpecularProbeDesc, globalDiffuseProbeDesc, integrationLUTDesc };
+
+		// Set 2
+		DescriptorSetLayoutDesc drawArgDescriptorSetLayoutDesc = {};
+		{
+			DescriptorBindingDesc verticesBindingDesc = {};
+			verticesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			verticesBindingDesc.DescriptorCount = 1;
+			verticesBindingDesc.Binding = 0;
+			verticesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			DescriptorBindingDesc instanceBindingDesc = {};
+			instanceBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			instanceBindingDesc.DescriptorCount = 1;
+			instanceBindingDesc.Binding = 1;
+			instanceBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			DescriptorBindingDesc meshletsBindingDesc = {};
+			meshletsBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			meshletsBindingDesc.DescriptorCount = 1;
+			meshletsBindingDesc.Binding = 2;
+			meshletsBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			DescriptorBindingDesc uniqueIndicesBindingDesc = {};
+			uniqueIndicesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			uniqueIndicesBindingDesc.DescriptorCount = 1;
+			uniqueIndicesBindingDesc.Binding = 3;
+			uniqueIndicesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			DescriptorBindingDesc primitiveIndicesBindingDesc = {};
+			primitiveIndicesBindingDesc.DescriptorType = EDescriptorType::DESCRIPTOR_TYPE_UNORDERED_ACCESS_BUFFER;
+			primitiveIndicesBindingDesc.DescriptorCount = 1;
+			primitiveIndicesBindingDesc.Binding = 4;
+			primitiveIndicesBindingDesc.ShaderStageMask = FShaderStageFlag::SHADER_STAGE_FLAG_ALL;
+
+			TArray<DescriptorBindingDesc> descriptorBindings = {
+				verticesBindingDesc,
+				instanceBindingDesc,
+				meshletsBindingDesc,
+				uniqueIndicesBindingDesc,
+				primitiveIndicesBindingDesc
+			};
+			
+			drawArgDescriptorSetLayoutDesc.DescriptorBindings = descriptorBindings;
+		}
+
+		ConstantRangeDesc constantRangeDesc = {};
+		constantRangeDesc.ShaderStageFlags = FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER | FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER;
+		constantRangeDesc.OffsetInBytes = 0;
+		constantRangeDesc.SizeInBytes = sizeof(SPushConstantData);
+
+		PipelineLayoutDesc pipelineLayoutDesc = { };
+		pipelineLayoutDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Layout liquid";
+		pipelineLayoutDesc.DescriptorSetLayouts = { descriptorSetLayoutDesc0, descriptorSetLayoutDesc1, drawArgDescriptorSetLayoutDesc };
+		pipelineLayoutDesc.ConstantRanges = { constantRangeDesc };
+
+		m_LiquidPipelineLayout = RenderAPI::GetDevice()->CreatePipelineLayout(&pipelineLayoutDesc);
+
+		return m_LiquidPipelineLayout != nullptr;
 	}
 
 	bool FirstPersonWeaponRenderer::CreateDescriptorSets()
@@ -810,7 +1178,10 @@ namespace LambdaEngine
 	{
 		m_VertexShaderPointGUID = ResourceManager::LoadShaderFromFile("/FirstPerson/Weapon.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
 		m_PixelShaderPointGUID = ResourceManager::LoadShaderFromFile("/FirstPerson/Weapon.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
-		return m_VertexShaderPointGUID != GUID_NONE && m_PixelShaderPointGUID != GUID_NONE;
+
+		m_LiquidVertexShaderGUID = ResourceManager::LoadShaderFromFile("/FirstPerson/WeaponLiquid.vert", FShaderStageFlag::SHADER_STAGE_FLAG_VERTEX_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		m_LiquidPixelShaderGUID = ResourceManager::LoadShaderFromFile("/FirstPerson/WeaponLiquid.frag", FShaderStageFlag::SHADER_STAGE_FLAG_PIXEL_SHADER, EShaderLang::SHADER_LANG_GLSL);
+		return m_VertexShaderPointGUID != GUID_NONE && m_PixelShaderPointGUID != GUID_NONE && m_LiquidVertexShaderGUID != GUID_NONE && m_LiquidPixelShaderGUID != GUID_NONE;
 	}
 
 	bool FirstPersonWeaponRenderer::CreateCommandLists()
@@ -890,74 +1261,116 @@ namespace LambdaEngine
 
 	bool FirstPersonWeaponRenderer::CreatePipelineState()
 	{
-		ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
-		pipelineStateDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Back Cull State";
-		pipelineStateDesc.RenderPass = m_RenderPass;
-		pipelineStateDesc.PipelineLayout = m_PipelineLayout;
-
-		pipelineStateDesc.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-		pipelineStateDesc.RasterizerState.LineWidth = 1.f;
-		pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
-		pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_BACK;
-
-		pipelineStateDesc.DepthStencilState = {};
-		pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
-		pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
-
-		pipelineStateDesc.BlendState.BlendAttachmentStates =
+		// Back face cullling pipeline
 		{
+			ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
+			pipelineStateDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Back Cull State";
+			pipelineStateDesc.RenderPass = m_RenderPass;
+			pipelineStateDesc.PipelineLayout = m_PipelineLayout;
+
+			pipelineStateDesc.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+			pipelineStateDesc.RasterizerState.LineWidth = 1.f;
+			pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
+			pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_BACK;
+
+			pipelineStateDesc.DepthStencilState = {};
+			pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
+			pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
+
+			pipelineStateDesc.BlendState.BlendAttachmentStates =
 			{
-				EBlendOp::BLEND_OP_ADD,
-				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
-				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-				EBlendOp::BLEND_OP_ADD,
-				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
-				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
-				true
-			}
-		};
+				{
+					EBlendOp::BLEND_OP_ADD,
+					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+					EBlendOp::BLEND_OP_ADD,
+					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+					COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
+					true
+				}
+			};
 
-		pipelineStateDesc.VertexShader.ShaderGUID = m_VertexShaderPointGUID;
-		pipelineStateDesc.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
+			pipelineStateDesc.VertexShader.ShaderGUID = m_VertexShaderPointGUID;
+			pipelineStateDesc.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
 
-		m_PipelineStateIDBackCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
+			m_PipelineStateIDBackCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
+		}
 
-
-		ManagedGraphicsPipelineStateDesc pipelineStateDesc2 = {};
-		pipelineStateDesc2.DebugName = "FirstPersonWeapon Renderer Pipeline Front Cull State";
-		pipelineStateDesc2.RenderPass = m_RenderPass;
-		pipelineStateDesc2.PipelineLayout = m_PipelineLayout;
-
-		pipelineStateDesc2.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-		pipelineStateDesc2.RasterizerState.LineWidth = 1.f;
-		pipelineStateDesc2.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
-		pipelineStateDesc2.RasterizerState.CullMode = ECullMode::CULL_MODE_FRONT;
-
-		pipelineStateDesc2.DepthStencilState = {};
-		pipelineStateDesc2.DepthStencilState.DepthTestEnable = true;
-		pipelineStateDesc2.DepthStencilState.DepthWriteEnable = true;
-
-		pipelineStateDesc2.BlendState.BlendAttachmentStates =
+		// Front face cullling pipeline
 		{
+			ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
+			pipelineStateDesc.DebugName = "FirstPersonWeapon Renderer Pipeline Front Cull State";
+			pipelineStateDesc.RenderPass = m_RenderPass;
+			pipelineStateDesc.PipelineLayout = m_PipelineLayout;
+
+			pipelineStateDesc.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+			pipelineStateDesc.RasterizerState.LineWidth = 1.f;
+			pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
+			pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_FRONT;
+
+			pipelineStateDesc.DepthStencilState = {};
+			pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
+			pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
+
+			pipelineStateDesc.BlendState.BlendAttachmentStates =
 			{
-				EBlendOp::BLEND_OP_ADD,
-				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
-				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-				EBlendOp::BLEND_OP_ADD,
-				EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
-				EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
-				COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
-				true
-			}
-		};
+				{
+					EBlendOp::BLEND_OP_ADD,
+					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+					EBlendOp::BLEND_OP_ADD,
+					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+					COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
+					true
+				}
+			};
 
-		pipelineStateDesc2.VertexShader.ShaderGUID = m_VertexShaderPointGUID;
-		pipelineStateDesc2.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
+			pipelineStateDesc.VertexShader.ShaderGUID = m_VertexShaderPointGUID;
+			pipelineStateDesc.PixelShader.ShaderGUID = m_PixelShaderPointGUID;
 
-		m_PipelineStateIDFrontCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc2);
+			m_PipelineStateIDFrontCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
+		}
+
+		// No cullling pipeline
+		{
+			ManagedGraphicsPipelineStateDesc pipelineStateDesc = {};
+			pipelineStateDesc.DebugName = "FirstPersonWeapon Renderer Pipeline No Cull State";
+			pipelineStateDesc.RenderPass = m_RenderPass;
+			pipelineStateDesc.PipelineLayout = m_LiquidPipelineLayout;
+
+			pipelineStateDesc.InputAssembly.PrimitiveTopology = EPrimitiveTopology::PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+			pipelineStateDesc.RasterizerState.LineWidth = 1.f;
+			pipelineStateDesc.RasterizerState.PolygonMode = EPolygonMode::POLYGON_MODE_FILL;
+			pipelineStateDesc.RasterizerState.CullMode = ECullMode::CULL_MODE_NONE;
+
+			pipelineStateDesc.DepthStencilState = {};
+			pipelineStateDesc.DepthStencilState.DepthTestEnable = true;
+			pipelineStateDesc.DepthStencilState.DepthWriteEnable = true;
+
+			pipelineStateDesc.BlendState.BlendAttachmentStates =
+			{
+				{
+					EBlendOp::BLEND_OP_ADD,
+					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+					EBlendOp::BLEND_OP_ADD,
+					EBlendFactor::BLEND_FACTOR_INV_SRC_ALPHA,
+					EBlendFactor::BLEND_FACTOR_SRC_ALPHA,
+					COLOR_COMPONENT_FLAG_R | COLOR_COMPONENT_FLAG_G | COLOR_COMPONENT_FLAG_B | COLOR_COMPONENT_FLAG_A,
+					true
+				}
+			};
+
+			pipelineStateDesc.VertexShader.ShaderGUID = m_LiquidVertexShaderGUID;
+			pipelineStateDesc.PixelShader.ShaderGUID = m_LiquidPixelShaderGUID;
+
+			m_PipelineStateIDNoCull = PipelineStateManager::CreateGraphicsPipelineState(&pipelineStateDesc);
+		}
 
 		return true;
 

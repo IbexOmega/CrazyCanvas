@@ -200,8 +200,8 @@ namespace LambdaEngine
 		}
 
 		{
-			m_MaxInnerTessLevel = 24.0f;
-			m_MaxOuterTessLevel = 24.0f;
+			m_MaxInnerTessLevel = 18.0f;
+			m_MaxOuterTessLevel = 18.0f;
 			m_MaxTrianglesPerSubTess = 100;
 
 			// Calculate max tessellation primitiveCount
@@ -375,11 +375,11 @@ namespace LambdaEngine
 			pMesh->Vertices.Resize(uniqueVertices);
 
 			// Remove the unused elements.
-			LOG_WARNING("Mesh Merged Vertex Change: %d -> %d", (uint32)PRE_MESH_VERTEX_COUNT, pMesh->Vertices.GetSize());
+			m_TotalVerticesAdded += pMesh->Vertices.GetSize() - (uint32)PRE_MESH_VERTEX_COUNT;
+			LOG_WARNING("Mesh Merged Vertex Change: %d -> %d, Total Vertices Added %d", (uint32)PRE_MESH_VERTEX_COUNT, pMesh->Vertices.GetSize(), m_TotalVerticesAdded);
 			LOG_WARNING("Done");
 
 			LOG_WARNING("Tessellation Complete");
-
 		}
 	}
 

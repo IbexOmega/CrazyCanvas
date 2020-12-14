@@ -125,7 +125,8 @@ void main()
 					server = (teamMode * paintMode) & 0x0F;
 				}
 
-				teamSC = (client << 4) | server;
+				uint animatedInformation = teamSC & 0x100;
+				teamSC = animatedInformation | (client << 4) | server;
 				vertex.Position.w = uintBitsToFloat(teamSC);
 
 				// Remove paint
@@ -146,13 +147,16 @@ void main()
 		{
 			uint teamSC = floatBitsToUint(vertex.Position.w);
 			uint server = teamSC & 0x0F; // Only use server side.
-			vertex.Position.w = uintBitsToFloat(server);
+			uint wData = server | (teamSC & 0x100); // Add information if it is a animated object or not.
+			vertex.Position.w = uintBitsToFloat(wData);
 			vertex.Normal.w = 1.f - float(step(1, int(server)));
 		}
 
 		if(u_PC.ShouldResetServer != 0)
 		{
-			vertex.Position.w = uintBitsToFloat(0);
+			uint wData = floatBitsToUint(vertex.Position.w);
+			wData = wData & 0x100; // Clear paint but not the animated information.
+			vertex.Position.w = uintBitsToFloat(wData);
 			vertex.Normal.w = 1.f;
 		}
 

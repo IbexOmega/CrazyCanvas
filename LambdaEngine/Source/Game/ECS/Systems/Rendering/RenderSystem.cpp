@@ -1784,8 +1784,8 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::UpdateTransform(Entity entity, const glm::mat4& additionalTransform, const PositionComponent& positionComp, const RotationComponent& rotationComp, const ScaleComponent& scaleComp, const glm::bvec3& rotationalAxes)
 	{
-		if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
-			return;
+		//if (!positionComp.Dirty && !rotationComp.Dirty && !scaleComp.Dirty)
+		//	return;
 
 		glm::mat4 transform = CreateEntityTransform(positionComp, rotationComp, scaleComp, rotationalAxes);
 		transform = transform * additionalTransform;
@@ -1812,7 +1812,11 @@ bool RenderSystem::InitIntegrationLUT()
 		if (m_RayTracingEnabled)
 		{
 			uint32 asInstanceIndex = meshAndInstancesIt->second.ASInstanceIndices[instanceKeyIt->second.InstanceIndex];
-			m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
+
+			if (asInstanceIndex != UINT32_MAX)
+			{
+				m_pASBuilder->UpdateInstanceTransform(asInstanceIndex, transform);
+			}
 		}
 
 		Instance* pRasterInstanceToUpdate = &meshAndInstancesIt->second.RasterInstances[instanceKeyIt->second.InstanceIndex];
