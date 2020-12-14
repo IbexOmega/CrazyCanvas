@@ -66,7 +66,7 @@ layout(push_constant) uniform RayTracingSettings
 {
 	int GlossyEnabled;
 	int SPP;
-	int ShadowsEnabled;
+	int ShadowsSetting;
 } pc_RayTracingSettings;
 
 #include "../MeshPaintHelper.glsl"

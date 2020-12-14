@@ -125,7 +125,6 @@ FORCEINLINE void ChangeRayTracingSettings(bool glossyEnabled, int32 spp, const L
 	{
 		rayTracingPushConstant.ShadowsSetting = 2;
 	}
-	
 
 	PushConstantsUpdate pushContantUpdate = {};
 	pushContantUpdate.pData				= &rayTracingPushConstant;

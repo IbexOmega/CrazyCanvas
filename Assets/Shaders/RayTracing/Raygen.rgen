@@ -58,8 +58,8 @@ vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 alb
 
 		SLightsBuffer lightBuffer = b_LightsBuffer.val;
 
-		bool rayTraceDirectionalShadows = (pc_RayTracingSettings.ShadowsEnabled >= 1 && b <= 1);
-		bool rayTracePointShadows = (pc_RayTracingSettings.ShadowsEnabled >= 2 && b <= 1);
+		bool rayTraceDirectionalShadows = (pc_RayTracingSettings.ShadowsSetting >= 1 && b <= 1);
+		bool rayTracePointShadows = (pc_RayTracingSettings.ShadowsSetting >= 2 && b <= 1);
 	
 		// Directional Light
 		{
@@ -102,8 +102,8 @@ vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 alb
 			
 			float n_dot_i = max(dot(w_nw, w_iw), 0.0f);
 
-			float shadow 			= rayTracePointShadows ? SampleLight(p_w, w_nw, w_iw, d, d_l) : PointShadowDepthTest(p_w, light.Position, d, w_nw, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			float attenuation		= max(1.0f / (d_l * d_l), 0.001f);
+			float shadow 			= rayTracePointShadows ? SampleLight(p_w, w_nw, w_iw, d, d_l) : PointShadowDepthTest(p_w, light.Position, d, w_nw, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - shadow);
 		

@@ -511,12 +511,25 @@ namespace LambdaEngine
 			{
 				int32 GlossyEnabled;
 				int32 SPP;
-				int32 ShadowsEnabled;
+				int32 ShadowsSetting;
 			} rayTracingPushConstant;
 
 			rayTracingPushConstant.GlossyEnabled = int32(EngineConfig::GetBoolProperty(EConfigOption::CONFIG_OPTION_GLOSSY_REFLECTIONS));
 			rayTracingPushConstant.SPP = EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP);
-			rayTracingPushConstant.ShadowsEnabled = int32(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_RAY_TRACED_SHADOWS));
+			
+			String shadowSetting = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RAY_TRACED_SHADOWS);
+			if (shadowSetting == "DISABLED")
+			{
+				rayTracingPushConstant.ShadowsSetting = 0;
+			}
+			else if (shadowSetting == "DIRECTIONAL")
+			{
+				rayTracingPushConstant.ShadowsSetting = 1;
+			}
+			else if (shadowSetting == "FULL")
+			{
+				rayTracingPushConstant.ShadowsSetting = 2;
+			}
 
 			PushConstantsUpdate pushContantUpdate = {};
 			pushContantUpdate.pData = &rayTracingPushConstant;
