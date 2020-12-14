@@ -14,6 +14,8 @@
 layout(local_size_x = NUM_THREADS, local_size_y = 1, local_size_z = 1) in;
 layout(triangles, max_vertices = MAX_VERTICES, max_primitives = MAX_PRIMITIVES) out;
 
+layout (constant_id = 0) const int DEBUG_COLORS = 0;
+
 // Output block for vertices
 layout(location = 0) out flat uint	out_MaterialSlot[];
 layout(location = 1) out vec3		out_WorldPosition[];
@@ -25,6 +27,7 @@ layout(location = 6) out vec4		out_ClipPosition[];
 layout(location = 7) out vec4		out_PrevClipPosition[];
 layout(location = 8) out vec4       out_PaintInfo4[];
 layout(location = 9) out float      out_PaintDist[];
+layout(location = 10) out vec3		out_VertexColor[];
 
 // Constant data
 const vec3 POSITIONS[3] = 
@@ -67,20 +70,21 @@ layout(binding = 4, set = DRAW_SET_INDEX) restrict readonly buffer PrimitiveIndi
 } b_PrimitiveIndices;
 
 // Color table for drawing each meshlet with a different color.
-//#define MAX_COLORS 10
-//const vec3 meshletcolors[MAX_COLORS] = 
-//{
-//	vec3(1.0f, 0.0f, 0.0f), 
-//	vec3(0.0f, 1.0f, 0.0f),
-//	vec3(0.0f, 0.0f, 1.0f),
-//	vec3(1.0f, 1.0f, 0.0f),
-//	vec3(1.0f, 0.0f, 1.0f),
-//	vec3(0.0f, 1.0f, 1.0f),
-//	vec3(1.0f, 0.5f, 0.0f),
-//	vec3(0.5f, 1.0f, 0.0f),
-//	vec3(0.0f, 0.5f, 1.0f),
-//	vec3(1.0f, 1.0f, 1.0f)
-//};
+#define MAX_COLORS 10
+
+const vec3 meshletcolors[MAX_COLORS] = 
+{
+	vec3(1.0f, 0.0f, 0.0f), 
+	vec3(0.0f, 1.0f, 0.0f),
+	vec3(0.0f, 0.0f, 1.0f),
+	vec3(1.0f, 1.0f, 0.0f),
+	vec3(1.0f, 0.0f, 1.0f),
+	vec3(0.0f, 1.0f, 1.0f),
+	vec3(1.0f, 0.5f, 0.0f),
+	vec3(0.5f, 1.0f, 0.0f),
+	vec3(0.0f, 0.5f, 1.0f),
+	vec3(1.0f, 1.0f, 1.0f)
+};
 
 /*
 * Main
@@ -105,6 +109,7 @@ void main()
 	mat4 prevTransform	= instance.PrevTransform;
 	
 	// Per vertex
+	const vec3 meshletColor = DEBUG_COLORS == 1 ? meshletcolors[totalMeshletID % MAX_COLORS] : vec3(0.0f);
 	for (uint vert = threadID; vert < meshlet.VertCount; vert += NUM_THREADS)
 	{
 		uint vertexIndex = b_UniqueIndices.Val[vert + meshlet.VertOffset];
@@ -132,6 +137,11 @@ void main()
 		
         out_PaintInfo4[vert] 		= PackedPaintInfoToVec4(PackPaintInfo(floatBitsToUint(vertex.Position.w)));
 	    out_PaintDist[vert] 		= vertex.Normal.w; // Distance from target. 0 is at the target, 1 is at the edge.
+
+		if (DEBUG_COLORS == 1)
+		{
+			out_VertexColor[vert] = meshletColor;
+		}
 
 		// Position
 		gl_MeshVerticesNV[vert].gl_Position = clipPosition;
