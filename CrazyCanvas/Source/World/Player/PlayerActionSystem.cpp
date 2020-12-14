@@ -40,6 +40,10 @@ PlayerActionSystem::PlayerActionSystem()
 			EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
 		}
 	}
+	else
+	{
+		EventQueue::RegisterEventHandler<KeyPressedEvent>(this, &PlayerActionSystem::OnKeyPressed);
+	}
 }
 
 PlayerActionSystem::~PlayerActionSystem()
