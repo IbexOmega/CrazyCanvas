@@ -762,6 +762,23 @@ namespace LambdaEngine
 			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
 		}
 
+		//Create Dummy TLAS
+		{
+			AccelerationStructureDesc createTLASDesc = {};
+			createTLASDesc.DebugName		= "Dummy TLAS";
+			createTLASDesc.Type				= EAccelerationStructureType::ACCELERATION_STRUCTURE_TYPE_TOP;
+			createTLASDesc.Flags			= FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_ALLOW_UPDATE | FAccelerationStructureFlag::ACCELERATION_STRUCTURE_FLAG_FAST_BUILD;
+			createTLASDesc.InstanceCount	= 0;
+
+			m_pTLAS = RenderAPI::GetDevice()->CreateAccelerationStructure(&createTLASDesc);
+
+			ResourceUpdateDesc resourceUpdateDesc = {};
+			resourceUpdateDesc.ResourceName							= SCENE_TLAS;
+			resourceUpdateDesc.ExternalAccelerationStructure.pTLAS	= m_pTLAS;
+
+			m_pRenderGraph->UpdateResource(&resourceUpdateDesc);
+		}
+
 		return true;
 	}
 }
