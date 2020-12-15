@@ -274,7 +274,7 @@ void HUDGUI::Reload(const std::unordered_map<EAmmoType, std::pair<int32, int32>>
 	const Player* pPlayer = PlayerManagerClient::GetPlayerLocal();
 	if (pPlayer->IsSpectator())
 		return;
-		
+
 	if (!isReloading)
 	{
 		auto paintAmmo = WeaponTypeAmmo.find(EAmmoType::AMMO_TYPE_PAINT);
@@ -553,7 +553,7 @@ void HUDGUI::CreateProjectedFlagGUIElement(Entity entity, uint8 localTeamIndex, 
 		brush->SetColor(color);
 	}
 	else
-		brush->SetColor(Color::Green());
+		brush->SetColor(Color::White());
 
 	flagImage->SetHeight(50);
 	flagImage->SetWidth(50);

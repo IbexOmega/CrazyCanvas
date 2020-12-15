@@ -466,7 +466,7 @@ void HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 
 	const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 
-	uint8 teamIndex = UINT8_MAX;
+	uint8 teamIndex = 0;
 	if (pTeamComponents->HasComponent(projectedEntity))
 	{
 		const TeamComponent& teamComponent = pTeamComponents->GetConstData(projectedEntity);
