@@ -37,3 +37,7 @@ LambdaProfile*.json
 
 # Ignore extra files created by Blender
 *.blend1
+
+# Ignore files from the installer
+InstallCrazyCanvas.exe
+/Output
