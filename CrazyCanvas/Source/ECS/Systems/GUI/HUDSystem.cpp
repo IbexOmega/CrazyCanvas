@@ -465,11 +465,18 @@ void HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 	const ProjectedGUIComponent& projectedGUIComponent = pProjectedGUIComponents->GetConstData(projectedEntity);
 
 	const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
-	const TeamComponent& teamComponent = pTeamComponents->GetConstData(projectedEntity);
+
+	uint8 teamIndex = UINT8_MAX;
+	if (pTeamComponents->HasComponent(projectedEntity))
+	{
+		const TeamComponent& teamComponent = pTeamComponents->GetConstData(projectedEntity);
+		teamIndex = teamComponent.TeamIndex;
+	}
+
 	switch (projectedGUIComponent.GUIType)
 	{
 	case IndicatorTypeGUI::FLAG_INDICATOR:
-		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex, teamComponent.TeamIndex);
+		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex, teamIndex);
 		break;
 	case IndicatorTypeGUI::PING_INDICATOR:
 		m_HUDGUI->CreateProjectedPingGUIElement(projectedEntity);
