@@ -7,7 +7,7 @@ Crazy Canvas is a Capture the Flag First Person Shooter with a twist, all enemie
 Crazy Canvas is designed from scratch during a 14 week period using a custom Vulkan engine (LambdaEngine) as a starting point.
 
 ## Download
-To get the latest installer of the game, go to (link is not provided yet).
+[Latest Release](https://github.com/IbexOmega/CrazyCanvas/releases)
 
 ## Techniques
   - Mesh Painting
