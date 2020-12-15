@@ -361,8 +361,17 @@ void SettingsGUI::SetDefaultSettings()
 	pReflectionsSPPSlider->SetValue(float32(EngineConfig::GetIntProperty(EConfigOption::CONFIG_OPTION_REFLECTIONS_SPP)));
 
 	//Set initial Ray Traced Shadows Setting
-	Noesis::ComboBox* pRayTracedShadowsSetting = FrameworkElement::FindName<Noesis::ComboBox>("RayTracedShadowsComboBox");
+	GraphicsDeviceFeatureDesc deviceFeatures;
+	RenderAPI::GetDevice()->QueryDeviceFeatures(&deviceFeatures);
 	LambdaEngine::String rayTracedShadowSetting = EngineConfig::GetStringProperty(EConfigOption::CONFIG_OPTION_RAY_TRACED_SHADOWS);
+	Noesis::ComboBox* pRayTracedShadowsSetting = FrameworkElement::FindName<Noesis::ComboBox>("RayTracedShadowsComboBox");
+
+	if (!deviceFeatures.InlineRayTracing)
+	{
+		pRayTracedShadowsSetting->SetIsEnabled(false);
+		rayTracedShadowSetting = "DISABLED";
+	}
+
 	NS_ASSERT(pRayTracedShadowsSetting);
 	SetRayTracedShadowSetting(pRayTracedShadowsSetting, rayTracedShadowSetting);
 
