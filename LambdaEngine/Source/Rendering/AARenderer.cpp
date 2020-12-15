@@ -132,6 +132,26 @@ namespace LambdaEngine
 			}
 		}
 
+		SamplerDesc samplerLinearDesc = {};
+		samplerLinearDesc.DebugName			= "Linear Sampler";
+		samplerLinearDesc.MinFilter			= EFilterType::FILTER_TYPE_LINEAR;
+		samplerLinearDesc.MagFilter			= EFilterType::FILTER_TYPE_LINEAR;
+		samplerLinearDesc.MipmapMode		= EMipmapMode::MIPMAP_MODE_LINEAR;
+		samplerLinearDesc.AddressModeU		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		samplerLinearDesc.AddressModeV		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		samplerLinearDesc.AddressModeW		= ESamplerAddressMode::SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		samplerLinearDesc.MipLODBias		= 0.0f;
+		samplerLinearDesc.AnisotropyEnabled	= true;
+		samplerLinearDesc.MaxAnisotropy		= 16;
+		samplerLinearDesc.MinLOD			= 0.0f;
+		samplerLinearDesc.MaxLOD			= FLT_MAX;
+
+		m_Sampler = RenderAPI::GetDevice()->CreateSampler(&samplerLinearDesc);
+		if (m_Sampler == nullptr)
+		{
+			return false;
+		}
+
 		return true;
 	}
 
@@ -508,7 +528,7 @@ namespace LambdaEngine
 				{
 					taaTextureSet->WriteTextureDescriptors(
 						&m_IntermediateOutputView,
-						Sampler::GetLinearSamplerToBind(),
+						&m_Sampler,
 						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 						0, 1,
 						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
@@ -520,7 +540,7 @@ namespace LambdaEngine
 				{
 					set->WriteTextureDescriptors(
 						&m_IntermediateOutputView,
-						Sampler::GetLinearSamplerToBind(),
+						&m_Sampler,
 						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 						0, 1,
 						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
@@ -540,7 +560,7 @@ namespace LambdaEngine
 				{
 					taaTextureSet->WriteTextureDescriptors(
 						&m_DepthView,
-						Sampler::GetLinearSamplerToBind(),
+						&m_Sampler,
 						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 						2, 1,
 						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
@@ -560,7 +580,7 @@ namespace LambdaEngine
 				{
 					taaTextureSet->WriteTextureDescriptors(
 						&m_VelocityView,
-						Sampler::GetLinearSamplerToBind(),
+						&m_Sampler,
 						ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 						1, 1,
 						EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
@@ -586,7 +606,7 @@ namespace LambdaEngine
 						TSharedRef<DescriptorSet>& taaTextureSet = m_TAATextureDescriptorSets[i];
 						taaTextureSet->WriteTextureDescriptors(
 							&taaHistoryView,
-							Sampler::GetLinearSamplerToBind(),
+							&m_Sampler,
 							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 							3, 1,
 							EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
@@ -622,7 +642,7 @@ namespace LambdaEngine
 						TSharedRef<DescriptorSet>& taaTextureSet = m_TAATextureDescriptorSets[i];
 						taaTextureSet->WriteTextureDescriptors(
 							&taaHistoryView,
-							Sampler::GetLinearSamplerToBind(),
+							&m_Sampler,
 							ETextureState::TEXTURE_STATE_SHADER_READ_ONLY,
 							3, 1,
 							EDescriptorType::DESCRIPTOR_TYPE_SHADER_RESOURCE_COMBINED_SAMPLER,
