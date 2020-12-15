@@ -6,8 +6,8 @@
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
 AppId={{DBBF083E-7BCF-4D86-B8CA-0618508C4FA5}
 AppName=Crazy Canvas
-AppVersion=0.9
-AppVerName=Crazy Canvas 0.9
+AppVersion=1.0
+AppVerName=Crazy Canvas 1.0
 AppPublisher=Ibex Omega
 AppPublisherURL=https://github.com/IbexOmega
 AppSupportURL=https://github.com/IbexOmega
