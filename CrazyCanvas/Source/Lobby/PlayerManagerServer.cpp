@@ -108,6 +108,7 @@ bool PlayerManagerServer::OnPacketJoinReceived(const PacketReceivedEvent<PacketJ
 			PacketJoin packetJoin;
 			packetJoin.UID = player.m_UID;
 			strcpy(packetJoin.Name, player.GetName().c_str());
+			packetJoin.IsSpectator = player.m_IsSpectator;
 			ServerHelper::Send(pClient, packetJoin);
 
 			if (hostPlayer)

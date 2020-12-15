@@ -1,7 +1,6 @@
 #version 460
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_ray_tracing : enable
-#extension GL_EXT_ray_query : enable
 //#extension GL_EXT_debug_printf : enable
 
 #include "RayTracingInclude.glsl"
@@ -42,15 +41,6 @@ layout(location = 0) rayPayloadEXT SPrimaryPayload s_PrimaryPayload;
 * metallic
 */
 
-float SampleLight(vec3 origin, vec3 normal, vec3 direction, float d, float tMax)
-{
-	rayQueryEXT rayQuery;
-	rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0x01, origin + normal * mix(0.1f, 0.5f, d / 100.0f), 0.001f, direction, tMax);
-	
-	while(rayQueryProceedEXT(rayQuery)) { }
-	return float(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT);
-}
-
 vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 albedo, float ao, float roughness, float metallic, vec3 F0, uint b)
 {
 		vec3 ambient 	= vec3(0.0f);
@@ -69,7 +59,7 @@ vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 alb
 			float n_dot_i 	= max(dot(w_nw, w_iw), 0.0f);
 
 			vec4 p_l 				= lightBuffer.DirL_ProjView * vec4(p_w, 1.0f);
-			float shadow 			= rayTraceDirectionalShadows ? SampleLight(p_w, w_nw, w_iw, d, 1000.0f) : DirShadowDepthTest(p_l, w_nw, w_iw, u_DirLShadowMap);
+			float shadow 			= DirShadowDepthTest(p_l, w_nw, w_iw, u_DirLShadowMap);
 			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * (1.0f - shadow);
 
@@ -103,7 +93,7 @@ vec3 ShadePoint(vec3 p_w, vec3 w_nw, vec3 w_ow, float n_dot_o, float d, vec3 alb
 			float n_dot_i = max(dot(w_nw, w_iw), 0.0f);
 
 			float attenuation		= max(1.0f / (d_l * d_l), 0.001f);
-			float shadow 			= rayTracePointShadows ? SampleLight(p_w, w_nw, w_iw, d, d_l) : PointShadowDepthTest(p_w, light.Position, d, w_nw, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
+			float shadow 			= PointShadowDepthTest(p_w, light.Position, d, w_nw, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - shadow);
 		

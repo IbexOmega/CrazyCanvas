@@ -61,6 +61,8 @@
 
 #include <imgui/imgui.h>
 
+#define DEBUG_INFO_ENABLED 0
+
 namespace LambdaEngine
 {
 	/*
@@ -194,7 +196,7 @@ namespace LambdaEngine
 		PROFILE_FUNCTION("Game::Tick", Game::Get().Tick(delta));
 
 		// Rendering
-#ifdef LAMBDA_DEVELOPMENT
+#if DEBUG_INFO_ENABLED
 		// TODO: Move to somewere else, does someone have a suggestion?
 		ImGuiRenderer::Get().DrawUI([delta]
 			{

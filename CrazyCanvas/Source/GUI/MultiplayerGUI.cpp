@@ -55,6 +55,12 @@ MultiplayerGUI::MultiplayerGUI(MultiplayerState* pMultiplayerState) :
 	m_pTextBoxAddress		= FrameworkElement::FindName<TextBox>("IP_ADDRESS");
 	m_pTextBoxName			= FrameworkElement::FindName<TextBox>("IN_GAME_NAME");
 
+	m_pTextBoxAddress->SetMaxLines(1);
+	m_pTextBoxAddress->SetMaxLength(36);
+
+	m_pTextBoxName->SetMaxLines(1);
+	m_pTextBoxName->SetMaxLength(MAX_NAME_LENGTH - 1);
+
 	// Use Host name as default In Game name
 	const Player* pLocalPlayer = PlayerManagerClient::GetPlayerLocal();
 	LambdaEngine::String nameStr;

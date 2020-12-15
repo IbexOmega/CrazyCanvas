@@ -37,7 +37,7 @@
 #include "Game/ECS/Components/Rendering/GlobalLightProbeComponent.h"
 #include "Game/ECS/Components/Rendering/MeshComponent.h"
 
-#define RENDER_SYSTEM_DEBUG 1
+#define RENDER_SYSTEM_DEBUG 0
 
 namespace LambdaEngine
 {
@@ -442,7 +442,7 @@ namespace LambdaEngine
 
 		void UpdateRenderGraph();
 
-#ifdef RENDER_SYSTEM_DEBUG
+#if RENDER_SYSTEM_DEBUG
 		// Debug
 		void CheckWhereEntityAlreadyRegistered(Entity entity);
 #endif
@@ -564,7 +564,7 @@ namespace LambdaEngine
 		class AARenderer*			m_pAARenderer			= nullptr;
 		TArray<CustomRenderer*>		m_GameSpecificCustomRenderers;
 
-#ifdef RENDER_SYSTEM_DEBUG
+#if RENDER_SYSTEM_DEBUG
 		// Debug
 		TSet<Entity> m_RenderableEntities;
 #endif

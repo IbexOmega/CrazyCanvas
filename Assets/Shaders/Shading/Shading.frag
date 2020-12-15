@@ -2,8 +2,6 @@
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_GOOGLE_include_directive : enable
 #extension GL_EXT_nonuniform_qualifier : enable
-#extension GL_EXT_ray_tracing : enable
-#extension GL_EXT_ray_query : enable
 
 #include "../Defines.glsl"
 #include "../Helpers.glsl"
@@ -20,8 +18,6 @@ layout(binding = 1, set = BUFFER_SET_INDEX) restrict readonly buffer LightsBuffe
 	SLightsBuffer val; 
 	SPointLight pointLights[];  
 } b_LightsBuffer;
-
-layout(binding = 2, set = BUFFER_SET_INDEX) uniform accelerationStructureEXT u_TLAS;
 
 layout(binding = 0, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAlbedo;
 layout(binding = 1, set = TEXTURE_SET_INDEX) uniform sampler2D u_GBufferAORoughMetalValid;
@@ -46,15 +42,6 @@ layout(push_constant) uniform RayTracingSettings
 	int SPP;
 	int ShadowsSetting;
 } pc_RayTracingSettings;
-
-float SampleLight(vec3 origin, vec3 normal, vec3 direction, float d, float tMax)
-{
-	rayQueryEXT rayQuery;
-	rayQueryInitializeEXT(rayQuery, u_TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0x01, origin + normal * mix(0.1f, 0.5f, d / 100.0f), 0.001f, direction, tMax);
-	
-	while(rayQueryProceedEXT(rayQuery)) { }
-	return float(rayQueryGetIntersectionTypeEXT(rayQuery, true) != gl_RayQueryCommittedIntersectionNoneEXT);
-}
 
 void main()
 {
@@ -102,7 +89,7 @@ void main()
 			vec3 H = normalize(V + L);
 
 			vec4 fragPosLight 		= lightBuffer.DirL_ProjView * vec4(positions.WorldPos, 1.0f);
-			inShadowDirLight 		= pc_RayTracingSettings.ShadowsSetting >= 1 ? SampleLight(positions.WorldPos, N, L, viewDistance, 1000.0f) : DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
+			inShadowDirLight 		= DirShadowDepthTest(fragPosLight, N, lightBuffer.DirL_Direction, u_DirLShadowMap);
 			vec3 outgoingRadiance	= lightBuffer.DirL_ColorIntensity.rgb * lightBuffer.DirL_ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * (1.0f - inShadowDirLight);
 
@@ -134,7 +121,7 @@ void main()
 			L = normalize(L);
 			vec3 H = normalize(V + L);
 			
-			float inShadow 			= pc_RayTracingSettings.ShadowsSetting >= 2 ? SampleLight(positions.WorldPos, N, L, viewDistance, distance) : PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
+			float inShadow 			= PointShadowDepthTest(positions.WorldPos, light.Position, viewDistance, N, u_PointLShadowMap[light.TextureIndex], light.FarPlane);
 			float attenuation		= 1.0f / (distance * distance);
 			vec3 outgoingRadiance	= light.ColorIntensity.rgb * light.ColorIntensity.a;
 			vec3 incomingRadiance	= outgoingRadiance * attenuation * (1.0f - inShadow);

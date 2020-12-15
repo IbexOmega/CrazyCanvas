@@ -344,6 +344,7 @@ namespace LambdaEngine
 			if (renderGraphName != "")
 			{
 				String prefix	= m_RayTracingEnabled	&& !isServer ? "RT_" : "";
+				if (m_InlineRayTracingEnabled && !isServer) prefix += "RQ_";
 				String postfix	= m_MeshShadersEnabled	&& !isServer ? "_MESH" : "";
 				size_t pos = renderGraphName.find_first_of(".lrg");
 				if (pos != String::npos)
@@ -1211,7 +1212,7 @@ bool RenderSystem::InitIntegrationLUT()
 		bool forceUniqueResource,
 		bool manualResourceDeletion)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
+#if RENDER_SYSTEM_DEBUG
 		if (!m_RenderableEntities.insert(entity).second)
 		{
 			LOG_ERROR("Renderable Entity added without being removed %u", entity);
@@ -1640,7 +1641,7 @@ bool RenderSystem::InitIntegrationLUT()
 
 	void RenderSystem::RemoveRenderableEntity(Entity entity)
 	{
-#ifdef RENDER_SYSTEM_DEBUG
+#if RENDER_SYSTEM_DEBUG
 		m_RenderableEntities.erase(entity);
 #endif
 
@@ -3232,7 +3233,7 @@ bool RenderSystem::InitIntegrationLUT()
 		}
 	}
 
-#ifdef RENDER_SYSTEM_DEBUG
+#if RENDER_SYSTEM_DEBUG
 	void RenderSystem::CheckWhereEntityAlreadyRegistered(Entity entity)
 	{
 		bool foundEntity = false;
