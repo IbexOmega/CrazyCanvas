@@ -45,7 +45,8 @@ Source: "CrazyCanvas\Saved_Servers.json"; DestDir: "{app}\bin"; Flags: ignorever
 [Icons]
 Name: "{group}\Crazy Canvas"; Filename: "{app}\bin\CrazyCanvas.exe"
 Name: "{group}\{cm:UninstallProgram,Crazy Canvas}"; Filename: "uninstall.exe"; Tasks: desktopicon
-Name: "{autodesktop}\Crazy Canvas"; Filename: "{app}\bin\CrazyCanvas.exe"; Tasks: desktopicon
+Name: "{autodesktop}\Crazy Canvas"; Filename: "{app}\bin\CrazyCanvas.exe"; IconFilename: "{app}\Assets\CrazyCanvas.ico"; Tasks: desktopicon
+Name: "{autodesktop}\Crazy Canvas Server"; Filename: "{app}\bin\CrazyCanvas.exe"; Parameters: "--state=server"; IconFilename: "{app}\Assets\CrazyCanvas.ico"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\bin\CrazyCanvas.exe"; Description: "{cm:LaunchProgram,Crazy Canvas}"; Flags: nowait postinstall skipifsilent
