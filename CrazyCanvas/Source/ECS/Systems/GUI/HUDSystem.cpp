@@ -75,7 +75,7 @@ void HUDSystem::Init()
 			.pSubscriber = &m_ProjectedGUIEntities,
 			.ComponentAccesses =
 			{
-				{ R, ProjectedGUIComponent::Type() }, { R, TeamComponent::Type() }, { R, PositionComponent::Type() }
+				{ R, ProjectedGUIComponent::Type() }, { R, PositionComponent::Type() }
 			},
 			.OnEntityAdded		= std::bind_front(&HUDSystem::OnProjectedEntityAdded, this),
 			.OnEntityRemoval	= std::bind_front(&HUDSystem::RemoveProjectedEntity, this)
@@ -92,7 +92,7 @@ void HUDSystem::Init()
 
 	systemReg.SubscriberRegistration.AdditionalAccesses =
 	{
-		{ R, ProjectileComponent::Type() }
+		{ R, ProjectileComponent::Type() },  { R, TeamComponent::Type() }
 	};
 
 	systemReg.Phase = 1;
@@ -256,7 +256,7 @@ bool HUDSystem::OnWeaponFired(const WeaponFiredEvent& event)
 					m_HUDGUI->UpdateAmmo(weaponComponent.WeaponTypeAmmo, event.AmmoType);
 				}
 			}
-		}	
+		}
 	}
 	return false;
 }
@@ -466,7 +466,7 @@ void HUDSystem::OnProjectedEntityAdded(LambdaEngine::Entity projectedEntity)
 
 	const ComponentArray<TeamComponent>* pTeamComponents = pECS->GetComponentArray<TeamComponent>();
 	const TeamComponent& teamComponent = pTeamComponents->GetConstData(projectedEntity);
-	switch (projectedGUIComponent.GUIType)	
+	switch (projectedGUIComponent.GUIType)
 	{
 	case IndicatorTypeGUI::FLAG_INDICATOR:
 		m_HUDGUI->CreateProjectedFlagGUIElement(projectedEntity, m_LocalTeamIndex, teamComponent.TeamIndex);
