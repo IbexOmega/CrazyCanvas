@@ -112,6 +112,7 @@ namespace LambdaEngine
 		bool m_NeedsUpdate = true;
 		EAAMode m_AAMode;
 
+		TSharedRef<Sampler> m_Sampler;
 		TArray<TSharedRef<CommandList>>			m_CommandLists;
 		TArray<TSharedRef<CommandAllocator>>	m_CommandAllocators;
 
