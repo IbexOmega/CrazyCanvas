@@ -33,6 +33,7 @@ const float PI_OVER_TWO		= 1.57079632679f;
 const float PI_OVER_FOUR	= 0.78539816330f;
 const float EPSILON			= 0.001f;
 const float GAMMA			= 2.2f;
+const float INV_SQRT_TWO	= 0.70710678118f;
 
 #define MAX_NUM_AREA_LIGHTS 4
 #define AREA_LIGHT_TYPE_QUAD 1

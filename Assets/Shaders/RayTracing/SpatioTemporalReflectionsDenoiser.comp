@@ -80,6 +80,7 @@ void main()
 
                 vec3 minRadiance = current_Radiance_Valid.rgb;
                 vec3 maxRadiance = current_Radiance_Valid.rgb;
+                vec3 filteredRadiance = vec3(0.0f);
 
                 const int kernelRadius = RoughnessToKernelSize(roughness);
 
@@ -92,8 +93,8 @@ void main()
                         //Id both 0, we are at center
                         if (x == 0 && y == 0)
                         {
-                            vec3 weight = orig_brdf_pdf.rgb / orig_brdf_pdf.a;
-                            current_Radiance_Valid.rgb += current_Radiance_Valid.rgb * weight;
+                            vec3 weight = INV_SQRT_TWO * orig_brdf_pdf.rgb / orig_brdf_pdf.a;
+                            filteredRadiance += current_Radiance_Valid.rgb * weight;
                             weightSum += weight;
                         }
                         else
@@ -112,15 +113,15 @@ void main()
                                 minRadiance = min(minRadiance, local_Radiance);
                                 maxRadiance = max(maxRadiance, local_Radiance);
 
-                                vec3 weight = local_brdf_pdf.rgb / orig_brdf_pdf.a;
-                                current_Radiance_Valid.rgb += local_Radiance * weight;
+                                vec3 weight = INV_SQRT_TWO * local_brdf_pdf.rgb / orig_brdf_pdf.a;
+                                filteredRadiance += local_Radiance * weight;
                                 weightSum += weight;
                             }
                         }
                     }
                 }
                 
-                current_Radiance_Valid.rgb /= max(weightSum, vec3(1.0f));
+                current_Radiance_Valid.rgb = filteredRadiance / max(weightSum, vec3(1.0f));
             #else
                 vec3 minRadiance = vec3(0.0f);
                 vec3 maxRadiance = vec3(1.0f / 0.0f);
