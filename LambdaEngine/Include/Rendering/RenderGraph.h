@@ -25,6 +25,8 @@
 #include "Application/API/Events/DebugEvents.h"
 #include "Application/API/Events/RenderEvents.h"
 
+#include "Threading/API/ThreadPool.h"
+
 namespace LambdaEngine
 {
 	struct PipelineTextureBarrierDesc;
@@ -526,6 +528,7 @@ namespace LambdaEngine
 		THashTable<String, uint32>						m_RenderStageMap;
 		RenderStage*									m_pRenderStages						= nullptr;
 		uint32											m_RenderStageCount					= 0;
+		TArray<uint32>									m_RecordingJobs;
 		TSet<uint32>									m_WindowRelativeRenderStages;		// Contains Render Stage Indices that have Dimension Variables that depend on the current Window Size
 		TArray<SBTRecord>								m_GlobalShaderRecords;
 		TArray<uint32>									m_GlobalHitGroupIndices;
