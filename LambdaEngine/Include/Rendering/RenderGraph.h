@@ -462,6 +462,11 @@ namespace LambdaEngine
 			CommandList** ppFirstExecutionStage,
 			CommandList** ppSecondExecutionStage);
 		
+		void ExecuteRenderStage(
+			PipelineStage* pPipelineStage,
+			RenderStage* pRenderStage,
+			CommandList** ppExecutionStage);
+
 		void ExecuteGraphicsRenderStage(
 			RenderStage* pRenderStage, 
 			CommandAllocator* pGraphicsCommandAllocator, 

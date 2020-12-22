@@ -61,7 +61,7 @@
 
 #include <imgui/imgui.h>
 
-#define DEBUG_INFO_ENABLED 1
+#define DEBUG_INFO_ENABLED 0
 
 namespace LambdaEngine
 {

@@ -35,7 +35,7 @@
 #include "Debug/Profiler.h"
 #include "Time/API/Clock.h"
 
-#define MULTI_THREADED_COMMAND_LIST_RECORDING_ENABLED 1
+#define MULTI_THREADED_COMMAND_LIST_RECORDING_ENABLED 0
 
 namespace LambdaEngine
 {
@@ -899,36 +899,11 @@ namespace LambdaEngine
 					else
 					{
 #if MULTI_THREADED_COMMAND_LIST_RECORDING_ENABLED
-						switch (pRenderStage->pPipelineState->GetType())
-						{
-						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		m_RecordingJobs.PushBack(ThreadPool::Execute(std::bind_front(&RenderGraph::ExecuteGraphicsRenderStage, this, pRenderStage,	pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	&m_ppExecutionStages[currentExecutionStage])));	break;
-						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		m_RecordingJobs.PushBack(ThreadPool::Execute(std::bind_front(&RenderGraph::ExecuteComputeRenderStage, this, pRenderStage,		pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage])));	break;
-						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	m_RecordingJobs.PushBack(ThreadPool::Execute(std::bind_front(&RenderGraph::ExecuteRayTracingRenderStage, this, pRenderStage,	pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage])));	break;
-						}
+						m_RecordingJobs.PushBack(ThreadPool::Execute(std::bind_front(&RenderGraph::ExecuteRenderStage, this, pPipelineStage, pRenderStage, &m_ppExecutionStages[currentExecutionStage])));
 #else
-						switch (pRenderStage->pPipelineState->GetType())
-						{
-						case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage,	pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex],	&m_ppExecutionStages[currentExecutionStage]);	break;
-						case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage,		pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
-						case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage,	pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex],	pPipelineStage->ppComputeCommandLists[m_ModFrameIndex],		&m_ppExecutionStages[currentExecutionStage]);	break;
-						}
+						ExecuteRenderStage(pPipelineStage, pRenderStage, &m_ppExecutionStages[currentExecutionStage]);
 #endif
 						currentExecutionStage++;
-					}
-
-					if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::EVERY)
-					{
-						pRenderStage->FrameCounter++;
-
-						if (pRenderStage->FrameCounter > pRenderStage->FrameDelay)
-						{
-							pRenderStage->FrameCounter = 0;
-						}
-					}
-					else
-					{
-						//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
-						pRenderStage->FrameCounter = 1;
 					}
 
 					END_PROFILING_SEGMENT("Render: " + pRenderStage->Name);
@@ -4374,6 +4349,31 @@ namespace LambdaEngine
 		//{
 		//}
 
+	}
+
+	void RenderGraph::ExecuteRenderStage(PipelineStage* pPipelineStage, RenderStage* pRenderStage, CommandList** ppExecutionStage)
+	{
+		switch (pRenderStage->pPipelineState->GetType())
+		{
+		case EPipelineStateType::PIPELINE_STATE_TYPE_GRAPHICS:		ExecuteGraphicsRenderStage(pRenderStage, pPipelineStage->ppGraphicsCommandAllocators[m_ModFrameIndex], pPipelineStage->ppGraphicsCommandLists[m_ModFrameIndex], ppExecutionStage);	break;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_COMPUTE:		ExecuteComputeRenderStage(pRenderStage, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex], pPipelineStage->ppComputeCommandLists[m_ModFrameIndex], ppExecutionStage);	break;
+		case EPipelineStateType::PIPELINE_STATE_TYPE_RAY_TRACING:	ExecuteRayTracingRenderStage(pRenderStage, pPipelineStage->ppComputeCommandAllocators[m_ModFrameIndex], pPipelineStage->ppComputeCommandLists[m_ModFrameIndex], ppExecutionStage);	break;
+		}
+
+		if (pRenderStage->TriggerType == ERenderStageExecutionTrigger::EVERY)
+		{
+			pRenderStage->FrameCounter++;
+
+			if (pRenderStage->FrameCounter > pRenderStage->FrameDelay)
+			{
+				pRenderStage->FrameCounter = 0;
+			}
+		}
+		else
+		{
+			//We set this to one, DISABLED and TRIGGERED wont trigger unless FrameCounter == 0
+			pRenderStage->FrameCounter = 1;
+		}
 	}
 
 	void RenderGraph::ExecuteGraphicsRenderStage(
