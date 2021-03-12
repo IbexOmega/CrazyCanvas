@@ -1,5 +1,3 @@
-#define GLOSSY_REFLECTIONS_ENABLED 0
-
 //Glossy Settings
 #define SAMPLE_VISIBLE_NORMALS_ENABLED          1
 #define SPATIAL_BRDF_DENOISING_ENABLED          1

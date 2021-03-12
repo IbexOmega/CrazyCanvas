@@ -628,6 +628,12 @@ namespace LambdaEngine
 				descriptorsNowAvailable.Clear();
 			}
 		}
+
+		if (m_View.GetPtr() != nullptr)
+		{
+			//Needs to be done in main thread so we do this here
+			m_View->Update(EngineLoop::GetTimeSinceStart().AsSeconds());
+		}
 	}
 
 	void GUIRenderer::UpdateTextureResource(
@@ -716,7 +722,6 @@ namespace LambdaEngine
 			return;
 
 		//Todo: Use UpdateRenderTree return value
-		m_View->Update(EngineLoop::GetTimeSinceStart().AsSeconds());
 		m_View->GetRenderer()->UpdateRenderTree();
 
 		if (!sleeping)
